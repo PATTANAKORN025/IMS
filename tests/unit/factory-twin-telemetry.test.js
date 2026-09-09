@@ -136,10 +136,17 @@ test('a complete drill-down request builds the existing URL shape', () => {
     machineId: 'TEST-DEVICE-01', factory: 'F1', mo: 'TEST-MO-1',
     eventTimeMs: 1234567890, from: 'now-6h', to: 'now',
   });
+  // FT-17.5 audit fix: var-clicked_series is REQUIRED alongside
+  // var-event_time_ms, or ims-ldi-machine-snapshot.json's own
+  // split_part(clicked_series, ' - ', 1) match clause matches zero rows on
+  // every panel (Machine/temperature/humidity/air_vacuum/scan_speed/
+  // thickness) -- confirmed against that dashboard's own real rawSql, and
+  // previously already learned and fixed once in app.js's own (now dead)
+  // drillDownUrl(), which this function had not inherited the fix from.
   assert.strictEqual(url,
     '/d/ims-ldi-machine-snapshot/set2-machine-snapshot?'
     + 'var-machine_id=TEST-DEVICE-01&var-factory=F1&var-mo=TEST-MO-1'
-    + '&var-event_time_ms=1234567890&from=now-6h&to=now');
+    + '&var-event_time_ms=1234567890&var-clicked_series=TEST-DEVICE-01&from=now-6h&to=now');
 });
 test('a drill-down request missing any required field builds nothing', () => {
   assert.strictEqual(buildDrillDownUrl({ machineId: 'X' }), null);
@@ -147,6 +154,22 @@ test('a drill-down request missing any required field builds nothing', () => {
   assert.strictEqual(buildDrillDownUrl({
     machineId: 'X', factory: 'F1', mo: null, eventTimeMs: NaN, from: 'a', to: 'b',
   }), null);
+});
+
+test('a real related_log_id is carried through as var-log_id, the COALESCE fallback the dashboard itself reads', () => {
+  const url = buildDrillDownUrl({
+    machineId: 'TEST-DEVICE-01', factory: 'F1', mo: 'TEST-MO-1',
+    eventTimeMs: 1234567890, from: 'now-6h', to: 'now', logId: 'TEST-LOG-42',
+  });
+  assert.ok(url.includes('var-log_id=TEST-LOG-42'));
+});
+
+test('no logId supplied omits var-log_id entirely, never a placeholder', () => {
+  const url = buildDrillDownUrl({
+    machineId: 'TEST-DEVICE-01', factory: 'F1', mo: null,
+    eventTimeMs: 1234567890, from: 'now-6h', to: 'now',
+  });
+  assert.ok(!url.includes('var-log_id'));
 });
 
 // ── resolvePhysicalOverlay: the whole gate, end to end ──

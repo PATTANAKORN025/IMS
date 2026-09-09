@@ -146,6 +146,20 @@ jobs:
       - name: Run Factory Twin Mapping Contract Tests
         run: node tests/unit/factory-twin-mapping.test.js
 
+      # FT-15/16/17: same class of guarantee as the mapping contract above --
+      # zero confirmed mappings must mean zero physical live attachments,
+      # zero physical alarm overlays, and no fabricated historical metric.
+      # These ran only in the local pre-commit hook until now, so a change
+      # that broke one of those invariants would still pass CI.
+      - name: Run Factory Twin Telemetry Overlay Tests
+        run: node tests/unit/factory-twin-telemetry.test.js
+
+      - name: Run Factory Twin Alarm/RCA Tests
+        run: node tests/unit/factory-twin-alarm.test.js
+
+      - name: Run Factory Twin Analytics Tests
+        run: node tests/unit/factory-twin-analytics.test.js
+
       - name: Run Factory Twin MES Import Boundary Tests
         run: node tests/unit/factory-twin-mes-import.test.js
 

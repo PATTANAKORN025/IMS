@@ -1700,47 +1700,21 @@ let physicalOverlayByAssetId = {};
 // 0 CONFIRMED mappings means every alarm's physical_asset_id is null, so
 // nothing groups under a real asset_id.
 let alarmRcaByAssetId = {};
-let latestStateById = new Map(); // deviceId -> state row from /api/state
 // The two fetches race: geometry can land after the first poll, and the roll-up
 // needs both. Keeping the last rows lets either arrival render a complete panel
 // rather than one showing zeros for the half that has not arrived.
 let lastStateRows = [];
 
-// ── Click-to-drill-down (raycasting against ALL 10 meshes, real browser
-// click-picking -- design §8: functionally testable, unlike Grafana Canvas
-// links[]) ──
+// ── Shared raycaster (CAD equipment picking -- pickEquipment/pickColumn
+// below). The old per-device "10 machine boxes" click-to-drill-down flow
+// this comment block used to describe (and its own drillDownUrl() helper)
+// is gone with the raster grid it targeted; removed by FT-17.5's audit as
+// confirmed dead code (zero call sites) rather than left to bit-rot --
+// its hard-won var-clicked_series/var-log_id knowledge was carried
+// forward into lib/telemetry.js's buildDrillDownUrl(), which had not
+// inherited it (see that function's own comment). ──
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-
-function drillDownUrl(deviceId) {
-  const state = latestStateById.get(deviceId);
-  const factory = (state && state.factory) || '2';
-  let url = `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${encodeURIComponent(deviceId)}&var-factory=${encodeURIComponent(factory)}&from=now-6h&to=now`;
-  // If this machine currently has an active alarm (the red state), scope
-  // the drill-down to that exact event -- without var-log_id/var-event_time_ms,
-  // Machine Snapshot falls back to its own default (most recent telemetry
-  // row), which can be minutes newer than the alarm and show unrelated
-  // "everything looks fine" values instead of the alarm moment.
-  if (state && state.alarm && state.alarm.related_log_id) {
-    url += `&var-log_id=${encodeURIComponent(state.alarm.related_log_id)}`;
-    if (state.alarm.logdate_ms) {
-      // var-clicked_series MUST be sent alongside var-event_time_ms: every
-      // panel keyed on "was a specific point clicked" branches on
-      // event_time_ms > 0 to decide whether to read the machine from
-      // clicked_series (split_part(x, ' - ', 1) -- ims-ldi-engineering-
-      // analytics.json's own data links set this to the plain machine ID,
-      // e.g. "LDI-03", confirmed live: split_part('LDI-03', ' - ', 1) =
-      // 'LDI-03' unchanged) or from machine_id. Sending event_time_ms alone
-      // (as this function did before) leaves clicked_series at its default
-      // '__none__', so that branch matches zero machines -- confirmed live:
-      // Process Capability / Alarm Context / Event Timeline all silently
-      // returned 0 rows (NO_DATA) until this was added.
-      url += `&var-event_time_ms=${encodeURIComponent(state.alarm.logdate_ms)}`;
-      url += `&var-clicked_series=${encodeURIComponent(deviceId)}`;
-    }
-  }
-  return url;
-}
 
 // Points the shared raycaster at a pointer event. Reading the canvas rect
 // forces a layout, so a pass that needs several picks aims once and then
@@ -2392,7 +2366,6 @@ function applyState(payload) {
   requestRender();
   const rows = payload.machines || [];
   lastStateRows = rows;
-  latestStateById = new Map(rows.map((r) => [r.device_id, r]));
   // New telemetry invalidates a machine inspector that is currently open.
   lastInspected = null;
 

@@ -63,21 +63,41 @@ function freshnessFor(hasData, isStale) {
 }
 
 /**
- * The one drill-down URL shape this deployment uses, reused verbatim from
+ * The one drill-down URL shape this deployment uses, based on
  * monitoring/grafana/dashboards/manufacturing/ims-ldi-operator-andon.json's
  * Action Queue panel (var-machine_id/var-factory/var-mo/var-event_time_ms/
  * from/to) -- not a new convention invented for the Twin.
+ *
+ * FT-17.5 audit fix: that convention alone lands on a Machine Snapshot
+ * that shows NO_DATA on every panel. ims-ldi-machine-snapshot.json's own
+ * queries (the Machine summary panel and every metric panel -- temperature/
+ * humidity/air_vacuum/scan_speed/thickness) all resolve their target
+ * log_id as
+ *   COALESCE(
+ *     (SELECT ... WHERE event_time_ms > 0 AND eqp_id = split_part(clicked_series, ' - ', 1) ...),
+ *     NULLIF(log_id, '__auto__')
+ *   )
+ * -- so with neither var-clicked_series nor var-log_id set, clicked_series
+ * defaults to '__none__', split_part('__none__', ' - ', 1) matches no real
+ * eqp_id, the COALESCE falls through to NULLIF('__auto__', '__auto__') =
+ * NULL, and `WHERE log_id = NULL` matches nothing on every panel. This was
+ * already known and fixed once, in now-dead client-side code this same
+ * audit found (app.js's old, unreferenced drillDownUrl(), left over from
+ * the pre-CAD "10 machine boxes" era) -- its own comment documents the
+ * exact live-verified failure ("Process Capability / Alarm Context /
+ * Event Timeline all silently returned 0 rows... until this was added").
+ * This function had not inherited that fix; it now does.
  *
  * Returns null (never a partial/malformed URL) if any required field is
  * missing -- a drill-down link that 404s or lands on the wrong machine is
  * worse than no link.
  *
- * @param {{machineId: string, factory: string, mo: string, eventTimeMs: number, from: string, to: string}} p
+ * @param {{machineId: string, factory: string, mo: string, eventTimeMs: number, from: string, to: string, logId?: string|null}} p
  * @returns {string|null}
  */
 function buildDrillDownUrl(p) {
   if (!p || typeof p !== 'object') return null;
-  const { machineId, factory, mo, eventTimeMs, from, to } = p;
+  const { machineId, factory, mo, eventTimeMs, from, to, logId } = p;
   if (typeof machineId !== 'string' || !machineId) return null;
   if (typeof factory !== 'string' || !factory) return null;
   if (typeof mo !== 'string' && mo !== null) return null;
@@ -88,9 +108,18 @@ function buildDrillDownUrl(p) {
     'var-factory': factory,
     'var-mo': mo ?? '',
     'var-event_time_ms': String(eventTimeMs),
+    // clicked_series is what the snapshot's own nearest-log_id subquery
+    // actually filters eqp_id by (split_part(clicked_series, ' - ', 1)) --
+    // without it that subquery matches zero rows regardless of event_time_ms.
+    'var-clicked_series': machineId,
     from,
     to,
   });
+  // The COALESCE fallback target, when a real log_id is known -- kept as a
+  // fallback (not the primary path) because it names one exact row while
+  // clicked_series+event_time_ms names the row nearest that moment for
+  // EVERY panel on the dashboard, which is the stronger guarantee.
+  if (typeof logId === 'string' && logId) q.set('var-log_id', logId);
   return `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?${q.toString()}`;
 }
 
@@ -205,6 +234,7 @@ function resolvePhysicalOverlay(assetIds, mappingByAssetId, telemetryByDeviceId,
             factory: telemetry.factory,
             mo: telemetry.mo,
             eventTimeMs: telemetry.alarm ? telemetry.alarm.logdate_ms : Date.now(),
+            logId: telemetry.alarm ? telemetry.alarm.related_log_id : null,
             from: dw.from,
             to: dw.to,
           })
