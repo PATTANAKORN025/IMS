@@ -2390,6 +2390,14 @@ if (machineListEl) {
     historyDeviceId = btn.getAttribute('data-history-device');
     deviceHistoryEl.hidden = false;
     renderDeviceHistory();
+    // FT-21: SPC shares historyDeviceId -- if the panel is already open
+    // (an engineer left it expanded), a new device pick must refresh it
+    // too, or it would keep showing the PREVIOUS device's stability data
+    // under the new device's label elsewhere on screen. spcPanelEl/renderSpc
+    // are declared further down this same module scope; safe to reference
+    // here because this callback only ever runs on a later click, long
+    // after the whole script (including those declarations) has executed.
+    if (spcPanelEl && spcPanelEl.open) renderSpc();
   });
 }
 if (historyMetricEl) historyMetricEl.addEventListener('change', renderDeviceHistory);
@@ -2401,6 +2409,73 @@ historyRangeButtons.forEach((btn) => {
     renderDeviceHistory();
   });
 });
+
+// ── FT-21: process stability (Cpk/EWMA/CUSUM/Nelson rules) ────────────
+// Shares historyDeviceId with device history above -- one "which device
+// am I looking at" state, not two that could disagree. Lazy: only
+// fetched while #spc-panel is open, same discipline as #diagnostics.
+const spcPanelEl = document.getElementById('spc-panel');
+const spcMetricEl = document.getElementById('spc-metric');
+const spcResultEl = document.getElementById('spc-result');
+const spcRangeButtons = document.querySelectorAll('[data-spc-range]');
+let spcMetric = 'PE';
+let spcRange = '1h';
+
+const fmt2 = (v) => (v === null || v === undefined || !Number.isFinite(v) ? '—' : v.toFixed(2));
+
+// The plant's own OCAP next-action, not an invented recommendation --
+// docs/architecture/LDI_SPC_GUIDE.md's own Stage 1/Stage 2 language.
+const SPC_NEXT_ACTION = {
+  CAPABLE: 'No action needed -- process is within capability.',
+  ASSESSMENT: 'OCAP Stage 1: review the control chart for a sudden shift vs. gradual drift; check RCA for correlating thermal/vacuum anomalies; tune recipe parameters.',
+  INTERVENTION: 'OCAP Stage 2: process is not capable of meeting tolerance. Engineering must authorize a line stop and quarantine panels from the last 60 minutes.',
+  UNKNOWN: 'No tolerance recorded for this metric, or too few samples -- Cpk cannot be established yet.',
+};
+
+async function renderSpc() {
+  if (!spcResultEl) return;
+  if (!historyDeviceId) { spcResultEl.textContent = "Select a device's History button above."; return; }
+  spcResultEl.textContent = 'Loading…';
+  try {
+    const res = await fetch(`api/spc?device_id=${encodeURIComponent(historyDeviceId)}&metric=${encodeURIComponent(spcMetric)}&range=${encodeURIComponent(spcRange)}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      spcResultEl.textContent = `Unavailable: ${body.error || res.status}`;
+      return;
+    }
+    const data = await res.json();
+    const { cpk, drift, nelson_violations: nelson } = data;
+    const nextAction = SPC_NEXT_ACTION[cpk.state] || SPC_NEXT_ACTION.UNKNOWN;
+    const driftLine = drift.velocityPerHour === null
+      ? 'Drift: not enough samples to establish a trend.'
+      : `Drift: ${fmt2(drift.velocityPerHour)} units/hour`
+        + (drift.accelerating === null ? '' : drift.accelerating ? ' (accelerating).' : ' (steady or slowing).');
+    const nelsonLine = nelson.length === 0
+      ? 'Pattern check: no Nelson-rule violations.'
+      : `Pattern check: rule(s) ${nelson.map((v) => v.rule).join(', ')} triggered (${nelson.map((v) => v.name).join('; ')}).`;
+
+    spcResultEl.innerHTML = `
+      <div><b>${data.metric}</b> on <b>${data.device_id}</b> &middot; ${data.sample_count} sample(s) since ${data.last_valid_sample ? new Date(data.last_valid_sample).toLocaleTimeString() : '—'}</div>
+      <div>Cpk: <b>${fmt2(cpk.cpk)}</b> (${cpk.state}) &middot; n=${cpk.n} &middot; ${cpk.reason || 'within confidence threshold'}</div>
+      <div>${driftLine}</div>
+      <div>${nelsonLine}</div>
+      <div class="hint" style="margin-top:6px">Next: ${nextAction}</div>`;
+  } catch (err) {
+    spcResultEl.textContent = `Fetch failed: ${err.message}`;
+  }
+}
+
+if (spcMetricEl) spcMetricEl.addEventListener('change', () => { spcMetric = spcMetricEl.value; renderSpc(); });
+spcRangeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    spcRange = btn.getAttribute('data-spc-range');
+    spcRangeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    renderSpc();
+  });
+});
+if (spcPanelEl) {
+  spcPanelEl.addEventListener('toggle', () => { if (spcPanelEl.open) renderSpc(); });
+}
 
 function applyState(payload) {
   // Live state changes machine colours and labels. Ask for the frame that

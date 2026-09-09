@@ -312,7 +312,15 @@
     dt { white-space: nowrap; font-size: 12px; }
     dd { margin: 0; color: var(--text-dim); font-size: 10.5px; line-height: 1.4; }
     .st-glyph { font-size: 12px; }
-    .st-off { opacity: .45; }
+    /* FT-21: same real, axe-core-measured defect FT-18 already fixed once
+       for the topbar's .ss-off -- a whole-element opacity here (.st-off,
+       applied to the drawer's own status-legend dt/dd) crushed the label
+       text ("Stop"), the "NO SOURCE" badge, and the meaning text to
+       ~2.3-3.8:1 against a required 4.5:1. This is a DIFFERENT class
+       family from .ss-off (legend vs. topbar strip), never audited when
+       FT-18 fixed the strip -- found this phase while testing the new SPC
+       panel, not caused by it. Same fix: dim only the decorative glyph. */
+    .st-off .st-glyph { opacity: .45; }
     .st-na, .st-dq {
       margin-left: 5px; font-size: 9px; letter-spacing: .06em;
       border: 1px solid var(--line-2); border-radius: 3px; padding: 0 3px; color: var(--text-dim);
@@ -485,7 +493,13 @@
       <div id="device-history" hidden>
         <div class="history-controls">
           <span id="history-device-label"></span>
-          <select id="history-metric">
+          <!-- FT-21: real axe-core finding (select-name, critical) --
+               pre-existing since FT-17, found while testing the new SPC
+               panel below. No visible <label> was ever intended here (the
+               history-controls row is deliberately compact), so an
+               aria-label carries the same name a sighted user infers from
+               this control's position next to the device label. -->
+          <select id="history-metric" aria-label="Trend metric">
             <option value="temperature">Temperature</option>
             <option value="humidity">Humidity</option>
             <option value="air_vacuum">Air vacuum</option>
@@ -500,6 +514,39 @@
         <div id="history-summary" aria-live="polite">Select a device's History button above.</div>
         <div id="history-alarms"></div>
       </div>
+
+      <!-- FT-21: process stability. Individual-sample analysis (Cpk/EWMA/
+           CUSUM/Nelson rules), so only short windows are supported -- the
+           SAME raw-data-only boundary this deployment already enforces for
+           min/max/median/p95/stddev (lib/analytics.js extendedStatsAvailable),
+           reused rather than a second rule. Lazy: only fetched while this
+           panel is open, same discipline as Diagnostics/Raw CAD reference. -->
+      <h2>Process stability (SPC)</h2>
+      <details id="spc-panel">
+        <summary>Cpk &middot; EWMA &middot; CUSUM &middot; Nelson rules</summary>
+        <p class="hint">
+          Cpk uses the same formula and thresholds as the Machine Snapshot
+          and Engineering Analytics dashboards (Assessment &lt; 1.33,
+          Intervention &lt; 1.0). Select a device's History button above
+          first.
+        </p>
+        <div class="history-controls">
+          <select id="spc-metric" aria-label="SPC metric">
+            <option value="PE">PE (Position Error)</option>
+            <option value="JE">JE (Judgement Error)</option>
+            <option value="temperature">Temperature</option>
+            <option value="humidity">Humidity</option>
+            <option value="air_vacuum">Air vacuum</option>
+            <option value="scan_speed">Scan speed</option>
+          </select>
+          <div class="history-ranges" id="spc-ranges" role="group" aria-label="SPC analysis window">
+            <button type="button" data-spc-range="15m" aria-pressed="false">15m</button>
+            <button type="button" data-spc-range="1h" aria-pressed="true">1h</button>
+            <button type="button" data-spc-range="6h" aria-pressed="false">6h</button>
+          </div>
+        </div>
+        <div id="spc-result" aria-live="polite">Select a device's History button above.</div>
+      </details>
 
       <h2>Diagnostics</h2>
       <details id="diagnostics">

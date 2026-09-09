@@ -12,6 +12,7 @@ const mappingLib = require('./lib/mapping');
 const telemetry = require('./lib/telemetry');
 const alarmLib = require('./lib/alarm');
 const analytics = require('./lib/analytics');
+const spc = require('./lib/spc');
 const schematic = require('./lib/schematic');
 const eapMap = require('./lib/eap-map');
 const floors = require('./lib/floors');
@@ -1052,6 +1053,147 @@ app.get('/api/telemetry-history', async (req, res) => {
         last_timestamp: lastTimestamp,
         ...extended,
       },
+      queried_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-21 — process stability (Cpk/EWMA/CUSUM/Nelson rules/drift velocity),
+// lib/spc.js. SPC needs the true individual-sample sequence, never an
+// AVG-of-AVG bucket -- exactly the same "raw ldi_data only, <= 6h" rule
+// analytics.extendedStatsAvailable() already enforces for min/max/median/
+// p95/stddev above, reused verbatim rather than a second boundary.
+//
+// PE_SAMPLE_LIMIT/OTHER_SAMPLE_LIMIT bound the raw scan the same way the
+// query-budget contract bounds every other range-scan in this service.
+const SPC_ROW_LIMIT = 5000;
+
+app.get('/api/spc', async (req, res) => {
+  try {
+    const { device_id: deviceId, metric } = req.query;
+
+    if (typeof deviceId !== 'string' || !DEVICE_IDS.includes(deviceId)) {
+      return res.status(404).json({ error: 'device not found' });
+    }
+    if (!spc.isValidSpcMetric(metric)) {
+      return res.status(400).json({
+        error: 'invalid metric',
+        valid_metrics: [...spc.SPC_COMPOSITE_METRICS, ...analytics.AVG_METRICS],
+      });
+    }
+
+    let fromMs;
+    let toMs;
+    if (typeof req.query.range === 'string') {
+      const spanMs = analytics.rangeToMs(req.query.range);
+      if (spanMs === null) {
+        return res.status(400).json({ error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES });
+      }
+      toMs = Date.now();
+      fromMs = toMs - spanMs;
+    } else {
+      fromMs = Number(req.query.from);
+      toMs = Number(req.query.to);
+    }
+    const validated = analytics.validateRange(fromMs, toMs);
+    if (!validated.ok) return res.status(400).json({ error: validated.error });
+
+    // SPC is individual-sample analysis -- it cannot run against a
+    // pre-averaged CAGG bucket without silently claiming a stability
+    // finding about the average of averages rather than the process
+    // itself. Same boundary analytics.js's own extended stats already use.
+    if (!analytics.extendedStatsAvailable(validated.spanMs)) {
+      return res.status(400).json({
+        error: 'SPC requires individual raw samples; only ranges of 6 hours or less are supported (the same raw-data boundary this service already uses for min/max/median/p95/stddev)',
+        max_supported_range: '6h',
+      });
+    }
+
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+    const isComposite = spc.SPC_COMPOSITE_METRICS.includes(metric);
+
+    let pooledValues; // every individual reading, for Cpk (order doesn't matter)
+    let seriesValues; // one value per row/timestamp, for EWMA/CUSUM/Nelson/drift
+    let seriesTimestampsMs;
+    let tolerance = NaN;
+
+    if (isComposite) {
+      const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
+      const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
+      const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
+      const result = await pool.query(
+        `SELECT "time", ${columns.join(', ')}, ${toleranceColumn}
+         FROM public.ldi_data
+         WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
+         ORDER BY "time" ASC
+         LIMIT $4`,
+        [deviceId, from, to, SPC_ROW_LIMIT],
+      );
+      pooledValues = [];
+      seriesValues = [];
+      seriesTimestampsMs = [];
+      const tolerances = [];
+      for (const row of result.rows) {
+        const rowValues = columns.map((c) => Number(row[c])).filter((v) => Number.isFinite(v));
+        if (rowValues.length === 0) continue;
+        pooledValues.push(...rowValues);
+        // The X-bar convention: each row/board event is one SUBGROUP, its
+        // own PE/JE readings averaged into ONE point on the time series --
+        // classical SPC subgrouping, not an arbitrary shortcut. Cpk itself
+        // (above) still pools every individual reading, matching the
+        // existing dashboard panels exactly.
+        seriesValues.push(spc.mean(rowValues));
+        seriesTimestampsMs.push(new Date(row.time).getTime());
+        const t = Number(row[toleranceColumn]);
+        if (Number.isFinite(t)) tolerances.push(t);
+      }
+      tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
+    } else {
+      const result = await pool.query(
+        `SELECT "time", ${metric} AS value
+         FROM public.ldi_data
+         WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND ${metric} IS NOT NULL
+         ORDER BY "time" ASC
+         LIMIT $4`,
+        [deviceId, from, to, SPC_ROW_LIMIT],
+      );
+      seriesValues = result.rows.map((r) => Number(r.value));
+      seriesTimestampsMs = result.rows.map((r) => new Date(r.time).getTime());
+      pooledValues = seriesValues;
+      // No tolerance/spec-limit column exists for a general process metric
+      // in this schema -- Cpk stays UNAVAILABLE rather than inventing one.
+      tolerance = NaN;
+    }
+
+    const cpk = spc.computeCpk({ values: pooledValues, tolerance });
+    const ewma = spc.computeEwma({ values: seriesValues });
+    const cusum = spc.computeCusum({ values: seriesValues });
+    const nelson = ewma.quality === analytics.Quality.INSUFFICIENT_DATA
+      ? []
+      : spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
+    const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
+
+    res.status(200).json({
+      device_id: deviceId,
+      metric,
+      from,
+      to,
+      baseline_definition: isComposite
+        ? `pooled mean/STDDEV_SAMP of every ${metric === 'PE' ? 'PE1-6' : 'JE1-4'} reading in this window; tolerance = AVG(${metric === 'PE' ? 'pe_setting' : 'je_setting'}) over the same window`
+        : `mean/STDDEV_SAMP of ${metric} readings in this window; no tolerance column exists for this metric, Cpk is UNAVAILABLE`,
+      sample_count: seriesValues.length,
+      last_valid_sample: seriesTimestampsMs.length > 0
+        ? new Date(seriesTimestampsMs[seriesTimestampsMs.length - 1]).toISOString() : null,
+      row_limit_hit: seriesValues.length >= SPC_ROW_LIMIT,
+      cpk,
+      ewma: { target: ewma.target, sigma: ewma.sigma, quality: ewma.quality, reason: ewma.reason, points: ewma.points },
+      cusum: { target: cusum.target, sigma: cusum.sigma, k: cusum.k, h: cusum.h, quality: cusum.quality, reason: cusum.reason, points: cusum.points },
+      nelson_violations: nelson,
+      drift,
       queried_at: new Date().toISOString(),
     });
   } catch (err) {
