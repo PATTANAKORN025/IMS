@@ -190,6 +190,11 @@ jobs:
       - name: Run EAP Status-Colour Drift Lint
         run: node tests/lint/eap-status-color-drift.js
 
+      # F-1: the two operator pages carry parallel :root token blocks (no
+      # shared stylesheet). This fails if the shared vocabulary drifts.
+      - name: Run CSS Design-Token Parity Lint
+        run: node tests/lint/css-token-parity.js
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -2,15 +2,8 @@
   "tokens": {
     "--bg": "#12151a",
     "--surface": "#1a1f27",
-    "--surface-2": "#222833",
-    "--line": "#333d4d",
-    "--line-strong": "#4a586e",
-    "--ink": "#e6eaf0",
-    "--ink-dim": "#97a3b5",
-    "--ink-faint": "#828da0",
+    "--text": "#e6eaf0",
     "--accent": "#63a4ff",
-    "--warn": "#e0ac63",
-    "--ok": "#7fd1a6",
     "--cell": "#8b96a8",
     "--cell-world": "#c7dbf5",
     "--cell-unassigned": "#5b6472",
@@ -18,10 +11,31 @@
     "--region-layout": "#d8a657",
     "--motion-fast": "110ms",
     "--motion-normal": "190ms",
+    "--motion-slow": "320ms",
     "--ease-standard": "cubic-bezier(.2, 0, 0, 1)",
     "--ease-exit": "cubic-bezier(.4, 0, 1, 1)",
+    "--space-1": "4px",
+    "--space-2": "6px",
+    "--space-3": "8px",
+    "--space-4": "12px",
+    "--status-run": "#22c55e",
+    "--status-down": "#ef4444",
+    "--status-idle": "#f59e0b",
+    "--status-off": "#475569",
+    "--status-initial": "#38bdf8",
+    "--status-pm": "#3b82f6",
+    "--status-stop": "#a855f7",
+    "--quality-unmapped": "#64748b",
+    "--quality-unavailable": "#475569",
+    "--text-xs": "11px",
+    "--text-sm": "12px",
+    "--text-md": "14px",
+    "--text-lg": "16px",
+    "--text-xl": "20px",
     "--z-drawer": "20",
-    "--z-webgl-lost": "30"
+    "--z-inspector": "20",
+    "--z-webgl-lost": "30",
+    "--z-dialog": "40"
   },
   "elements": {
     "body": {
@@ -30,7 +44,7 @@
         "display": "grid",
         "position": "static",
         "gridTemplateColumns": "3440px 400px",
-        "gridTemplateRows": "73.625px 2086.38px",
+        "gridTemplateRows": "72.8906px 2087.11px",
         "flexWrap": "nowrap",
         "gap": "normal",
         "rowGap": "normal",
@@ -71,7 +85,7 @@
         "x": 0,
         "y": 0,
         "w": 3840,
-        "h": 74
+        "h": 73
       },
       "style": {
         "display": "flex",
@@ -87,7 +101,7 @@
         "width": "3840px",
         "maxWidth": "none",
         "minWidth": "auto",
-        "height": "73.625px",
+        "height": "72.8906px",
         "maxHeight": "none",
         "fontSize": "14px",
         "fontWeight": "400",
@@ -192,7 +206,7 @@
         "backgroundColor": "rgba(0, 0, 0, 0)",
         "borderColor": "rgb(51, 61, 77)",
         "borderWidth": "1px",
-        "borderRadius": "3px",
+        "borderRadius": "4px",
         "boxShadow": "none",
         "transition": "color 0.11s cubic-bezier(0.2, 0, 0, 1), border-color 0.11s cubic-bezier(0.2, 0, 0, 1)",
         "transitionDuration": "0.11s, 0.11s",
@@ -239,7 +253,7 @@
         "backgroundColor": "rgb(34, 40, 51)",
         "borderColor": "rgb(51, 61, 77)",
         "borderWidth": "1px",
-        "borderRadius": "3px",
+        "borderRadius": "4px",
         "boxShadow": "none",
         "transition": "border-color 0.11s cubic-bezier(0.2, 0, 0, 1), color 0.11s cubic-bezier(0.2, 0, 0, 1), background-color 0.11s cubic-bezier(0.2, 0, 0, 1)",
         "transitionDuration": "0.11s, 0.11s, 0.11s",
@@ -286,7 +300,7 @@
         "backgroundColor": "rgb(34, 40, 51)",
         "borderColor": "rgb(51, 61, 77)",
         "borderWidth": "1px",
-        "borderRadius": "3px",
+        "borderRadius": "4px",
         "boxShadow": "none",
         "transition": "border-color 0.11s cubic-bezier(0.2, 0, 0, 1), color 0.11s cubic-bezier(0.2, 0, 0, 1), background-color 0.11s cubic-bezier(0.2, 0, 0, 1)",
         "transitionDuration": "0.11s, 0.11s, 0.11s",
@@ -304,9 +318,9 @@
     "aside": {
       "rect": {
         "x": 3440,
-        "y": 74,
+        "y": 73,
         "w": 400,
-        "h": 2086
+        "h": 2087
       },
       "style": {
         "display": "block",
@@ -322,7 +336,7 @@
         "width": "400px",
         "maxWidth": "none",
         "minWidth": "auto",
-        "height": "2086.38px",
+        "height": "2087.11px",
         "maxHeight": "none",
         "fontSize": "14px",
         "fontWeight": "400",
@@ -351,7 +365,7 @@
     "aside h2": {
       "rect": {
         "x": 3457,
-        "y": 88,
+        "y": 87,
         "w": 367,
         "h": 16
       },
@@ -445,7 +459,7 @@
     ".legend-row": {
       "rect": {
         "x": 3457,
-        "y": 978,
+        "y": 977,
         "w": 367,
         "h": 17
       },
@@ -492,7 +506,7 @@
     ".legend-row .chip": {
       "rect": {
         "x": 3457,
-        "y": 1048,
+        "y": 1047,
         "w": 6,
         "h": 6
       },
