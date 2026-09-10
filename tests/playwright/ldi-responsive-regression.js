@@ -70,7 +70,19 @@ async function run() {
   await page.fill('input[name="password"]', PASS);
   await page.click('button[type="submit"]');
   await page.waitForTimeout(2000);
-  console.log('Login done.\n');
+
+  // Hard auth gate: /login can return HTTP 200 with 0 panels and 0 errors,
+  // which the per-dashboard checks below would silently count as PASS.
+  // Verified this actually happened (all "OK" results were the login page).
+  const postLoginUrl = page.url();
+  const loginFormStillPresent = await page.locator('input[name="password"]').count();
+  if (postLoginUrl.includes('/login') || loginFormStillPresent > 0) {
+    console.error(`AUTHENTICATION_FAILED: still on login page after submit (url=${postLoginUrl}).`);
+    console.error('Not running dashboard checks against an unauthenticated session.');
+    await browser.close();
+    process.exit(1);
+  }
+  console.log('Login verified (left /login, no login form present).\n');
 
   const results = [];
   let failures = 0;
@@ -83,6 +95,15 @@ async function run() {
       try {
         await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
         await page.waitForTimeout(3500);
+
+        // Per-dashboard gate: bounced back to /login mid-suite (session expiry,
+        // concurrent restart) must fail, not read as an empty clean dashboard.
+        if (page.url().includes('/login')) {
+          results.push({ dashboard: dash.uid, viewport: vp.name, status: 'FAIL (AUTHENTICATION_FAILED — redirected to /login)' });
+          failures++;
+          console.log('FAIL (AUTHENTICATION_FAILED — redirected to /login)');
+          continue;
+        }
         await page.evaluate(() => {
           document.querySelectorAll('.sidemenu, .navbar, .page-toolbar').forEach(el => el.style.display = 'none');
         });

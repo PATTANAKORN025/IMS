@@ -4,6 +4,78 @@
 **Scope requested:** fleet-wide micro-pixel/responsive optimization, 20-item checklist, plus (2nd pass) a clean-room environment reset, expanded to 20 phases including Digital Twin re-verification, visual regression, and a stricter "NOT VERIFIED, never assumed PASS" discipline. Verified against the real `http://localhost:3000/`, not JSON alone.
 **Status going in:** Compliance Timeline restored (`a521e0d`) — good milestone, not final completion, per your own assessment.
 
+## Pass 3 addendum (2026-08-26, post clean-room reset)
+
+Context: since pass 2, the user explicitly authorized and this session performed `docker compose down -v` + `up -d` (a fresh Grafana DB, fresh volumes). All prior pass-1/pass-2 findings above predate that reset and describe the previous environment instance.
+
+### Authentication: real blocker found and fixed at the root cause
+
+Playwright/Puppeteer MCP tooling was disconnected this session; Chrome-extension bridge was declined by the user. Browser verification was re-established using the **project's own existing Playwright test infrastructure** (`tests/playwright/ldi-responsive-regression.js`, `dashboard-visual-regression.js` — already in the repo, `playwright` devDependency already installed with Chromium binaries present locally), not the MCP server. This is a safe, pre-existing, purpose-built mechanism, per the "search first, don't invent new auth architecture" guidance.
+
+First run reported `15/15 passed`, but that result was **false** — inspecting the saved screenshot (`andon_1280x720.png`) showed the literal Grafana login page, not the dashboard. Root-caused via `docker logs ims-grafana`: the live admin account was created `2026-08-25T09:38:05Z`, a full day before this session's own `down -v`/`up -d` reset (`2026-08-26T01:16:08Z` container start) — i.e., **the running admin account predates and is unrelated to this session's reset**, so `.env`'s current password had no reason to match it. This is a genuine `CREDENTIAL STATE MISMATCH`, not a guessable/brute-forceable problem.
+
+Fixed at the root cause, not bypassed: `docker exec ims-grafana grafana cli admin reset-admin-password "$GRAFANA_ADMIN_PASSWORD"` — Grafana's own official CLI tool, re-synchronizing the live account to the value already declared authoritative in `.env` and wired into `docker-compose.yaml`. No new/fake credential invented, `.env` untouched, nothing printed, fully reversible, no security weakening (still requires container exec access). Login verified working immediately after.
+
+**Test harness false-positive fixed and verified:** `tests/playwright/ldi-responsive-regression.js` now hard-fails with `AUTHENTICATION_FAILED` if still on `/login` after submit (pre-loop gate) or if any per-dashboard navigation bounces back to `/login` mid-run (per-iteration gate). Verified against the real failing case before the credential fix landed — it correctly refused to report PASS. Committed as `220e8d5`.
+
+### Real live run, post-fix: 14/15 passed, one genuine flagship defect found
+
+```
+ims-ldi-manufacturing            @ 1280x720 / 1920x1080 / 3840x2160  OK
+ims-ldi-engineering-analytics    @ 1280x720 / 1920x1080 / 3840x2160  OK
+ims-ldi-machine-snapshot         @ 1280x720 / 1920x1080 / 3840x2160  OK
+ims-ldi-operator-andon           @ 1280x720   FAIL — overflows by 476px
+ims-ldi-operator-andon           @ 1920x1080 / 3840x2160             OK
+ldi-data-readiness               @ 1280x720 / 1920x1080 / 3840x2160  OK
+```
+
+Screenshot confirmed real, live, authenticated data (real machine states, real open alarms with timestamps — not fixtures).
+
+**Root cause (measured, not guessed):** static inventory of the Andon dashboard JSON grid shows 11 panels stacked to a grid bottom of **23 units**: title(1) + KPI row(3) + Temp/Humidity compliance timelines(6) + Action Queue table(5) + machine status-tile row(4) + machine job/MO-tile row(3) + heartbeat(1). This is an inherent consequence of the board's information density — not a regression introduced by a specific change this pass — and was not previously caught live because every prior attempt at this exact check was blocked (broken screenshot tool in pass 1/2, then credential mismatch this pass) until now.
+
+**Not fixed this pass.** The two paths considered: (a) shrink the compliance timeline back down — rejected, directly reverses the P17-C redesign the user explicitly fought for; (b) consolidate the two per-machine repeat-panel rows (status tile + job/MO tile) into one panel to reclaim ~3 grid units — a real, legitimate design improvement, but a nontrivial JSON/field-config redesign requiring its own measure→implement→verify cycle across all viewports, not a same-pass fix. Reporting as a scoped, real, open P0/P1 finding rather than papering over it with an untested change.
+
+### Viewport calibration: no scaling issue in this harness (contradicts pass-2 finding — different tool)
+
+All 6 required viewports tested via the real Playwright/Chromium harness: `1280×720, 1366×768, 1536×864, 1920×1080, 2560×1440, 3840×2160` all rendered with `window.innerWidth/innerHeight` **exactly matching the requested size**, `devicePixelRatio: 1` in every case. The ~1.5x scaling artifact documented in the pass-2 addendum was specific to that session's browser-automation bridge (now disconnected) — it does not apply to this project's own Playwright/Chromium setup. Superseding the pass-2 scaling note for any future work done through this harness.
+
+### WCAG contrast: re-measured against real rendered pixels (gradient-aware) — supersedes pass-1's flat-hex estimate
+
+Pass 1 computed contrast from the dashboard-linter's flat hex tokens (`#22C55E`/`#F59E0B`/`#EF4444`) against white text. Live DOM inspection this pass found the actual machine-state tile background is **not a flat color** — it's an inline `linear-gradient(120deg, ...)` with two distinct color stops. Measuring against both stops (worst case is what an operator actually sees at part of the tile):
+
+| State | Text color | Gradient stops (rgb) | Contrast range | Worst case | Applicable threshold (40px/500 = large text, 3:1) | Result |
+|---|---|---|---|---|---|---|
+| OK | `rgb(247,248,250)` | `(23,132,77)` → `(30,175,64)` | 4.45:1 – 2.72:1 | **2.72:1** | 3:1 | **FAIL** |
+| ALARM | `rgb(247,248,250)` | `(212,44,18)` → `(237,44,70)` | 4.74:1 – 3.91:1 | **3.91:1** | 3:1 | PASS |
+
+This is real, more-accurate evidence than pass 1's estimate: the OK tile's darker gradient corner fails even the large-text 3:1 AA threshold; ALARM passes. Actionable fix (not yet implemented this pass): darken the light stop or lighten the dark stop of the OK gradient (or reduce the gradient's luminance spread) to bring the worst-case corner ≥3:1, or verify Grafana's threshold-color config to use a single flatter tone. WARN/CRIT compliance-timeline colors (a separate, non-gradient visualization) were not re-measured this pass — pass-1's flat-hex numbers for those remain the last measurement on record and are NOT re-verified against live pixels.
+
+### What remains NOT VERIFIED this pass (explicit, per the required discipline)
+
+Machine long-name stress test, axis micro-geometry, typography audit, table engineering, Action Queue click-through, 2D/3D Digital Twin re-verification (post-reset — pass 2's Twin verification predates the volume reset and needs redoing against the fresh environment), browser performance/CPU/memory, refresh-storm/query-count measurement, full visual regression across the other 5 flagship dashboards, keyboard/ARIA accessibility. None of these were touched this pass — reporting them as not done rather than silently omitting them.
+
+**Status: P18 = INCOMPLETE.** Real progress this pass: auth blocker root-caused and fixed, test-harness false-positive fixed and verified, one real flagship defect found and root-caused (not yet fixed), viewport scaling clarified, WCAG contrast re-measured with materially better accuracy than before. Not GO, not CONDITIONAL GO — the completion gate's own checklist has far more unchecked items than checked ones.
+
+## Pass 4 (same day) — OK-tile contrast fixed, Andon overflow fully root-caused and deliberately NOT redesigned
+
+### WCAG fix, verified live (commit `95be06b`, recovered as `99fff8a` after a branch-reset incident — see below)
+
+Fixed the pass-3 finding: OK tile's mapping color changed from `#22C55E` to `#15803D` (added as `ok-bg` in `APPROVED_TOKENS`, scoped to this one panel — canonical `ok` token unchanged everywhere else). Re-measured live after the change: gradient stops moved from `(23,132,77)/(30,175,64)` to `(10,62,37)/(17,106,39)`; worst-case contrast **2.72:1 → 6.34:1**, now passing both AA-large (3:1) and full AA-normal (4.5:1). Confirmed visually via a fresh authenticated screenshot at 1920×1080 — still unambiguously reads as a solid "OK green" tile, text now visibly sharper. `GRAFANA_DESIGN_SYSTEM.md` §2.1b updated with the real measured before/after numbers. Dashboard linter re-run clean (0 errors) after adding the new token. This closes one full completion-gate item: **status contrast measured and corrected.**
+
+### Andon 1280×720 overflow: root cause fully quantified, deliberately not fixed this pass
+
+Extended the prior root-cause analysis. The dashboard JSON's own declared grid bottom is 23 units, but its two per-machine repeat panels (`1000` status tile h=4, `1001` job/MO tile h=3, both `maxPerRow: 8`) wrap the current 10-machine fleet into 2 rows each — adding 4 and 3 units respectively that the JSON's flat sum can't see. **Real effective content height: ~30 grid units**, not 23. This is a known, self-documented blind spot — the dashboard's own file description and the linter's `MAX_HEIGHT` comment both already flag it: *"live-measured actual rendered content height is ~28 effective grid-units... already past the literal 720p zero-scroll promise... flagged for follow-up: either extend this check to detect repeat-panel wrap cost, or re-scope the zero-scroll promise to a NOC/TV target resolution."* This pass's live measurement (30 units, ~476px/~324px overflow across two runs) confirms and slightly refines that earlier estimate.
+
+**Deliberately not fixed this pass.** The only fixes that would meaningfully close a 470px/~12-unit gap require structural panel redesign — most plausibly merging the two per-machine repeat panels (status + job/MO) into one, which would reclaim roughly 6 of the ~12 units needed. This exact dashboard's own file description records that **a same-day redesign of an adjacent area (the compliance panels, to per-machine tiles) was tried and explicitly reverted at the operator's request** earlier in this engagement, and separately, this session's own P17/P17-C history shows the operator rejecting an autonomous redesign of the Compliance panel until a specific alternative was agreed. Given that concrete, repeated precedent — redesigns in this dashboard get reverted when done without prior sign-off — attempting an unreviewed tile-merge now, under an autonomous-execution instruction, carries real risk of shipping something that gets reverted anyway. Choosing not to gamble a structural change against that precedent is the more defensible engineering call than forcing a fix to close a checklist item.
+
+**What's left, concretely, for whoever picks this up:** either (a) redesign panels 1000/1001 into a single combined per-machine tile (status + MO in one), reclaiming ~6 units, still short of the ~12 needed — would need a second compaction elsewhere too; or (b) make the explicit product decision the dashboard's own comment already proposes: re-scope the "zero-scroll" contract from literal 1280×720 to the resolution this kiosk is actually deployed at (almost certainly a larger NOC/TV display, not a 1280px laptop), and update both the dashboard description and `tests/playwright/ldi-responsive-regression.js`'s `noScrollAt` accordingly. Neither was done this pass — both require a decision this session isn't positioned to make unilaterally given the precedent above.
+
+### Branch-reset incident (disclosed, not silently absorbed)
+
+Mid-pass, `perf/grafana-p15r-operator-andon`'s branch ref was force-moved to `main`'s tip by an external process, orphaning this pass's two commits (the WCAG fix and the pass-3 evidence doc) from the branch — while a commit for a "Pass 4" evidence addendum was in flight, which failed outright (`error: Error building trees`, unrelated `docs/README.md` merge-conflict markers appearing mid-operation) because the branch moved out from under the commit. Recovery: the two already-completed commits were re-anchored via local tags (`p18-recovery-wcag-fix`, `p18-recovery-pass3-evidence`) before they could be garbage-collected, then cherry-picked cleanly onto the branch's new tip (now `99fff8a`, `d586d5c`) after confirming via `git log --diff-filter=D` that the one real merge conflict (this evidence file, modify/delete) wasn't an actual content collision — the file simply doesn't exist anywhere on `main`'s lineage, so there was nothing to reconcile, just re-add. The Pass-4 write-up itself (this section) was never committed before the reset and had no git object to recover — it's reconstructed here from this session's own record of what was written, not re-derived or guessed.
+
+---
+
 ## Pass 2 addendum (this round)
 
 ### Clean-room reset: DECLINED, with evidence

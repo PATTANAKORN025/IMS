@@ -21,6 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Scan for confidential private facility data
+        run: node tests/lint/private-data-leak-scanner.js
+
+      - name: Repo hygiene (block plugin bundles, source maps, binaries, oversized files)
+        run: node tests/lint/repo-hygiene-linter.js
+        # Structural/path-based only (private/ directory segments, the
+        # Apex3Layout name, CAD extensions, this repo's own private-data
+        # filenames) -- never reads file contents or a real facility
+        # identifier. Runs before any other step since a leak here matters
+        # more than any other lint result.
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -49,6 +60,9 @@ jobs:
 
       - name: Lint Alert Rules (ORDER BY on time_series queries)
         run: node tests/lint/alert-rule-linter.js
+
+      - name: Validate Floor 1 private geometry (skips cleanly if absent)
+        run: node tests/lint/floor1-geometry-validator.js
 
       - name: Check Dashboard Inventory is up to date
         run: node scripts/generate-dashboard-inventory.js --check
@@ -120,6 +134,55 @@ jobs:
 
       - name: Run Gate Decision Tests
         run: node tests/unit/gate.test.js
+
+      # Factory Twin contract suites. These encode the system's REFUSALS --
+      # that an observation cannot be promoted to a confirmation, that a
+      # mapping cannot be inferred from proximity or a property lookup, that
+      # an unvalidated zone cannot render, that no private field can reach the
+      # wire. They ran only in the local pre-commit hook, so a change that
+      # deleted a refusal passed CI. Enforced here for the same reason the
+      # leak scanner runs before everything else: these are the guarantees,
+      # not incidental coverage.
+      - name: Run Factory Twin Mapping Contract Tests
+        run: node tests/unit/factory-twin-mapping.test.js
+
+      # FT-15/16/17: same class of guarantee as the mapping contract above --
+      # zero confirmed mappings must mean zero physical live attachments,
+      # zero physical alarm overlays, and no fabricated historical metric.
+      # These ran only in the local pre-commit hook until now, so a change
+      # that broke one of those invariants would still pass CI.
+      - name: Run Factory Twin Telemetry Overlay Tests
+        run: node tests/unit/factory-twin-telemetry.test.js
+
+      - name: Run Factory Twin Alarm/RCA Tests
+        run: node tests/unit/factory-twin-alarm.test.js
+
+      - name: Run Factory Twin Analytics Tests
+        run: node tests/unit/factory-twin-analytics.test.js
+
+      - name: Run Factory Twin MES Import Boundary Tests
+        run: node tests/unit/factory-twin-mes-import.test.js
+
+      - name: Run Factory Twin Geometry Mutation Tests
+        run: node tests/unit/factory-twin-geometry-mutation.test.js
+
+      - name: Run Factory Twin Diagnostics Sanitization Tests
+        run: node tests/unit/factory-twin-diagnostics.test.js
+
+      - name: Run Factory Twin Evidence Pipeline Tests
+        run: node tests/unit/factory-twin-evidence.test.js
+
+      - name: Run Factory Twin Wire Projection Tests
+        run: node tests/unit/factory-twin-wire.test.js
+
+      - name: Run Factory Twin Schematic Layer Tests
+        run: node tests/unit/factory-twin-schematic.test.js
+
+      - name: Run Factory Twin Floor Registry Tests
+        run: node tests/unit/factory-twin-floors.test.js
+
+      - name: Run Factory Twin Operational Status Tests
+        run: node tests/unit/factory-twin-operational-status.test.js
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
@@ -220,6 +283,81 @@ jobs:
           if-no-files-found: warn
 
       - name: Teardown
+        if: always()
+        run: docker compose down -v
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Stage 4a: Factory Twin browser regression
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Runs the twin through the proxy, behind Grafana's auth_request gate --
+  # the path a real user takes, and the one that cannot be exercised on a
+  # workstation whose Grafana admin password has been changed since its
+  # database was initialised. CI starts from .env.example against a fresh
+  # database, so the authenticated path genuinely runs here.
+  #
+  # Private geometry is gitignored and therefore absent. The suite reconciles
+  # the scene against what the API actually served, so an empty deployment
+  # still verifies the boundary, the evidence semantics and the layer
+  # behaviour; the checks that need an envelope report SKIP with a reason and
+  # are never counted as passing.
+  factory-twin-regression:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Seed environment
+        run: cp .env.example .env
+
+      - name: Start twin behind the proxy
+        run: |
+          docker compose up -d timescaledb pgbouncer grafana factory-twin-3d proxy
+          for i in $(seq 1 45); do
+            curl -sf http://127.0.0.1:3000/api/health >/dev/null && break
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:3000/api/health >/dev/null || (echo "Grafana not ready"; docker logs ims-grafana; exit 1)
+          # nginx resolves upstream hostnames once at startup, so a container
+          # that came up after it is otherwise a 502.
+          docker exec ims-proxy nginx -s reload
+
+      - name: Factory Twin browser regression (authenticated, 5 viewports)
+        env:
+          GRAFANA_URL: http://127.0.0.1:3000
+          GRAFANA_ADMIN_USER: admin
+          GRAFANA_ADMIN_PASSWORD: change-me-please
+        run: node tests/playwright/factory-twin-regression.js
+
+      - name: Factory Twin failure-mode regression
+        env:
+          GRAFANA_URL: http://127.0.0.1:3000
+          GRAFANA_ADMIN_USER: admin
+          GRAFANA_ADMIN_PASSWORD: change-me-please
+        run: node tests/playwright/factory-twin-failure-modes.js
+
+      - name: Factory Twin inspector E2E (real click -> identity gate)
+        env:
+          GRAFANA_URL: http://127.0.0.1:3000
+          GRAFANA_ADMIN_USER: admin
+          GRAFANA_ADMIN_PASSWORD: change-me-please
+        run: node tests/playwright/factory-twin-inspector-e2e.js
+
+      - name: Twin service logs on failure
+        if: failure()
+        run: docker logs ims-factory-twin-3d --tail 100
+
+      - name: Tear down
         if: always()
         run: docker compose down -v
 

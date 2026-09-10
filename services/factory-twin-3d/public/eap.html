@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floor 1 EAP Operational Map</title>
+<style>
+  /* Industrial graphite. One background, one surface, one line colour, and a
+     single accent -- a map that has to stay readable from 1366x768 to 3840x2160
+     cannot also carry a palette. Everything below is either structure or state,
+     and state is deliberately not colour-coded, because no live status exists. */
+  :root {
+    --bg: #12151a;
+    --surface: #1a1f27;
+    --surface-2: #222833;
+    --line: #333d4d;
+    --line-strong: #4a586e;
+    --ink: #e6eaf0;
+    --ink-dim: #97a3b5;
+    /* FT-24.6: real axe-core finding on this page (never previously
+       audited) -- #6b7688 measured 3.22-3.98:1 against this page's real
+       surfaces, below the 4.5:1 AA minimum for the several real text uses
+       below (mode-note, group-label, aside h2, dt). #828da0 clears 4.5:1
+       against every surface this token is actually used on, computed
+       before writing it, while staying visibly dimmer than --ink-dim. */
+    --ink-faint: #828da0;
+    --accent: #63a4ff;
+    --cell: #8b96a8;
+    --cell-world: #c7dbf5;
+    --cell-unassigned: #5b6472;
+    --warn: #e0ac63;
+    --region: #6fa0d8;
+    --region-layout: #d8a657;
+    --ok: #7fd1a6;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 13px/1.45 ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+  }
+  aside { grid-column: 2; grid-row: 2; }
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  header h1 { font-size: 14px; font-weight: 600; margin: 0; letter-spacing: .02em; }
+  header .sub { color: var(--ink-dim); font-size: 12px; }
+  header .mode-note { color: var(--ink-faint); font-size: 11.5px; flex-basis: 100%; }
+  header .spacer { flex: 1; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  button {
+    background: var(--surface-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 5px 11px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--line-strong); }
+  #twin-link {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 5px 10px;
+  }
+  #twin-link:hover { color: var(--ink); border-color: var(--line-strong); }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .group-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-faint);
+  }
+  .divider { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-size: 10px;
+    letter-spacing: .04em;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-dim);
+  }
+  .badge.ok { color: var(--ok); border-color: var(--ok); }
+  .badge.warn { color: var(--warn); border-color: var(--warn); }
+  .badge.mid { color: var(--region); border-color: var(--region); }
+  .swatch.outline { background: transparent; border: 1px solid var(--region); }
+  .swatch.outline.dashed { border-style: dashed; border-color: var(--region-layout); }
+  #stage { position: relative; overflow: hidden; grid-column: 1; grid-row: 2; }
+  #stage canvas { display: block; }
+  /* FT-EAP-CTXLOSS: this page's WebGL context is its own -- separate canvas,
+     separate renderer, separate GPU resources from the physical twin's --
+     and app.js's FT-19 fix never reached it. A driver reset, sleep/wake or
+     memory pressure here left this canvas frozen with zero on-screen sign
+     anything was wrong, while the aside (selection, population, legend)
+     kept working, because that content is plain DOM, not WebGL. Same
+     failure mode, same fix, applied to the context that was missing it. */
+  #webgl-lost {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    text-align: center; padding: 24px; background: rgba(18, 21, 26, .92);
+  }
+  /* FT-TWIN-CTXLIFECYCLE: real bug, same root cause as the physical twin's
+     own copy of this pattern (index.html) -- an ID selector always beats
+     the browser's own [hidden]{display:none} attribute rule, so setting
+     .hidden=true on this element never actually hid it visually. Every
+     prior test here read the DOM property (which correctly reports true)
+     rather than hit-testing the rendered page, so it went uncaught until
+     the physical twin's own regression suite's elementFromPoint check
+     found the identical flaw there. */
+  #webgl-lost[hidden] { display: none; }
+  #webgl-lost p { max-width: 420px; color: var(--ink); font-size: 13px; line-height: 1.5; margin: 0; }
+  #labels { position: absolute; inset: 0; pointer-events: none; }
+  #zoneDrawer {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    width: 340px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.45);
+    overflow: hidden;
+  }
+  #zoneDrawer[hidden] { display: none; }
+  .drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .drawer-head button {
+    padding: 2px 8px;
+    font-size: 13px;
+    line-height: 1;
+  }
+  #zoneDrawerBody { padding: 8px 10px 0; }
+  #zoneDrawerCanvas { display: block; width: 100%; height: 190px; }
+  aside {
+    background: var(--surface);
+    border-left: 1px solid var(--line);
+    overflow-y: auto;
+    padding: 14px 16px;
+  }
+  aside h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-faint);
+    margin: 18px 0 8px;
+    font-weight: 600;
+  }
+  aside h2:first-child { margin-top: 0; }
+  dl { margin: 0; display: grid; grid-template-columns: 130px 1fr; gap: 3px 10px; }
+  dt { color: var(--ink-faint); }
+  dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+  .note { color: var(--ink-dim); font-size: 12px; margin: 8px 0 0; }
+  .warn { color: var(--warn); }
+  #inspector button { margin-top: 10px; margin-right: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  td { padding: 2px 0; }
+  td:last-child { text-align: right; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+  .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 12px; }
+  .swatch { width: 18px; height: 10px; border-radius: 1px; flex: none; }
+  .chip { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  @media (max-width: 1400px) { body { grid-template-columns: 1fr 300px; } }
+  @media (min-width: 2200px) { body { font-size: 14px; grid-template-columns: 1fr 400px; } }
+</style>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/three.module.js",
+      "three/addons/": "./vendor/three/examples/jsm/"
+    }
+  }
+</script>
+</head>
+<body>
+  <header>
+    <a id="twin-link" href="./" title="Back to the physical Floor 1 twin">&larr; Factory Twin</a>
+    <h1>Floor 1 &mdash; EAP Operational Map</h1>
+    <span class="sub" id="headline">loading&hellip;</span>
+    <span class="spacer"></span>
+    <div class="controls">
+      <span class="group-label">Frame</span>
+      <button id="modeAuto" aria-pressed="true">Auto</button>
+      <button id="modeWorld" aria-pressed="false">World</button>
+      <button id="modeEap" aria-pressed="false">EAP</button>
+      <span class="divider"></span>
+      <span class="group-label">View</span>
+      <button id="view2d" aria-pressed="true">2D</button>
+      <button id="view3d" aria-pressed="false">3D</button>
+      <button id="fit">Fit floor</button>
+      <span class="divider"></span>
+      <button id="simToggle" aria-pressed="true" title="Simulated status is client-side only and never reaches production telemetry">Simulation: ON</button>
+    </div>
+    <span class="mode-note" id="mode-note"></span>
+  </header>
+
+  <!-- FT-24.6: real axe findings on this page -- no <main> landmark existed
+       at all (landmark-one-main), and the canvas/#labels content sat
+       outside every landmark as a result (region). The WebGL canvas and
+       its label overlay ARE the page's main content, so <main> is the
+       correct element here, not a cosmetic wrapper change. -->
+  <main id="stage">
+    <canvas id="labels"></canvas>
+    <div id="zoneDrawer" hidden>
+      <div class="drawer-head">
+        <span id="zoneDrawerTitle">Zone</span>
+        <button id="zoneDrawerClose" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div id="zoneDrawerBody"></div>
+      <canvas id="zoneDrawerCanvas"></canvas>
+    </div>
+    <!-- FT-WEBGL-RECOVERY-02: shown from webglcontextlost (or a boot-time
+         webglcontextcreationerror) through recovery or failure (eap.js).
+         role="alert" because this is the one state that needs an
+         interrupting announcement -- this canvas has stopped rendering, not
+         merely gone stale. Text is set per lifecycle stage (LOST/
+         RESTORING/REBUILDING/VERIFYING/RECOVERED/FAILED) by
+         showWebglBanner(); both actions are shown/hidden by stage -- Retry
+         only once automatic recovery has actually failed (or never started
+         at all), Reload only alongside it as the explicit last resort, not
+         offered while an automatic attempt might still work on its own. -->
+    <div id="webgl-lost" hidden role="alert">
+      <p id="webgl-status-text"></p>
+      <button type="button" id="webgl-retry" hidden>Retry 3D</button>
+      <button type="button" id="webgl-reload" hidden>Reload page</button>
+    </div>
+  </main>
+
+  <aside tabindex="0" aria-label="Selection, population, legend and frame reference">
+    <h2>Selection</h2>
+    <div id="inspector">
+      <p class="note">Click a cell or a zone.</p>
+    </div>
+
+    <h2>Population</h2>
+    <table id="counts"></table>
+
+    <h2>Legend</h2>
+    <div class="legend-row">
+      <span class="swatch" style="background:var(--cell-world)"></span>
+      <span>DIRECT cell, on the real floor plan</span>
+    </div>
+    <div class="legend-row">
+      <span class="swatch" style="background:var(--cell)"></span>
+      <span>Schematic cell (EAP view), CAD position not established</span>
+    </div>
+    <div class="legend-row">
+      <span class="swatch" style="background:var(--cell-unassigned)"></span>
+      <span>Cell attached to no machine unit</span>
+    </div>
+    <div class="legend-row">
+      <span class="chip" style="background:var(--warn)"></span>
+      <span>Identity-confidence marker</span>
+    </div>
+    <div class="legend-row">
+      <span class="swatch outline"></span>
+      <span>Zone region: set-level, placed but no machine inside it is</span>
+    </div>
+    <div class="legend-row">
+      <span class="swatch outline dashed"></span>
+      <span>Zone region: layout-only, position-only, LOW confidence</span>
+    </div>
+    <p class="note">
+      Every cell is drawn somewhere. A cell with no CAD-backed position is never
+      hidden &mdash; it is in its zone's drawer, marked spatially unresolved.
+    </p>
+
+    <h2>Two frames</h2>
+    <p class="note">
+      <strong>FLOOR1_WORLD_M</strong> is the real floor plan, in metres, from the same
+      geometry the floor's walls and columns are drawn from. 40 cells whose CAD instance
+      is identified stand in it at that instance&rsquo;s own measured position.
+    </p>
+    <p class="note">
+      <strong>EAP_LAYOUT_FRAME</strong> is the reference layout&rsquo;s own frame &mdash;
+      schematic and anisotropic. The other 170 cells live there because nothing places
+      them on the real floor; open a zone's drawer to see them.
+    </p>
+    <p class="note">
+      The two are never merged and no transform takes one to the other. A set-level
+      registration places a zone, not a machine.
+    </p>
+
+    <h2>Status</h2>
+    <p class="note">
+      No authoritative mapping from a cell to an IMS machine exists, so every cell's
+      <strong>live</strong> status is <strong>UNKNOWN</strong>. The reference layout's
+      colours are a snapshot of another system and are not drawn here.
+    </p>
+
+    <!-- FT-EAP-STATE-04 Phase 7: the one line that has to be true and
+         unmissable regardless of which mode this page is in -- production
+         (demo off) reads its own honest "no real source", demo reads its
+         own honest "this is generated." Always visible, never only in the
+         cell inspector, and never phrased so the two could be confused at
+         a glance. -->
+    <h2>Operational data source</h2>
+    <p class="note warn" id="opDataSourceNote"></p>
+
+    <h2>Simulated status</h2>
+    <p class="note warn">
+      <strong>SIMULATED &mdash; not live telemetry.</strong> Deterministic per cell,
+      client-side only. Never read from, or written to, /api/state, TimescaleDB,
+      Node-RED or any production system. Toggle with the header button.
+    </p>
+    <!-- FT-EAP-STATE: always visible, never only on hover or click -- the same
+         "HUD is the accessibility fallback" rule app.js's own status list
+         already follows (design section referenced in its own comment), so a
+         viewer who cannot resolve the map's colours still has the same
+         numbers as plain text, unconditionally, not behind an interaction. -->
+    <table id="stateBreakdown" aria-label="Factory-wide simulated state distribution"></table>
+    <!-- FT-EAP-UX: real gap found comparing this legend against the plant's
+         own full 7-state vocabulary (operational-status.js's STATUS_ORDER) --
+         Off had no row at all. Simulation deliberately never assigns Off to a
+         cell (eap.js's own SIM_STATES excludes it: "a floor mid-shift is not
+         powered down"), so it is shown dimmed with its own real meaning
+         rather than omitted -- a legend is a reference for what the vocabulary
+         MEANS, not just a tally of what happened to be simulated this load. -->
+    <!-- Dims only the decorative chip, never the label text -- an opacity on
+         the whole row crushed real text contrast the exact same way twice
+         before in this codebase (the physical twin's .ss-off and .st-off
+         fixes); this is that same fix applied here rather than repeated. -->
+    <div class="legend-row"><span class="chip" style="background:#475569;opacity:.6"></span><span>&#9632; Off <span class="note" style="display:inline">(listed for completeness; never assigned by this simulation)</span></span></div>
+    <div class="legend-row"><span class="chip" style="background:#22c55e"></span><span>&#9679; Run</span></div>
+    <div class="legend-row"><span class="chip" style="background:#f59e0b"></span><span>&#9650; Idle</span></div>
+    <div class="legend-row"><span class="chip" style="background:#ef4444"></span><span>&#9670; Down</span></div>
+    <div class="legend-row"><span class="chip" style="background:#38bdf8"></span><span>&#9689; Initial</span></div>
+    <div class="legend-row"><span class="chip" style="background:#3b82f6"></span><span>&#9671; PM</span></div>
+    <div class="legend-row"><span class="chip" style="background:#a855f7"></span><span>&#9644; Stop</span></div>
+    <div class="legend-row"><span class="chip" style="background:#94a3b8"></span><span>? Undefined</span></div>
+    <div class="legend-row"><span class="chip" style="background:#64748b"></span><span>&#9675; Unmapped (not a machine state)</span></div>
+
+    <h2>Frame</h2>
+    <p class="note" id="frame-note"></p>
+  </aside>
+
+  <script type="module" src="./eap.js"></script>
+</body>
+</html>

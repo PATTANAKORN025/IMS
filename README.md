@@ -26,7 +26,7 @@
 
 <div align="center">
  <p>
-  <a href="README.md"><img src="docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
+  <a href="README.md"><img src="docs/assets/icons/gb-us.svg" width="18" align="center"/> <b>English</b></a> |
   <a href="th/README.md"><img src="docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
   <a href="zh-CN/README.md"><img src="docs/assets/icons/tw.svg" width="18" align="center"/> <b>中文</b></a>
  </p>
@@ -145,7 +145,7 @@
 
 ---
 
-## Quick Start (Two Paths)
+## Extended Evaluation Paths
 
 > [!NOTE]
 > **Simulator Boundary:** Both paths run the IMS stack locally using a built-in SNMP/HTTP data simulator (`ims-snmpsim`). They **do not** connect to real factory equipment or external network devices. The simulator generates realistic, bounded telemetry and alarm sequences for validation.

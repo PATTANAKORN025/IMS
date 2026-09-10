@@ -541,7 +541,7 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 <div align="center">
 
-**IMS คู่มือผู้ใช้ — เวอร์ชั่น 1.1**
+**IMS คู่มือผู้ใช้ — เวอร์ชัน 1.1**
 
 _สำหรับฝ่าย IT Support และ NOC Team_
 

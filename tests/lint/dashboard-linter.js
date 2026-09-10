@@ -27,6 +27,11 @@
  *      exception list (GRAFANA_DESIGN_SYSTEM.md §2.1b) — it fails WCAG AA
  *      white-text contrast for every token except critical/accent/no_data;
  *      use colorMode "value" instead
+ *  18. No abnormal vertical gaps between panels (warn) — a panel left at a
+ *      stale/copy-pasted gridPos.y (e.g. bumped to y=1000 mid-edit to dodge
+ *      an overlap, never repositioned back) passes Check 9 clean since
+ *      nothing overlaps; this walks panels sorted by y and flags any panel
+ *      starting more than GAP_THRESHOLD units past where prior content ends
  *
  * Also validates monitoring/grafana/library-panels/*.json (real Grafana
  * Library Panels, provisioned via scripts/provision-library-panels.sh --
@@ -72,7 +77,9 @@ const BACKGROUND_COLORMODE_EXCEPTIONS = {
 // not drift; added them here rather than force-resizing working layouts
 // to match an incomplete list. Warn-only: this rule flags an unusual
 // height as worth a second look, not an automatic violation.
-const ALLOWED_HEIGHTS = [1, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20];
+const ALLOWED_HEIGHTS = [1, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 18, 20];
+// 7 added: Operator Andon's Action Queue table, sized to show more than one
+// alarm row without an internal scrollbar during multi-alarm periods.
 
 // Per-dashboard total-height ceiling (Check 14), keyed by dashboard uid.
 // Only kiosk/wall displays get a hard ceiling — analysis dashboards are
@@ -87,21 +94,24 @@ const MAX_HEIGHT = {
   // dropping the temporal view entirely, which the operator explicitly
   // rejected as unacceptable -- the requirement is to keep the timeline AND
   // the full fleet legible, not one or the other.
-  // Separately discovered while sizing this: this dashboard's own repeat
-  // panels (machine state/job tiles, id 1000/1001) already wrap 11 machines
-  // to 2 rows at maxPerRow:8, and that wrap cost is invisible to this same
-  // check (it sums each panel's own declared y+h once, not per wrapped
-  // repeat-row) -- live-measured actual rendered content height at the
-  // current 11-machine fleet is ~28 effective grid-units' worth of pixels,
-  // already past the literal 720p zero-scroll promise before this change.
-  // The 20-unit ceiling was already not a real physical guarantee at this
-  // fleet size; 23 is the number this specific change needs and is
-  // disclosed, not silently inflated. Flagged for follow-up: either extend
-  // this same check to detect repeat-panel wrap cost from live variable
-  // cardinality, or re-scope the "zero scroll" promise to a NOC/TV target
-  // resolution (1920x1080+) that reflects how this board is actually run,
-  // rather than a literal 1280x720 window.
-  'ims-ldi-operator-andon': 23, // factory-floor kiosk (Phase 3 compliance timeline restore)
+  // 2026-09-10 (Factory-Twin x Operator-Andon integration merge): the
+  // conflicting branch carried 34 here (its own layout used compliance h=8 +
+  // Action Queue h=7). That layout was NOT taken -- the merged board keeps
+  // this branch's shorter layout (compliance h=6, Action Queue h=5), which a
+  // real disposable-Grafana render at 1280x720 confirmed is the better of
+  // the two: identical declared grid bottom (23u), zero panel overlap, zero
+  // inner-panel scrollbars, and 476px 1280p overflow versus the other
+  // layout's 628px. Every panel y/h in the merged JSON is byte-identical to
+  // this branch's pre-merge values; nothing was re-guessed. Render evidence:
+  // docs/evidence/GRAFANA_ANDON_FT_INTEGRATION_RENDER.md.
+  // Check 14 sums each panel's own declared y+h once (not repeat-wrap
+  // aware). Declared bottom = 23u (10000 at y22+h1). The wrapped tile rows
+  // add ~7 effective units at the current 10-machine fleet -- the real
+  // ~30-unit / 476px 1280p overflow is a pre-existing, cross-branch,
+  // documented issue (see the render doc and GRAFANA_FRONTEND_P18_FINAL.md),
+  // not something this merge introduced or is scoped to fix.
+  'ims-ldi-operator-andon': 23, // factory-floor kiosk (declared grid bottom; render-validated 2026-09-10)
+
   // 2026-08-08: NOC and Easy Overview are the other two dashboards this
   // system's own design doc (§1 principle 5, "progressive disclosure")
   // designates as glance/kiosk boards -- NOC answers "do I need to call
@@ -126,6 +136,11 @@ const APPROVED_TOKENS = new Set([
   '#64748b', // no_data
   '#4a5568', // forecast
   '#eab308', // severity-minor (4th ISA-18.2 tier, distinct from warning)
+  '#15803d', // ok-bg (Andon panel 1000 colorMode:background exception only --
+             // darker shade of `ok` chosen so its own gradient's darkest stop
+             // still clears WCAG AA large-text 3:1 with white fill text;
+             // canonical `ok` token #22c55e is unchanged for colorMode:value
+             // use everywhere else -- see GRAFANA_DESIGN_SYSTEM.md §2.1b)
 ]);
 
 let errors = 0;
@@ -345,6 +360,22 @@ function lintDashboard(filePath) {
           `B[x=${b.x},y=${b.y},w=${b.w},h=${b.h}]`);
       }
     }
+  }
+
+  // ── Check 18: abnormal vertical gaps ──
+  // Overlap check (9) only catches panels crowding each other; it can't see
+  // a gap where nothing overlaps because nothing is there. Catches a panel
+  // left at a stale/copy-pasted gridPos.y (e.g. bumped to y=1000 to dodge
+  // overlap mid-edit and never repositioned back next to real content).
+  const GAP_THRESHOLD = 20; // units -- generous vs. normal row-header spacing
+  const gapSorted = [...panels].sort((a, b) => a.y - b.y);
+  let frontier = 0;
+  for (const p of gapSorted) {
+    if (p.y > frontier + GAP_THRESHOLD) {
+      warn(file, `${p.id}:${p.title}`,
+        `Abnormal vertical gap: panel starts at y=${p.y}, prior content ends at y=${frontier} (gap=${p.y - frontier}u) — check for a stale gridPos.y`);
+    }
+    frontier = Math.max(frontier, p.y + p.h);
   }
 
   // ── Check 14: kiosk dashboard no-scroll ceiling ──

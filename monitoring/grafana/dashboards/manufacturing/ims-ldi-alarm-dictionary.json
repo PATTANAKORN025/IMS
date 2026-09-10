@@ -199,7 +199,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: single-row master-catalog lookup by code, not a time series */\nSELECT alarm_id AS \"Alarm Code\", alarm_type AS \"Alarm Type\", alarm_msg AS \"Message\", alarm_detail AS \"Detail\", severity AS \"Severity\",\n       cause AS \"Cause\", impact AS \"Impact\", recovery_action AS \"Recovery Action\", COALESCE(sop_reference, 'Not yet available') AS \"SOP / Work Instruction\"\nFROM public.ldi_alarm_ms_code\nWHERE alarm_id = '${alarm_code}' OR alarm_code = '${alarm_code}'\nLIMIT 1;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: single-row master-catalog lookup by code, not a time series */\nSELECT alarm_id AS \"Alarm Code\", alarm_type AS \"Alarm Type\", alarm_msg AS \"Message\", alarm_detail AS \"Detail\", severity AS \"Severity\",\n       cause AS \"Cause\", impact AS \"Impact\", recovery_action AS \"Recovery Action\", COALESCE(sop_reference, 'Not yet available') AS \"SOP / Work Instruction\"\nFROM public.ldi_alarm_ms_code\nWHERE alarm_id = ${alarm_code:sqlstring} OR alarm_code = ${alarm_code:sqlstring}\nLIMIT 1;",
           "format": "table"
         }
       ],
@@ -294,7 +294,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: last 20 firings of this specific code, full dataset scope */\nSELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.logid AS \"Alarm Event ID\",\n       a.related_log_id AS \"Telemetry Event ID\", COALESCE(a.link_basis, 'nearest') AS \"Link Basis\"\nFROM public.ldi_alarm_log a\nWHERE a.errorcode = '${alarm_code}'\nORDER BY a.logdate DESC\nLIMIT 20;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: last 20 firings of this specific code, full dataset scope */\nSELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.logid AS \"Alarm Event ID\",\n       a.related_log_id AS \"Telemetry Event ID\", COALESCE(a.link_basis, 'nearest') AS \"Link Basis\"\nFROM public.ldi_alarm_log a\nWHERE a.errorcode = ${alarm_code:sqlstring}\nORDER BY a.logdate DESC\nLIMIT 20;",
           "format": "table"
         }
       ],
