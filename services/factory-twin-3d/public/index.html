@@ -364,6 +364,7 @@
     /* ---- drawer ------------------------------------------------- */
     #drawer {
       grid-area: drawer;
+      container-type: inline-size;   /* audit F-7: components below size to the drawer, not the viewport */
       background: var(--surface);
       border-left: 1px solid var(--border);
       overflow-y: auto;
@@ -378,7 +379,9 @@
     }
     #drawer h2:first-child { margin-top: 2px; }
 
-    #factory-status { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    #factory-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    /* audit F-7: if the drawer is ever narrower than two readable cells, stack. */
+    @container (max-width: 260px) { #factory-status { grid-template-columns: 1fr; } }
     .fs-cell { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 7px 9px; }
     .fs-value { font-size: var(--text-xl); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
     .fs-label { font-size: var(--text-2xs); color: var(--text-secondary); letter-spacing: .03em; }

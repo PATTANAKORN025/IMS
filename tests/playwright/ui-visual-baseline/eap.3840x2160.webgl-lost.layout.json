@@ -43,7 +43,7 @@
       "style": {
         "display": "grid",
         "position": "static",
-        "gridTemplateColumns": "3440px 400px",
+        "gridTemplateColumns": "3460px 380px",
         "gridTemplateRows": "72.8906px 2087.11px",
         "flexWrap": "nowrap",
         "gap": "normal",
@@ -317,9 +317,9 @@
     },
     "aside": {
       "rect": {
-        "x": 3440,
+        "x": 3460,
         "y": 73,
-        "w": 400,
+        "w": 380,
         "h": 2087
       },
       "style": {
@@ -333,7 +333,7 @@
         "columnGap": "normal",
         "padding": "14px 16px",
         "margin": "0px",
-        "width": "400px",
+        "width": "380px",
         "maxWidth": "none",
         "minWidth": "auto",
         "height": "2087.11px",
@@ -364,9 +364,9 @@
     },
     "aside h2": {
       "rect": {
-        "x": 3457,
+        "x": 3477,
         "y": 87,
-        "w": 367,
+        "w": 347,
         "h": 16
       },
       "style": {
@@ -380,7 +380,7 @@
         "columnGap": "normal",
         "padding": "0px",
         "margin": "0px 0px 8px",
-        "width": "367px",
+        "width": "347px",
         "maxWidth": "none",
         "minWidth": "0px",
         "height": "15.9375px",
@@ -411,9 +411,9 @@
     },
     "#stateBreakdown": {
       "rect": {
-        "x": 3457,
-        "y": 1711,
-        "w": 367,
+        "x": 3477,
+        "y": 1728,
+        "w": 347,
         "h": 214
       },
       "style": {
@@ -427,7 +427,7 @@
         "columnGap": "normal",
         "padding": "0px",
         "margin": "0px",
-        "width": "367px",
+        "width": "347px",
         "maxWidth": "none",
         "minWidth": "0px",
         "height": "213.906px",
@@ -458,9 +458,9 @@
     },
     ".legend-row": {
       "rect": {
-        "x": 3457,
+        "x": 3477,
         "y": 977,
-        "w": 367,
+        "w": 347,
         "h": 17
       },
       "style": {
@@ -474,7 +474,7 @@
         "columnGap": "8px",
         "padding": "0px",
         "margin": "4px 0px",
-        "width": "367px",
+        "width": "347px",
         "maxWidth": "none",
         "minWidth": "0px",
         "height": "17.3906px",
@@ -505,7 +505,7 @@
     },
     ".legend-row .chip": {
       "rect": {
-        "x": 3457,
+        "x": 3477,
         "y": 1047,
         "w": 6,
         "h": 6
@@ -552,9 +552,9 @@
     },
     "#opDataSourceNote": {
       "rect": {
-        "x": 3457,
-        "y": 1530,
-        "w": 367,
+        "x": 3477,
+        "y": 1547,
+        "w": 347,
         "h": 35
       },
       "style": {
@@ -568,7 +568,7 @@
         "columnGap": "normal",
         "padding": "0px",
         "margin": "8px 0px 0px",
-        "width": "367px",
+        "width": "347px",
         "maxWidth": "none",
         "minWidth": "0px",
         "height": "34.7812px",
@@ -648,7 +648,7 @@
       "rect": {
         "x": 0,
         "y": 73,
-        "w": 3440,
+        "w": 3460,
         "h": 2087
       },
       "style": {
@@ -662,7 +662,7 @@
         "columnGap": "14px",
         "padding": "24px",
         "margin": "0px",
-        "width": "3440px",
+        "width": "3460px",
         "maxWidth": "none",
         "minWidth": "0px",
         "height": "2087.11px",

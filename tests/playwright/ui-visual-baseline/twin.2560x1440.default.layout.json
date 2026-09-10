@@ -585,7 +585,7 @@
       "style": {
         "display": "grid",
         "position": "static",
-        "gridTemplateColumns": "repeat(2, 1fr)",
+        "gridTemplateColumns": "repeat(2, minmax(0px, 1fr))",
         "gridTemplateRows": "none",
         "flexWrap": "nowrap",
         "gap": "6px",

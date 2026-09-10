@@ -116,7 +116,7 @@
     color: var(--text);
     font: var(--text-base)/1.45 ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: 1fr clamp(300px, 18vw, 380px);  /* audit F-7: fluid aside, replaces two width breakpoints */
     grid-template-rows: auto 1fr;
     overflow: hidden;
   }
@@ -222,7 +222,7 @@
     position: absolute;
     right: 14px;
     bottom: 14px;
-    width: 340px;
+    width: min(340px, calc(100vw - 28px));  /* audit F-7 */
     background: var(--surface);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
@@ -282,8 +282,7 @@
   .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: var(--text-sm); }
   .swatch { width: 18px; height: 10px; border-radius: 1px; flex: none; }
   .chip { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-  @media (max-width: 1400px) { body { grid-template-columns: 1fr 300px; } }
-  @media (min-width: 2560px) { :root { --text-base: 14px; } body { grid-template-columns: 1fr 400px; } }
+  @media (min-width: 2560px) { :root { --text-base: 14px; } }  /* audit F-9: one wide-wall type step; aside width is now fluid (F-7) */
 
   /* audit F-10 / F-14: honour the OS "reduce motion" setting. State changes
      stay VISIBLE -- the drawer and the context-loss banner still appear and

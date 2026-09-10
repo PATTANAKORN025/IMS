@@ -56,7 +56,8 @@ function parseRoot(src) {
   const block = src.slice(open + 1, end);
   const out = {};
   let pageSpecific = false;
-  for (const raw of block.split('\n')) {
+  for (const raw0 of block.split(/\r?\n/)) {
+    const raw = raw0.replace(/\r$/, '');
     if (/PAGE-SPECIFIC/i.test(raw)) pageSpecific = true;
     const m = raw.match(/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);(.*)$/i);
     if (!m) continue;
