@@ -567,7 +567,15 @@ function buildSchema() {
   zoneMesh = null;
 }
 
-let simulationOn = true;
+// FT-EAP-SCADA-AUDIT: default OFF. This page has no authoritative operational
+// source (docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md), so the state a viewer
+// sees on first load must be the honest REAL / UNAVAILABLE, never a generated
+// stand-in they did not ask for. `simulationOn` doubles as the production/demo
+// switch (see resolveOperationalState): false => REAL only, no substitution;
+// true => the one explicit, viewer-initiated exception. The earlier default
+// (true) contradicted this file's own resolver comment, which already
+// described a "default-off framing".
+let simulationOn = false;
 
 function hashString(s) {
   let h = 0;
@@ -1509,10 +1517,16 @@ document.getElementById('view3d').addEventListener('click', () => setView('3d'))
 document.getElementById('fit').addEventListener('click', resetCamera);
 const simToggleBtn = document.getElementById('simToggle');
 if (simToggleBtn) {
-  simToggleBtn.setAttribute('aria-pressed', String(simulationOn));
+  // Sync the button to the real initial state rather than trusting the
+  // markup -- the default is OFF (FT-EAP-SCADA-AUDIT), and the label/pressed
+  // state must say so on first paint, not only after the first click.
+  const syncSimToggle = (on) => {
+    simToggleBtn.setAttribute('aria-pressed', String(on));
+    simToggleBtn.textContent = on ? 'Simulation: ON' : 'Simulation: OFF';
+  };
+  syncSimToggle(simulationOn);
   simToggleBtn.addEventListener('click', () => {
-    const next = window.__eap.setSimulation(!simulationOn);
-    simToggleBtn.textContent = next ? 'Simulation: ON' : 'Simulation: OFF';
+    syncSimToggle(window.__eap.setSimulation(!simulationOn));
   });
 }
 drawerClose.addEventListener('click', closeDrawer);

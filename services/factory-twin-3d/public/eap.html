@@ -212,7 +212,7 @@
       <button id="view3d" aria-pressed="false">3D</button>
       <button id="fit">Fit floor</button>
       <span class="divider"></span>
-      <button id="simToggle" aria-pressed="true" title="Simulated status is client-side only and never reaches production telemetry">Simulation: ON</button>
+      <button id="simToggle" aria-pressed="false" title="Off by default: no authoritative operational source exists for this floor, so every cell reads REAL / UNAVAILABLE until you deliberately turn on the client-side simulation. Simulated status never reaches production telemetry.">Simulation: OFF</button>
     </div>
     <span class="mode-note" id="mode-note"></span>
   </header>
@@ -321,10 +321,12 @@
     <p class="note warn" id="opDataSourceNote"></p>
 
     <h2>Simulated status</h2>
-    <p class="note warn">
-      <strong>SIMULATED &mdash; not live telemetry.</strong> Deterministic per cell,
-      client-side only. Never read from, or written to, /api/state, TimescaleDB,
-      Node-RED or any production system. Toggle with the header button.
+    <p class="note">
+      <strong>Off by default.</strong> When the header toggle is ON, every cell's
+      status is <strong>SIMULATED</strong> &mdash; deterministic per cell, client-side
+      only, never read from or written to /api/state, TimescaleDB, Node-RED or any
+      production system. When OFF (the default), the map shows REAL / UNAVAILABLE for
+      every cell, because no authoritative operational source is integrated for this floor.
     </p>
     <!-- FT-EAP-STATE: always visible, never only on hover or click -- the same
          "HUD is the accessibility fallback" rule app.js's own status list
