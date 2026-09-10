@@ -30,7 +30,7 @@
         "display": "grid",
         "position": "static",
         "gridTemplateColumns": "1066px 300px",
-        "gridTemplateRows": "73.625px 694.375px",
+        "gridTemplateRows": "108.453px 659.547px",
         "flexWrap": "nowrap",
         "gap": "normal",
         "rowGap": "normal",
@@ -71,7 +71,7 @@
         "x": 0,
         "y": 0,
         "w": 1366,
-        "h": 74
+        "h": 108
       },
       "style": {
         "display": "flex",
@@ -87,7 +87,7 @@
         "width": "1366px",
         "maxWidth": "none",
         "minWidth": "auto",
-        "height": "73.625px",
+        "height": "108.453px",
         "maxHeight": "none",
         "fontSize": "13px",
         "fontWeight": "400",
@@ -209,8 +209,8 @@
     },
     ".controls button": {
       "rect": {
-        "x": 836,
-        "y": 11,
+        "x": 59,
+        "y": 45,
         "w": 50,
         "h": 29
       },
@@ -256,8 +256,8 @@
     },
     "button[aria-pressed]": {
       "rect": {
-        "x": 836,
-        "y": 11,
+        "x": 59,
+        "y": 45,
         "w": 50,
         "h": 29
       },
@@ -304,9 +304,9 @@
     "aside": {
       "rect": {
         "x": 1066,
-        "y": 74,
+        "y": 108,
         "w": 300,
-        "h": 694
+        "h": 660
       },
       "style": {
         "display": "block",
@@ -322,7 +322,7 @@
         "width": "300px",
         "maxWidth": "none",
         "minWidth": "auto",
-        "height": "694.375px",
+        "height": "659.547px",
         "maxHeight": "none",
         "fontSize": "13px",
         "fontWeight": "400",
@@ -351,7 +351,7 @@
     "aside h2": {
       "rect": {
         "x": 1083,
-        "y": 88,
+        "y": 122,
         "w": 267,
         "h": 16
       },
@@ -398,7 +398,7 @@
     "#stateBreakdown": {
       "rect": {
         "x": 1083,
-        "y": 2044,
+        "y": 2131,
         "w": 267,
         "h": 214
       },
@@ -445,7 +445,7 @@
     ".legend-row": {
       "rect": {
         "x": 1083,
-        "y": 1172,
+        "y": 1206,
         "w": 267,
         "h": 17
       },
@@ -492,7 +492,7 @@
     ".legend-row .chip": {
       "rect": {
         "x": 1083,
-        "y": 1259,
+        "y": 1294,
         "w": 6,
         "h": 6
       },
@@ -539,7 +539,7 @@
     "#opDataSourceNote": {
       "rect": {
         "x": 1083,
-        "y": 1863,
+        "y": 1898,
         "w": 267,
         "h": 52
       },
@@ -680,7 +680,7 @@
     "#inspector": {
       "rect": {
         "x": 1083,
-        "y": 112,
+        "y": 146,
         "w": 267,
         "h": 762
       },

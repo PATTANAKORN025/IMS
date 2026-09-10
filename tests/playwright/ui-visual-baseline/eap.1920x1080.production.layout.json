@@ -209,7 +209,7 @@
     },
     ".controls button": {
       "rect": {
-        "x": 1390,
+        "x": 1388,
         "y": 11,
         "w": 50,
         "h": 29
@@ -256,7 +256,7 @@
     },
     "button[aria-pressed]": {
       "rect": {
-        "x": 1390,
+        "x": 1388,
         "y": 11,
         "w": 50,
         "h": 29
@@ -398,7 +398,7 @@
     "#stateBreakdown": {
       "rect": {
         "x": 1597,
-        "y": 1230,
+        "y": 1317,
         "w": 307,
         "h": 214
       },
@@ -541,7 +541,7 @@
         "x": 1597,
         "y": 1066,
         "w": 307,
-        "h": 52
+        "h": 87
       },
       "style": {
         "display": "block",
@@ -557,7 +557,7 @@
         "width": "307px",
         "maxWidth": "none",
         "minWidth": "0px",
-        "height": "52.1719px",
+        "height": "86.9531px",
         "maxHeight": "none",
         "fontSize": "12px",
         "fontWeight": "400",
