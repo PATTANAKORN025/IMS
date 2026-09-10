@@ -42,6 +42,16 @@
       --strip-h: 44px;
       --drawer-w: 340px;
       --radius: 6px;
+
+      /* MOTION SYSTEM (audit F-10). Parallel copy of the EAP page's tokens
+         (audit F-1: the two operator pages do not yet share a stylesheet).
+         Short on purpose -- motion is here to say WHERE state changed, and
+         every use is compositor-only (opacity / transform) and neutralised
+         by the prefers-reduced-motion block at the end of this stylesheet. */
+      --motion-fast: 110ms;
+      --motion-normal: 190ms;
+      --ease-standard: cubic-bezier(.2, 0, 0, 1);
+      --ease-exit: cubic-bezier(.4, 0, 1, 1);
     }
     * { box-sizing: border-box; }
     html, body {
@@ -145,8 +155,12 @@
       font-size: 12px;
       cursor: pointer;
       white-space: nowrap;
+      transition: color var(--motion-fast) var(--ease-standard),
+                  background-color var(--motion-fast) var(--ease-standard),
+                  border-color var(--motion-fast) var(--ease-standard);
     }
     .seg button:hover:not(:disabled), .btn:hover:not(:disabled) { color: var(--text); background: #172434; }
+    .seg button:active:not(:disabled), .btn:active:not(:disabled) { transform: translateY(1px); }
     .seg button[aria-pressed="true"] { background: #1d3348; color: var(--text); border-color: var(--line-2); }
     .seg button:disabled, .btn:disabled { opacity: .35; cursor: not-allowed; }
     #floor-picker { display: flex; align-items: center; gap: 6px; }
@@ -185,6 +199,7 @@
          implied, :focus-visible's existing global rule already covers
          keyboard operation. */
       cursor: pointer;
+      transition: background-color var(--motion-fast) var(--ease-standard);
     }
     .ss-cell:hover { background: var(--line); }
     .ss-glyph { font-size: 13px; line-height: 1; }
@@ -229,7 +244,16 @@
       padding: 10px 12px;
       font-size: 12px;
       box-shadow: 0 10px 26px rgba(0, 0, 0, .45);
+      /* audit F-10: fade + rise from the corner it docks in, so a click
+         reads as "this opened here" rather than a box blinking on. Animates
+         through the `hidden` toggle app.js drives (allow-discrete +
+         @starting-style); no app.js change. */
+      transition: opacity var(--motion-normal) var(--ease-standard),
+                  transform var(--motion-normal) var(--ease-standard),
+                  display var(--motion-normal) allow-discrete;
     }
+    @starting-style { #inspector { opacity: 0; transform: translateY(8px); } }
+    #inspector[hidden] { display: none; opacity: 0; transform: translateY(8px); }
     .inspector-title { font-weight: 600; margin-bottom: 7px; display: flex; align-items: center; gap: 7px; }
     #inspector div { display: flex; gap: 8px; justify-content: space-between; padding: 1.5px 0; }
     #inspector .k { color: var(--text-dim); }
@@ -288,7 +312,13 @@
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 14px;
       text-align: center; padding: 24px; background: rgba(11, 16, 23, .92);
+      /* audit F-10: short cross-fade over the frozen frame instead of a hard
+         cut. allow-discrete + @starting-style animate through the `hidden`
+         toggle; no app.js change; instant where unsupported. */
+      transition: opacity var(--motion-normal) var(--ease-standard),
+                  display var(--motion-normal) allow-discrete;
     }
+    @starting-style { #webgl-lost { opacity: 0; } }
     /* FT-TWIN-CTXLIFECYCLE: real, pre-existing bug found by this phase's own
        regression suite, not introduced by it -- an ID selector always beats
        the browser's own [hidden]{display:none} attribute rule, so the
@@ -297,7 +327,7 @@
        silently sat over its centre the whole time, intercepting the one
        hit-test a regression happened to check. Needs its own rule with
        higher specificity than the bare #webgl-lost one above. */
-    #webgl-lost[hidden] { display: none; }
+    #webgl-lost[hidden] { display: none; opacity: 0; }
     #webgl-lost p { max-width: 420px; color: var(--text); font-size: 13px; line-height: 1.5; margin: 0; }
     #machine-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
     #machine-labels .machine-label {
@@ -425,8 +455,26 @@
       width: min(560px, 92vw); max-height: 85vh; overflow-y: auto;
       background: var(--panel); color: var(--text); border: 1px solid var(--line-2);
       border-radius: var(--radius); padding: 14px 16px; font-size: 12px;
+      /* audit F-10: a restrained fade + rise on open/close. The [open] +
+         @starting-style + allow-discrete pattern for <dialog>; showModal()/
+         close() in app.js are untouched. */
+      opacity: 0; transform: translateY(6px);
+      transition: opacity var(--motion-normal) var(--ease-standard),
+                  transform var(--motion-normal) var(--ease-standard),
+                  display var(--motion-normal) allow-discrete,
+                  overlay var(--motion-normal) allow-discrete;
     }
-    #command-center-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+    #command-center-dialog[open] { opacity: 1; transform: translateY(0); }
+    @starting-style { #command-center-dialog[open] { opacity: 0; transform: translateY(6px); } }
+    #command-center-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.55);
+      transition: opacity var(--motion-normal) var(--ease-standard),
+                  display var(--motion-normal) allow-discrete,
+                  overlay var(--motion-normal) allow-discrete;
+      opacity: 0;
+    }
+    #command-center-dialog[open]::backdrop { opacity: 1; }
+    @starting-style { #command-center-dialog[open]::backdrop { opacity: 0; } }
     .cc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .cc-header h2 { margin: 0; font-size: 15px; }
     #cc-plant-state { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
@@ -455,7 +503,21 @@
     #drawer::-webkit-scrollbar-thumb, #machine-list::-webkit-scrollbar-thumb,
     #inspector::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
 
-    @media (prefers-reduced-motion: reduce) { #app { transition: none; } }
+    /* audit F-10: honour the OS "reduce motion" setting across the whole
+       motion layer. Every state change stays VISIBLE -- the drawer track,
+       the inspector, the context-loss banner and the command-centre dialog
+       all still appear and disappear, and every focus / pressed / hover
+       state still reads -- only the movement and the fades are removed. */
+    @media (prefers-reduced-motion: reduce) {
+      #app { transition: none; }
+      .seg button, .btn, .ss-cell, #inspector, #webgl-lost,
+      #command-center-dialog, #command-center-dialog::backdrop {
+        transition-duration: 1ms !important;
+      }
+      #inspector, #inspector[hidden], #command-center-dialog,
+      #command-center-dialog[open] { transform: none; }
+      .seg button:active:not(:disabled), .btn:active:not(:disabled) { transform: none; }
+    }
   </style>
 </head>
 <body>
