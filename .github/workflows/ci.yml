@@ -184,6 +184,12 @@ jobs:
       - name: Run Factory Twin Operational Status Tests
         run: node tests/unit/factory-twin-operational-status.test.js
 
+      # F-3: the EAP status colours are hand-copied into eap.html's static
+      # legend and eap.js -- this fails if any copy drifts from
+      # operational-status.js, the single source of truth. Was pre-commit only.
+      - name: Run EAP Status-Colour Drift Lint
+        run: node tests/lint/eap-status-color-drift.js
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

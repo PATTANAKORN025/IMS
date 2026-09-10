@@ -87,7 +87,11 @@ vendored (`nodered_data/node_modules`) and not authored here.
   `#1d3348`). These form a real second palette with real meaning (claim provenance,
   risk tier) and should be `--evidence-*` / `--risk-*` semantic tokens. Several are
   already duplicated (`#7dd3fc` appears twice, `#a5b4fc` twice).
-- **F-3 (SHOULD-FIX): EAP status colours hand-copied into markup.** The single
+- **F-3 (ADDRESSED 2026-09-10 — implementation phase):** `tests/lint/eap-status-color-drift.js`
+  now fails if the `eap.html` static legend hex, the `eap.js` `SIM_QUALITY_DISPLAY`
+  greys, or `operational-status.js`'s own `color` vs `hex` ever diverge. Wired into
+  `scripts/pre-commit.js` and the CI unit-tests job. Original finding below.
+- **F-3 (was SHOULD-FIX): EAP status colours hand-copied into markup.** The single
   source of truth is `operational-status.js` (`OPERATIONAL_STATUS[*].color` +
   `.hex` + `.glyph` + `.label` + `.backed` + `.meaning` — an exemplary Phase-4
   model). But the always-visible legend in `eap.html:348–356` re-types all nine
