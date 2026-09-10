@@ -1,8 +1,22 @@
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const { Pool } = require('pg');
+const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
+const { buildDiagnostics } = require('./lib/diagnostics');
+const wire = require('./lib/wire');
+const mappingLib = require('./lib/mapping');
+const telemetry = require('./lib/telemetry');
+const alarmLib = require('./lib/alarm');
+const analytics = require('./lib/analytics');
+const spc = require('./lib/spc');
+const predictive = require('./lib/predictive');
+const schematic = require('./lib/schematic');
+const eapMap = require('./lib/eap-map');
+const floors = require('./lib/floors');
 
 const PORT = process.env.PORT || 4100;
 
@@ -27,6 +41,163 @@ pool.on('error', (err) => {
 
 const app = express();
 
+// Nothing needs to know which framework serves this, and naming it only helps
+// someone match the service against a vulnerability list.
+app.disable('x-powered-by');
+
+// Aggregate operational counters. Deliberately counts only -- no path, no
+// URL, no identifier, no client detail. Anything richer would turn the
+// diagnostics endpoint into a log of who asked for what.
+const runtimeCounters = {
+  requestsTotal: 0,
+  requestsFailed: 0,
+  geometryLoadMs: 0,
+  geometryParseFailures: 0,
+  // Fixed-edge histogram, not a list of timings. A list would be an ordered
+  // record of individual requests; a histogram answers "is this service slow"
+  // without describing any one of them. Null-prototype so a bucket name can
+  // never collide with an inherited property.
+  latencyBuckets: Object.assign(Object.create(null), {
+    lt_10ms: 0,
+    lt_50ms: 0,
+    lt_100ms: 0,
+    lt_500ms: 0,
+    gte_500ms: 0,
+  }),
+};
+
+function latencyBucket(ms) {
+  if (ms < 10) return 'lt_10ms';
+  if (ms < 50) return 'lt_50ms';
+  if (ms < 100) return 'lt_100ms';
+  if (ms < 500) return 'lt_500ms';
+  return 'gte_500ms';
+}
+
+app.use((req, res, next) => {
+  runtimeCounters.requestsTotal++;
+  const started = Date.now();
+  res.on('finish', () => {
+    if (res.statusCode >= 400) runtimeCounters.requestsFailed++;
+    runtimeCounters.latencyBuckets[latencyBucket(Date.now() - started)]++;
+  });
+  next();
+});
+
+// Response headers. Small set, each with a reason -- this service's threat is
+// disclosure of the data it serves, not compromise of the service.
+app.use((req, res, next) => {
+  // The geometry route carries values derived from a confidential drawing.
+  // Without an explicit directive a browser may heuristically cache it and a
+  // future caching intermediary may store it, which would put private-derived
+  // data somewhere the auth gate does not reach. Static assets keep their
+  // normal caching; only the shaped API is marked.
+  if (req.path.startsWith('/api/')) res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  // The twin is opened in its own tab from a dashboard link and is never
+  // embedded, so refusing to be framed costs nothing and removes clickjacking
+  // against a view whose controls change what an operator believes.
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
+  next();
+});
+
+// ── Build fingerprint ────────────────────────────────────────
+//
+// WHY THIS EXISTS. A container was found serving a six-commit-old build while
+// the repository, the tests and the image tag had all moved on. Nothing on the
+// page said so, and nothing could: the frontend is static files with no
+// version in them, so "is production running the code I just wrote" was a
+// question no one could answer from the outside. That is how a rebuilt
+// verification port came to be mistaken for a rebuilt production one.
+//
+// The fingerprint is computed at boot from the bytes actually on disk in this
+// process's own image -- server.js, lib/ and public/ -- so it cannot be set
+// by an environment variable, cannot be stamped by a build script that did not
+// run, and cannot claim a version the running code is not. Two services
+// reporting the same fingerprint are running identical code; two reporting
+// different fingerprints are not, whatever their tags say.
+//
+// It is a hash of source bytes, not a secret and not a coordinate: it names
+// code, and the code is public.
+const BUILD = (() => {
+  const files = [];
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.(js|html|css|mjs)$/.test(e.name)) files.push(full);
+    }
+  };
+  walk(path.join(__dirname, 'public'));
+  walk(path.join(__dirname, 'lib'));
+  files.push(path.join(__dirname, 'server.js'));
+
+  const h = crypto.createHash('sha256');
+  const assets = [];
+  for (const f of files.sort()) {
+    let buf;
+    try {
+      buf = fs.readFileSync(f);
+    } catch {
+      continue;
+    }
+    const rel = path.relative(__dirname, f).split(path.sep).join('/');
+    const digest = crypto.createHash('sha256').update(buf).digest('hex').slice(0, 12);
+    h.update(rel).update(digest);
+    assets.push({ path: rel, sha256: digest, bytes: buf.length });
+  }
+  return {
+    fingerprint: h.digest('hex').slice(0, 16),
+    asset_count: assets.length,
+    assets,
+    started_at: new Date().toISOString(),
+  };
+})();
+
+// Deliberately unauthenticated-safe in content: it lists this service's own
+// public source files and their hashes, which are already published in the
+// repository. It carries no private path -- every entry is relative to the app
+// root -- and no facility data of any kind.
+app.get('/api/build', (req, res) => {
+  res.status(200).json({
+    service: 'factory-twin-3d',
+    fingerprint: BUILD.fingerprint,
+    asset_count: BUILD.asset_count,
+    assets: BUILD.assets,
+    started_at: BUILD.started_at,
+  });
+});
+
+// ── Canonical entry point ──
+// index.html -- the physical Floor 1 twin: real building envelope, walls,
+// columns, zones and equipment footprints, live /api/state telemetry, and
+// the evidence-tiered inspector -- is the Factory Twin a user should land on
+// at the bare service root. This reverses the PREVIOUS phase's choice
+// (EAP map canonical): the physical CAD reconstruction -- now carrying the
+// validated ellipse correction, PRODUCTION_LINE decomposition and
+// TRUE_POLYGON rendering -- is the product a floor visitor should land on,
+// with the EAP census as the operational layer reached deliberately. An
+// explicit route is used rather than relying on express.static's
+// default-index behaviour, so the choice of canonical page is one line to
+// find and one line to change, not an artifact of file naming.
+//
+// eap.html stays exactly where it was, unmoved and undeleted: reachable at
+// its own filename, /factory-twin-3d/eap.html, via the static middleware
+// below, and linked from the physical twin's own topbar as an operational
+// layer a viewer opens deliberately -- its model, its simulated-status
+// layer and its 210/40/171/12 evidence counts are untouched here.
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // ── Static frontend + vendored Three.js (no CDN dependency -- this
 // container has no host port, only reachable via the proxy's auth_request
 // gate, so the frontend must not depend on fetching a script from a
@@ -35,101 +206,168 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/vendor/three/', express.static(path.join(__dirname, 'node_modules', 'three', 'build')));
 app.use('/vendor/three/examples/', express.static(path.join(__dirname, 'node_modules', 'three', 'examples')));
 
-// Task 4.3 dynamic fleet discovery: the hardcoded 10-machine/2-per-zone
-// layout below (Task 4.2) was built when only 10 LDI devices were assumed
-// to exist. A later audit found public.devices actually has 23 enabled
-// device_type='ldi' rows across the SAME 5 real zones -- some zones hold
-// up to 7 machines, not 2, which the old `machineIndex === 0 ? -4 : 4`
-// ternary can't place (3rd+ machine in a zone would collide with the 2nd).
+// ── Private data directory (gitignored: .gitignore's `private/` rule) ──
+// This repo is public (github.com/PATTANAKORN025/IMS). The 2-tier split:
+// this service's CODE is public and must run standalone on pure synthetic
+// data with an empty/missing private/ dir (a fresh clone has no real
+// layout or geometry file here); a private production environment drops
+// real files into this same path, on the same host, with zero code change.
 //
-// Still no device_3d_placement DB table (same reasoning as before: every
-// placement is is_simulated: true, disclosed throwaway, wholesale-replaced
-// once a real layout exists -- see design §17). What changes here is WHERE
-// the placement input comes from: devices/zones are now discovered live
-// from `public.devices WHERE device_type='ldi' AND enabled=true` instead
-// of a hardcoded array, so a device added/disabled in that table is
-// reflected without a code change.
+// READ SERVER-SIDE ONLY -- deliberately NOT mounted as static content. A
+// static mount serves every file in private/ verbatim to anyone past the
+// proxy's auth gate, which bypasses the shaped /api/* responses below and
+// would expose any file dropped here (including a source drawing) at a
+// guessable URL. Real geometry reaches the browser only via those routes.
+const PRIVATE_DIR = path.join(__dirname, 'private');
+
+// The private per-device LAYOUT loader is gone with the placement route it
+// fed. That file held one synthetic position per device, generated by the same
+// deterministic grid formula the server used as a fallback -- a file-shaped
+// version of the same invented coordinates, and no more real for being on
+// disk. Real facility geometry now arrives through floor1-geometry.json below,
+// which is read from CAD.
+
+// Reads private/floor1-geometry.json if present -- anonymous building
+// envelope/columns/zones/physical-slot geometry, entirely independent of
+// the per-device placement above. Returns null (not a throw) when
+// missing/malformed, matching loadPrivateLayout()'s convention; this repo's
+// own /api/floor-geometry response is simply an empty-slots shape in that
+// case (see the route below), never a crash.
 //
-// Deterministic grid formula, generalized from Task 4.2's fixed 5-zone/
-// 2-machine shape to any zone count and any machines-per-zone count:
-//   pos_x = (zone_index  - (zone_count    - 1) / 2) * 18  -- 18u between zones
-//   pos_y = (machine_index - (machine_count - 1) / 2) * 8  -- 8u within a zone
-// This is an exact generalization, not a redesign: for the original fixed
-// shape (5 zones, 2 machines/zone) it reduces algebraically to Task 4.2's
-// literal (zoneIndex - 2) * 18 and (idx === 0 ? -4 : 4) formulas -- verified
-// bit-identical output for the 10 original machines (see
-// scratchpad test-placements.js run, kept out of the repo as it's a
-// throwaway verification script, not product code).
+// Deliberately does NOT itself carry a device_id mapping -- see
+// loadPrivateAssetMapping() below. Splitting these into two files (per an
+// explicit data-separation requirement) means a verified physical-slot ->
+// device_id correspondence can be added or changed without touching this
+// file's geometry at all.
+function loadPrivateGeometry(floorId) {
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'geometry');
+  if (!filePath || !fs.existsSync(filePath)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    // equipment[] is what the physical view draws. slots[] -- the raster-
+    // derived positions digitised from the scanned schematic -- is no longer
+    // served at all, so its presence or absence says nothing about whether
+    // this document is usable.
+    if (!Array.isArray(parsed.equipment)) throw new Error('missing equipment[]');
+    return parsed;
+  } catch (err) {
+    runtimeCounters.geometryParseFailures++;
+    console.error(`private geometry file present but unusable: ${err.message}`);
+    return null;
+  }
+}
+
+// FT-14: reads private/floor1-asset-mapping.json if present -- the file
+// holds { mappings: PhysicalIdentityMapping[] } (lib/mapping.js's canonical
+// evidence-gated shape), keyed here by asset_id for O(1) lookup. Absent,
+// malformed, or internally invalid (a duplicate asset_id, a confirmed record
+// missing evidence, two confirmed records claiming one device, ...) all fall
+// back to an EMPTY table -- every asset UNRESOLVED -- fail-closed exactly
+// like loadPrivateGeometry(). This is the ONLY place a real asset<->device
+// correspondence may be introduced, and this repo's own copy of the file (if
+// any) has zero CONFIRMED entries: no authoritative evidence source exists
+// yet (see docs/superpowers/specs/2026-09-08-ft14-asset-identity-evidence-
+// design.md).
+function loadPrivateAssetMapping(floorId) {
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'mapping');
+  if (!filePath || !fs.existsSync(filePath)) return {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (!Array.isArray(parsed.mappings)) throw new Error('missing mappings[]');
+    const result = mappingLib.validateMappings(parsed.mappings);
+    if (!result.ok) throw new Error(`invalid mapping records: ${result.errors.join('; ')}`);
+    const byAssetId = {};
+    for (const record of parsed.mappings) byAssetId[record.asset_id] = record;
+    return byAssetId;
+  } catch (err) {
+    console.error(`private asset-mapping file present but unusable (treating all assets UNRESOLVED): ${err.message}`);
+    return {};
+  }
+}
+
+// Reads private/floor1-zones.json if present -- the drawing's own closed area
+// boundaries. These ARE the rooms: each polygon is one closed ring off the
+// CAD's area-boundary layer, bound to its name by containment and by the area
+// the drawing prints for itself. They are not derived from the wall model and
+// do not depend on it.
 //
-// Trade-off, disclosed rather than hidden: because zones now legitimately
-// contain more machines than the old assumption, LDI-01..10's absolute
-// pos_x/pos_y DO shift from Task 4.2's values wherever their real zone grew
-// past 2 machines (e.g. Site A - Zone 1 now has 4: LDI-A01/2B
-// plus LDI-01/02). Freezing the old positions instead would mean either
-// hardcoding again (defeats the point) or placing new machines outside
-// their real zone's cluster (worse). Relative ordering (alphabetical by
-// device_id within a zone) and the spacing pattern are preserved; only the
-// absolute offset for machines in a now-larger zone changes.
-const ZONE_ORDER = [
-  'Site A - Zone 1',
-  'Site B - Zone 1',
-  'Site A - Zone 2',
-  'Site A - Zone 3',
-  'Site B - Zone 2',
-];
-const ZONE_SPACING_X = 18;
-const MACHINE_SPACING_Y = 8;
+// They are still not architectural walls. A boundary says where an area ends,
+// not what stands there, so nothing here should be read as an enclosure with a
+// thickness, a door or a height.
+//
+// Returns { renderable, meta }. Only zones the extraction actually
+// validated are given geometry: HIGH/MEDIUM confidence, renderable===true,
+// and not party to an unresolved CONFLICT. Everything else -- LOW,
+// REJECTED, UNRESOLVED, and both sides of a conflict -- is deliberately
+// withheld from the wire as geometry and survives only as counts in meta,
+// so the browser cannot draw an unvalidated boundary even by accident. The
+// filter is applied here rather than trusting the file's own renderable
+// flag alone, so a hand-edit of that flag still cannot promote a LOW or
+// conflicted zone into the scene.
+function loadPrivateZones(floorId) {
+  const empty = { renderable: [], meta: { total: 0, served: 0, withheld: 0, byConfidence: {}, conflicts: [] } };
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'zones');
+  if (!filePath || !fs.existsSync(filePath)) return empty;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const zones = Array.isArray(parsed.zones) ? parsed.zones : [];
+    const conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
+    const conflicted = new Set();
+    for (const c of conflicts) {
+      if (c.status === 'CONFLICT') for (const id of c.ids || []) conflicted.add(id);
+    }
+    // Validation filter first, then projection. lib/wire rebuilds each zone
+    // field by field: tier and boundary only. Its process type, its printed and
+    // calculated areas and its free-text validation notes are values read from
+    // the confidential drawing, nothing rendered them, and they are no longer
+    // put on the wire at all.
+    const renderable = wire.projectAll(
+      zones.filter((z) =>
+        z.renderable === true &&
+        (z.confidence === 'HIGH' || z.confidence === 'MEDIUM') &&
+        z.status !== 'CONFLICT' &&
+        !conflicted.has(z.id) &&
+        z.geometry && Array.isArray(z.geometry.vertices) && z.geometry.vertices.length >= 3),
+      wire.projectFunctionalZone
+    );
+    // Null-prototype accumulator: a confidence value of `__proto__` on a plain
+    // object literal is swallowed by the prototype setter rather than counted,
+    // which loses a zone silently. Counting into a bare object cannot.
+    const byConfidence = Object.create(null);
+    for (const z of zones) {
+      const tier = typeof z.confidence === 'string' ? z.confidence : 'unknown';
+      byConfidence[tier] = (byConfidence[tier] || 0) + 1;
+    }
+    return {
+      renderable,
+      meta: {
+        total: zones.length,
+        served: renderable.length,
+        withheld: zones.length - renderable.length,
+        byConfidence,
+        // Conflicts are reported, never silently resolved -- the client is
+        // told two candidates exist and that neither was drawn. Ids and status
+        // are enough to say that; the resolution note is author-written free
+        // text and is not carried, matching lib/diagnostics.
+        conflicts: wire.projectAll(conflicts, wire.projectConflict),
+      },
+    };
+  } catch (err) {
+    console.error(`private zone file present but unusable (serving no zones): ${err.message}`);
+    return empty;
+  }
+}
+// The zone-ordering table and the grid spacing constants are gone. They
+// existed only to lay monitored devices out on a synthetic floor: which zone
+// came first, how far apart zones sat, how far apart machines sat within one.
+// Nothing places a device any more, so none of it has a meaning to preserve.
+
 const DEVICE_REFRESH_INTERVAL_MS = 60_000;
 
-// A zone not in ZONE_ORDER (a future physical zone this code doesn't know
-// about yet) is appended after the known five, sorted alphabetically --
-// keeps placement deterministic and collision-free without needing a code
-// change just to not crash on it.
-function orderedZoneNames(distinctLocations) {
-  const known = ZONE_ORDER.filter((z) => distinctLocations.has(z));
-  const unknown = [...distinctLocations].filter((z) => !ZONE_ORDER.includes(z)).sort();
-  return [...known, ...unknown];
-}
 
-// Pure and DB-free: same (device_id, location) rows always produce the same
-// placements, regardless of what order the DB returned them in. Grouping
-// by zone then sorting device_id within each zone makes the result
-// independent of input row order.
-function computePlacements(deviceRows) {
-  const byZone = new Map();
-  for (const { device_id, location } of deviceRows) {
-    if (!byZone.has(location)) byZone.set(location, []);
-    byZone.get(location).push(device_id);
-  }
-  const zones = orderedZoneNames(new Set(byZone.keys()));
-  const centerZone = (zones.length - 1) / 2;
-
-  const placements = [];
-  zones.forEach((zone, zoneIndex) => {
-    const machines = [...byZone.get(zone)].sort();
-    const centerMachine = (machines.length - 1) / 2;
-    const factoryMatch = zone.match(/^Factory\s+(\d+)/);
-    const factory = factoryMatch ? factoryMatch[1] : null;
-    machines.forEach((device_id, machineIndex) => {
-      placements.push({
-        device_id,
-        zone,
-        factory,
-        pos_x: (zoneIndex - centerZone) * ZONE_SPACING_X,
-        pos_y: (machineIndex - centerMachine) * MACHINE_SPACING_Y,
-        pos_z: 0,
-        rot_x: 0,
-        rot_y: 0,
-        rot_z: 0,
-        scale: 1.0,
-        is_simulated: true,
-        source: 'simulated_grid',
-      });
-    });
-  });
-  return placements;
-}
-
+// The enabled LDI device roster. Note what this does NOT return: a position.
+// It reads identity and a location NAME, and nothing downstream turns either
+// into a coordinate on the floor.
 async function discoverDevices() {
   const result = await pool.query(
     `SELECT device_id, location FROM public.devices WHERE device_type = 'ldi' AND enabled = true ORDER BY location, device_id`
@@ -137,19 +375,16 @@ async function discoverDevices() {
   return result.rows;
 }
 
-// In-memory cache refreshed on a timer rather than queried per-request:
 // /api/state is polled frequently by every open kiosk tab, and the device
 // list changes rarely (an enable/disable or a new device row), so paying a
 // DB round trip on every single poll isn't worth it just to react to that
 // instantly. DEVICE_REFRESH_INTERVAL_MS bounds how stale it can get.
 let DEVICE_IDS = [];
-let SIMULATED_PLACEMENTS = [];
 
 async function refreshDevices() {
   try {
     const rows = await discoverDevices();
     DEVICE_IDS = rows.map((r) => r.device_id).sort();
-    SIMULATED_PLACEMENTS = computePlacements(rows);
   } catch (err) {
     console.error('device discovery refresh failed (keeping previous list):', err.message);
   }
@@ -205,6 +440,13 @@ WITH s AS (
     v.board_no,
     v.total_board,
     v.factory,
+    -- FT-15: has_data/is_stale/time are v_ldi_machine_latest_full's own
+    -- freshness facts (migration 052), selected through untouched -- st
+    -- below still collapses them into /api/state's existing 4-state
+    -- contract on its own, unrelated to these three passing through.
+    v.has_data,
+    v.is_stale,
+    v."time" AS last_seen,
     CASE
       WHEN EXISTS (
         SELECT 1 FROM public.ldi_alarm_log a
@@ -262,6 +504,9 @@ SELECT
   s.total_board,
   s.mo,
   s.factory,
+  s.has_data,
+  s.is_stale,
+  s.last_seen,
   COALESCE(alarm_ctx.n, 0) AS alarm_count,
   alarm_ctx.owner AS alarm_owner,
   alarm_ctx.elapsed AS alarm_elapsed,
@@ -271,19 +516,50 @@ FROM s
 LEFT JOIN alarm_ctx ON alarm_ctx.equipmentid = s.eqp_id
 ORDER BY s.eqp_id`;
 
-const STATE_LABELS = ['NO_DATA', 'IDLE', 'OK', 'ALARM'];
+// STATE_SQL's numeric `st` -> contracts.js's MachineState. Only 4 of the
+// 8 MachineState values have a real source in this query today (see
+// lib/contracts.js's per-member comments on OFF/INITIAL/PM/STOP) -- this
+// map intentionally only covers the 4 that are real. A code this map does
+// not cover resolves to UNDEFINED, never to a plausible-looking state.
+const STATE_CODE_TO_MACHINE_STATE = {
+  0: MachineState.UNDEFINED, // no telemetry row, or stale
+  1: MachineState.IDLE, // state=false
+  2: MachineState.RUN, // state=true, no active alarm
+  3: MachineState.DOWN, // active Critical/Major alarm
+};
 
-app.get('/api/state', async (req, res) => {
-  try {
-    const result = await pool.query(STATE_SQL, [DEVICE_IDS]);
-    const rows = result.rows.map((row) => ({
+// FT-15: the one place device telemetry is queried, shared by /api/state
+// (unchanged response shape) and /api/physical-overlay (FT-15's identity-
+// gated join). Extracted so a physical overlay never runs its own second
+// device-discovery/query path -- it queries EXACTLY this, for a subset of
+// the SAME discovered device ids, never an id from the mapping file that
+// was not itself discovered as real.
+//
+// has_data/is_stale do not exist on this route's rows before this change --
+// STATE_SQL's own `st` CASE already collapses "no data" and "stale" into
+// state=0 (UNDEFINED) upstream, in SQL, which is correct for /api/state's
+// existing 4-state contract and is left untouched. FT-15's freshness needs
+// the two facts un-collapsed, so they are selected here as their own
+// columns without changing what `st`/state already computes.
+async function queryDeviceState(deviceIds) {
+  if (!Array.isArray(deviceIds) || deviceIds.length === 0) return [];
+  const result = await pool.query(STATE_SQL, [deviceIds]);
+  return result.rows.map((row) => {
+    const machineState = STATE_CODE_TO_MACHINE_STATE[row.state] || MachineState.UNDEFINED;
+    const theme = MACHINE_STATE_THEME[machineState];
+    return {
       device_id: row.eqp_id,
       state: row.state,
-      state_label: STATE_LABELS[row.state] || 'NO_DATA',
+      machine_state: machineState,
+      state_label: theme.label,
+      state_color: `#${theme.color.toString(16).padStart(6, '0')}`,
       board_no: row.board_no,
       total_board: row.total_board,
       mo: row.mo,
       factory: row.factory,
+      has_data: row.has_data,
+      is_stale: row.is_stale,
+      last_seen: row.last_seen,
       alarm:
         row.alarm_count > 0
           ? {
@@ -294,7 +570,13 @@ app.get('/api/state', async (req, res) => {
               logdate_ms: row.alarm_logdate_ms,
             }
           : null,
-    }));
+    };
+  });
+}
+
+app.get('/api/state', async (req, res) => {
+  try {
+    const rows = await queryDeviceState(DEVICE_IDS);
     res.status(200).json({
       machines: rows,
       queried_at: new Date().toISOString(),
@@ -305,8 +587,1249 @@ app.get('/api/state', async (req, res) => {
   }
 });
 
-app.get('/api/placement', (req, res) => {
-  res.status(200).json({ machines: SIMULATED_PLACEMENTS });
+// FT-15: the identity-gated join between real device telemetry and a
+// physical CAD asset. Separate route from /api/state (device telemetry)
+// and from /api/floor-geometry (physical geometry + identity fields) on
+// purpose -- Phase 6's "clear separation" is a route boundary, not just a
+// field naming convention, so a client cannot accidentally treat one as
+// the other.
+//
+// Every asset_id this deployment's geometry could carry is resolved
+// through lib/mapping.js's canonical table; only a CONFIRMED entry with a
+// real, currently-discovered device behind it ever produces an overlay
+// entry (see lib/telemetry.js's resolvePhysicalOverlay). With zero
+// CONFIRMED mappings (this repo's own state -- no authoritative CAD-to-IMS
+// evidence source exists yet), this route always answers an empty overlay.
+app.get('/api/physical-overlay', async (req, res) => {
+  try {
+    const list = catalogue();
+    const floorId = requestedFloor(req, list);
+    if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+    const geometry = loadPrivateGeometry(floorId);
+    const assetIds = geometry && Array.isArray(geometry.equipment)
+      ? geometry.equipment.map((e) => e && e.id).filter((id) => typeof id === 'string')
+      : [];
+    const mappingByAssetId = loadPrivateAssetMapping(floorId);
+
+    // Only a CONFIRMED entry whose device is one this deployment actually
+    // discovered may ever be queried -- an asset_id's mapping file cannot
+    // by itself cause an arbitrary string to reach the telemetry query.
+    const confirmedDeviceIds = [];
+    for (const assetId of assetIds) {
+      const identity = mappingLib.resolveMapping(mappingByAssetId, assetId);
+      if (identity.mapping_status !== mappingLib.MappingStatus.CONFIRMED) continue;
+      if (typeof identity.ims_device_id === 'string' && DEVICE_IDS.includes(identity.ims_device_id)) {
+        confirmedDeviceIds.push(identity.ims_device_id);
+      }
+    }
+
+    const deviceRows = await queryDeviceState([...new Set(confirmedDeviceIds)]);
+    const telemetryByDeviceId = new Map();
+    for (const row of deviceRows) {
+      const t = telemetry.projectDeviceTelemetry(row);
+      if (t) telemetryByDeviceId.set(t.device_id, t);
+    }
+
+    const from = typeof req.query.from === 'string' ? req.query.from : 'now-6h';
+    const to = typeof req.query.to === 'string' ? req.query.to : 'now';
+    const { overlayByAssetId, counts } = telemetry.resolvePhysicalOverlay(
+      assetIds, mappingByAssetId, telemetryByDeviceId, { from, to }
+    );
+
+    res.status(200).json({
+      floor: floorId,
+      overlay: overlayByAssetId,
+      counts,
+      queried_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-16: the exact/nearest telemetry correlation, inlined from
+// public.v_ldi_alarm_context's own LATERAL sub-select (053/057/058/062/063
+// -- see lib/alarm.js's header for the full history) rather than FROM'd
+// directly, because that view does not expose logid, which the lifecycle
+// join below needs and which this endpoint's own alarm_id field is. This
+// is the SAME two-tier rule the view already encodes -- 'exact' on
+// related_log_id when present, 'nearest' prior row for the same equipment
+// within 5 minutes only when related_log_id is null -- never a new or
+// looser one. match_type is null only when NEITHER branch found a row.
+//
+// EXPLAIN ANALYZE showed this LATERAL is an inherently per-row cost
+// against the ldi_data hypertable (log_id is not the partitioning column,
+// so even an exact-match lookup considers every chunk) -- ~1.9s to
+// correlate all 2,533 currently-unresolved alarms (no operator ack/
+// resolve write-path exists yet, migration 077's own note, so "not
+// RESOLVED" today means nearly every alarm ever fired). Adding a covering
+// index would be the real fix but is out of scope (no DB schema changes,
+// this task's own standing rule).
+//
+// The actual fix that IS in scope: this correlation is only ever KEPT for
+// an alarm whose device has a CONFIRMED physical mapping (lib/alarm.js's
+// buildAlarmEvent nulls it out for every other identity state) -- with
+// today's 0 confirmed mappings, every one of those 1.9s was spent
+// computing a value that gets thrown away 100% of the time. So the LIST
+// query below does NOT run this CTE at all; queryAlarmRCA() resolves
+// identity FIRST (cheap, in-memory) and runs this correlation only for
+// the handful of rows (today: zero) whose device is actually eligible.
+const ALARM_RCA_CTE = `
+WITH ctx AS (
+  SELECT
+    a.logid, a.logdate, a.errorcode, a.equipmentid, a.related_log_id,
+    m.severity, m.alarm_msg,
+    c.category,
+    l.status AS lifecycle_status, l.resolved_at,
+    -- a.factory (ldi_alarm_log's own column) can be stale/wrong for a
+    -- machine -- same fallback the Alarm Console dashboard already uses,
+    -- preferring the matched ldi_data row and only falling back when the
+    -- correlation itself found nothing.
+    COALESCE(ev.factory, a.factory) AS factory,
+    -- FT-17.6: mo travels with the same already-joined correlation row --
+    -- free (no extra query), and is the Machine Snapshot dashboard's own
+    -- optional var-mo (real default $__all when unset, never required for
+    -- a panel to show data -- unlike clicked_series/log_id/event_time_ms).
+    ev.mo,
+    ev.process, ev.temperature, ev.humidity, ev.air_vacuum,
+    ev.scan_speed, ev.resist_dosage, ev.pe_1, ev.je_1, ev.match_type
+  FROM public.ldi_alarm_log a
+  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
+  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT
+  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid
+  LEFT JOIN LATERAL (
+    SELECT d1.factory, d1.mo, d1.process, d1.temperature, d1.humidity, d1.air_vacuum,
+           d1.scan_speed, d1.resist_dosage, d1.pe_1, d1.je_1, 'exact'::text AS match_type
+    FROM public.ldi_data d1
+    WHERE d1.log_id = a.related_log_id
+    UNION ALL
+    (SELECT d2.factory, d2.mo, d2.process, d2.temperature, d2.humidity, d2.air_vacuum,
+            d2.scan_speed, d2.resist_dosage, d2.pe_1, d2.je_1, 'nearest'::text AS match_type
+     FROM public.ldi_data d2
+     WHERE a.related_log_id IS NULL AND d2.eqp_id = a.equipmentid
+       AND d2."time" <= a.logdate AND d2."time" >= a.logdate - INTERVAL '5 minutes'
+     ORDER BY d2."time" DESC LIMIT 1)
+    LIMIT 1
+  ) ev ON true
+  WHERE a.logid = $1 AND a.logdate = $2
+)`;
+
+// The cheap list shape (no LATERAL correlation) now lives inline in
+// queryAlarmHistory() below, whose WHERE clause is built per-request from
+// FT-17's own device_id/alarm_code/severity/from/to/state filters --
+// same shape, same Alarm-Console-dashboard lineage, same 100-row cap and
+// 24h default bound (see queryAlarmHistory's own comment), just no
+// longer a fixed template now that it has real filters to honor.
+
+// One specific alarm, active or not, WITH its exact/nearest correlation --
+// a resolved alarm's RCA context must stay reachable (test #13, "cleared
+// alarm"), the list above just does not surface it by default, and this
+// route never gains the 24h bound: an old alarm's RCA context must stay
+// reachable regardless of age.
+const ALARM_RCA_ONE_SQL = `${ALARM_RCA_CTE}
+SELECT * FROM ctx`;
+
+// A bounded window of real telemetry rows around an event -- separate from
+// and never a replacement for the exact/nearest row above. Only ever
+// queried for a single alarm's own detail view (never for the list), and
+// only when the caller explicitly asks (?context=1) -- this is real extra
+// DB work, not something every alarm refresh should pay for.
+const ALARM_CONTEXT_WINDOW_SQL = `
+(SELECT * FROM public.ldi_data WHERE eqp_id = $1 AND "time" <= $2 ORDER BY "time" DESC LIMIT $3)
+UNION ALL
+(SELECT * FROM public.ldi_data WHERE eqp_id = $1 AND "time" > $2 ORDER BY "time" ASC LIMIT $3)
+ORDER BY "time" ASC`;
+
+function rcaRowToExactEvent(row) {
+  if (!row || row.match_type == null) return null;
+  return {
+    resolution: alarmLib.resolveEventType(row.match_type),
+    factory: row.factory ?? null,
+    process: row.process ?? null,
+    temperature: row.temperature ?? null,
+    humidity: row.humidity ?? null,
+    air_vacuum: row.air_vacuum ?? null,
+    scan_speed: row.scan_speed ?? null,
+    resist_dosage: row.resist_dosage ?? null,
+    pe_1: row.pe_1 ?? null,
+    je_1: row.je_1 ?? null,
+  };
+}
+
+// FT-16 perf: identity is resolved BEFORE ever considering the expensive
+// exact/nearest correlation, and that correlation is queried only for a
+// row whose device is actually eligible -- see ALARM_RCA_CTE's own
+// comment for the measured cost this avoids. With this deployment's real
+// mapping table (0 CONFIRMED entries) that second pass runs zero times.
+async function queryAlarmRCA(deviceIds, mappingByAssetId) {
+  return queryAlarmHistory({ deviceIds }, mappingByAssetId);
+}
+
+// FT-17 Phase 6: extends the FT-16 list query with device_id/alarm_code/
+// severity/from/to/state filters, rather than a second endpoint or a
+// second correlation implementation -- same base SQL shape, same
+// eligibility-gated second-pass correlation, same 100-row cap. Any filter
+// left unset falls back to the exact default FT-16 already shipped
+// (severity Critical/Major, last 24h, not RESOLVED) so existing callers
+// (queryAlarmRCA above, the /api/alarm-rca route with no query params)
+// are unaffected.
+async function queryAlarmHistory(filters, mappingByAssetId) {
+  const deviceIds = Array.isArray(filters.deviceIds) ? filters.deviceIds : DEVICE_IDS;
+  if (deviceIds.length === 0) return [];
+
+  const params = [deviceIds];
+  const where = ['a.equipmentid = ANY($1::text[])'];
+
+  if (typeof filters.alarmCode === 'string' && filters.alarmCode) {
+    params.push(filters.alarmCode);
+    where.push(`a.errorcode = $${params.length}`);
+  }
+  if (typeof filters.severity === 'string' && filters.severity) {
+    params.push(filters.severity);
+    where.push(`m.severity = $${params.length}`);
+  } else {
+    where.push(`m.severity IN ('Critical', 'Major')`);
+  }
+  if (Number.isFinite(filters.fromMs)) {
+    params.push(new Date(filters.fromMs).toISOString());
+    where.push(`a.logdate >= $${params.length}`);
+  }
+  if (Number.isFinite(filters.toMs)) {
+    params.push(new Date(filters.toMs).toISOString());
+    where.push(`a.logdate <= $${params.length}`);
+  }
+  if (!Number.isFinite(filters.fromMs) && !Number.isFinite(filters.toMs)) {
+    // No explicit range: the same 24h query-budget bound FT-16 already
+    // measured and fixed (see ALARM_RCA_CTE's own comment) -- an explicit
+    // from/to opts INTO a wider, caller-accepted cost instead.
+    where.push(`a.logdate > NOW() - INTERVAL '24 hours'`);
+  }
+  // 'unresolved' and 'active' are the same real fact in this schema --
+  // migration 077 has no separate lifecycle value for it -- kept as two
+  // accepted spellings because Phase 6 names both.
+  if (filters.state === 'active' || filters.state === 'unresolved') {
+    where.push(`l.status IS DISTINCT FROM 'RESOLVED'`);
+  } else if (filters.state === 'cleared') {
+    where.push(`l.status = 'RESOLVED'`);
+  }
+
+  const sql = `
+SELECT
+  a.logid, a.logdate, a.errorcode, a.equipmentid, a.related_log_id,
+  m.severity, m.alarm_msg, c.category,
+  l.status AS lifecycle_status, l.resolved_at,
+  a.factory
+FROM public.ldi_alarm_log a
+JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
+LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT
+LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid
+WHERE ${where.join(' AND ')}
+ORDER BY (CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END), a.logdate DESC
+LIMIT 100`;
+
+  const result = await pool.query(sql, params);
+  const reverseIndex = alarmLib.reverseIdentityIndex(mappingByAssetId);
+
+  const events = [];
+  for (const row of result.rows) {
+    const identity = alarmLib.identityForDevice(row.equipmentid, reverseIndex);
+    const elig = alarmLib.alarmEligibility(identity.identity_state);
+    let exactEvent = null;
+    let mo = null;
+    let factory = row.factory ?? null; // a.factory, from the cheap base query -- may be stale
+    if (elig.physical_overlay_eligible) {
+      // eslint-disable-next-line no-await-in-loop
+      const correlated = await pool.query(ALARM_RCA_ONE_SQL, [row.logid, row.logdate]);
+      if (correlated.rows.length > 0) {
+        exactEvent = rcaRowToExactEvent(correlated.rows[0]);
+        // mo/factory travel only on the correlated row (the base list
+        // query above never selects mo, and only has ldi_alarm_log's own
+        // possibly-stale factory -- see ALARM_RCA_CTE's own comment on
+        // COALESCE(ev.factory, a.factory)). FT-17.6 found this drifting
+        // live: the base row's factory ("2") disagreed with the
+        // correlated, authoritative one ("3") for the same alarm on the
+        // SAME request -- the drill-down URL must use the one exact_event
+        // itself reports, not silently disagree with it.
+        mo = correlated.rows[0].mo ?? null;
+        factory = correlated.rows[0].factory ?? factory;
+      }
+    }
+    const alarmRow = { ...row, device_id: row.equipmentid, mo, factory };
+    const event = alarmLib.buildAlarmEvent(alarmRow, identity, exactEvent, null, { from: 'now-6h', to: 'now' });
+    if (event) events.push(event);
+  }
+  return events;
+}
+
+app.get('/api/alarm-rca', async (req, res) => {
+  try {
+    const list = catalogue();
+    const floorId = requestedFloor(req, list);
+    if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+    const mappingByAssetId = loadPrivateAssetMapping(floorId);
+
+    if (req.query.logid && req.query.logdate) {
+      const { logid, logdate } = req.query;
+      const single = await pool.query(ALARM_RCA_ONE_SQL, [logid, logdate]);
+      if (single.rows.length === 0) return res.status(404).json({ error: 'not found' });
+      const row = single.rows[0];
+      const reverseIndex = alarmLib.reverseIdentityIndex(mappingByAssetId);
+      const identity = alarmLib.identityForDevice(row.equipmentid, reverseIndex);
+      const elig = alarmLib.alarmEligibility(identity.identity_state);
+
+      let contextWindow = null;
+      // Real extra DB work, and never fabricated as a substitute for a
+      // missing exact event -- only fetched when both the caller asked
+      // AND identity is eligible AND an exact/nearest event actually
+      // resolved (a context window around an unresolved event would
+      // itself be an invented correlation).
+      if (req.query.context === '1' && elig.physical_overlay_eligible && row.match_type != null) {
+        const n = Number(req.query.context_rows) > 0 && Number(req.query.context_rows) <= 20
+          ? Number(req.query.context_rows) : 5;
+        const windowResult = await pool.query(ALARM_CONTEXT_WINDOW_SQL, [row.equipmentid, row.logdate, n]);
+        contextWindow = windowResult.rows.map((r) => ({
+          time: r.time, temperature: r.temperature, humidity: r.humidity,
+          air_vacuum: r.air_vacuum, scan_speed: r.scan_speed, resist_dosage: r.resist_dosage,
+          pe_1: r.pe_1, je_1: r.je_1, state: r.state,
+        }));
+      }
+
+      const alarmRow = { ...row, device_id: row.equipmentid };
+      const event = alarmLib.buildAlarmEvent(
+        alarmRow, identity, rcaRowToExactEvent(row), contextWindow, { from: 'now-6h', to: 'now' },
+      );
+      return res.status(200).json({ alarm: event, queried_at: new Date().toISOString() });
+    }
+
+    // FT-17 Phase 6: device_id/alarm_code/severity/from/to/state are all
+    // optional -- with none supplied this is byte-for-byte the FT-16
+    // default (queryAlarmRCA's own delegation confirms the same query
+    // shape). from/to accept epoch milliseconds, matching the rest of
+    // this service's ms-based conventions (e.g. alarm_logdate_ms).
+    const q = req.query;
+    let requestedDeviceIds = DEVICE_IDS;
+    if (typeof q.device_id === 'string' && q.device_id) {
+      // Only a device this deployment actually discovered may be queried
+      // -- same discipline as /api/physical-overlay's confirmedDeviceIds.
+      requestedDeviceIds = DEVICE_IDS.includes(q.device_id) ? [q.device_id] : [];
+    }
+    const filters = {
+      deviceIds: requestedDeviceIds,
+      alarmCode: typeof q.alarm_code === 'string' ? q.alarm_code : undefined,
+      severity: typeof q.severity === 'string' ? q.severity : undefined,
+      fromMs: q.from !== undefined ? Number(q.from) : undefined,
+      toMs: q.to !== undefined ? Number(q.to) : undefined,
+      state: typeof q.state === 'string' ? q.state : undefined,
+    };
+    if (Number.isFinite(filters.fromMs) || Number.isFinite(filters.toMs)) {
+      const range = analytics.validateRange(
+        Number.isFinite(filters.fromMs) ? filters.fromMs : 0,
+        Number.isFinite(filters.toMs) ? filters.toMs : Date.now(),
+      );
+      if (!range.ok) return res.status(400).json({ error: range.error });
+    }
+
+    const alarms = await queryAlarmHistory(filters, mappingByAssetId);
+    res.status(200).json({
+      alarms,
+      counts: {
+        total: alarms.length,
+        active: alarms.filter((a) => a.active).length,
+        physicalOverlayEligible: alarms.filter((a) => a.physical_overlay_eligible).length,
+        exactEvent: alarms.filter((a) => a.exact_event && a.exact_event.resolution === 'exact').length,
+        // exact_event is null both when ineligible (never queried into the
+        // response) and when eligible-but-genuinely-unresolved (the
+        // exact/nearest correlation found nothing) -- the eligibility
+        // check first is what disambiguates the two.
+        unresolvedEvent: alarms.filter((a) => a.physical_overlay_eligible && !a.exact_event).length,
+      },
+      queried_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-17 Phase 5: the one canonical historical telemetry endpoint. Reuses
+// the EXISTING tiering contract (migrations 043/044, docs/architecture/
+// GRAFANA_DESIGN_SYSTEM.md §10, enforced for dashboards by tests/lint/
+// query-budget-linter.js) via lib/analytics.js's tierForRange() -- never
+// a fresh range-scan against raw ldi_data. min/max/median/p95/stddev
+// exist nowhere but raw ldi_data (no CAGG tier stores them), so they are
+// only ever computed for a request whose own span already resolves to
+// the 1-minute tier (<= 6h) -- the same "short window against raw" shape
+// this codebase's own Cpk/StdDev panels already use, never approximated
+// from an averaged tier.
+app.get('/api/telemetry-history', async (req, res) => {
+  try {
+    const { device_id: deviceId, metric } = req.query;
+
+    if (typeof deviceId !== 'string' || !DEVICE_IDS.includes(deviceId)) {
+      return res.status(404).json({ error: 'device not found' });
+    }
+    if (!analytics.isValidMetric(metric)) {
+      return res.status(400).json({ error: 'invalid metric', valid_metrics: analytics.AVG_METRICS });
+    }
+
+    let fromMs;
+    let toMs;
+    if (typeof req.query.range === 'string') {
+      const spanMs = analytics.rangeToMs(req.query.range);
+      if (spanMs === null) {
+        return res.status(400).json({ error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES });
+      }
+      toMs = Date.now();
+      fromMs = toMs - spanMs;
+    } else {
+      fromMs = Number(req.query.from);
+      toMs = Number(req.query.to);
+    }
+    const validated = analytics.validateRange(fromMs, toMs);
+    if (!validated.ok) return res.status(400).json({ error: validated.error });
+
+    const tier = analytics.tierForRange(validated.spanMs);
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+
+    const trendResult = await pool.query(
+      `SELECT bucket, avg_${metric} AS value, sample_count
+       FROM public.${tier}
+       WHERE eqp_id = $1 AND bucket >= $2 AND bucket <= $3
+       ORDER BY bucket ASC`,
+      [deviceId, from, to],
+    );
+    const points = trendResult.rows.map((row) => analytics.projectTrendPoint(row, true));
+
+    let totalSamples = 0;
+    let weightedSum = 0;
+    let firstTimestamp = null;
+    let lastTimestamp = null;
+    for (const p of points) {
+      if (p.value !== null) { weightedSum += p.value * p.sample_count; totalSamples += p.sample_count; }
+      if (firstTimestamp === null) firstTimestamp = p.timestamp;
+      lastTimestamp = p.timestamp;
+    }
+
+    const extendedAvailable = analytics.extendedStatsAvailable(validated.spanMs);
+    let extended = {
+      min: null, max: null, median: null, p95: null, stddev: null,
+      quality: analytics.Quality.UNAVAILABLE,
+    };
+    if (extendedAvailable) {
+      const statsResult = await pool.query(
+        `SELECT MIN(${metric}) AS min, MAX(${metric}) AS max,
+                PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${metric}) AS median,
+                PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY ${metric}) AS p95,
+                STDDEV_SAMP(${metric}) AS stddev,
+                COUNT(${metric}) AS n
+         FROM public.ldi_data
+         WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3`,
+        [deviceId, from, to],
+      );
+      const s = statsResult.rows[0];
+      const n = Number(s.n) || 0;
+      extended = {
+        min: n > 0 ? Number(s.min) : null,
+        max: n > 0 ? Number(s.max) : null,
+        median: n > 0 ? Number(s.median) : null,
+        p95: n > 0 ? Number(s.p95) : null,
+        stddev: n > 1 ? Number(s.stddev) : null, // STDDEV_SAMP is undefined for n<=1
+        quality: analytics.classifyQuality({ metricSupported: true, sampleCount: n, minSamplesForValid: 2 }),
+      };
+    }
+
+    res.status(200).json({
+      device_id: deviceId,
+      metric,
+      from,
+      to,
+      tier,
+      points,
+      summary: {
+        avg: totalSamples > 0 ? weightedSum / totalSamples : null,
+        sample_count: totalSamples,
+        first_timestamp: firstTimestamp,
+        last_timestamp: lastTimestamp,
+        ...extended,
+      },
+      queried_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-21 — process stability (Cpk/EWMA/CUSUM/Nelson rules/drift velocity),
+// lib/spc.js. SPC needs the true individual-sample sequence, never an
+// AVG-of-AVG bucket -- exactly the same "raw ldi_data only, <= 6h" rule
+// analytics.extendedStatsAvailable() already enforces for min/max/median/
+// p95/stddev above, reused verbatim rather than a second boundary.
+//
+// PE_SAMPLE_LIMIT/OTHER_SAMPLE_LIMIT bound the raw scan the same way the
+// query-budget contract bounds every other range-scan in this service.
+const SPC_ROW_LIMIT = 5000;
+
+// Validates device_id/metric/range the same way for every SPC-family
+// endpoint (/api/spc, /api/predictive) -- one validation path, not two that
+// could silently drift apart. Returns {error: {status, body}} or {fromMs,
+// toMs}.
+function validateSpcRequest(req) {
+  const { device_id: deviceId, metric } = req.query;
+  if (typeof deviceId !== 'string' || !DEVICE_IDS.includes(deviceId)) {
+    return { error: { status: 404, body: { error: 'device not found' } } };
+  }
+  if (!spc.isValidSpcMetric(metric)) {
+    return { error: { status: 400, body: { error: 'invalid metric', valid_metrics: [...spc.SPC_COMPOSITE_METRICS, ...analytics.AVG_METRICS] } } };
+  }
+  let fromMs;
+  let toMs;
+  if (typeof req.query.range === 'string') {
+    const spanMs = analytics.rangeToMs(req.query.range);
+    if (spanMs === null) {
+      return { error: { status: 400, body: { error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES } } };
+    }
+    toMs = Date.now();
+    fromMs = toMs - spanMs;
+  } else {
+    fromMs = Number(req.query.from);
+    toMs = Number(req.query.to);
+  }
+  const validated = analytics.validateRange(fromMs, toMs);
+  if (!validated.ok) return { error: { status: 400, body: { error: validated.error } } };
+  if (!analytics.extendedStatsAvailable(validated.spanMs)) {
+    return {
+      error: {
+        status: 400,
+        body: {
+          error: 'SPC requires individual raw samples; only ranges of 6 hours or less are supported (the same raw-data boundary this service already uses for min/max/median/p95/stddev)',
+          max_supported_range: '6h',
+        },
+      },
+    };
+  }
+  return { deviceId, metric, fromMs, toMs };
+}
+
+// FT-21 — process stability (Cpk/EWMA/CUSUM/Nelson rules/drift velocity),
+// lib/spc.js. SPC needs the true individual-sample sequence, never an
+// AVG-of-AVG bucket -- exactly the same "raw ldi_data only, <= 6h" rule
+// analytics.extendedStatsAvailable() already enforces for min/max/median/
+// p95/stddev above, reused verbatim rather than a second boundary.
+//
+// FT-22 — pulled the raw-scan + reshape into fetchSpcSeries() below so
+// /api/spc and the new /api/predictive run the EXACT same query and the
+// exact same per-row shaping; nothing here is a second, parallel read of
+// ldi_data that could silently disagree with the other.
+/**
+ * @returns {Promise<{pooledValues:number[], seriesValues:number[], seriesTimestampsMs:number[], tolerance:number, rows:{tMs:number,values:number[],tolerance:number}[], isComposite:boolean, baselineDefinition:string, rowLimitHit:boolean}>}
+ */
+async function fetchSpcSeries(deviceId, metric, fromMs, toMs) {
+  const from = new Date(fromMs).toISOString();
+  const to = new Date(toMs).toISOString();
+  const isComposite = spc.SPC_COMPOSITE_METRICS.includes(metric);
+
+  let pooledValues; // every individual reading, for Cpk (order doesn't matter)
+  let seriesValues; // one value per row/timestamp, for EWMA/CUSUM/Nelson/drift
+  let seriesTimestampsMs;
+  let rows; // per-row detail (FT-22 capability trajectory needs each row's own values+tolerance, not just the flattened pool)
+  let tolerance = NaN;
+
+  // FT-23 Phase 4: factory/mo/log_id/process travel on every row now, not
+  // just time+metric columns -- real, unambiguous fields straight off
+  // ldi_data (this device_id is already a confirmed real IMS device, no
+  // CAD-to-IMS mapping ambiguity involved), so a predictive finding's
+  // drill-down link and RCA correlation are built from an EXACT row, never
+  // approximated or invented (see lib/predictive.js's selectEvidenceEvent).
+  if (isComposite) {
+    const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
+    const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
+    const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
+    const result = await pool.query(
+      `SELECT "time", ${columns.join(', ')}, ${toleranceColumn}, factory, mo, process, log_id
+       FROM public.ldi_data
+       WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
+       ORDER BY "time" ASC
+       LIMIT $4`,
+      [deviceId, from, to, SPC_ROW_LIMIT],
+    );
+    pooledValues = [];
+    seriesValues = [];
+    seriesTimestampsMs = [];
+    rows = [];
+    const tolerances = [];
+    for (const row of result.rows) {
+      const rowValues = columns.map((c) => Number(row[c])).filter((v) => Number.isFinite(v));
+      if (rowValues.length === 0) continue;
+      pooledValues.push(...rowValues);
+      // The X-bar convention: each row/board event is one SUBGROUP, its
+      // own PE/JE readings averaged into ONE point on the time series --
+      // classical SPC subgrouping, not an arbitrary shortcut. Cpk itself
+      // (above) still pools every individual reading, matching the
+      // existing dashboard panels exactly.
+      seriesValues.push(spc.mean(rowValues));
+      const tMs = new Date(row.time).getTime();
+      seriesTimestampsMs.push(tMs);
+      const t = Number(row[toleranceColumn]);
+      if (Number.isFinite(t)) tolerances.push(t);
+      rows.push({
+        tMs, values: rowValues, tolerance: Number.isFinite(t) ? t : NaN,
+        factory: row.factory ?? null, mo: row.mo ?? null, process: row.process ?? null, logId: row.log_id ?? null,
+      });
+    }
+    tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
+  } else {
+    const result = await pool.query(
+      `SELECT "time", ${metric} AS value, factory, mo, process, log_id
+       FROM public.ldi_data
+       WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND ${metric} IS NOT NULL
+       ORDER BY "time" ASC
+       LIMIT $4`,
+      [deviceId, from, to, SPC_ROW_LIMIT],
+    );
+    seriesValues = result.rows.map((r) => Number(r.value));
+    seriesTimestampsMs = result.rows.map((r) => new Date(r.time).getTime());
+    pooledValues = seriesValues;
+    // No tolerance/spec-limit column exists for a general process metric
+    // in this schema -- Cpk stays UNAVAILABLE rather than inventing one.
+    tolerance = NaN;
+    rows = result.rows.map((r, i) => ({
+      tMs: seriesTimestampsMs[i], values: [seriesValues[i]], tolerance: NaN,
+      factory: r.factory ?? null, mo: r.mo ?? null, process: r.process ?? null, logId: r.log_id ?? null,
+    }));
+  }
+
+  const baselineDefinition = isComposite
+    ? `pooled mean/STDDEV_SAMP of every ${metric === 'PE' ? 'PE1-6' : 'JE1-4'} reading in this window; tolerance = AVG(${metric === 'PE' ? 'pe_setting' : 'je_setting'}) over the same window`
+    : `mean/STDDEV_SAMP of ${metric} readings in this window; no tolerance column exists for this metric, Cpk is UNAVAILABLE`;
+
+  return { pooledValues, seriesValues, seriesTimestampsMs, rows, tolerance, isComposite, baselineDefinition, rowLimitHit: seriesValues.length >= SPC_ROW_LIMIT };
+}
+
+app.get('/api/spc', async (req, res) => {
+  try {
+    const validated = validateSpcRequest(req);
+    if (validated.error) return res.status(validated.error.status).json(validated.error.body);
+    const { deviceId, metric, fromMs, toMs } = validated;
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+
+    const { pooledValues, seriesValues, seriesTimestampsMs, tolerance, baselineDefinition, rowLimitHit } = await fetchSpcSeries(deviceId, metric, fromMs, toMs);
+
+    const cpk = spc.computeCpk({ values: pooledValues, tolerance });
+    const ewma = spc.computeEwma({ values: seriesValues });
+    const cusum = spc.computeCusum({ values: seriesValues });
+    const nelson = ewma.quality === analytics.Quality.INSUFFICIENT_DATA
+      ? []
+      : spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
+    const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
+
+    res.status(200).json({
+      device_id: deviceId,
+      metric,
+      from,
+      to,
+      baseline_definition: baselineDefinition,
+      sample_count: seriesValues.length,
+      last_valid_sample: seriesTimestampsMs.length > 0
+        ? new Date(seriesTimestampsMs[seriesTimestampsMs.length - 1]).toISOString() : null,
+      row_limit_hit: rowLimitHit,
+      cpk,
+      ewma: { target: ewma.target, sigma: ewma.sigma, quality: ewma.quality, reason: ewma.reason, points: ewma.points },
+      cusum: { target: cusum.target, sigma: cusum.sigma, k: cusum.k, h: cusum.h, quality: cusum.quality, reason: cusum.reason, points: cusum.points },
+      nelson_violations: nelson,
+      drift,
+      queried_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-22 — predictive process intelligence, lib/predictive.js. Reuses
+// fetchSpcSeries() (the SAME query /api/spc runs) and every lib/spc.js
+// primitive already verified above -- see lib/predictive.js's own header
+// for why this is a synthesis of existing evidence, not a new statistics
+// engine or a second Cpk definition.
+app.get('/api/predictive', async (req, res) => {
+  try {
+    const validated = validateSpcRequest(req);
+    if (validated.error) return res.status(validated.error.status).json(validated.error.body);
+    const { deviceId, metric, fromMs, toMs } = validated;
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+
+    const { pooledValues, seriesValues, seriesTimestampsMs, rows, tolerance, baselineDefinition, rowLimitHit } = await fetchSpcSeries(deviceId, metric, fromMs, toMs);
+
+    const cpk = spc.computeCpk({ values: pooledValues, tolerance });
+    const ewma = spc.computeEwma({ values: seriesValues });
+    const cusum = spc.computeCusum({ values: seriesValues });
+    const nelson = ewma.quality === analytics.Quality.INSUFFICIENT_DATA
+      ? []
+      : spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
+    const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
+    const lastValidSampleMs = seriesTimestampsMs.length > 0 ? seriesTimestampsMs[seriesTimestampsMs.length - 1] : null;
+
+    const response = predictive.buildCanonicalResponse({
+      deviceId, metric, from, to, baselineDefinition,
+      rangeLabel: typeof req.query.range === 'string' ? req.query.range : 'custom range',
+      sampleCount: seriesValues.length, lastValidSampleMs, rowLimitHit,
+      cpk, ewma, cusum, nelson, drift, rows, fromMs, toMs, tolerance,
+    });
+
+    // FT-23 Phase 4: real alarm/RCA correlation for the SAME device+window,
+    // via the SAME queryAlarmHistory() the existing /api/alarm-rca route
+    // already uses -- not a second alarm-lookup implementation. Capped to
+    // 3 for the response; eligibility-gated exact_event/drill_down_url on
+    // each entry are already handled inside that pipeline.
+    try {
+      const list = catalogue();
+      const floorId = requestedFloor(req, list);
+      const mappingByAssetId = floorId === null ? {} : loadPrivateAssetMapping(floorId);
+      const relatedAlarms = await queryAlarmHistory({ deviceIds: [deviceId], fromMs, toMs }, mappingByAssetId);
+      response.action.related_alarms = relatedAlarms.slice(0, 3);
+    } catch (alarmErr) {
+      // A failed alarm correlation must never take down the predictive
+      // response itself -- report it as unavailable, not as a 500.
+      console.error('predictive alarm correlation failed (non-fatal):', alarmErr.message);
+      response.action.related_alarms = [];
+    }
+
+    res.status(200).json(response);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-22 — fleet-wide risk ranking. Composite metrics only (PE/JE) --
+// the only ones with a real tolerance column, so the only ones a Cpk-based
+// risk verdict can mean anything for. ONE query across every device
+// (window function partitioned per eqp_id, not a per-device round trip) --
+// bounded per-device row count, same query-budget discipline as everywhere
+// else in this service.
+const PREDICTIVE_FLEET_PER_DEVICE_LIMIT = 2000;
+// FT-23 Phase 8: real measurement (see PREDICTIVE_PERFORMANCE.md) found
+// running this scan TWICE in parallel (PE+JE, for executive-summary) at
+// the full per-device row depth cost ~100-160ms at a 6h range -- over the
+// <100ms target. The executive view is a fleet-wide overview, not the
+// per-device deep-dive panel, so it does not need the same row depth: a
+// smaller, still-real, still-bounded limit cuts query cost roughly
+// proportionally without changing risk-ranking's own existing, tested
+// 2000-row behavior.
+const EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT = 300;
+
+// FT-23 — pulled the query + per-device computation out of the
+// risk-ranking route so /api/predictive/risk-ranking and the new
+// /api/predictive/executive-summary run the EXACT same fleet scan (same
+// SQL shape, same per-device math), just at a caller-chosen row depth, not
+// two implementations that could disagree. Returns the ranking entries
+// (unsorted) plus how many devices reported data.
+async function runFleetRiskScan(metric, fromMs, toMs, perDeviceLimit = PREDICTIVE_FLEET_PER_DEVICE_LIMIT) {
+  const from = new Date(fromMs).toISOString();
+  const to = new Date(toMs).toISOString();
+  const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
+  const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
+  const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
+  // FT-24 Phase 3/8: an EARLIER version of this query added factory/process
+  // to every row of the main scan so the Command Center could show
+  // "machine / process" -- real measurement (DECISION_UX_VALIDATION.md's
+  // FT-24 addendum) found this pushed executive-summary's sustained p95
+  // back over 100ms (more bytes per row, times up to perDeviceLimit rows,
+  // times every device, times 2 metrics). factory/process is a display
+  // fact that only needs ONE value per device (the most recent), not a
+  // copy on every one of up to `perDeviceLimit` rows -- moved to its own
+  // tiny DISTINCT ON query below (bounded to <= DEVICE_IDS.length rows)
+  // instead of bloating the heavy per-sample scan.
+  const [result, latestMetaResult] = await Promise.all([
+    pool.query(
+      `SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn} FROM (
+         SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn},
+                ROW_NUMBER() OVER (PARTITION BY eqp_id ORDER BY "time" DESC) AS rn
+         FROM public.ldi_data
+         WHERE eqp_id = ANY($1) AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
+       ) sub WHERE rn <= $4
+       ORDER BY eqp_id ASC, "time" ASC`,
+      [DEVICE_IDS, from, to, perDeviceLimit],
+    ),
+    pool.query(
+      `SELECT DISTINCT ON (eqp_id) eqp_id, factory, process
+       FROM public.ldi_data
+       WHERE eqp_id = ANY($1) AND "time" >= $2 AND "time" <= $3
+       ORDER BY eqp_id, "time" DESC`,
+      [DEVICE_IDS, from, to],
+    ),
+  ]);
+  const latestMetaByDevice = new Map(latestMetaResult.rows.map((r) => [r.eqp_id, { factory: r.factory ?? null, process: r.process ?? null }]));
+
+  const byDevice = new Map();
+  for (const row of result.rows) {
+    if (!byDevice.has(row.eqp_id)) byDevice.set(row.eqp_id, []);
+    const rowValues = columns.map((c) => Number(row[c])).filter((v) => Number.isFinite(v));
+    if (rowValues.length === 0) continue;
+    const t = Number(row[toleranceColumn]);
+    byDevice.get(row.eqp_id).push({ tMs: new Date(row.time).getTime(), values: rowValues, tolerance: Number.isFinite(t) ? t : NaN });
+  }
+
+  const rankings = [];
+  for (const [deviceId, rows] of byDevice.entries()) {
+    const pooledValues = rows.flatMap((r) => r.values);
+    const seriesValues = rows.map((r) => spc.mean(r.values));
+    const seriesTimestampsMs = rows.map((r) => r.tMs);
+    const tolerances = rows.map((r) => r.tolerance).filter((t) => Number.isFinite(t));
+    const tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
+
+    const cpk = spc.computeCpk({ values: pooledValues, tolerance });
+    const ewma = spc.computeEwma({ values: seriesValues });
+    const cusum = spc.computeCusum({ values: seriesValues });
+    const nelson = ewma.quality === analytics.Quality.INSUFFICIENT_DATA
+      ? [] : spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
+    const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
+    const trajectory = predictive.computeCapabilityTrajectory({ rows, fromMs, toMs });
+    const driftIntel = predictive.computeDriftIntelligence({ ewma, cusum, nelson, drift });
+    const mixedBaseline = predictive.computeMixedBaselineSignal({ seriesValues, seriesTimestampsMs, nelson, cusum });
+    const risk = predictive.assessRisk({ cpk, trajectoryClassification: trajectory.classification, driftIntel, mixedBaseline, nelsonViolationCount: nelson.length });
+
+    const lastRow = rows[rows.length - 1];
+    const meta = latestMetaByDevice.get(deviceId);
+    rankings.push({
+      device_id: deviceId, metric, sample_count: seriesValues.length, cpk_state: cpk.state, cpk: cpk.cpk,
+      sample_quality: cpk.quality,
+      trajectory: trajectory.classification, risk: risk.level, evidence: risk.evidence,
+      drift: { direction: driftIntel.direction, velocity_per_hour: driftIntel.velocity_per_hour, persistence: driftIntel.persistence },
+      // FT-24 Phase 3: "machine / process" + a real next-action for the
+      // Command Center's own risk cards -- the SAME OCAP text
+      // decision_summary already uses (lib/predictive.js's own single
+      // authoritative copy), not a second recommendation. factory/process
+      // come from the small DISTINCT ON query above, not from `rows`.
+      factory: meta ? meta.factory : null,
+      process: meta ? meta.process : null,
+      last_valid_sample: lastRow ? new Date(lastRow.tMs).toISOString() : null,
+      next_action: predictive.buildNextActionText(cpk.state, risk.level),
+      mixed_baseline_detected: mixedBaseline.heterogeneity_detected,
+    });
+  }
+  return { rankings, devicesScanned: byDevice.size };
+}
+
+app.get('/api/predictive/risk-ranking', async (req, res) => {
+  try {
+    const { metric } = req.query;
+    if (!spc.SPC_COMPOSITE_METRICS.includes(metric)) {
+      return res.status(400).json({ error: 'invalid metric', valid_metrics: spc.SPC_COMPOSITE_METRICS });
+    }
+    let fromMs;
+    let toMs;
+    if (typeof req.query.range === 'string') {
+      const spanMs = analytics.rangeToMs(req.query.range);
+      if (spanMs === null) return res.status(400).json({ error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES });
+      toMs = Date.now();
+      fromMs = toMs - spanMs;
+    } else {
+      fromMs = Number(req.query.from);
+      toMs = Number(req.query.to);
+    }
+    const validated = analytics.validateRange(fromMs, toMs);
+    if (!validated.ok) return res.status(400).json({ error: validated.error });
+    if (!analytics.extendedStatsAvailable(validated.spanMs)) {
+      return res.status(400).json({ error: 'SPC requires individual raw samples; only ranges of 6 hours or less are supported', max_supported_range: '6h' });
+    }
+
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+    const { rankings, devicesScanned } = await runFleetRiskScan(metric, fromMs, toMs);
+    rankings.sort((a, b) => predictive.RISK_ORDER[b.risk] - predictive.RISK_ORDER[a.risk]);
+
+    res.status(200).json({ metric, from, to, devices_scanned: devicesScanned, per_device_row_limit: PREDICTIVE_FLEET_PER_DEVICE_LIMIT, rankings, queried_at: new Date().toISOString() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-23 Phase 5 — executive summary. Runs the SAME fleet scan as
+// risk-ranking above, once per composite metric (PE, JE -- the only ones a
+// Cpk-based risk verdict means anything for), in parallel, then a pure
+// aggregation (lib/predictive.js's buildExecutiveSummary) -- no new query
+// shape, no fabricated KPI, just counts and top-N over data already
+// computed for the per-device panel and the risk-ranking endpoint.
+app.get('/api/predictive/executive-summary', async (req, res) => {
+  try {
+    let fromMs;
+    let toMs;
+    if (typeof req.query.range === 'string') {
+      const spanMs = analytics.rangeToMs(req.query.range);
+      if (spanMs === null) return res.status(400).json({ error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES });
+      toMs = Date.now();
+      fromMs = toMs - spanMs;
+    } else {
+      fromMs = Number(req.query.from);
+      toMs = Number(req.query.to);
+    }
+    const validated = analytics.validateRange(fromMs, toMs);
+    if (!validated.ok) return res.status(400).json({ error: validated.error });
+    if (!analytics.extendedStatsAvailable(validated.spanMs)) {
+      return res.status(400).json({ error: 'SPC requires individual raw samples; only ranges of 6 hours or less are supported', max_supported_range: '6h' });
+    }
+
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+    const [peResult, jeResult] = await Promise.all([
+      runFleetRiskScan('PE', fromMs, toMs, EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT),
+      runFleetRiskScan('JE', fromMs, toMs, EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT),
+    ]);
+    const allEntries = [...peResult.rankings, ...jeResult.rankings];
+    const summary = predictive.buildExecutiveSummary(allEntries, { range: typeof req.query.range === 'string' ? req.query.range : 'custom range', from, to });
+    summary.per_device_row_limit = EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT;
+    res.status(200).json(summary);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// /api/placement IS GONE. It served a deterministic synthetic grid: one
+// position per monitored device, computed from a zone name and an index, with
+// no relationship to anywhere the device actually stands. The renderer drew
+// those as boxes on the floor.
+//
+// With the floor now read from CAD, an invented position rendered beside a
+// measured one is indistinguishable to the eye -- and the eye is the entire
+// point of a digital twin. The route, its computation and its renderer are
+// deleted rather than disabled, so nothing can quietly reinstate them.
+//
+// A device with no established position is reported as UNMAPPED by
+// /api/floor-geometry's slot layer and listed by /api/state. It is not drawn.
+
+// Anonymous physical-slot geometry -- entirely separate concern from
+// /api/placement above. Returns an empty-but-valid shape when
+// private/floor1-geometry.json is absent (the default state for anyone
+// cloning this public repo), never an error. Merges in
+// floor1-asset-mapping.json's physicalSlotId -> device_id | null
+// separately (per the explicit data-separation requirement: a real
+// mapping can be added/changed without touching geometry) -- every value
+// is null (UNMAPPED) until an authoritative correspondence is supplied;
+// this route never infers or fabricates one from position, numbering, or
+// any other heuristic. A mapped slot's `status` becomes 'IMS_CONNECTED'
+// (its live MachineState comes from /api/state, joined client-side by
+// device_id, same pattern as the real-device layer); every other slot
+// stays 'UNMAPPED' and carries no device_id.
+/**
+ * The deployed-floor catalogue.
+ *
+ * Read on every request rather than cached at boot, because a floor arrives as
+ * a file drop into a read-only bind mount: a restart to notice it would make
+ * the deployment step a redeploy. The directory holds at most five entries and
+ * this is five fs.existsSync calls, so the cost is not worth a cache that can
+ * go stale.
+ */
+function catalogue() {
+  return floors.discover(PRIVATE_DIR);
+}
+
+/**
+ * The floor a request is for.
+ *
+ * No `floor` parameter means the default floor -- the URL every client used
+ * before floors existed still means what it meant. A parameter that names a
+ * deployed floor resolves to the CATALOGUE'S copy of that id, never the
+ * client's string. Anything else resolves to null, and the caller answers 404
+ * rather than quietly substituting a different floor: a view that shows
+ * Floor 1 while its control says Floor 3 is worse than an error.
+ */
+function requestedFloor(req, list) {
+  const raw = req.query ? req.query.floor : undefined;
+  if (raw === undefined || raw === null || raw === '') return floors.defaultFloor(list);
+  return floors.resolve(list, typeof raw === 'string' ? raw : null);
+}
+
+// Which floors this deployment actually has. Ids, ordinals and computed
+// labels only -- nothing here is read from a private document, so the
+// catalogue discloses that a floor is deployed and nothing about what is on
+// it. A client renders its floor selector from this and cannot invent an
+// option the server would refuse.
+app.get('/api/floors', (req, res) => {
+  const list = catalogue();
+  res.status(200).json({
+    floors: list.map((f) => ({
+      id: f.id,
+      ordinal: f.ordinal,
+      label: f.label,
+      has_zones: f.has_zones,
+    })),
+    default: floors.defaultFloor(list),
+  });
+});
+
+/**
+ * Reads private/floorN-raw-cad.json if present -- the drawing's own line-work,
+ * as a reference the reconstructed model can be compared against.
+ *
+ * WHY THIS EXISTS AS A SEPARATE ROUTE. Every other geometry this service serves
+ * has been interpreted: faces paired into walls, fragments merged, corners
+ * closed, labels bound to boundaries. A model checked only against its own
+ * output can be self-consistently wrong, and on this floor one was -- a
+ * mirrored frame passed every check for as long as the checks compared the
+ * model with itself. This carries no interpretation, so a disagreement between
+ * the two is visible instead of theoretical.
+ *
+ * It is a separate route rather than a field on the geometry response because
+ * it is diagnostic: an operator's floor view must not pay for nine thousand
+ * reference segments it never draws.
+ *
+ * Returns null when the document is absent, which is the normal state for a
+ * fresh clone and not an error.
+ */
+function loadPrivateRawCad(floorId) {
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'rawcad');
+  if (!filePath || !fs.existsSync(filePath)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const roles = wire.projectAll(parsed.roles, wire.projectCadRole);
+    if (roles.length === 0) return null;
+    const env = parsed.envelope_mm && typeof parsed.envelope_mm === 'object'
+      ? parsed.envelope_mm : {};
+    const cov = parsed.coverage && typeof parsed.coverage === 'object' ? parsed.coverage : {};
+    const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.trunc(v) : null);
+    return {
+      // Named field by field, like every other private document this service
+      // reads. The source layer names, the disclosure banner and every prose
+      // note in the file stay here.
+      envelope_mm: {
+        width: typeof env.width === 'number' && Number.isFinite(env.width) ? env.width : null,
+        depth: typeof env.depth === 'number' && Number.isFinite(env.depth) ? env.depth : null,
+      },
+      roles,
+      // Coverage is served because the reference is only usable if the reader
+      // knows what it leaves out. Counts only -- no layer is named.
+      coverage: {
+        entities_carried: int(cov.entities_carried),
+        segments: int(cov.segments),
+        entities_excluded_by_layer: int(cov.entities_excluded_by_layer),
+        excluded_layer_count: int(cov.excluded_layer_count),
+        block_references_not_expanded: int(cov.block_references_not_expanded),
+      },
+    };
+  } catch (err) {
+    console.error(`private raw-CAD file present but unusable: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * The raw CAD reference for one floor.
+ *
+ * COORDINATES ARE THE DRAWING'S, NOT THE MODEL'S. Millimetres, +y up, no
+ * reflection -- deliberately NOT the twin's frame. The client applies the
+ * canonical transform itself to overlay this on the model, so that the
+ * transform is exercised on the comparison rather than baked into the thing
+ * being compared with.
+ */
+app.get('/api/floor-raw-cad', (req, res) => {
+  const list = catalogue();
+  const floorId = requestedFloor(req, list);
+  if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+  const raw = loadPrivateRawCad(floorId);
+  if (!raw) {
+    return res.status(200).json({
+      floor: floorId,
+      available: false,
+      envelope_mm: null,
+      roles: [],
+      coverage: null,
+    });
+  }
+  res.status(200).json({
+    floor: floorId,
+    available: true,
+    coordinate_system: 'CAD_MM_Y_UP_FLOOR_LOCAL',
+    envelope_mm: raw.envelope_mm,
+    roles: raw.roles,
+    coverage: raw.coverage,
+  });
+});
+
+app.get('/api/floor-geometry', (req, res) => {
+  // Functional zones live in their own private file and are independent of
+  // floor1-geometry.json -- they are served even when no geometry file
+  // exists, which is the current state on this deployment.
+  const list = catalogue();
+  const floorId = requestedFloor(req, list);
+  // A named floor that is not deployed is not an empty floor. Answering with
+  // the empty shape would say "this floor exists and has nothing on it", which
+  // is a different statement from "there is no such floor here".
+  if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+  const zoneLayer = loadPrivateZones(floorId);
+  const geometry = loadPrivateGeometry(floorId);
+  if (!geometry) {
+    return res.status(200).json({
+      floor: floorId,
+      envelope: null,
+      footprint_polygon: null,
+      grid: null,
+      columns: [],
+      walls: [],
+      wall_lines: [],
+      openings: [],
+      zones: [],
+      equipment: [],
+      functional_zones: zoneLayer.renderable,
+      functional_zones_meta: zoneLayer.meta,
+    });
+  }
+  const mapping = loadPrivateAssetMapping(floorId);
+  // Allowlist at BOTH levels, not just this one. Naming the top-level fields
+  // stopped a whole private document being published by one spread; it did not
+  // stop the level below, where each slot was itself spread. lib/wire rebuilds
+  // every slot, column and zone field by field, so a field added to a private
+  // record cannot reach the browser the moment it is written. It also
+  // normalizes each slot to one wire shape regardless of the private file's own
+  // internal shape, which the renderer relies on.
+  //
+  // footprint_polygon and grid are served again, and the reason they were
+  // withdrawn is the reason they are back: they were removed when nothing
+  // consumed them, because publishing traced outlines no client reads is
+  // disclosure with no purpose. The renderer now draws the building from the
+  // traced outline and the surveyed gridlines instead of from a bounding box
+  // and a decorative helper grid, so they have a consumer and earn their place
+  // on the wire. Both go through the same field-by-field projection as
+  // everything else: vertices and line positions as finite numbers, axis labels
+  // through the token guard, and the traced area, winding note, span dimensions
+  // and provenance prose all left server-side.
+  //
+  // `camera` stays unserved. Nothing reads it, and framing is derived from the
+  // geometry rather than dictated by the private file.
+  res.status(200).json({
+    // The floor this payload describes, echoed from the catalogue rather than
+    // from the request, so a client can tell which floor it actually received.
+    floor: floorId,
+    envelope: wire.projectEnvelope(geometry.envelope),
+    footprint_polygon: wire.projectFootprintPolygon(geometry.footprint_polygon),
+    grid: wire.projectGrid(geometry.grid),
+    columns: wire.projectAll(geometry.columns, wire.projectColumn),
+    walls: wire.projectAll(geometry.walls, wire.projectWall),
+    // The unpaired faces. The renderer has drawn these as flat plan linework
+    // since the wall layer was written, and never received one: the field was
+    // extracted, documented and rendered, but never projected, so two thirds
+    // of the drawing's wall line-work was silently absent from every plan this
+    // service has ever served. They are a WEAKER claim than walls[] and are
+    // shaped to stay that way -- no thickness field, so nothing downstream can
+    // extrude a depth the drawing does not measure.
+    wall_lines: wire.projectAll(geometry.wall_lines, wire.projectWallLine),
+    openings: wire.projectAll(geometry.openings, wire.projectOpening),
+    zones: wire.projectAll(geometry.zones, wire.projectZoneBox),
+    // equipment[] replaces slots[]. slots[] held 243 positions digitised off
+    // the scanned schematic: they were raster measurements presented beside CAD
+    // geometry, and left/right placement, extent and orientation were all the
+    // raster's, not the drawing's. They are no longer served in any form --
+    // deleting the wire path is what makes that irreversible by accident.
+    equipment: wire.projectAll(geometry.equipment, wire.projectEquipment, mapping),
+    functional_zones: zoneLayer.renderable,
+    functional_zones_meta: zoneLayer.meta,
+  });
+});
+
+// Reads private/floor1-schematic.json if present -- the schematic reference
+// transcription. Same convention as every other private loader: missing or
+// malformed is the expected default for a public clone and returns null, never
+// a throw.
+//
+// This document is NOT geometry. It holds drawing coordinates from a source
+// that declares no scale, and it is kept in its own file precisely so that it
+// cannot be confused with, or accidentally merged into, the measured model.
+function loadPrivateSchematic(floorId) {
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'schematic');
+  if (!filePath) return null;
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (err) {
+    console.error(`private schematic file present but unusable: ${err.message}`);
+    return null;
+  }
+}
+
+// The schematic reference layer, served separately from /api/floor-geometry
+// and never mixed into it.
+//
+// Two things make the separation real rather than stated. The route is its own
+// route, so nothing consuming geometry receives schematic coordinates by
+// accident. And the payload names its own space -- coordinate_space is
+// SCHEMATIC_NOT_PHYSICAL -- so a consumer that only ever sees the response
+// still knows these numbers are not metres.
+app.get('/api/floor-schematic', (req, res) => {
+  const list = catalogue();
+  const floorId = requestedFloor(req, list);
+  if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+  res.status(200).json({
+    ...schematic.projectSchematic(loadPrivateSchematic(floorId)),
+    generated_at: new Date().toISOString(),
+  });
+});
+
+// The EAP operational map.
+//
+// This is a different layer from /api/floor-geometry, and the separation is the
+// point. Floor geometry answers "where is the equipment, measured from the
+// drawing"; this answers "what does the operational layout show". The two have
+// different populations -- 331 CAD candidates against 210 operational cells --
+// and blending them is what produced a display that matched neither.
+//
+// lib/eap-map projects the private model field by field. Nothing here builds
+// the payload inline, for the same reason the diagnostics route does not: an
+// object literal at the route is where a private field eventually gets added by
+// accident.
+app.get('/api/eap-map', (req, res) => {
+  const model = eapMap.loadModel(PRIVATE_DIR);
+  if (!model) return res.status(404).json({ error: 'not found' });
+  const payload = eapMap.project(model, eapMap.loadEnvelope(PRIVATE_DIR));
+  if (!payload) return res.status(503).json({ error: 'model unavailable' });
+  res.status(200).json({ ...payload, generated_at: new Date().toISOString() });
+});
+
+// Safe aggregate diagnostics. Deliberately counts and flags only: no
+// coordinate, no identifier, no filesystem path, no process or vendor name
+// ever appears here. A diagnostics endpoint that leaks the data it describes
+// would defeat the boundary the rest of this service maintains.
+//
+// Evidence categories are reported separately and never summed -- a single
+// "objects" figure would say that 242 observed positions and 23 monitored
+// devices are the same kind of claim, which is exactly what this system
+// exists to keep apart.
+app.get('/api/diagnostics', (req, res) => {
+  const t0 = Date.now();
+  const list = catalogue();
+  const floorId = requestedFloor(req, list);
+  if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+  const geometry = loadPrivateGeometry(floorId);
+  const zoneLayer = loadPrivateZones(floorId);
+  const mapping = loadPrivateAssetMapping(floorId);
+  runtimeCounters.geometryLoadMs = Date.now() - t0;
+
+  // Serialization is delegated to lib/diagnostics, which builds the response
+  // field by field and can only emit counts, booleans and fixed enums. This
+  // route deliberately does not assemble the payload itself: an inline object
+  // literal here is exactly where a private field would eventually be added
+  // by accident.
+  res.status(200).json({
+    ...buildDiagnostics({
+      geometry,
+      zoneMeta: zoneLayer.meta,
+      // FT-14: counts real CONFIRMED lifecycle entries, never truthy-device-id
+      // (a CONFLICTING or DEPRECATED record can carry a device id too, and
+      // must not count as confirmed here).
+      confirmedMappings: Object.values(mapping)
+        .filter((r) => r && r.mapping_status === mappingLib.MappingStatus.CONFIRMED).length,
+      runtime: { ...runtimeCounters, uptimeSeconds: Math.floor(process.uptime()) },
+      // Coverage only -- lib/diagnostics reduces this to counts and can emit
+      // no name, label or coordinate from it.
+      schematic: loadPrivateSchematic(floorId),
+    }),
+    generated_at: new Date().toISOString(),
+  });
 });
 
 app.get('/healthz', async (req, res) => {
@@ -316,6 +1839,31 @@ app.get('/healthz', async (req, res) => {
   } catch (err) {
     res.status(503).json({ status: 'db unreachable' });
   }
+});
+
+// Terminal handlers. Express's defaults are wrong for this service in two
+// specific ways, and both are disclosure rather than availability problems:
+//
+//   - the default 404 page echoes the requested path back into the body, which
+//     reflects caller-controlled text and, for a probe like
+//     /private/floor1-geometry.json, quotes a private filename back at whoever
+//     guessed it.
+//   - the default error handler emits err.stack unless NODE_ENV is production.
+//     Relying on an environment variable being set correctly is not a control;
+//     a stack trace names source files, line numbers and the container's
+//     directory layout.
+//
+// Both are replaced with fixed strings that carry nothing from the request.
+app.use((req, res) => {
+  res.status(404).json({ error: 'not found' });
+});
+
+// eslint-disable-next-line no-unused-vars -- Express identifies an error
+// handler by its arity; dropping `next` silently turns this back into ordinary
+// middleware and reinstates the default handler.
+app.use((err, req, res, next) => {
+  console.error(`unhandled request error: ${err && err.message}`);
+  res.status(500).json({ error: 'internal error' });
 });
 
 refreshDevices().then(() => {

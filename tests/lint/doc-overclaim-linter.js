@@ -68,7 +68,11 @@ function isExemptPath(relFile) {
 
 function countJsonFiles(dir) {
   if (!fs.existsSync(dir)) return 0;
-  return fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.json')).length;
+  // ims-sandbox-* files are experimental scratch dashboards, not part of
+  // the product's documented dashboard inventory -- exclude from counts.
+  return fs.readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith('.json') && !e.name.startsWith('ims-sandbox-'))
+    .length;
 }
 
 function getRealDashboardCounts() {

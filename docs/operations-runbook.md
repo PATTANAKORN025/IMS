@@ -182,3 +182,52 @@ Run: `node scripts/production-assurance.js --profile=security`. Read the result 
 ## 16. Escalation criteria
 
 Full severity framework and worked examples: `docs/operations/INCIDENT_RESPONSE.md`. In summary: escalate immediately for anything matching that document's P0/P1 definitions — active data loss, extended production outage, or a confirmed (not merely Trivy-flagged) security exposure. Routine restarts, stale-cache symptoms (section 4), and confirmed-unreachable CVE findings (section 15) do not warrant escalation on their own.
+
+## 17. Factory Twin (3D) troubleshooting
+
+Design background: `docs/architecture/FACTORY_TWIN_ARCHITECTURE.md`. Security boundary: `docs/architecture/FACTORY_TWIN_SECURITY_MODEL.md`.
+
+🟢 Aggregate health, safe to share: `docker exec ims-factory-twin-3d wget -qO- http://localhost:4100/api/diagnostics`. Emits counts, booleans and fixed enums only — no coordinate, identifier, path, process or vendor name — so it can be pasted into a ticket. Watch `requestsFailed`, `geometryParseFailures` and `geometryLoadMs`.
+🟢 Liveness including a database round-trip: `docker exec ims-factory-twin-3d wget -qO- http://localhost:4100/healthz`.
+
+> **This container has no host port, by design.** Reach it via `docker exec` as above, or through the proxy at `/factory-twin-3d/` with a valid Grafana session. Never publish a host port to make an investigation easier — that bypasses the `auth_request` gate the twin's disclosure model depends on.
+
+| Symptom | Likely cause |
+|---|---|
+| 401 on `/factory-twin-3d/` | Expected without a valid Grafana session. The gate is working. Log in first; do not change the middleware. |
+| 502 on `/factory-twin-3d/` after a rebuild | nginx cached the old upstream IP. `docker exec ims-proxy nginx -s reload` once (see section 4). |
+| Scene renders, but empty of structure | No private geometry present. Expected on a fresh clone; the API serves an empty-but-valid shape rather than an error. Confirm the `private/` bind mount is populated on this host. |
+| Building / Overview view buttons disabled | Same cause: the measured envelope has not loaded. |
+| `geometryParseFailures` climbing | A private file is malformed. Treated as absent by design, so the service stays up; the data needs fixing at source. |
+| UI change not visible after editing `public/` | Application code is baked into the image; only `private/` is live-mounted. Rebuild and recreate the service, then reload nginx. |
+| Zone counts moved | Only validated tiers render. A change here means either new evidence or a regression — both warrant a look, neither is fixed by adjusting geometry. |
+
+🟢 Latency, as a histogram rather than a timing log: `runtime.latency_buckets` in the diagnostics response counts requests falling under 10 ms / 50 ms / 100 ms / 500 ms and at or above 500 ms. Bucket names are fixed in code, so nothing a caller sends can add a field. Every diagnostics field's disclosure class is tabulated in `docs/architecture/FACTORY_TWIN_SECURITY_MODEL.md` — classify any new one there before adding it.
+
+### Release criteria
+
+Before shipping a twin change, all of these must hold. None may be waived by lowering an assertion.
+
+| Gate | Where |
+|---|---|
+| Six contract suites green (mapping, MES boundary, geometry mutation, diagnostics, evidence, wire) | pre-commit hook and CI unit job |
+| Geometry validator 0 errors / 0 warnings, or a clean skip where no private data exists | CI lint job |
+| Private-data leak scan 0 matches | CI lint job, first step |
+| Browser regression green at five viewports, with any SKIP reported and read | CI factory-twin job |
+| Failure-mode regression green | CI factory-twin job |
+| Unauthenticated boundary 401 on every twin route | browser regression, proxy mode |
+| Confirmed physical mappings still 0, unless an authoritative record arrived | evidence semantics section of the regression |
+
+A SKIP is not a PASS. If the run reports skipped checks, read why before releasing: the usual reasons are that the environment has no private geometry or no monitored devices, both of which are legitimate — and both of which mean those properties were not verified by that run.
+
+### Rollback
+
+🟡 The twin is stateless and read-only: it writes nothing to the database and nothing to disk. Rolling it back is therefore a container-image operation with no data consequence.
+
+1. Redeploy the previous image and recreate only this service.
+2. Reload the proxy once — nginx caches the upstream address at startup, so a recreated container is otherwise a 502.
+3. Confirm `/healthz` and then the diagnostics counts.
+
+🔴 Do **not** roll back by editing files under `private/`. Those are evidence, not configuration; a geometry change is a data change and belongs to whoever owns the source, not to a deployment.
+
+🔴 Never treat a twin display value as an operational fact about physical equipment. Machine **state** is live telemetry; machine **position** is synthetic, and no slot is confirmed to be any particular machine. See the operator guide before acting on anything seen in this view: `docs/architecture/FACTORY_TWIN_OPERATOR_GUIDE.md`.

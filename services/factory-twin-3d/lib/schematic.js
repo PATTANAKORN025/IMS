@@ -1,0 +1,439 @@
+/**
+ * Schematic reference layer — projection and contract.
+ *
+ * This module serves a SECOND, deliberately separate spatial model: a visual
+ * reconstruction of the manufacturing system's floor schematic. It exists
+ * because that schematic answers a question the measured model cannot -- "what
+ * area is this, and what is running in it" -- while being useless for the
+ * question the measured model answers, namely where anything physically is.
+ *
+ * The separation is the whole point, so it is enforced here rather than left to
+ * discipline:
+ *
+ *   SCHEMATIC COORDINATES ARE NOT PHYSICAL COORDINATES.
+ *
+ * They are drawing coordinates in their own normalized space, from a source
+ * whose title block declares no scale and which contains no structural
+ * gridline. Nothing in this module emits metres, and nothing it emits may be
+ * compared against, registered onto, or merged into the measured model in
+ * lib/wire.js. The two never share a field name for position: the measured
+ * model uses `position.x/y/z`, this one uses `sx/sy`, so a value from one
+ * cannot be silently read as the other.
+ *
+ * What this layer may assert is exactly one class of claim: SCHEMATIC_OBSERVED
+ * -- "this label and this arrangement are visible on the reference render". It
+ * may never assert MEASURED, and it may never produce a confirmed physical or
+ * IMS mapping. An area label here names a region of a drawing, not a region of
+ * a building.
+ *
+ * Serialization follows the same allowlist-by-construction discipline as
+ * lib/wire.js and lib/diagnostics.js: nothing is spread, no unknown key is
+ * iterated, and every emitted value is a finite number, a pattern-checked
+ * token, a shaped display name, or a fixed enum.
+ */
+
+'use strict';
+
+const { token, zoneName, num } = require('./wire');
+
+/**
+ * The only evidence class this layer can express. Written out as a frozen
+ * single-member set rather than a string literal so that adding a second class
+ * is a visible, reviewed act rather than a typo that widens what the schematic
+ * is allowed to claim.
+ */
+const SOURCE_CLASS = Object.freeze({ SCHEMATIC_OBSERVED: 'SCHEMATIC_OBSERVED' });
+const ALLOWED_SOURCE_CLASS = new Set(Object.values(SOURCE_CLASS));
+
+/**
+ * Operational states the reference legend defines. Fixed here, so a snapshot
+ * file cannot introduce a state name and therefore cannot introduce an output
+ * value the renderer has no styling for.
+ */
+const LEGEND_STATES = Object.freeze([
+  { state: 'OFF', label: 'Off' },
+  { state: 'DOWN', label: 'Down' },
+  { state: 'IDLE', label: 'Idle' },
+  { state: 'INITIAL_PM_STOP', label: 'Initial, PM, Stop' },
+  { state: 'RUN', label: 'Run' },
+  { state: 'UNDEFINED', label: 'Undefined' },
+]);
+const ALLOWED_STATE = new Set(LEGEND_STATES.map((s) => s.state));
+
+/** What the drawing says about itself, rather than about the factory. */
+const ALLOWED_ANNOTATION_KIND = new Set(['LEGEND', 'TIMESTAMP', 'DIMENSION', 'NORTH', 'TITLE_BLOCK']);
+
+/** Confidence in a transcription, not in a measurement. */
+const ALLOWED_CONFIDENCE = new Set(['HIGH', 'MEDIUM', 'LOW']);
+
+/**
+ * The normalized schematic space. X spans 0..1000; Y uses the same scale
+ * factor rather than its own, so the reference render's aspect ratio survives
+ * and nothing has to be un-squashed at draw time.
+ *
+ * The bound is generous on Y (the reference is roughly 2:1) and exists to
+ * reject a coordinate that is obviously not in this space -- a stray metre
+ * value, a pixel value, a negative -- rather than to police the drawing.
+ */
+const SCHEMATIC_MAX_X = 1000;
+const SCHEMATIC_MAX_Y = 1000;
+
+/** A point in schematic space, or null. Never a physical position. */
+function point(p) {
+  if (!p || typeof p !== 'object') return null;
+  const sx = num(p.sx);
+  const sy = num(p.sy);
+  if (sx === null || sy === null) return null;
+  if (sx < 0 || sx > SCHEMATIC_MAX_X || sy < 0 || sy > SCHEMATIC_MAX_Y) return null;
+  return { sx, sy };
+}
+
+/**
+ * A closed ring of schematic points.
+ *
+ * One unusable vertex withholds the whole ring, for the same reason a partial
+ * building outline is withheld in lib/wire.js: half a boundary is a different
+ * boundary and still looks like one.
+ */
+function ring(vertices, min = 3) {
+  const raw = Array.isArray(vertices) ? vertices : [];
+  const out = [];
+  for (const v of raw) {
+    const p = point(v);
+    if (!p) return null;
+    out.push(p);
+  }
+  return out.length >= min ? out : null;
+}
+
+function fromEnum(v, allowed) {
+  return typeof v === 'string' && allowed.has(v) ? v : null;
+}
+
+/** Snapshot ids a record may reference, rebuilt rather than echoed. */
+function snapshotRefs(list) {
+  const out = [];
+  for (const v of Array.isArray(list) ? list : []) {
+    const id = token(v);
+    if (id !== null) out.push(id);
+  }
+  return out;
+}
+
+/**
+ * Projects one reference snapshot: a single render of the schematic.
+ *
+ * Two of these exist and they disagree while claiming the same instant, so they
+ * are served as separate snapshots and never merged. `timestamp_observed` is
+ * carried as a token because it is a string read off an image, not a time this
+ * system knows to be true -- it is what the render claims, not when anything
+ * happened.
+ */
+function projectSnapshot(s) {
+  if (!s || typeof s !== 'object') return null;
+  const id = token(s.id);
+  if (id === null) return null;
+  return {
+    id,
+    label: zoneName(s.label),
+    timestamp_observed: token(s.timestamp_observed),
+    source_class: fromEnum(s.source_class, ALLOWED_SOURCE_CLASS),
+    // Free-text notes about a snapshot stay server-side; what a consumer needs
+    // is whether this render conflicts with another, not the prose about it.
+    conflicts_with: snapshotRefs(s.conflicts_with),
+  };
+}
+
+/** Projects the schematic building outline. */
+function projectBoundary(b) {
+  if (!b || typeof b !== 'object') return null;
+  const vertices = ring(b.vertices);
+  if (!vertices) return null;
+  return {
+    vertices,
+    source_class: fromEnum(b.source_class, ALLOWED_SOURCE_CLASS),
+    confidence: fromEnum(b.confidence, ALLOWED_CONFIDENCE),
+  };
+}
+
+/**
+ * Projects one labelled area.
+ *
+ * The name goes through the same display-name guard the measured zones use, so
+ * an area label and a zone label are held to one standard. `id` is separate
+ * from `name` and always present: the id is what anything keys on, the name is
+ * for a human to read.
+ */
+function projectArea(a) {
+  if (!a || typeof a !== 'object') return null;
+  const id = token(a.id);
+  const vertices = ring(a.vertices);
+  if (id === null || !vertices) return null;
+  return {
+    id,
+    name: zoneName(a.name),
+    vertices,
+    label_at: point(a.label_at),
+    source_class: fromEnum(a.source_class, ALLOWED_SOURCE_CLASS),
+    confidence: fromEnum(a.confidence, ALLOWED_CONFIDENCE),
+    observed_in: snapshotRefs(a.observed_in),
+  };
+}
+
+/**
+ * Grouping classes. A bank on this drawing is a PRESENTATION group and nothing
+ * more: the measured slot set is predominantly horizontal, loosely clustered
+ * and largely unzoned, so it does not correspond to these dense vertical banks
+ * and cannot be their source. Saying PRESENTATION rather than inventing an
+ * equipment grouping is the honest description of what this is.
+ */
+const ALLOWED_GROUPING = new Set(['SCHEMATIC_PRESENTATION_GROUP']);
+
+/**
+ * How a bank's rectangle was arrived at. The source images carry no
+ * authoritative machine dimension, so every width and height here is a
+ * presentation value read off a render -- never a measurement, and never
+ * eligible to enter the physical model.
+ */
+const ALLOWED_DIMENSION_CLASS = new Set(['SCHEMATIC_DERIVED']);
+
+/** Counts of drawn cells. Bounded so a malformed record cannot ask for a million rectangles. */
+function count(v, max) {
+  const n = num(v);
+  if (n === null || !Number.isInteger(n) || n < 1 || n > max) return null;
+  return n;
+}
+
+/**
+ * Projects one drawing label.
+ *
+ * `ambiguous` and `variants` exist because the two renders disagree on several
+ * labels by a single glyph -- BVN001 against BYN001, XRY001 against XRN001.
+ * Neither spelling is authoritative, so both are carried and the label is
+ * marked ambiguous rather than silently normalised to whichever reads better.
+ */
+function projectLabel(l) {
+  if (!l || typeof l !== 'object') return null;
+  const text = token(l.text);
+  if (text === null) return null;
+  const variants = [];
+  for (const v of Array.isArray(l.variants) ? l.variants : []) {
+    const t = token(v);
+    if (t !== null) variants.push(t);
+  }
+  return {
+    text,
+    // A drawing label is an observation of ink, never an identity. It is
+    // deliberately its own class so it can never be read as an IMS device id.
+    class: 'SCHEMATIC_OBSERVED_LABEL',
+    ambiguous: l.ambiguous === true,
+    variants,
+  };
+}
+
+/**
+ * Per-cell values, held per snapshot and never merged.
+ *
+ * The two renders disagree about what the cells say while declaring the same
+ * instant. Recording both, each under the snapshot it came from, is not
+ * choosing between them -- it is the only way to keep both readable. A merged
+ * or averaged array would be a reading neither source supports.
+ *
+ * A cell the transcriber could not read confidently is null, which the renderer
+ * shows as unknown. Guessing at a smudged three-digit number would be exactly
+ * the fabrication this whole layer is built to avoid, and a wrong number here
+ * looks identical to a right one.
+ *
+ * The array is positional: index = column * rows + row, matching the order the
+ * renderer lays cells out. A length that does not match the bank's own
+ * columns * rows is refused outright rather than padded, because a
+ * misaligned array silently attributes every value to the wrong cell.
+ */
+function cellValues(raw, expected) {
+  if (!raw || typeof raw !== 'object') return {};
+  const out = {};
+  for (const key of Object.keys(raw)) {
+    const snapshot = token(key);
+    if (snapshot === null) continue;
+    const list = raw[key];
+    if (!Array.isArray(list) || list.length !== expected) continue;
+    out[snapshot] = list.map((v) => (v === null || v === undefined ? null : token(v)));
+  }
+  return out;
+}
+
+/**
+ * Marks which cells the two snapshots disagree about.
+ *
+ * Computed here rather than by the renderer so that every consumer sees the
+ * same answer, and so the comparison is made once against the raw values rather
+ * than against whatever happens to be on screen. Two snapshots that both read
+ * a cell and read it differently is a CONFLICT; one reading it and the other
+ * not is not -- that is simply one transcription being less complete.
+ */
+function cellConflicts(values, expected) {
+  const keys = Object.keys(values);
+  if (keys.length < 2) return [];
+  const out = [];
+  for (let i = 0; i < expected; i++) {
+    const seen = new Set();
+    let readable = 0;
+    for (const k of keys) {
+      const v = values[k][i];
+      if (v !== null && v !== undefined) {
+        seen.add(v);
+        readable++;
+      }
+    }
+    if (readable > 1 && seen.size > 1) out.push(i);
+  }
+  return out;
+}
+
+/**
+ * Projects one equipment bank: a rectangle of cells at a place on the drawing.
+ *
+ * Cells are described by a column and row count rather than transcribed
+ * individually. The renderer lays them out inside the rectangle, which
+ * reproduces the density and arrangement the drawing shows without asserting a
+ * position for each cell that the source does not support.
+ */
+function projectBank(b) {
+  if (!b || typeof b !== 'object') return null;
+  const id = token(b.id);
+  const at = point(b.at);
+  const width = num(b.schematic_width);
+  const height = num(b.schematic_height);
+  const columns = count(b.columns, 64);
+  const rows = count(b.rows, 64);
+  if (id === null || !at || width === null || height === null || columns === null || rows === null) {
+    return null;
+  }
+  if (width <= 0 || height <= 0) return null;
+
+  const labels = [];
+  for (const l of Array.isArray(b.labels) ? b.labels : []) {
+    const projected = projectLabel(l);
+    if (projected !== null) labels.push(projected);
+  }
+
+  const expected = columns * rows;
+  const values = cellValues(b.cell_values, expected);
+
+  return {
+    id,
+    area_id: token(b.area_id),
+    at,
+    // Per snapshot, never merged. An absent snapshot key means that render was
+    // not transcribed for this bank; a null entry means that cell could not be
+    // read confidently.
+    cell_values: values,
+    // Indices where two snapshots both read a cell and read it differently.
+    cell_conflicts: cellConflicts(values, expected),
+    // Named schematic_* rather than width/height so that a value from here
+    // reads wrong the moment anyone puts it near the measured model.
+    schematic_width: width,
+    schematic_height: height,
+    columns,
+    rows,
+    orientation: fromEnum(b.orientation, ALLOWED_ORIENTATION),
+    // How the drawing sets this bank's label. Several are rotated on the
+    // reference -- read bottom-to-top beside their stack rather than across it
+    // -- and that is an observation about the drawing, so it is carried rather
+    // than left to the renderer to guess.
+    label_orientation: fromEnum(b.label_orientation, ALLOWED_ORIENTATION),
+    source_class: fromEnum(b.source_class, ALLOWED_SOURCE_CLASS),
+    grouping_class: fromEnum(b.grouping_class, ALLOWED_GROUPING),
+    dimension_class: fromEnum(b.dimension_class, ALLOWED_DIMENSION_CLASS),
+    labels,
+    observed_in: snapshotRefs(b.observed_in),
+  };
+}
+
+const ALLOWED_ORIENTATION = new Set(['VERTICAL', 'HORIZONTAL']);
+
+/**
+ * Projects one annotation: a legend box, a timestamp, a dimension, a north
+ * marker. Everything the drawing says about itself rather than about the
+ * factory.
+ */
+function projectAnnotation(a) {
+  if (!a || typeof a !== 'object') return null;
+  const kind = fromEnum(a.kind, ALLOWED_ANNOTATION_KIND);
+  const at = point(a.at);
+  if (kind === null || !at) return null;
+  return {
+    kind,
+    at,
+    // A dimension's printed value is a number on a drawing with no stated
+    // scale. It is carried as the text it is, never converted, and the unit is
+    // whatever the drawing does not say. The class travels with it so a
+    // consumer cannot mistake the number for a length.
+    text: token(a.text),
+    annotation_class: a.kind === 'DIMENSION' ? 'SCHEMATIC_ANNOTATION' : null,
+    to: point(a.to),
+    observed_in: snapshotRefs(a.observed_in),
+  };
+}
+
+/** Maps a list through a projector, dropping anything unprojectable. */
+function projectAll(items, project) {
+  const out = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const projected = project(item);
+    if (projected !== null) out.push(projected);
+  }
+  return out;
+}
+
+/**
+ * Projects the whole schematic document.
+ *
+ * Returns an empty-but-valid shape rather than null when nothing is deployed,
+ * matching every other loader in this service: absence is the default state for
+ * a public clone, not an error.
+ */
+function projectSchematic(doc) {
+  const d = doc && typeof doc === 'object' ? doc : {};
+  return {
+    // Stated in the payload, not only in this comment, so a consumer that only
+    // ever sees the response still knows what space these numbers are in.
+    coordinate_space: 'SCHEMATIC_NOT_PHYSICAL',
+    extent: { sx: SCHEMATIC_MAX_X, sy: SCHEMATIC_MAX_Y },
+    // The legend the reference prints, in its own order. Fixed in code rather
+    // than read from the private document: these are the six operational words
+    // the drawing defines, and serving them from a frozen list means a data
+    // file can neither add a seventh nor rename one into free text.
+    //
+    // Publishing the vocabulary is not publishing state. No cell here carries a
+    // status: the two renders disagree about status, and none was transcribed,
+    // so every cell is UNDEFINED -- which is the honest reading and happens to
+    // be exactly what the drawing's own UNDEFINED swatch looks like.
+    legend_states: LEGEND_STATES.map((s) => ({ state: s.state, label: s.label })),
+    snapshots: projectAll(d.snapshots, projectSnapshot),
+    boundary: projectBoundary(d.boundary),
+    areas: projectAll(d.areas, projectArea),
+    // Sorted by id so the order a consumer sees is deterministic rather than
+    // whatever order the file happens to hold.
+    banks: projectAll(d.banks, projectBank).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
+    annotations: projectAll(d.annotations, projectAnnotation),
+  };
+}
+
+module.exports = {
+  SOURCE_CLASS,
+  ALLOWED_STATE,
+  LEGEND_STATES,
+  SCHEMATIC_MAX_X,
+  SCHEMATIC_MAX_Y,
+  point,
+  projectSnapshot,
+  projectBoundary,
+  projectArea,
+  projectBank,
+  projectLabel,
+  cellValues,
+  cellConflicts,
+  projectAnnotation,
+  projectSchematic,
+};

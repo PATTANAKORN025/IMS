@@ -102,7 +102,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 11,
         "h": 4,
         "w": 24
       },
@@ -195,7 +195,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 15,
         "h": 3,
         "w": 24
       },
@@ -218,7 +218,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "text": "\u2014"
+                  "text": "—"
                 }
               }
             }
@@ -241,7 +241,7 @@
           "valueSize": 14,
           "titleSize": 0
         },
-        "noValue": "\u2014",
+        "noValue": "—",
         "textMode": "value",
         "tooltip": {
           "mode": "single",
@@ -258,7 +258,7 @@
           "format": "table"
         }
       ],
-      "description": "Current MO (job) running on $machine_id, or \u2014 if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
+      "description": "Current MO (job) running on $machine_id, or — if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
     },
     {
       "id": 9999,
@@ -278,7 +278,7 @@
     },
     {
       "id": 1,
-      "title": "\u25c9 Fleet Availability",
+      "title": "◉ Fleet Availability",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -369,7 +369,7 @@
     },
     {
       "id": 2,
-      "title": "\u25c9 Active Critical/Major Alarms (master-code matched)",
+      "title": "◉ Active Critical/Major Alarms (master-code matched)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -456,7 +456,7 @@
     },
     {
       "id": 3,
-      "title": "\u25c9 Environmental Compliance",
+      "title": "◉ Environmental Compliance",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -551,7 +551,7 @@
     },
     {
       "id": 9,
-      "title": "\u25c9 Machines Running",
+      "title": "◉ Machines Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -640,14 +640,14 @@
     },
     {
       "id": 10000,
-      "title": "\u25c9 Pipeline Heartbeat",
+      "title": "◉ Pipeline Heartbeat",
       "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 19,
+        "y": 18,
         "h": 1,
         "w": 1
       },
@@ -684,7 +684,7 @@
     },
     {
       "id": 12,
-      "title": "\u25c8 Temperature Compliance (22\u00b12\u00b0C)",
+      "title": "◈ Temperature Compliance (22±2°C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -775,7 +775,7 @@
     },
     {
       "id": 13,
-      "title": "\u25c8 Humidity Compliance (55\u00b15%)",
+      "title": "◈ Humidity Compliance (55±5%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -866,7 +866,7 @@
     },
     {
       "id": 8,
-      "title": "\u25c8 Action Queue (Critical/Major, last 5 min)",
+      "title": "◈ Action Queue (Critical/Major, last 5 min)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -874,7 +874,7 @@
       "gridPos": {
         "x": 0,
         "y": 7,
-        "h": 5,
+        "h": 4,
         "w": 24
       },
       "options": {
@@ -1045,7 +1045,7 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Open Machine Snapshot for ${__value.text}",
+                    "title": "Open Machine Snapshot for ${__data.fields.Machine}",
                     "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
