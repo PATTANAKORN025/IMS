@@ -79,6 +79,28 @@ async function main() {
   await page.evaluate(() => window.__eap.setMode('EAP'));
   await page.waitForTimeout(350);
 
+  section('0. production default: simulation OFF, honest UNAVAILABLE, no opt-in');
+  // FT-EAP-SCADA-AUDIT: the page must load with simulation OFF -- a viewer
+  // who has not asked for it must never see a generated state. Everything
+  // downstream in this suite deliberately turns demo mode ON first; this is
+  // the only section that observes the untouched default.
+  check(await page.evaluate(() => window.__eap.isSimulationOn() === false),
+    'simulation is OFF on first load -- no generated state without an explicit opt-in');
+  const defaultStates = await page.evaluate((ids) => ids.map((id) => window.__eap.operationalState(id)),
+    await page.evaluate(() => window.__eap.drawn().map((c) => c.cell_id)));
+  eq(defaultStates.length, TOTAL_CELLS, 'one record per cell at the default');
+  check(defaultStates.every((r) => r.state === null && r.quality === 'UNAVAILABLE' && r.source_type === 'REAL'),
+    'every cell reads REAL / UNAVAILABLE at the default -- never a fabricated state');
+  const defaultNote = await page.$eval('#opDataSourceNote', (el) => el.textContent);
+  check(/REAL SOURCE UNAVAILABLE/.test(defaultNote), 'the always-visible note shows the no-source message at the default');
+  const toggle = await page.$eval('#simToggle', (el) => ({ text: el.textContent.trim(), pressed: el.getAttribute('aria-pressed') }));
+  check(toggle.text === 'Simulation: OFF' && toggle.pressed === 'false',
+    'the header toggle shows OFF / aria-pressed=false on first paint', JSON.stringify(toggle));
+
+  // Everything from here on is the DEMO-mode contract -- turn it on deliberately.
+  await page.evaluate(() => window.__eap.setSimulation(true));
+  await page.waitForTimeout(200);
+
   section('1. every cell resolves to exactly one bucket');
   const allStates = await page.evaluate((cellIds) => cellIds.map((id) => window.__eap.operationalState(id)),
     await page.evaluate(() => window.__eap.drawn().map((c) => c.cell_id)));
@@ -130,7 +152,7 @@ async function main() {
   check(allZonesReconciled, 'every zone breakdown reconciled and matched its own cell count');
   eq(zoneSum, TOTAL_CELLS, 'sum of all 12 zone totals equals the factory total');
 
-  section('5. simulation-off is UNAVAILABLE, never a state, and still reconciles');
+  section('5. toggling simulation OFF returns to UNAVAILABLE, never a state, and still reconciles');
   await page.evaluate(() => window.__eap.setSimulation(false));
   const fbOff = await page.evaluate(() => window.__eap.factoryStateBreakdown());
   eq(fbOff.total, TOTAL_CELLS, 'total unchanged with simulation off');
