@@ -72,6 +72,8 @@ run("Factory Twin Orientation Proof", "node tests/lint/floor1-orientation.js");
 // instance identity would look like.
 run("EAP Map Wire Tests", "node tests/unit/eap-map-wire.test.js");
 run("EAP Node Model Contract", "node tests/lint/eap-node-model-contract.js");
+run("EAP Status-Colour Drift", "node tests/lint/eap-status-color-drift.js");
+run("CSS Design-Token Parity", "node tests/lint/css-token-parity.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

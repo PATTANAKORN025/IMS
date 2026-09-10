@@ -26,22 +26,122 @@
       a hard max-height. Nothing else overlaps the floor at any viewport.
     */
     :root {
-      --bg: #0b1017;
-      --panel: #111a26;
-      --panel-2: #0e1621;
-      --line: #1e2c3d;
-      --line-2: #2a3d54;
-      --text: #dbe6f3;
-      --text-dim: #8ba0b8;
-      --text-faint: #5f7387;
-      --accent: #38bdf8;
-      --warn: #f59e0b;
-      --crit: #ef4444;
-      --ok: #22c55e;
+      /* ============================================================
+         DESIGN TOKENS -- shared vocabulary (audit F-1). eap.html
+         declares an identical NAME set for the palette roles and an
+         identical NAME+VALUE set for the scales (motion, ease, z,
+         space, radius, type). tests/lint/css-token-parity.js
+         enforces it. A palette value that deliberately differs
+         between the two pages carries a "diverges:" note on its
+         line, which the lint requires.
+         ------------------------------------------------------------ */
+
+      /* -- neutral surface + line scale. Every value here "diverges:" from
+         the EAP map on purpose -- two separately-tuned dark palettes, each
+         with its own measured contrast against its own content. Shared
+         NAMES, not shared tints. -- */
+      --bg: #0b1017;                 /* diverges: tuned dark palette */
+      --surface: #111a26;            /* diverges: tuned dark palette */
+      --surface-raised: #172434;     /* diverges: hover fill */
+      --surface-sunken: #0e1621;     /* diverges: seg tracks + wells, darker than --surface */
+      --surface-hover: #172434;
+      --surface-active: #1d3348;
+      --border: #1e2c3d;             /* diverges: tuned dark palette */
+      --border-strong: #2a3d54;      /* diverges: tuned dark palette */
+
+      /* -- text scale -- */
+      --text: #dbe6f3;               /* diverges: tuned dark palette */
+      --text-secondary: #8ba0b8;     /* diverges: tuned dark palette */
+      --text-muted: #5f7387;         /* diverges: tuned dark palette */
+
+      /* -- accent + signal roles. diverges from the EAP map ON PURPOSE:
+         this page shows REAL plant state, so its signal colours are
+         SATURATED; the EAP map, which shows no live status, uses muted
+         equivalents. -- */
+      --accent: #38bdf8;             /* diverges: saturated live-state page */
+      --focus: #38bdf8;              /* diverges: = --accent */
+      --warning: #f59e0b;            /* diverges: saturated */
+      --danger: #ef4444;            /* diverges: saturated (EAP uses a muted #d98a86) */
+      --success: #22c55e;            /* diverges: saturated */
+      --success-dim: #9fd7a2;
+      --on-danger: #1a0505;
+      --on-warning: #2a1a00;
+      --on-success: #06210f;
+      --on-accent: #06121f;
+      --warning-wash: rgba(245, 158, 11, 0.08);
+
+      /* -- operational status (audit F-3) -- */
+      --status-run: #22c55e;
+      --status-down: #ef4444;
+      --status-idle: #f59e0b;
+      --status-off: #475569;
+      --status-initial: #38bdf8;
+      --status-pm: #3b82f6;
+      --status-stop: #a855f7;
+      --status-undefined: #94a3b8;
+      --quality-unmapped: #64748b;
+      --quality-unavailable: #475569;
+
+      /* -- evidence-provenance ramp (data-visualisation, kept literal) -- */
+      --evidence-measured: #7dd3fc;
+      --evidence-observed: #a5b4fc;
+      --evidence-derived: #fbbf24;
+      --evidence-simulated: #f472b6;
+      --evidence-confirmed: var(--success);
+
+      /* -- risk-tier ramp (data-visualisation) -- */
+      --risk-high: var(--danger);
+      --risk-medium: var(--warning);
+      --risk-low: var(--border-strong);
+      --risk-none: var(--success);
+
+      /* -- machine-label overlay component -- */
+      --label-ink: #dbe6f5;
+      --label-border: rgba(147, 168, 196, 0.35);
+      --label-dot: #64789a;
+      --label-dot-mapped: #4ade80;
+      --label-dim: #93a8c4;
+
+      /* -- type scale (audit F-9). Unified with eap.html; parity-locked.
+         --text-3xs (9px) is intentional micro-type for the densest
+         provenance / legend labels only -- documented at each use. -- */
+      --text-3xs: 9px;
+      --text-2xs: 10px;
+      --text-xs: 11px;
+      --text-sm: 12px;
+      --text-base: 13px;
+      --text-md: 14px;
+      --text-lg: 16px;
+      --text-xl: 20px;
+
+      /* -- space + radius scales -- */
+      --space-1: 4px;
+      --space-2: 6px;
+      --space-3: 8px;
+      --space-4: 12px;
+      --space-5: 16px;
+      --radius-sm: 3px;
+      --radius-md: 4px;
+      --radius-lg: 6px;
+
+      /* -- motion (audit F-10) -- */
+      --motion-fast: 110ms;
+      --motion-normal: 190ms;
+      --motion-slow: 320ms;
+      --ease-standard: cubic-bezier(.2, 0, 0, 1);
+      --ease-exit: cubic-bezier(.4, 0, 1, 1);
+      --ease-emphasis: cubic-bezier(.2, 0, 0, 1.2);
+
+      /* -- z-index scale -- */
+      --z-drawer: 20;
+      --z-inspector: 20;
+      --z-webgl-lost: 30;
+      --z-dialog: 40;
+
+      /* -- PAGE-SPECIFIC: shell geometry -- */
       --header-h: 46px;
       --strip-h: 44px;
       --drawer-w: 340px;
-      --radius: 6px;
     }
     * { box-sizing: border-box; }
     html, body {
@@ -49,7 +149,7 @@
       height: 100%;
       background: var(--bg);
       color: var(--text);
-      font: 13px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+      font: var(--text-base)/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
       overflow: hidden;
     }
 
@@ -88,8 +188,8 @@
       gap: 8px 14px;
       min-height: var(--header-h);
       padding: 5px 12px;
-      background: var(--panel);
-      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       min-width: 0;
     }
     .brand {
@@ -103,8 +203,8 @@
        level-one heading at all, only the drawer's own <h2>s). This IS the
        page's title, so it is the correct level-one heading; margin/font
        reset so becoming a real <h1> changes no visual pixel. */
-    .brand h1 { margin: 0; font-weight: bold; font-size: 14px; letter-spacing: .06em; }
-    .brand span { color: var(--text-dim); font-size: 11px; letter-spacing: .1em; }
+    .brand h1 { margin: 0; font-weight: bold; font-size: var(--text-md); letter-spacing: .06em; }
+    .brand span { color: var(--text-secondary); font-size: var(--text-xs); letter-spacing: .1em; }
     #data-quality {
       flex: 1 1 260px;
       /* A hard floor, so the flex line breaks before this collapses. */
@@ -112,51 +212,55 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      color: var(--text-dim);
-      font-size: 11.5px;
+      color: var(--text-secondary);
+      font-size: var(--text-xs);
     }
-    #data-quality.quality-measured { color: #9fd7a2; }
+    #data-quality.quality-measured { color: var(--success-dim); }
     /* FT-19: a fetch failure previously left #data-quality stuck on its
        initial "Loading floor evidence…" text forever -- see app.js's
        showGeometryLoadError. This state needs a visible Retry button, so
        the topbar's usual overflow:hidden/nowrap truncation is lifted only
        here, and only while the error is showing. */
     #data-quality.quality-error {
-      color: var(--crit); white-space: normal; overflow: visible;
+      color: var(--danger); white-space: normal; overflow: visible;
       display: flex; align-items: center; gap: 6px;
     }
     #data-quality.quality-error .btn-mini { margin-top: 0; flex: none; }
-    #status-line { color: var(--text-dim); font-size: 11px; white-space: nowrap; }
-    #status-line.error { color: var(--crit); }
+    #status-line { color: var(--text-secondary); font-size: var(--text-xs); white-space: nowrap; }
+    #status-line.error { color: var(--danger); }
     #build-id {
-      color: var(--text-dim); font-size: 10.5px; letter-spacing: .04em;
-      border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; white-space: nowrap;
+      color: var(--text-secondary); font-size: var(--text-2xs); letter-spacing: .04em;
+      border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1px 5px; white-space: nowrap;
     }
 
-    .seg { display: flex; gap: 2px; background: var(--panel-2); padding: 2px; border-radius: var(--radius); }
+    .seg { display: flex; gap: 2px; background: var(--surface-sunken); padding: 2px; border-radius: var(--radius-lg); }
     .seg button, .btn {
       appearance: none;
       background: transparent;
-      color: var(--text-dim);
+      color: var(--text-secondary);
       border: 1px solid transparent;
-      border-radius: 4px;
+      border-radius: var(--radius-md);
       padding: 4px 10px;
       font: inherit;
-      font-size: 12px;
+      font-size: var(--text-sm);
       cursor: pointer;
       white-space: nowrap;
+      transition: color var(--motion-fast) var(--ease-standard),
+                  background-color var(--motion-fast) var(--ease-standard),
+                  border-color var(--motion-fast) var(--ease-standard);
     }
-    .seg button:hover:not(:disabled), .btn:hover:not(:disabled) { color: var(--text); background: #172434; }
-    .seg button[aria-pressed="true"] { background: #1d3348; color: var(--text); border-color: var(--line-2); }
+    .seg button:hover:not(:disabled), .btn:hover:not(:disabled) { color: var(--text); background: var(--surface-hover); }
+    .seg button:active:not(:disabled), .btn:active:not(:disabled) { transform: translateY(1px); }
+    .seg button[aria-pressed="true"] { background: var(--surface-active); color: var(--text); border-color: var(--border-strong); }
     .seg button:disabled, .btn:disabled { opacity: .35; cursor: not-allowed; }
     #floor-picker { display: flex; align-items: center; gap: 6px; }
     #floor-picker[hidden] { display: none; }
-    #floor-picker label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    #floor-picker label { color: var(--text-secondary); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .06em; }
     #floor-select {
-      background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
-      border-radius: var(--radius); padding: 5px 8px; font: inherit; font-size: 12px;
+      background: var(--surface-sunken); color: var(--text); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 5px 8px; font: inherit; font-size: var(--text-sm);
     }
-    .btn { border-color: var(--line); }
+    .btn { border-color: var(--border); }
     a.btn { text-decoration: none; display: inline-block; }
     /* Focus is never removed, only restyled. Keyboard operators are operators. */
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -168,8 +272,8 @@
       display: flex;
       align-items: stretch;
       gap: 0;
-      background: var(--panel-2);
-      border-bottom: 1px solid var(--line);
+      background: var(--surface-sunken);
+      border-bottom: 1px solid var(--border);
       overflow-x: auto;
     }
     .ss-cell {
@@ -177,7 +281,7 @@
       align-items: center;
       gap: 6px;
       padding: 0 14px;
-      border-right: 1px solid var(--line);
+      border-right: 1px solid var(--border);
       white-space: nowrap;
       min-width: 0;
       /* FT-18: this cell is a real activation target (opens the device
@@ -185,11 +289,12 @@
          implied, :focus-visible's existing global rule already covers
          keyboard operation. */
       cursor: pointer;
+      transition: background-color var(--motion-fast) var(--ease-standard);
     }
-    .ss-cell:hover { background: var(--line); }
-    .ss-glyph { font-size: 13px; line-height: 1; }
-    .ss-label { color: var(--text-dim); font-size: 11.5px; letter-spacing: .04em; }
-    .ss-value { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; }
+    .ss-cell:hover { background: var(--border); }
+    .ss-glyph { font-size: var(--text-base); line-height: 1; }
+    .ss-label { color: var(--text-secondary); font-size: var(--text-xs); letter-spacing: .04em; }
+    .ss-value { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; font-size: var(--text-md); }
     /* A state this deployment cannot derive is dimmed AND shows a dash, never a
        zero: a zero is a measurement, a dash is the absence of one.
        FT-18: dimming used to be a flat opacity on the whole cell, which
@@ -200,12 +305,15 @@
        which is the part that is genuinely decorative. */
     .ss-cell.ss-off .ss-glyph, .ss-cell.ss-off .ss-value { opacity: .42; }
     .ss-cell.ss-off .ss-value { font-weight: 400; }
-    .ss-sep { width: 1px; background: var(--line-2); margin: 8px 6px; flex: 0 0 auto; }
+    .ss-sep { width: 1px; background: var(--border-strong); margin: 8px 6px; flex: 0 0 auto; }
     .ss-quality .ss-label { font-style: italic; }
     @media (max-width: 1200px) {
       .ss-cell { padding: 0 9px; }
-      .ss-label { font-size: 10.5px; }
+      .ss-label { font-size: var(--text-2xs); }
     }
+    /* audit F-9: one clean wide-wall step, not a fluid base (keeps computed
+       type deterministic per breakpoint). */
+    @media (min-width: 2560px) { :root { --text-base: 14px; } }
 
     /* ---- stage -------------------------------------------------- */
     #stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; }
@@ -224,31 +332,41 @@
       max-height: min(52%, 420px);
       overflow: auto;
       background: rgba(14, 22, 33, .95);
-      border: 1px solid var(--line-2);
-      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
       padding: 10px 12px;
-      font-size: 12px;
+      font-size: var(--text-sm);
       box-shadow: 0 10px 26px rgba(0, 0, 0, .45);
+      /* audit F-10: fade + rise from the corner it docks in, so a click
+         reads as "this opened here" rather than a box blinking on. Animates
+         through the `hidden` toggle app.js drives (allow-discrete +
+         @starting-style); no app.js change. */
+      transition: opacity var(--motion-normal) var(--ease-standard),
+                  transform var(--motion-normal) var(--ease-standard),
+                  display var(--motion-normal) allow-discrete;
     }
+    @starting-style { #inspector { opacity: 0; transform: translateY(8px); } }
+    #inspector[hidden] { display: none; opacity: 0; transform: translateY(8px); }
     .inspector-title { font-weight: 600; margin-bottom: 7px; display: flex; align-items: center; gap: 7px; }
     #inspector div { display: flex; gap: 8px; justify-content: space-between; padding: 1.5px 0; }
-    #inspector .k { color: var(--text-dim); }
+    #inspector .k { color: var(--text-secondary); }
     #inspector .v { text-align: right; }
-    #inspector .hint { display: block; color: var(--text-dim); margin-top: 8px; font-size: 11px; line-height: 1.45; }
+    #inspector .hint { display: block; color: var(--text-secondary); margin-top: 8px; font-size: var(--text-xs); line-height: 1.45; }
     .badge {
-      font-size: 10px; letter-spacing: .06em; padding: 1px 6px;
-      border-radius: 3px; border: 1px solid currentColor;
+      font-size: var(--text-2xs); letter-spacing: .06em; padding: 1px 6px;
+      border-radius: var(--radius-sm); border: 1px solid currentColor;
     }
-    .badge-measured { color: #7dd3fc; }
-    .badge-observed { color: #a5b4fc; }
-    .badge-confirmed { color: var(--ok); }
-    .badge-unmapped { color: var(--text-dim); }
+    .badge-measured { color: var(--evidence-measured); }
+    .badge-observed { color: var(--evidence-observed); }
+    .badge-confirmed { color: var(--success); }
+    .badge-unmapped { color: var(--text-secondary); }
 
     /* ---- drawer ------------------------------------------------- */
     #drawer {
       grid-area: drawer;
-      background: var(--panel);
-      border-left: 1px solid var(--line);
+      container-type: inline-size;   /* audit F-7: components below size to the drawer, not the viewport */
+      background: var(--surface);
+      border-left: 1px solid var(--border);
       overflow-y: auto;
       overflow-x: hidden;
       padding: 10px 12px 24px;
@@ -256,21 +374,23 @@
     }
     #app:not(.drawer-open) #drawer { display: none; }
     #drawer h2 {
-      font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
-      color: var(--text-dim); margin: 16px 0 6px; font-weight: 600;
+      font-size: var(--text-xs); letter-spacing: .1em; text-transform: uppercase;
+      color: var(--text-secondary); margin: 16px 0 6px; font-weight: 600;
     }
     #drawer h2:first-child { margin-top: 2px; }
 
-    #factory-status { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-    .fs-cell { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 7px 9px; }
-    .fs-value { font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
-    .fs-label { font-size: 10.5px; color: var(--text-dim); letter-spacing: .03em; }
-    .fs-warn .fs-value { color: var(--warn); }
-    .fs-crit .fs-value { color: var(--crit); }
+    #factory-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    /* audit F-7: if the drawer is ever narrower than two readable cells, stack. */
+    @container (max-width: 260px) { #factory-status { grid-template-columns: 1fr; } }
+    .fs-cell { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 7px 9px; }
+    .fs-value { font-size: var(--text-xl); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .fs-label { font-size: var(--text-2xs); color: var(--text-secondary); letter-spacing: .03em; }
+    .fs-warn .fs-value { color: var(--warning); }
+    .fs-crit .fs-value { color: var(--danger); }
 
-    fieldset { border: 1px solid var(--line); border-radius: 5px; margin: 0; padding: 8px 10px; }
-    legend { color: var(--text-dim); font-size: 10.5px; letter-spacing: .08em; padding: 0 4px; }
-    #layer-controls label { display: block; padding: 2px 0; font-size: 12px; }
+    fieldset { border: 1px solid var(--border); border-radius: var(--radius-md); margin: 0; padding: 8px 10px; }
+    legend { color: var(--text-secondary); font-size: var(--text-2xs); letter-spacing: .08em; padding: 0 4px; }
+    #layer-controls label { display: block; padding: 2px 0; font-size: var(--text-sm); }
     /* The reference is a different kind of thing from the layers above it: it
        is the source the model is checked against, not part of the floor. The
        rule separates the two so the list does not read as six equal layers. */
@@ -288,7 +408,13 @@
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 14px;
       text-align: center; padding: 24px; background: rgba(11, 16, 23, .92);
+      /* audit F-10: short cross-fade over the frozen frame instead of a hard
+         cut. allow-discrete + @starting-style animate through the `hidden`
+         toggle; no app.js change; instant where unsupported. */
+      transition: opacity var(--motion-normal) var(--ease-standard),
+                  display var(--motion-normal) allow-discrete;
     }
+    @starting-style { #webgl-lost { opacity: 0; } }
     /* FT-TWIN-CTXLIFECYCLE: real, pre-existing bug found by this phase's own
        regression suite, not introduced by it -- an ID selector always beats
        the browser's own [hidden]{display:none} attribute rule, so the
@@ -297,30 +423,32 @@
        silently sat over its centre the whole time, intercepting the one
        hit-test a regression happened to check. Needs its own rule with
        higher specificity than the bare #webgl-lost one above. */
-    #webgl-lost[hidden] { display: none; }
-    #webgl-lost p { max-width: 420px; color: var(--text); font-size: 13px; line-height: 1.5; margin: 0; }
+    #webgl-lost[hidden] { display: none; opacity: 0; }
+    #webgl-lost p { max-width: 420px; color: var(--text); font-size: var(--text-base); line-height: 1.5; margin: 0; }
     #machine-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
     #machine-labels .machine-label {
       position: absolute; transform: translate(-50%, -50%);
       font: 11px/1.25 var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-      color: #dbe6f5; background: rgba(11, 16, 23, 0.72);
-      border: 1px solid rgba(147, 168, 196, 0.35); border-radius: 3px;
+      color: var(--label-ink); background: rgba(11, 16, 23, 0.72);
+      border: 1px solid var(--label-border); border-radius: var(--radius-sm);
       padding: 1px 4px; white-space: nowrap; letter-spacing: 0.02em;
     }
     #machine-labels .machine-label .dot {
       display: inline-block; width: 6px; height: 6px; border-radius: 50%;
-      margin-right: 4px; vertical-align: baseline; background: #64789a;
+      margin-right: 4px; vertical-align: baseline; background: var(--label-dot);
     }
-    #machine-labels .machine-label.is-mapped .dot { background: #4ade80; }
-    #machine-labels .machine-label .dim { color: #93a8c4; margin-left: 5px; }
-    .reference-toggle { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px !important; }
+    #machine-labels .machine-label.is-mapped .dot { background: var(--label-dot-mapped); }
+    #machine-labels .machine-label .dim { color: var(--label-dim); margin-left: 5px; }
+    /* Selector carries a class + the #layer-controls id so it outranks the
+       `#layer-controls label { padding: 2px 0 }` rule above without !important. */
+    #layer-controls label.reference-toggle { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
     .reference-note { margin: 2px 0 0; line-height: 1.4; }
-    .hint { color: var(--text-dim); font-size: 10.5px; }
+    .hint { color: var(--text-secondary); font-size: var(--text-2xs); }
 
     dl { margin: 0; display: grid; grid-template-columns: minmax(0, auto) 1fr; gap: 3px 10px; align-items: baseline; }
-    dt { white-space: nowrap; font-size: 12px; }
-    dd { margin: 0; color: var(--text-dim); font-size: 10.5px; line-height: 1.4; }
-    .st-glyph { font-size: 12px; }
+    dt { white-space: nowrap; font-size: var(--text-sm); }
+    dd { margin: 0; color: var(--text-secondary); font-size: var(--text-2xs); line-height: 1.4; }
+    .st-glyph { font-size: var(--text-sm); }
     /* FT-21: same real, axe-core-measured defect FT-18 already fixed once
        for the topbar's .ss-off -- a whole-element opacity here (.st-off,
        applied to the drawer's own status-legend dt/dd) crushed the label
@@ -331,68 +459,68 @@
        panel, not caused by it. Same fix: dim only the decorative glyph. */
     .st-off .st-glyph { opacity: .45; }
     .st-na, .st-dq {
-      margin-left: 5px; font-size: 9px; letter-spacing: .06em;
-      border: 1px solid var(--line-2); border-radius: 3px; padding: 0 3px; color: var(--text-dim);
+      margin-left: 5px; font-size: var(--text-3xs); letter-spacing: .06em;
+      border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 0 3px; color: var(--text-secondary);
     }
-    .legend-note { color: var(--text-dim); font-size: 10.5px; margin: 8px 0 0; line-height: 1.45; }
+    .legend-note { color: var(--text-secondary); font-size: var(--text-2xs); margin: 8px 0 0; line-height: 1.45; }
 
-    #evidence-summary div { display: flex; gap: 8px; align-items: baseline; padding: 1.5px 0; font-size: 11.5px; }
-    #evidence-summary .k { flex: 1 1 auto; color: var(--text-dim); }
+    #evidence-summary div { display: flex; gap: 8px; align-items: baseline; padding: 1.5px 0; font-size: var(--text-xs); }
+    #evidence-summary .k { flex: 1 1 auto; color: var(--text-secondary); }
     #evidence-summary .n { font-variant-numeric: tabular-nums; font-weight: 600; }
-    #evidence-summary .t { font-size: 9.5px; letter-spacing: .05em; color: var(--text-dim); }
+    #evidence-summary .t { font-size: var(--text-3xs); letter-spacing: .05em; color: var(--text-secondary); }
     .summary-title { display: none; }
 
-    details { border: 1px solid var(--line); border-radius: 5px; padding: 6px 9px; }
-    summary { cursor: pointer; font-size: 12px; color: var(--text); }
+    details { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 6px 9px; }
+    summary { cursor: pointer; font-size: var(--text-sm); color: var(--text); }
     #machine-list { margin-top: 8px; max-height: 260px; overflow: auto; }
-    .machine-row { border-top: 1px solid var(--line); padding: 5px 0; font-size: 11.5px; }
+    .machine-row { border-top: 1px solid var(--border); padding: 5px 0; font-size: var(--text-xs); }
     .machine-row:first-child { border-top: 0; }
     .machine-row-top { display: flex; gap: 7px; align-items: center; }
-    .mini-pill { font-size: 9.5px; padding: 0 5px; border-radius: 3px; color: #06121f; font-weight: 600; }
+    .mini-pill { font-size: var(--text-3xs); padding: 0 5px; border-radius: var(--radius-sm); color: var(--on-accent); font-weight: 600; }
     .machine-id { font-weight: 600; }
-    .machine-row-detail, .machine-row-alarm { color: var(--text-dim); font-size: 10.5px; display: flex; gap: 10px; }
-    .btn-mini { margin-top: 4px; font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; }
-    #device-history { margin-top: 8px; font-size: 11px; }
+    .machine-row-detail, .machine-row-alarm { color: var(--text-secondary); font-size: var(--text-2xs); display: flex; gap: 10px; }
+    .btn-mini { margin-top: 4px; font-size: var(--text-2xs); padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+    #device-history { margin-top: 8px; font-size: var(--text-xs); }
     .history-controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
     #history-device-label { font-weight: 600; }
-    .history-ranges button { font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; }
-    .history-ranges button[aria-pressed="true"] { background: var(--line); }
-    #history-alarms { margin-top: 4px; color: var(--text-dim); font-size: 10.5px; }
+    .history-ranges button { font-size: var(--text-2xs); padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+    .history-ranges button[aria-pressed="true"] { background: var(--border); }
+    #history-alarms { margin-top: 4px; color: var(--text-secondary); font-size: var(--text-2xs); }
     /* FT-22: OBSERVED / CALCULATED / FORECAST must read as three different
        kinds of claim, not three panels that look alike -- a left border +
        an explicit text label on each, not colour alone (colour-contrast and
        colour-blind safe; the label is the real signal, colour reinforces
        it). Forecast additionally gets a dashed border -- the one visual
        cue reserved for "this did not happen yet". */
-    .pi-block { margin-top: 8px; padding: 4px 0 4px 8px; border-left: 3px solid var(--line-2); }
-    .pi-label { font-size: 9px; font-weight: 700; letter-spacing: .07em; color: var(--text-dim); display: block; margin-bottom: 2px; }
-    .pi-observed { border-left-color: var(--text-dim); }
+    .pi-block { margin-top: 8px; padding: 4px 0 4px 8px; border-left: 3px solid var(--border-strong); }
+    .pi-label { font-size: var(--text-3xs); font-weight: 700; letter-spacing: .07em; color: var(--text-secondary); display: block; margin-bottom: 2px; }
+    .pi-observed { border-left-color: var(--text-secondary); }
     .pi-calculated { border-left-color: var(--accent); }
-    .pi-forecast { border-left-color: var(--warn); border-left-style: dashed; }
-    .pi-risk { font-weight: 700; padding: 0 5px; border-radius: 3px; font-size: 10px; }
-    .pi-risk-HIGH { background: var(--crit); color: #1a0505; }
-    .pi-risk-MEDIUM { background: var(--warn); color: #2a1a00; }
-    .pi-risk-LOW { background: var(--line-2); color: var(--text); }
-    .pi-risk-NONE { background: var(--ok); color: #06210f; }
-    #fleet-risk-panel { margin-top: 6px; font-size: 10.5px; }
+    .pi-forecast { border-left-color: var(--warning); border-left-style: dashed; }
+    .pi-risk { font-weight: 700; padding: 0 5px; border-radius: var(--radius-sm); font-size: var(--text-2xs); }
+    .pi-risk-HIGH { background: var(--danger); color: var(--on-danger); }
+    .pi-risk-MEDIUM { background: var(--warning); color: var(--on-warning); }
+    .pi-risk-LOW { background: var(--border-strong); color: var(--text); }
+    .pi-risk-NONE { background: var(--success); color: var(--on-success); }
+    #fleet-risk-panel { margin-top: 6px; font-size: var(--text-2xs); }
     #fleet-risk-result { margin-top: 4px; }
-    .fleet-risk-row { display: flex; gap: 6px; align-items: center; padding: 2px 0; border-top: 1px solid var(--line); }
+    .fleet-risk-row { display: flex; gap: 6px; align-items: center; padding: 2px 0; border-top: 1px solid var(--border); }
     .fleet-risk-row:first-child { border-top: 0; }
     /* FT-23 Phase 1: PRIMARY SIGNAL carries deliberately heavier visual
        weight (larger text, its own bordered block) than every tier below
        it -- SECONDARY EVIDENCE/CONTEXT/NEXT ACTION are all real information,
        never hidden, but none of them competes with the primary verdict for
        the reader's first glance. */
-    .pi-primary { margin-top: 8px; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel-2); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-    .pi-primary-state { font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+    .pi-primary { margin-top: 8px; padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface-sunken); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .pi-primary-state { font-size: var(--text-lg); font-weight: 700; letter-spacing: .02em; }
     .pi-evidence-list { margin: 2px 0 0; padding-left: 16px; }
     .pi-evidence-list li { margin: 1px 0; }
-    .pi-next-action { margin-top: 8px; padding: 4px 0 4px 8px; border-left: 3px solid var(--accent); font-size: 11px; }
+    .pi-next-action { margin-top: 8px; padding: 4px 0 4px 8px; border-left: 3px solid var(--accent); font-size: var(--text-xs); }
     /* Phase 3: a clearly separate notice, not folded silently into the
        evidence list -- amber (warn), never the crit/danger colour, because
        this is a caution about INTERPRETATION, not itself a fault state. */
-    .mixed-baseline-banner { margin-top: 6px; padding: 5px 7px; border: 1px solid var(--warn); border-radius: var(--radius); background: rgba(245, 158, 11, 0.08); font-size: 10.5px; }
-    .mixed-baseline-banner b { color: var(--warn); }
+    .mixed-baseline-banner { margin-top: 6px; padding: 5px 7px; border: 1px solid var(--warning); border-radius: var(--radius-lg); background: var(--warning-wash); font-size: var(--text-2xs); }
+    .mixed-baseline-banner b { color: var(--warning); }
     /* Phase 4: action continuity -- a real drill-down link plus any real
        correlated alarms, never styled to look like a CALCULATED/FORECAST
        claim (no left-border colour token reused from those). */
@@ -403,16 +531,16 @@
        panel backgrounds -- far under the 4.5:1 AA minimum. --accent
        (already used and contrast-verified elsewhere in this file, 8+:1
        here) makes both real, working links. */
-    .action-links { margin-top: 8px; font-size: 11px; }
+    .action-links { margin-top: 8px; font-size: var(--text-xs); }
     .action-links a, .action-alarms a { color: var(--accent); }
-    .action-alarms { margin-top: 6px; font-size: 10.5px; }
+    .action-alarms { margin-top: 6px; font-size: var(--text-2xs); }
     .action-alarms a { margin-left: 4px; }
     /* Phase 5: executive summary. */
-    #exec-summary-panel { margin-top: 6px; font-size: 10.5px; }
+    #exec-summary-panel { margin-top: 6px; font-size: var(--text-2xs); }
     #exec-summary-result { margin-top: 4px; }
     .exec-fleet-counts { display: flex; gap: 10px; margin-bottom: 6px; }
-    .exec-count { padding: 2px 6px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line-2); }
-    .exec-section-title { font-size: 9px; font-weight: 700; letter-spacing: .07em; color: var(--text-dim); display: block; margin: 6px 0 2px; }
+    .exec-count { padding: 2px 6px; border-radius: var(--radius-sm); background: var(--surface-sunken); border: 1px solid var(--border-strong); }
+    .exec-section-title { font-size: var(--text-3xs); font-weight: 700; letter-spacing: .07em; color: var(--text-secondary); display: block; margin: 6px 0 2px; }
 
     /* FT-24: Executive Command Center. PRIMARY SIGNAL (the top risk) is
        deliberately the single largest, boldest thing in this dialog --
@@ -421,39 +549,71 @@
        Phase 1's own "primary signals must dominate" instruction. */
     #command-center-dialog {
       width: min(560px, 92vw); max-height: 85vh; overflow-y: auto;
-      background: var(--panel); color: var(--text); border: 1px solid var(--line-2);
-      border-radius: var(--radius); padding: 14px 16px; font-size: 12px;
+      background: var(--surface); color: var(--text); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg); padding: 14px 16px; font-size: var(--text-sm);
+      /* audit F-10: a restrained fade + rise on open/close. The [open] +
+         @starting-style + allow-discrete pattern for <dialog>; showModal()/
+         close() in app.js are untouched. */
+      opacity: 0; transform: translateY(6px);
+      transition: opacity var(--motion-normal) var(--ease-standard),
+                  transform var(--motion-normal) var(--ease-standard),
+                  display var(--motion-normal) allow-discrete,
+                  overlay var(--motion-normal) allow-discrete;
     }
-    #command-center-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+    #command-center-dialog[open] { opacity: 1; transform: translateY(0); }
+    @starting-style { #command-center-dialog[open] { opacity: 0; transform: translateY(6px); } }
+    #command-center-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.55);
+      transition: opacity var(--motion-normal) var(--ease-standard),
+                  display var(--motion-normal) allow-discrete,
+                  overlay var(--motion-normal) allow-discrete;
+      opacity: 0;
+    }
+    #command-center-dialog[open]::backdrop { opacity: 1; }
+    @starting-style { #command-center-dialog[open]::backdrop { opacity: 0; } }
     .cc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .cc-header h2 { margin: 0; font-size: 15px; }
+    .cc-header h2 { margin: 0; font-size: var(--text-lg); }
     #cc-plant-state { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-    .cc-state-pill { font-size: 10.5px; padding: 2px 7px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line-2); }
-    .cc-top-risk { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel-2); }
+    .cc-state-pill { font-size: var(--text-2xs); padding: 2px 7px; border-radius: var(--radius-sm); background: var(--surface-sunken); border: 1px solid var(--border-strong); }
+    .cc-top-risk { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface-sunken); }
     .cc-top-risk-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
-    .cc-top-risk-device { font-size: 19px; font-weight: 700; }
-    .cc-top-risk-trend { color: var(--text-dim); font-size: 11px; }
-    #command-center-dialog .pi-risk { font-size: 12px; padding: 1px 7px; }
+    .cc-top-risk-device { font-size: var(--text-xl); font-weight: 700; }
+    .cc-top-risk-trend { color: var(--text-secondary); font-size: var(--text-xs); }
+    #command-center-dialog .pi-risk { font-size: var(--text-sm); padding: 1px 7px; }
     #command-center-dialog .cc-inspect { margin-top: 6px; }
     #command-center-dialog .fleet-risk-row { align-items: flex-start; flex-wrap: wrap; }
     #command-center-dialog .fleet-risk-row .cc-inspect { margin-top: 0; margin-left: auto; }
-    #diagnostics-body { margin-top: 8px; font-size: 11px; }
-    #diagnostics-body .k { color: var(--text-dim); }
+    #diagnostics-body { margin-top: 8px; font-size: var(--text-xs); }
+    #diagnostics-body .k { color: var(--text-secondary); }
     .ev { display: inline-block; width: 1.1em; text-align: center; }
-    .ev-measured { color: #7dd3fc; }
-    .ev-observed { color: #a5b4fc; }
-    .ev-derived { color: #fbbf24; }
-    .ev-simulated { color: #f472b6; }
-    .ev-unknown { color: var(--text-dim); }
-    .ev-confirmed { color: var(--ok); }
+    .ev-measured { color: var(--evidence-measured); }
+    .ev-observed { color: var(--evidence-observed); }
+    .ev-derived { color: var(--evidence-derived); }
+    .ev-simulated { color: var(--evidence-simulated); }
+    .ev-unknown { color: var(--text-secondary); }
+    .ev-confirmed { color: var(--success); }
 
     /* Panels get a scrollbar of their own rather than pushing the page: the
        stage must keep its full height at every viewport, 3840x2160 included. */
     #drawer::-webkit-scrollbar, #machine-list::-webkit-scrollbar, #inspector::-webkit-scrollbar { width: 8px; }
     #drawer::-webkit-scrollbar-thumb, #machine-list::-webkit-scrollbar-thumb,
-    #inspector::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
+    #inspector::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: var(--radius-md); }
 
-    @media (prefers-reduced-motion: reduce) { #app { transition: none; } }
+    /* audit F-10: honour the OS "reduce motion" setting across the whole
+       motion layer. Every state change stays VISIBLE -- the drawer track,
+       the inspector, the context-loss banner and the command-centre dialog
+       all still appear and disappear, and every focus / pressed / hover
+       state still reads -- only the movement and the fades are removed. */
+    @media (prefers-reduced-motion: reduce) {
+      #app { transition: none; }
+      .seg button, .btn, .ss-cell, #inspector, #webgl-lost,
+      #command-center-dialog, #command-center-dialog::backdrop {
+        transition-duration: 1ms !important;
+      }
+      #inspector, #inspector[hidden], #command-center-dialog,
+      #command-center-dialog[open] { transform: none; }
+      .seg button:active:not(:disabled), .btn:active:not(:disabled) { transform: none; }
+    }
   </style>
 </head>
 <body>
