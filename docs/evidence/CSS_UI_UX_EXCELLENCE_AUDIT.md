@@ -296,14 +296,21 @@ vendored (`nodered_data/node_modules`) and not authored here.
 
 ## Highest-value problems, ranked
 
+**Implementation phase (2026-09-10) — see `CSS_UI_UX_EXCELLENCE_FINAL.md`:**
+F-5, F-6 **FIXED**. F-8 **BUILT** (`tests/playwright/ui-visual-regression.js` +
+32-state baseline). F-3 **ENFORCED** (`tests/lint/eap-status-color-drift.js`, in
+pre-commit + CI). F-10 **BUILT** (compositor-only motion system, both pages,
+reduced-motion, measured). F-1 **PARTIAL** (motion/ease/z tokens on both pages,
+still parallel copies). F-2, F-7, F-9, F-15 remain scoped-not-built.
+
 | # | Finding | Class | Effort | Prereq |
 |---|---|---|---|---|
 | F-5 | `var(--muted)` undefined | **FIXED** | trivial | — |
 | F-6 | unjustified `!important` | **FIXED** | trivial | — |
-| F-3 | EAP status colours hand-copied into markup — drift risk | SHOULD-FIX | small (add lint) | — |
-| F-8 | no visual-regression baseline for the 2 pages | SHOULD-FIX | medium | — (this unblocks the rest) |
-| F-10 | no motion system (brief's headline ask) | SHOULD-FIX | large | F-8, F-15 |
-| F-1 | two token vocabularies / no shared layer | SHOULD-FIX | medium | F-8 |
+| F-3 | EAP status colours hand-copied into markup — drift risk | **ENFORCED (lint)** | done | — |
+| F-8 | no visual-regression baseline for the 2 pages | **BUILT** | done | — |
+| F-10 | no motion system (brief's headline ask) | **BUILT** | done | F-8 |
+| F-1 | two token vocabularies / no shared layer | **PARTIAL** — motion/z tokens added both pages; colour vocabulary + shared stylesheet + cross-page lint still open | medium | F-8 |
 | F-2 | `index.html` secondary palette untokenized | SHOULD-FIX | medium | F-8 |
 | F-7 | breakpoint-only responsive, no fluid scale / `@container` | SHOULD-FIX | large | F-8 |
 | F-9 | no semantic type scale; some `9px` labels | SHOULD-FIX | medium | F-1, F-8 |
