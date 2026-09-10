@@ -79,76 +79,343 @@ const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerH
 // the first pass's flatter angle caused zone labels to visually overlap).
 camera.position.set(18, 52, 46);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-// Capped. This view is fill-rate bound, not triangle bound: across 1366x768 to
-// 3840x2160 the frame time tracks PIXEL COUNT almost exactly while the triangle
-// count is unchanged. An uncapped ratio therefore multiplies the most expensive
-// axis by itself -- a 3x display would render nine times the pixels of the
-// measurement above. Two is the point past which more samples stop being
-// visible on this content.
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-// Soft shadows. Affordable specifically because frames are drawn on demand: an
-// idle view pays nothing for them, and a moving one pays once per real frame.
-renderer.shadowMap.enabled = true;
-// PCF, not PCFSoft. The soft variant samples the depth map several extra
-// times PER LIT PIXEL, which is charged on every frame whether or not the map
-// itself was regenerated -- measured at 105 ms against 37 ms per frame at
-// 1080p on this software rasteriser. PCF keeps the shadow readable at a
-// fraction of that; the difference is a slightly harder edge on a shadow that
-// is a lighting convention in the first place.
-renderer.shadowMap.type = THREE.PCFShadowMap;
-// The shadow map is re-rendered ON DEMAND, not every frame.
-//
-// The light is directional and the geometry is static, so orbiting the camera
-// cannot change a single shadow -- yet re-rendering the depth map every frame
-// cost 3.4x the frame time at 1080p and pushed 4K past 650 ms. Nothing about
-// the picture changes by leaving it; only the redundant work goes.
-//
-// It must then be refreshed explicitly whenever the SCENE changes: geometry
-// arriving, a layer's visibility changing, the light being re-aimed. Those are
-// exactly the moments requestShadowUpdate() is called from.
-renderer.shadowMap.autoUpdate = false;
-renderer.shadowMap.needsUpdate = true;
-renderer.setSize(window.innerWidth, window.innerHeight);
-container.appendChild(renderer.domElement);
-// A WebGL canvas is opaque to assistive technology. It is named rather than
-// left as a bare "canvas", and points at the HUD, which carries the same live
-// data as plain DOM text and is the documented accessibility path.
-renderer.domElement.setAttribute('role', 'img');
-renderer.domElement.setAttribute(
-  'aria-label',
-  'Three-dimensional view of Floor 1. Machine state and evidence counts are also available as text in the panel on the left.'
-);
-
-// FT-19: GPU context loss (driver reset, sleep/wake, memory pressure) had no
-// handler at all before this -- the canvas would simply stop drawing, with
-// no on-screen sign anything was wrong, and no user-facing recovery path.
-// preventDefault() is required for the browser to ever fire
-// webglcontextrestored at all; without it the context is gone for good.
-// Restoration does not re-answer this: three.js does not automatically
-// re-upload every GPU resource (geometries, textures, shadow maps) after a
-// restore, and rebuilding all of that in place risks silently missing one on
-// a floor plan whose whole job is to be believed. A reload is the same
-// choice this app already makes for a floor switch (see setUpFloorSelector's
-// own comment) -- consistent, not a new policy.
-renderer.domElement.addEventListener('webglcontextlost', (ev) => {
-  ev.preventDefault();
-  const banner = document.getElementById('webgl-lost');
-  if (banner) banner.hidden = false;
+// FT-TWIN-CTXLIFECYCLE Phase 1: webglcontextcreationerror fires on the canvas
+// itself, synchronously, inside the getContext() call THREE's WebGLRenderer
+// constructor makes internally -- by the time `new THREE.WebGLRenderer()`
+// either returns or throws, it is too late to attach a listener to anything
+// THREE hands back. So the canvas is made by hand, with the listener
+// attached first, and construction is wrapped: a GPU genuinely unavailable
+// at boot (not a runtime loss -- total absence, no driver to reset)
+// previously threw an uncaught exception straight out of this module with
+// no on-screen sign anything was wrong at all (the same real gap found and
+// fixed for the EAP map's own equivalent code).
+const glCanvas = document.createElement('canvas');
+let contextCreationFailed = false;
+glCanvas.addEventListener('webglcontextcreationerror', (ev) => {
+  contextCreationFailed = true;
+  console.error('[twin] webglcontextcreationerror', ev.statusMessage || '(no status message)');
 });
-renderer.domElement.addEventListener('webglcontextrestored', () => {
-  window.location.reload();
-});
-document.getElementById('webgl-reload')?.addEventListener('click', () => window.location.reload());
+let renderer = null;
+let rendererAvailable = false;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true });
+  rendererAvailable = !contextCreationFailed;
+} catch (err) {
+  console.error('[twin] WebGLRenderer construction failed', err);
+}
 
-const controls = new OrbitControls(camera, renderer.domElement);
+if (rendererAvailable) {
+  // Capped. This view is fill-rate bound, not triangle bound: across
+  // 1366x768 to 3840x2160 the frame time tracks PIXEL COUNT almost exactly
+  // while the triangle count is unchanged. An uncapped ratio therefore
+  // multiplies the most expensive axis by itself -- a 3x display would
+  // render nine times the pixels of the measurement above. Two is the
+  // point past which more samples stop being visible on this content.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // Soft shadows. Affordable specifically because frames are drawn on demand: an
+  // idle view pays nothing for them, and a moving one pays once per real frame.
+  renderer.shadowMap.enabled = true;
+  // PCF, not PCFSoft. The soft variant samples the depth map several extra
+  // times PER LIT PIXEL, which is charged on every frame whether or not the map
+  // itself was regenerated -- measured at 105 ms against 37 ms per frame at
+  // 1080p on this software rasteriser. PCF keeps the shadow readable at a
+  // fraction of that; the difference is a slightly harder edge on a shadow that
+  // is a lighting convention in the first place.
+  renderer.shadowMap.type = THREE.PCFShadowMap;
+  // The shadow map is re-rendered ON DEMAND, not every frame.
+  //
+  // The light is directional and the geometry is static, so orbiting the camera
+  // cannot change a single shadow -- yet re-rendering the depth map every frame
+  // cost 3.4x the frame time at 1080p and pushed 4K past 650 ms. Nothing about
+  // the picture changes by leaving it; only the redundant work goes.
+  //
+  // It must then be refreshed explicitly whenever the SCENE changes: geometry
+  // arriving, a layer's visibility changing, the light being re-aimed. Those are
+  // exactly the moments requestShadowUpdate() is called from.
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  container.appendChild(renderer.domElement);
+  // A WebGL canvas is opaque to assistive technology. It is named rather than
+  // left as a bare "canvas", and points at the HUD, which carries the same live
+  // data as plain DOM text and is the documented accessibility path.
+  renderer.domElement.setAttribute('role', 'img');
+  renderer.domElement.setAttribute(
+    'aria-label',
+    'Three-dimensional view of Floor 1. Machine state and evidence counts are also available as text in the panel on the left.'
+  );
+}
+
+// Phase 1: with no renderer, there is no canvas for OrbitControls to bind
+// pointer listeners to. A real (still constructible) OrbitControls bound to
+// `document.body` would silently intercept every pointer event on the page
+// -- worse than not having one. Null here; every call site below already
+// has to check `controls` for other reasons (its own dispose/re-create
+// path), so this is one more legitimate falsy case, not a new pattern.
+const controls = rendererAvailable ? new OrbitControls(camera, renderer.domElement) : null;
 // Damping keeps the camera gliding after the pointer stops, which is exactly
 // the kind of continued motion a reduced-motion preference asks not to see.
 // Honoured at construction rather than animated away, so the camera simply
 // stops when the input stops.
 const prefersReducedMotion =
   typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-controls.enableDamping = !prefersReducedMotion;
+if (controls) controls.enableDamping = !prefersReducedMotion;
+
+// ── WebGL context lifecycle ──────────────────────────────────
+//
+// FT-TWIN-CTXLIFECYCLE: replaces FT-19's detect-and-reload with the same
+// real, verified lifecycle already built and proven for the EAP map's own
+// canvas (READY -> LOST -> RESTORING -> REBUILDING -> VERIFYING ->
+// RECOVERED -> READY, or LOST/RESTORING/REBUILDING -> FAILED after a
+// bounded timeout or a verification failure), adapted for this page's own
+// real differences from that one: a PerspectiveCamera (no zoom-property
+// dolly state to save -- camera.position IS the pan/zoom state, and the
+// camera object itself is never replaced, so it survives a context loss
+// automatically, with zero extra code), shadow maps (forced to re-render
+// on recovery -- their GPU-side depth texture is gone with the old
+// context), and a "selection" that is pure DOM (the inspector panel),
+// never touched by the WebGL scene at all and so never lost either.
+//
+// The reload FT-19 chose was a reasoned decision at the time (three.js
+// does not automatically re-upload every GPU resource, and a floor plan
+// whose job is to be believed should not risk a partial, silently-
+// incomplete restore) -- but it was never re-examined against real
+// evidence the way the EAP map's own case was. That evidence carries over
+// here on inspection, not by assumption: buildEquipmentLayer was ALREADY
+// idempotent (its own comment: "a repeat call must cost exactly what a
+// fresh call costs, never more"); buildFloor's and buildFunctionalZones'
+// own sub-builders were not (no clear-before-add, several push-only
+// tracking arrays never reset) -- real, latent bugs, never exercised
+// before because nothing had ever called them twice. Both are fixed
+// below, generically, by rebuildSceneFromCache() and its own
+// clearRebuildableGroup() helper (declared further down, near the shared
+// geometry/material caches they depend on).
+const WebglLifecycle = Object.freeze({
+  READY: 'READY',
+  LOST: 'LOST',
+  RESTORING: 'RESTORING',
+  REBUILDING: 'REBUILDING',
+  VERIFYING: 'VERIFYING',
+  RECOVERED: 'RECOVERED',
+  FAILED: 'FAILED',
+});
+let webglLifecycle = WebglLifecycle.READY;
+let contextLossCount = 0; // observability only; also what a repeated-loss test reads back
+// Bumped on every new loss episode. Any recovery attempt in flight from an
+// OLDER episode checks its own captured value of this against the live one
+// before each step that would otherwise mutate shared state or declare a
+// verdict -- if a newer loss has since arrived, that attempt is stale and
+// abandons itself rather than fighting (or wrongly finishing) the episode
+// that actually matters now.
+let recoveryGeneration = 0;
+// Real browsers usually fire webglcontextrestored automatically within a
+// second or two of preventDefault() being called, if the underlying driver
+// issue actually resolved. If it does not fire within this window, the
+// context is not coming back on its own.
+const CONTEXT_RESTORE_TIMEOUT_MS = 8000;
+let contextRestoreTimer = null;
+// Step 6: full reload is the explicitly bounded LAST resort, never the
+// first action -- allowed only after this many genuinely failed recovery
+// attempts in the current episode (FAILED reached via timeout or a failed
+// verification, not merely LOST).
+const MAX_RECOVERY_ATTEMPTS_BEFORE_RELOAD_OFFERED = 3;
+let recoveryAttemptsThisEpisode = 0;
+let totalFramesRendered = 0; // monotonic; NEVER reset (renderTail/framesRendered above are, for their own unrelated fps-window purposes) -- see verifyRecovery()'s own comment for why a resettable counter is the wrong thing to watch for frame progression.
+
+const WEBGL_STATUS_MESSAGES = Object.freeze({
+  LOST: '3D view temporarily unavailable. Live operational data remains available.',
+  RESTORING: 'Restoring 3D view…',
+  REBUILDING: 'Rebuilding 3D view…',
+  VERIFYING: 'Verifying 3D view…',
+  RECOVERED: '3D view restored.',
+  FAILED: '3D view could not be restored automatically. Live operational data remains available.',
+  CREATION_FAILED: '3D view could not start. Live operational data remains available.',
+});
+const RECOVERED_DISPLAY_MS = 900;
+
+const webglStatusText = document.getElementById('webgl-status-text');
+const webglLostBanner = document.getElementById('webgl-lost');
+const webglRetryBtn = document.getElementById('webgl-retry');
+const webglReloadBtn = document.getElementById('webgl-reload');
+
+function setWebglLifecycle(next) {
+  webglLifecycle = next;
+  console.log('[twin] webgl lifecycle ->', next);
+}
+
+function showWebglBanner(messageKey, { retryVisible = false, reloadVisible = false } = {}) {
+  if (webglStatusText) webglStatusText.textContent = WEBGL_STATUS_MESSAGES[messageKey];
+  if (webglRetryBtn) webglRetryBtn.hidden = !retryVisible;
+  if (webglReloadBtn) webglReloadBtn.hidden = !reloadVisible;
+  if (webglLostBanner) webglLostBanner.hidden = false;
+}
+
+/** Runs on webglcontextlost. The render loop itself must stop drawing, not
+ *  merely stop taking input (animate() checks webglLifecycle itself); the
+ *  HUD/live-data poll is on its own setInterval, untouched by any of this. */
+function handleContextLost() {
+  contextLossCount += 1;
+  recoveryGeneration += 1;
+  setWebglLifecycle(WebglLifecycle.LOST);
+  if (controls) controls.enabled = false;
+  showWebglBanner('LOST', { retryVisible: false, reloadVisible: false });
+  clearTimeout(contextRestoreTimer);
+  const myGeneration = recoveryGeneration;
+  contextRestoreTimer = setTimeout(() => {
+    if (myGeneration === recoveryGeneration && webglLifecycle === WebglLifecycle.LOST) {
+      recoveryAttemptsThisEpisode += 1;
+      showFailedFallback();
+    }
+  }, CONTEXT_RESTORE_TIMEOUT_MS);
+}
+
+/**
+ * Runs on webglcontextrestored. The browser has already re-created the
+ * underlying GL context; what is stale is only the GPU-side buffers/
+ * programs three.js uploaded into the OLD one. The camera, the inspector's
+ * DOM state, activeDisplayMode, activeView and lastGeometryPayload were
+ * never actually lost -- they live in plain JS values a GPU event cannot
+ * touch -- so this is a real rebuild from cache, not a reconstruction from
+ * a snapshot.
+ */
+function attemptContextRecovery() {
+  if (webglLifecycle === WebglLifecycle.RESTORING
+    || webglLifecycle === WebglLifecycle.REBUILDING
+    || webglLifecycle === WebglLifecycle.VERIFYING) {
+    return; // a second webglcontextrestored for one real event must not race a rebuild already in flight
+  }
+  clearTimeout(contextRestoreTimer);
+  const myGeneration = recoveryGeneration;
+  setWebglLifecycle(WebglLifecycle.RESTORING);
+  showWebglBanner('RESTORING');
+
+  setWebglLifecycle(WebglLifecycle.REBUILDING);
+  showWebglBanner('REBUILDING');
+  let rebuilt = false;
+  try {
+    recoveringFromContextLoss = true;
+    try {
+      rebuilt = rebuildSceneFromCache();
+    } finally {
+      recoveringFromContextLoss = false;
+    }
+    if (controls) controls.enabled = true;
+  } catch (err) {
+    console.error('[twin] rebuild failed during recovery', err);
+    recoveryAttemptsThisEpisode += 1;
+    if (myGeneration === recoveryGeneration) showFailedFallback();
+    return;
+  }
+  if (!rebuilt) {
+    // No geometry was ever successfully fetched to rebuild from (e.g. the
+    // context was lost before the first /api/floor-geometry response ever
+    // arrived) -- not a crash, but nothing to verify either.
+    recoveryAttemptsThisEpisode += 1;
+    if (myGeneration === recoveryGeneration) showFailedFallback();
+    return;
+  }
+
+  if (myGeneration !== recoveryGeneration) return; // superseded by a newer loss while rebuilding
+  setWebglLifecycle(WebglLifecycle.VERIFYING);
+  showWebglBanner('VERIFYING');
+  verifyRecovery(myGeneration);
+}
+
+/**
+ * The real watchdog Step 3 asks for: webglcontextrestored firing, and even
+ * a rebuild completing without throwing, are not proof the view actually
+ * works. Checks the live renderer/scene state, then two real animation
+ * frames of progression through animate()'s own normal path (not a
+ * second, parallel render call) before RECOVERED is declared.
+ */
+function verifyRecovery(myGeneration) {
+  if (myGeneration !== recoveryGeneration) return;
+  let ok = true;
+  let reason = '';
+  try {
+    const gl = renderer.getContext();
+    if (!gl || gl.isContextLost()) { ok = false; reason = 'context reports lost immediately after restore'; }
+    if (ok && scene.children.length === 0) { ok = false; reason = 'scene has no content after rebuild'; }
+  } catch (err) {
+    ok = false;
+    reason = err.message;
+  }
+  if (!ok) {
+    console.error('[twin] recovery verification failed:', reason);
+    recoveryAttemptsThisEpisode += 1;
+    if (myGeneration === recoveryGeneration) showFailedFallback();
+    return;
+  }
+
+  requestRender(); // this app renders on demand -- verification needs a real frame to actually happen
+  const framesAtStart = totalFramesRendered;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (myGeneration !== recoveryGeneration) return;
+    if (totalFramesRendered <= framesAtStart) {
+      console.error('[twin] recovery verification failed: no frame progression observed');
+      recoveryAttemptsThisEpisode += 1;
+      showFailedFallback();
+      return;
+    }
+    finishRecovery(myGeneration);
+  }));
+}
+
+function finishRecovery(myGeneration) {
+  if (myGeneration !== recoveryGeneration) return;
+  recoveryAttemptsThisEpisode = 0; // a genuinely successful recovery resets the bounded-retry counter
+  setWebglLifecycle(WebglLifecycle.RECOVERED);
+  showWebglBanner('RECOVERED');
+  setWebglLifecycle(WebglLifecycle.READY);
+  setTimeout(() => {
+    if (myGeneration === recoveryGeneration && webglLifecycle === WebglLifecycle.READY && webglLostBanner) {
+      webglLostBanner.hidden = true;
+    }
+  }, RECOVERED_DISPLAY_MS);
+}
+
+function showFailedFallback() {
+  setWebglLifecycle(WebglLifecycle.FAILED);
+  // Step 6: reload is offered, never triggered automatically -- an explicit
+  // click is required either way. It is shown only once bounded automatic
+  // retries have been exhausted, so a viewer whose driver recovers on the
+  // second or third attempt is never pushed toward reloading at all.
+  const reloadEarned = recoveryAttemptsThisEpisode >= MAX_RECOVERY_ATTEMPTS_BEFORE_RELOAD_OFFERED;
+  showWebglBanner('FAILED', { retryVisible: true, reloadVisible: reloadEarned });
+}
+
+/** Step 1/Phase-1 parity with the EAP map: the GPU was never available at
+ *  all. Reuses the FAILED state (identical UI treatment) with its own
+ *  distinct message -- "could not be restored" would claim a working view
+ *  that never existed to restore. */
+function showCreationFailure() {
+  setWebglLifecycle(WebglLifecycle.FAILED);
+  showWebglBanner('CREATION_FAILED', { retryVisible: true, reloadVisible: true });
+}
+
+if (rendererAvailable) {
+  renderer.domElement.addEventListener('webglcontextlost', (ev) => {
+    ev.preventDefault();
+    handleContextLost();
+  });
+  renderer.domElement.addEventListener('webglcontextrestored', () => {
+    attemptContextRecovery();
+  });
+} else {
+  showCreationFailure();
+}
+webglReloadBtn?.addEventListener('click', () => window.location.reload());
+webglRetryBtn?.addEventListener('click', () => {
+  if (rendererAvailable) {
+    // The one real action available to a page whose browser did not
+    // restore the context on its own: ask it to. A genuinely dead GPU
+    // process will not answer this either.
+    renderer.forceContextRestore();
+  } else {
+    // Nothing was ever constructed to retry in place.
+    window.location.reload();
+  }
+});
 
 // ── Render on demand ──────────────────────────────────────────────────
 //
@@ -186,11 +453,11 @@ function requestRender() {
  * shadows do not depend on where the viewer stands.
  */
 function requestShadowUpdate() {
-  renderer.shadowMap.needsUpdate = true;
+  if (rendererAvailable) renderer.shadowMap.needsUpdate = true;
   requestRender();
 }
 
-controls.addEventListener('change', requestRender);
+if (controls) controls.addEventListener('change', requestRender);
 window.addEventListener('resize', requestRender);
 window.addEventListener('twin-pane-resize', requestRender);
 document.addEventListener('visibilitychange', requestRender);
@@ -202,7 +469,7 @@ document.addEventListener('visibilitychange', requestRender);
 // discovered-via-screenshot issue, not a hypothetical one. Users can still
 // freely pan/rotate anywhere via OrbitControls; this only changes the
 // initial framing.
-controls.target.set(14, 0.5, 0);
+if (controls) controls.target.set(14, 0.5, 0);
 
 // ── Scene layers ────────────────────────────────────────────
 // Four layers, matching the four distinct kinds of claim this twin makes.
@@ -300,6 +567,11 @@ const cadRoleGroups = new Map();
 let rawCadState = 'idle';     // idle | loading | ready | unavailable | error
 let rawCadCoverage = null;
 let rawCadSegments = 0;
+let rawCadLastDoc = null; // the last successfully fetched raw-CAD doc, cached so a
+// context-loss recovery can redraw it without re-fetching (Phase 3: "do not
+// reload source data unnecessarily").
+let lastGeometryPayload = null; // the last successful /api/floor-geometry response,
+// cached for the same reason -- see rebuildSceneFromCache() above.
 
 /** CAD millimetres (floor-local, +y up) to twin metres. */
 function cadToTwin(xMm, yMm, halfWidth, halfDepth) {
@@ -497,8 +769,10 @@ function applyView(name) {
   if (!v) return false;
   requestRender();
   camera.position.set(v.position.x, v.position.y, v.position.z);
-  controls.target.set(v.target.x, v.target.y, v.target.z);
-  controls.update();
+  if (controls) {
+    controls.target.set(v.target.x, v.target.y, v.target.z);
+    controls.update();
+  }
   activeView = name;
   for (const btn of document.querySelectorAll('#view-controls button[data-view]')) {
     btn.setAttribute('aria-pressed', String(btn.dataset.view === name));
@@ -593,6 +867,105 @@ sublayers.shell.add(orientationGrid);
 // position, dimension or colour is altered -- the scene renders identically.
 const geometryCache = new Map();
 const materialCache = new Map();
+
+// FT-TWIN-CTXLIFECYCLE: set for the one rebuild rebuildSceneFromCache() makes
+// after a real GPU context restore, never otherwise. A restored context is a
+// genuinely NEW underlying WebGLRenderingContext, not the old one repaired
+// in place, so the old geometries'/materials' GPU buffers are already gone
+// with it -- deleting them again would throw "INVALID_OPERATION: object
+// does not belong to this context" (the exact, real bug FT-EAP-CTXLIFECYCLE
+// found and fixed for the EAP map's own equivalent code). A NORMAL rebuild
+// (there is none today outside recovery, but this stays correct if one is
+// ever added) still disposes as usual.
+let recoveringFromContextLoss = false;
+
+/**
+ * Disposes an Object3D's geometry/material UNLESS it is owned by
+ * geometryCache/materialCache -- those are shared across every build call
+ * by design (see the comment above this cache), and disposing a cache
+ * entry every other consumer still points at would blank them for
+ * everyone, not free anything real. Skipped entirely while recovering
+ * from a context loss (see recoveringFromContextLoss above).
+ */
+// Cache membership by VALUE (the cache is keyed by a string, not by the
+// geometry/material itself) -- computed against the cache's own live
+// contents, not a parallel record that could drift from it.
+function isSharedGeometry(g) {
+  for (const v of geometryCache.values()) if (v === g) return true;
+  return false;
+}
+function isSharedMaterial(m) {
+  for (const v of materialCache.values()) if (v === m) return true;
+  return false;
+}
+function disposeIfUnshared(obj) {
+  if (recoveringFromContextLoss) return;
+  if (obj.geometry && !isSharedGeometry(obj.geometry)) obj.geometry.dispose();
+  if (obj.material) {
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    for (const m of mats) {
+      if (isSharedMaterial(m)) continue;
+      if (m.map && m.map.isCanvasTexture) m.map.dispose(); // e.g. makeTextSprite's own per-call texture
+      m.dispose();
+    }
+  }
+}
+
+/** Recursively empties a Group, disposing only what is not shared/cached. */
+function clearRebuildableGroup(group) {
+  for (let i = group.children.length - 1; i >= 0; i -= 1) {
+    const child = group.children[i];
+    group.remove(child);
+    child.traverse((node) => disposeIfUnshared(node));
+  }
+}
+
+/**
+ * The real recovery mechanism: not a page reload, and not a hand-patched
+ * partial reconstruction either. This is the exact code path a fresh boot
+ * already exercises for these three builders (buildFloor, applyDisplayMode
+ * -> buildEquipmentLayer, buildFunctionalZones), called again against the
+ * SAME already-fetched geometry payload (lastGeometryPayload) -- nothing
+ * is re-fetched, nothing is invented. buildEquipmentLayer was already
+ * idempotent (its own comment: "a repeat call must cost exactly what a
+ * fresh call costs"); buildFloor's and buildFunctionalZones' own
+ * sub-builders were not (no clear-before-add, several push-only tracking
+ * arrays never reset) -- real, latent bugs never exercised before because
+ * nothing ever called them twice. Both are fixed here, once, generically,
+ * rather than patched builder-by-builder.
+ */
+function rebuildSceneFromCache() {
+  if (!lastGeometryPayload) return false;
+  for (const g of [sublayers.shell, sublayers.columns, sublayers.walls, sublayers.measured, layers.functional]) {
+    clearRebuildableGroup(g);
+  }
+  // buildEquipmentLayer (via applyDisplayMode) already clears sublayers.equipment
+  // and resets equipmentBatches itself -- clearing it again here would just
+  // remove the same-frame result of the call this loop cannot see.
+  footprintMeshes.length = 0;
+  wallMeshes.length = 0;
+  openingMeshes.length = 0;
+  wallLineMeshes.length = 0;
+  columnMeshes.length = 0;
+  zoneLabels.length = 0;
+  buildFloor(lastGeometryPayload);
+  applyDisplayMode(activeDisplayMode);
+  buildFunctionalZones(lastGeometryPayload);
+  if (rawCadState === 'ready' && rawCadLastDoc) {
+    // buildRawCad() unconditionally disposes cadRoleGroups' OWN previous
+    // geometry at its own top -- correct for its one existing caller (the
+    // reference toggle, always under a live context) but wrong here: those
+    // handles are already gone with the destroyed context. Pre-clearing
+    // through the flag-respecting path first leaves its own loop with
+    // nothing left to (wrongly) dispose.
+    clearRebuildableGroup(layers.reference);
+    cadRoleGroups.clear();
+    buildRawCad(rawCadLastDoc);
+  }
+  requestShadowUpdate(); // the old shadow FBO is gone with the old context
+  requestRender();
+  return true;
+}
 
 function resourceStats() {
   return { geometries: geometryCache.size, materials: materialCache.size };
@@ -996,6 +1369,7 @@ async function ensureRawCad(floorId) {
     if (!res.ok) { rawCadState = 'unavailable'; return rawCadState; }
     const doc = await res.json();
     if (doc.available !== true) { rawCadState = 'unavailable'; return rawCadState; }
+    rawCadLastDoc = doc;
     buildRawCad(doc);
     rawCadState = rawCadSegments > 0 ? 'ready' : 'unavailable';
   } catch (err) {
@@ -1822,7 +2196,7 @@ async function loadDiagnostics() {
   }
   const apiMs = Math.round(performance.now() - T0);
 
-  const info = renderer.info;
+  const info = rendererAvailable ? renderer.info : { render: { calls: 0, triangles: 0 }, memory: { geometries: 0, textures: 0 } };
   let meshes = 0;
   const perLayer = {};
   for (const [name, g] of Object.entries(layers)) {
@@ -2214,14 +2588,20 @@ function hideEquipmentInspector() {
   requestLabelUpdate();
 }
 
-renderer.domElement.addEventListener('click', (event) => {
-  // No machine drill-down from the scene: nothing in the scene IS a machine.
-  // A drill-down would have to be reached from a position, and no position on
-  // this floor is tied to a device by an authoritative record.
-  const item = pickEquipment(event);
-  if (item) showEquipmentInspector(item);
-  else hideEquipmentInspector();
-});
+// Phase 1: renderer.domElement was never inserted into the DOM when GPU
+// context creation failed -- there is no live element for a pointer to
+// ever reach, so there is nothing real for either listener below to
+// attach to.
+if (rendererAvailable) {
+  renderer.domElement.addEventListener('click', (event) => {
+    // No machine drill-down from the scene: nothing in the scene IS a machine.
+    // A drill-down would have to be reached from a position, and no position on
+    // this floor is tied to a device by an authoritative record.
+    const item = pickEquipment(event);
+    if (item) showEquipmentInspector(item);
+    else hideEquipmentInspector();
+  });
+}
 
 function pickColumn(event) {
   aimRay(event);
@@ -2241,7 +2621,7 @@ let hoverPending = null;
 // current value keeps the assignment to the frames where it actually differs.
 let currentCursor = 'default';
 function setCursor(value) {
-  if (currentCursor === value) return;
+  if (currentCursor === value || !rendererAvailable) return;
   currentCursor = value;
   renderer.domElement.style.cursor = value;
 }
@@ -2287,16 +2667,18 @@ function handleHover(event) {
   lastInspected = null;
 }
 
-renderer.domElement.addEventListener('pointermove', (event) => {
-  if (hoverPending) return;
-  const { clientX, clientY } = event;
-  hoverPending = requestAnimationFrame(() => {
-    hoverPending = null;
-    handleHover({ clientX, clientY });
-    // Hover changes the cursor and the highlight, both of which are drawn.
-    requestRender();
+if (rendererAvailable) {
+  renderer.domElement.addEventListener('pointermove', (event) => {
+    if (hoverPending) return;
+    const { clientX, clientY } = event;
+    hoverPending = requestAnimationFrame(() => {
+      hoverPending = null;
+      handleHover({ clientX, clientY });
+      // Hover changes the cursor and the highlight, both of which are drawn.
+      requestRender();
+    });
   });
-});
+}
 
 // ── HUD (also the accessibility fallback per design §16 -- same real data
 // as plain DOM text/list, not locked inside the WebGL canvas) ──
@@ -3214,6 +3596,7 @@ async function boot() {
       }
       const geo = await geoRes.json();
       rawApiEquipment = Array.isArray(geo.equipment) ? geo.equipment : [];
+      lastGeometryPayload = geo;
       buildFloor(geo);
       applyDisplayMode(activeDisplayMode);
       // Separate call: the zone layer is independent of the envelope, and
@@ -3353,6 +3736,19 @@ async function boot() {
     // Cache sizes are exposed so a regression test can assert the sharing
     // actually happened rather than trusting that it did.
     resourceStats,
+    // FT-TWIN-CTXLIFECYCLE: real QA hooks, not test-only stubs -- the same
+    // variables handleContextLost()/attemptContextRecovery() drive.
+    webglLifecycle: () => webglLifecycle,
+    contextLossCount: () => contextLossCount,
+    recoveryGeneration: () => recoveryGeneration,
+    rendererAvailable: () => rendererAvailable,
+    totalFramesRendered: () => totalFramesRendered,
+    simulateContextLoss: () => (rendererAvailable ? renderer.forceContextLoss() : undefined),
+    simulateContextRestore: () => (rendererAvailable ? renderer.forceContextRestore() : undefined),
+    cameraSnapshot: () => ({
+      position: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+      target: controls ? { x: controls.target.x, y: controls.target.y, z: controls.target.z } : null,
+    }),
     // Read back by the regression: the caption layer is a presentation overlay
     // and must be provable to be one -- it draws no geometry and moves nothing.
     labelStats: () => ({
@@ -3369,6 +3765,7 @@ async function boot() {
     // can assert "no machine label overlaps a visible zone caption" against
     // the real render, not a re-implementation of the math.
     zoneLabelRects: () => {
+      if (!rendererAvailable) return [];
       const w = renderer.domElement.clientWidth;
       const h = renderer.domElement.clientHeight;
       return visibleZoneLabelRects(w, h).map((r) => ({
@@ -3419,6 +3816,11 @@ function onResize() {
   const h = Math.max(Math.round(rect.height), 1);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  // Phase 1: with no renderer, boot()'s very first call is this function --
+  // guarding here, not at every caller, is what keeps the rest of boot()
+  // (the HUD/live-data fetches and setInterval, none of which touch the
+  // renderer) reachable at all with zero GPU.
+  if (!rendererAvailable) return;
   // updateStyle stays ON. Suppressing it leaves the canvas at its previous CSS
   // size while the drawing buffer changes underneath, which renders the floor
   // squeezed into a corner of a half-width pane.
@@ -3612,7 +4014,7 @@ function visibleZoneLabelRects(width, height) {
 
 function updateMachineLabels() {
   labelsPending = false;
-  if (!labelHost) return;
+  if (!labelHost || !rendererAvailable) return;
   const host = renderer.domElement;
   const width = host.clientWidth;
   const height = host.clientHeight;
@@ -3738,12 +4140,21 @@ function requestLabelUpdate() {
 
 function animate() {
   requestAnimationFrame(animate);
+  if (!rendererAvailable) return; // Phase 1: nothing to update or render
   // controls.update() returns true while damping is still moving the camera.
   // Trusting only the 'change' event would stop the loop mid-glide.
-  if (controls.update()) requestRender();
+  if (controls && controls.update()) requestRender();
+  // FT-TWIN-CTXLIFECYCLE Phase 3/4: stop rendering on a lost/recovering
+  // context as an explicit app decision, not by relying on three.js's own
+  // internal no-op-while-lost guard. VERIFYING is deliberately included --
+  // verifyRecovery() observes THIS loop's own real frame progression, so
+  // rendering has to actually happen here while verifying, not in a second,
+  // parallel render call.
+  if (webglLifecycle !== WebglLifecycle.READY && webglLifecycle !== WebglLifecycle.VERIFYING) return;
   if (renderTail <= 0) return;
   renderTail--;
   framesRendered++;
+  totalFramesRendered++;
   renderer.render(scene, camera);
   // Labels follow the camera, so they are refreshed with the frame rather than
   // on a timer: a timer either lags the view or burns frames when nothing moved.

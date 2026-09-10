@@ -289,6 +289,15 @@
       align-items: center; justify-content: center; gap: 14px;
       text-align: center; padding: 24px; background: rgba(11, 16, 23, .92);
     }
+    /* FT-TWIN-CTXLIFECYCLE: real, pre-existing bug found by this phase's own
+       regression suite, not introduced by it -- an ID selector always beats
+       the browser's own [hidden]{display:none} attribute rule, so the
+       `hidden` attribute this banner is toggled with never actually hid it.
+       The canvas underneath rendered fine; this invisible-but-present div
+       silently sat over its centre the whole time, intercepting the one
+       hit-test a regression happened to check. Needs its own rule with
+       higher specificity than the bare #webgl-lost one above. */
+    #webgl-lost[hidden] { display: none; }
     #webgl-lost p { max-width: 420px; color: var(--text); font-size: 13px; line-height: 1.5; margin: 0; }
     #machine-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
     #machine-labels .machine-label {
@@ -525,15 +534,21 @@
       <div id="machine-labels" aria-hidden="true"></div>
       <!-- Context panel. Hidden until the operator selects something. -->
       <div id="inspector" hidden aria-live="polite"></div>
-      <!-- FT-19: shown only on webglcontextlost (app.js). role="alert" because
-           this is the one state that needs an interrupting announcement --
-           the 3D view has stopped rendering, not merely gone stale. -->
+      <!-- FT-TWIN-CTXLIFECYCLE: shown from webglcontextlost (or a boot-time
+           webglcontextcreationerror) through recovery or failure (app.js).
+           role="alert" because this is the one state that needs an
+           interrupting announcement -- the 3D view has stopped rendering,
+           not merely gone stale. Text is set per lifecycle stage (LOST/
+           RESTORING/REBUILDING/VERIFYING/RECOVERED/FAILED) by
+           showWebglBanner(); both actions are shown/hidden by stage --
+           Retry only once automatic recovery has genuinely failed (or
+           never started at all), Reload only after several bounded
+           automatic attempts have already failed, never offered as the
+           first action. -->
       <div id="webgl-lost" hidden role="alert">
-        <p>3D rendering lost the GPU context. This can happen after the
-          computer sleeps, a graphics driver reset, or memory pressure. The
-          panel on the left keeps reporting live data -- only the 3D view is
-          affected.</p>
-        <button type="button" class="btn" id="webgl-reload">Reload to recover</button>
+        <p id="webgl-status-text"></p>
+        <button type="button" class="btn" id="webgl-retry" hidden>Retry 3D</button>
+        <button type="button" class="btn" id="webgl-reload" hidden>Reload page</button>
       </div>
     </main>
 

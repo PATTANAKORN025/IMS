@@ -117,6 +117,15 @@
     align-items: center; justify-content: center; gap: 14px;
     text-align: center; padding: 24px; background: rgba(18, 21, 26, .92);
   }
+  /* FT-TWIN-CTXLIFECYCLE: real bug, same root cause as the physical twin's
+     own copy of this pattern (index.html) -- an ID selector always beats
+     the browser's own [hidden]{display:none} attribute rule, so setting
+     .hidden=true on this element never actually hid it visually. Every
+     prior test here read the DOM property (which correctly reports true)
+     rather than hit-testing the rendered page, so it went uncaught until
+     the physical twin's own regression suite's elementFromPoint check
+     found the identical flaw there. */
+  #webgl-lost[hidden] { display: none; }
   #webgl-lost p { max-width: 420px; color: var(--ink); font-size: 13px; line-height: 1.5; margin: 0; }
   #labels { position: absolute; inset: 0; pointer-events: none; }
   #zoneDrawer {
