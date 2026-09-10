@@ -296,25 +296,30 @@ vendored (`nodered_data/node_modules`) and not authored here.
 
 ## Highest-value problems, ranked
 
-**Implementation phase (2026-09-10) — see `CSS_UI_UX_EXCELLENCE_FINAL.md`:**
-F-5, F-6 **FIXED**. F-8 **BUILT** (`tests/playwright/ui-visual-regression.js` +
-32-state baseline). F-3 **ENFORCED** (`tests/lint/eap-status-color-drift.js`, in
-pre-commit + CI). F-10 **BUILT** (compositor-only motion system, both pages,
-reduced-motion, measured). F-1 **PARTIAL** (motion/ease/z tokens on both pages,
-still parallel copies). F-2, F-7, F-9, F-15 remain scoped-not-built.
+**Implementation phase COMPLETE (2026-09-10) — see `CSS_UI_UX_EXCELLENCE_FINAL.md`
+for measurements and the `READY` verdict.** F-5, F-6 fixed. F-8 built
+(`ui-visual-regression.js` + 32-state baseline). F-3 enforced
+(`eap-status-color-drift.js`). F-1 done — one shared vocabulary +
+`css-token-parity.js` (both lints in pre-commit + CI). F-2 done — index.html
+ad-hoc colours tokenized. F-9 done — one type scale, 0 literals left. F-7 done —
+fluid `clamp()` aside + a `@container` KPI grid. F-10 done — compositor-only
+motion, both pages, full reduced-motion. F-15 done — CDP trace captured, no
+regression. axe 0 across both pages × 4 res + 200% zoom + forced-colors.
+Deferred: F-14 explicit forced-colors block (assessed clean), F-13 unified
+state-block component.
 
-| # | Finding | Class | Effort | Prereq |
-|---|---|---|---|---|
-| F-5 | `var(--muted)` undefined | **FIXED** | trivial | — |
-| F-6 | unjustified `!important` | **FIXED** | trivial | — |
-| F-3 | EAP status colours hand-copied into markup — drift risk | **ENFORCED (lint)** | done | — |
-| F-8 | no visual-regression baseline for the 2 pages | **BUILT** | done | — |
-| F-10 | no motion system (brief's headline ask) | **BUILT** | done | F-8 |
-| F-1 | two token vocabularies / no shared layer | **PARTIAL** — motion/z tokens added both pages; colour vocabulary + shared stylesheet + cross-page lint still open | medium | F-8 |
-| F-2 | `index.html` secondary palette untokenized | SHOULD-FIX | medium | F-8 |
-| F-7 | breakpoint-only responsive, no fluid scale / `@container` | SHOULD-FIX | large | F-8 |
-| F-9 | no semantic type scale; some `9px` labels | SHOULD-FIX | medium | F-1, F-8 |
-| F-15 | no CSS perf trace (recalc/layout/paint/composite) | SHOULD-FIX | small | — |
+| # | Finding | Status |
+|---|---|---|
+| F-5 | `var(--muted)` undefined | **FIXED** |
+| F-6 | unjustified `!important` | **FIXED** |
+| F-3 | EAP status colours hand-copied into markup | **ENFORCED** (`eap-status-color-drift.js`) |
+| F-8 | no visual-regression baseline | **BUILT** (`ui-visual-regression.js`, 32 states) |
+| F-10 | no motion system | **BUILT** (both pages, reduced-motion, measured) |
+| F-1 | two token vocabularies / no shared layer | **DONE** — one vocabulary, `css-token-parity.js` enforces it |
+| F-2 | `index.html` secondary palette untokenized | **DONE** — evidence/risk/label/on-signal ramps tokenized |
+| F-7 | breakpoint-only responsive, no fluid scale / `@container` | **DONE** — `clamp()` aside + one `@container` KPI grid |
+| F-9 | no semantic type scale; some `9px` labels | **DONE** — one `--text-*` scale, 0 literals; `9px` kept as documented micro-type |
+| F-15 | no CSS perf trace | **DONE** — CDP `Performance.getMetrics` before/after, no regression |
 | F-4 | EAP aside width magic number ×3 | ACCEPTABLE-DEFER | trivial | F-1 |
 | F-11 | `forced-colors` not handled | ACCEPTABLE-DEFER | small | — |
 | F-12 | zoom-200% / text-scaling untested | ACCEPTABLE-DEFER | small | F-8 |
