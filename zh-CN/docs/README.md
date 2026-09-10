@@ -72,10 +72,18 @@
 - **[服务级别目标 (SLO)](sre/SLO_DEFINITIONS.md)** - 可靠性, Error Budgets, 及 SLI
 - **[遥测数据字典 (Ontology)](data/TELEMETRY_ONTOLOGY.md)** - 数据字典和有效载荷标准
 
+### 7. Hyper-Scaler 运营与治理
+
+用于安全、文化和合规的企业级框架。
+
+- **[数据治理 (Data Governance)](data/DATA_GOVERNANCE.md)** - 数据生命周期，PII 掩码与合规性。
+- **[供应链安全 (Supply Chain Security)](security/SUPPLY_CHAIN_POLICY.md)** - SBOM 和依赖管理策略。
+- **[事后回顾框架 (Post-Mortem)](sre/postmortems/TEMPLATE.md)** - 无指责事故 RCA 模板。
+- **[文档规范 (Style Guide)](DOCUMENTATION_STYLE_GUIDE.md)** - 知识库的编辑标准。
+
 ---
 
-
 <div align="center">
-  <p><i>文档由 IMS 核心工程团队维护</i></p>
-  <p><b>精确 • 保真 • 速度 (Precision • Fidelity • Velocity)</b></p>
+  <p><i>Documentation maintained by the IMS Core Engineering Team</i></p>
+  <p><b>Precision • Fidelity • Velocity</b></p>
 </div>

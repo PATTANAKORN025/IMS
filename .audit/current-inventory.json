@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-08-25",
+  "method": "Static JSON walk (always-recurse into row.panels regardless of collapsed state) cross-validated against live Grafana DOM (document.querySelectorAll('[data-viz-panel-key]')) for 2 dashboards (ims-easy-overview: 7/7 match, ims-noc-overview: 10/10 match). gridPos overlap check scoped per coordinate space: top-level flat panels compared only against each other; each rows children compared only against siblings in the SAME row, never across rows -- nested-row panels use row-LOCAL relative gridPos coordinates, not page-absolute, proven empirically (4 panels from 4 different rows all sharing x:0,y:0).",
+  "totalDashboards": 15,
+  "totalPanels": 169,
+  "totalQueries": 178,
+  "totalRows": 43,
+  "totalGridOverlaps": 0,
+  "knownLinterBlindSpotConfirmed": "nested row panel traversal gap -- CONFIRMED STILL PRESENT. A naive JSON-only tool that assumes collapsed:false rows never carry real nested panels, or that compares gridPos across different rows as one coordinate space, produces false data (undercounts panels by 22, and/or reports spurious overlaps). Not a production defect -- live rendering is correct -- but a real static-analysis tooling gap.",
+  "dashboards": [
+    {
+      "file": "monitoring/grafana/dashboards/infrastructure/ims-capacity-planning.json",
+      "uid": "ims-capacity",
+      "title": "IMS AIOps & Capacity Forecast",
+      "realPanelCount": 12,
+      "queryCount": 14,
+      "rowCount": 4,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/infrastructure/ims-engineering-drilldown.json",
+      "uid": "ims-engineering",
+      "title": "IMS Engineering Drill-Down",
+      "realPanelCount": 19,
+      "queryCount": 22,
+      "rowCount": 6,
+      "missingPanelIds": [
+        "◉ Estimated Daily Power Cost (THB)",
+        "◉ Power Efficiency Ratio",
+        "◉ Yield Risk Index",
+        "[row] Cost & Efficiency Analytics"
+      ],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/infrastructure/ims-ingestion-latency.json",
+      "uid": "ims-ingestion-latency",
+      "title": "IMS Ingestion Latency",
+      "realPanelCount": 10,
+      "queryCount": 12,
+      "rowCount": 3,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/infrastructure/ims-meta-monitoring.json",
+      "uid": "ims-meta-monitoring",
+      "title": "IMS Pipeline Health & Meta-Monitoring",
+      "realPanelCount": 12,
+      "queryCount": 0,
+      "rowCount": 4,
+      "missingPanelIds": [
+        "◈ Inserts / sec",
+        "◈ Error Rate",
+        "◉ Last Flush",
+        "◉ Devices OPEN",
+        "◉ Devices HALF-OPEN",
+        "◉ Devices CLOSED",
+        "◈ Trip Rate (per device)",
+        "◈ Device Circuit Breaker State",
+        "◉ Unique Devices Polled (1h)",
+        "◈ Devices Polled / cycle",
+        "◈ Pipeline Success Rate",
+        "[row] Pipeline Health",
+        "[row] Circuit Breaker",
+        "[row] Circuit Breaker Trips",
+        "[row] Throughput"
+      ],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/infrastructure/ims-noc-overview.json",
+      "uid": "ims-noc-overview",
+      "title": "IMS NOC Overview",
+      "realPanelCount": 10,
+      "queryCount": 11,
+      "rowCount": 4,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-easy-overview.json",
+      "uid": "ims-easy-overview",
+      "title": "IMS Easy Overview",
+      "realPanelCount": 7,
+      "queryCount": 7,
+      "rowCount": 4,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-ldi-alarm-console.json",
+      "uid": "ims-ldi-alarm-console",
+      "title": "IMS LDI - Alarm Console",
+      "realPanelCount": 2,
+      "queryCount": 1,
+      "rowCount": 0,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-ldi-alarm-dictionary.json",
+      "uid": "ims-ldi-alarm-dictionary",
+      "title": "IMS LDI - Alarm Dictionary",
+      "realPanelCount": 3,
+      "queryCount": 2,
+      "rowCount": 0,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-ldi-alarm-response.json",
+      "uid": "ims-ldi-alarm-response",
+      "title": "IMS LDI - Alarm Response (MTTA/MTTR)",
+      "realPanelCount": 8,
+      "queryCount": 7,
+      "rowCount": 0,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-ldi-engineering-analytics.json",
+      "uid": "ims-ldi-engineering-analytics",
+      "title": "IMS LDI - Engineering Analytics & SPC",
+      "realPanelCount": 19,
+      "queryCount": 32,
+      "rowCount": 9,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-ldi-factory-digital-twin.json",
+      "uid": "ims-ldi-factory-digital-twin",
+      "title": "IMS LDI - Factory Digital Twin",
+      "realPanelCount": 1,
+      "queryCount": 10,
+      "rowCount": 0,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-ldi-machine-snapshot.json",
+      "uid": "ims-ldi-machine-snapshot",
+      "title": "IMS LDI - Machine Snapshot",
+      "realPanelCount": 14,
+      "queryCount": 13,
+      "rowCount": 0,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-ldi-manufacturing.json",
+      "uid": "ims-ldi-manufacturing",
+      "title": "IMS LDI - Manufacturing Command Center",
+      "realPanelCount": 24,
+      "queryCount": 21,
+      "rowCount": 9,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ims-ldi-operator-andon.json",
+      "uid": "ims-ldi-operator-andon",
+      "title": "IMS LDI - Operator Andon Board",
+      "realPanelCount": 11,
+      "queryCount": 10,
+      "rowCount": 0,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    },
+    {
+      "file": "monitoring/grafana/dashboards/manufacturing/ldi-data-readiness.json",
+      "uid": "ldi-data-readiness",
+      "title": "LDI Data Readiness & Integration Gaps (Real Database)",
+      "realPanelCount": 17,
+      "queryCount": 16,
+      "rowCount": 0,
+      "missingPanelIds": [],
+      "gridOverlaps": 0
+    }
+  ]
+}

@@ -54,23 +54,6 @@
   <a href="../data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
-## ⚡ 快速开始 (3分钟上手)
-
-```bash
-# 1. 克隆代码库
-git clone https://github.com/PATTANAKORN025/IMS.git
-cd IMS
-
-# 2. 启动遥测模拟器和基础设施
-make up
-
-# 3. 验证运行状态并访问仪表板
-make verify
-# Grafana: http://localhost:3000 (admin / change-me-please)
-```
-
-*生产环境部署请参阅 [Deployment Readiness](../docs/operations/DEPLOYMENT_READINESS.md)。*
-
 <br/>
 
 <div align="center" justify-content="space-between">
@@ -154,7 +137,7 @@ make verify
 
 ---
 
-## 扩展评估路径
+## 快速入门（两种路径）
 
 > [!NOTE]
 > **模拟器边界：** 两种路径都使用内置的 SNMP/HTTP 数据模拟器 (`ims-snmpsim`) 在本地运行 IMS 堆栈。它们 **不** 连接到真实的工厂设备或外部网络设备。模拟器生成用于验证的真实、有界遥测和警报序列。

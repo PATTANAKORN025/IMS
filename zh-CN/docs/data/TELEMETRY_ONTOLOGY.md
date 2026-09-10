@@ -10,19 +10,37 @@
 - 状态 (Status/State): `*_state` (整数枚举), `*_status` (字符串)
 
 ## 2. 标准 LDI 有效载荷 (HTTP POST)
-**Endpoint**: `POST /ingest/ldi`
+**Endpoint**: `POST /ldi-telemetry`
 ```json
 {
-  "equipment_id": "LDI-01",
-  "timestamp": "2026-08-26T09:00:00Z",
-  "metrics": {
-    "spindle_speed_rpm": 12000,
-    "chamber_temp_celsius": 24.5,
-    "vacuum_pressure_bar": 1.2
-  },
-  "alarms": [
-    {"code": "E-404", "severity": "CRITICAL", "message": "Vacuum loss"}
-  ]
+  "time": "2026-08-26T09:00:00Z",
+  "factory": "F1",
+  "process": "LDI",
+  "eqp_id": "LDI-01",
+  "mo": "MO12345",
+  "fpn": "PN9876",
+  "layer_name": "L1",
+  "resist_dosage": 45.5,
+  "scale_x": 1.002,
+  "scale_y": 0.998,
+  "temperature": 24.5,
+  "humidity": 45.0,
+  "scan_speed": 120.0,
+  "air_vacuum": -0.8,
+  "thickness": 1.2,
+  "board_no": 1,
+  "total_board": 100,
+  "total_time": 450.5,
+  "filmno": "F001",
+  "board_id": "B001",
+  "resist": "R-100",
+  "state": true,
+  "scale_mode": "AUTO",
+  "pe_1": 1.1,
+  "je_1": 2.2,
+  "pe_setting": 1.0,
+  "je_setting": 2.0,
+  "log_id": "LOG-5555"
 }
 ```
 

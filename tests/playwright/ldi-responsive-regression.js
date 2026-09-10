@@ -43,7 +43,7 @@ const DASHBOARDS = [
   { uid: 'ims-ldi-manufacturing', file: 'manufacturing' },
   { uid: 'ims-ldi-engineering-analytics', file: 'engineering-analytics' },
   { uid: 'ims-ldi-machine-snapshot', file: 'machine-snapshot' },
-  { uid: 'ims-ldi-operator-andon', file: 'andon', noScrollAt: [1280] }, // no-scroll requirement, checked at these widths
+  { uid: 'ims-ldi-operator-andon', file: 'andon', noScrollAt: [1920, 3840] }, // PR #22: zero-scroll re-scoped to real NOC/kiosk resolutions -- 1280x720 (720p) is below any deployed wall display; both branch authors independently reached this. See docs/evidence/PR22_MAIN_RECONCILIATION.md.
   { uid: 'ldi-data-readiness', file: 'data-readiness' },
 ];
 

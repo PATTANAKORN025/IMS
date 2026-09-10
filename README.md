@@ -145,7 +145,7 @@
 
 ---
 
-## Extended Evaluation Paths
+## Quick Start (Two Paths)
 
 > [!NOTE]
 > **Simulator Boundary:** Both paths run the IMS stack locally using a built-in SNMP/HTTP data simulator (`ims-snmpsim`). They **do not** connect to real factory equipment or external network devices. The simulator generates realistic, bounded telemetry and alarm sequences for validation.

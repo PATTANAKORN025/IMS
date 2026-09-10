@@ -110,7 +110,7 @@ const MAX_HEIGHT = {
   // ~30-unit / 476px 1280p overflow is a pre-existing, cross-branch,
   // documented issue (see the render doc and GRAFANA_FRONTEND_P18_FINAL.md),
   // not something this merge introduced or is scoped to fix.
-  'ims-ldi-operator-andon': 23, // factory-floor kiosk (declared grid bottom; render-validated 2026-09-10)
+  'ims-ldi-operator-andon': 19, // factory-floor kiosk. PR #22 reconciliation: adopted main's compact P15-R layout (compliance h3, Action Queue h4) -- render-validated zero-scroll at 1920x1080 (-36px) and 3840x2160; 1280x720 is an unsupported sub-NOC resolution (see docs/evidence/PR22_MAIN_RECONCILIATION.md).
 
   // 2026-08-08: NOC and Easy Overview are the other two dashboards this
   // system's own design doc (§1 principle 5, "progressive disclosure")

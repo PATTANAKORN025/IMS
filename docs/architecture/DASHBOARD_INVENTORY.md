@@ -11,9 +11,9 @@
 > (`node scripts/generate-dashboard-inventory.js --check`) fails the build
 > if this file doesn't match what the dashboards currently say.
 >
-> Last generated: 2026-09-10 | Total dashboards: 16 | Total panels: 201
+> Last generated: 2026-09-10 | Total dashboards: 15 | Total panels: 190
 
-## Infrastructure (6)
+## Infrastructure (5)
 
 | UID | Title | Panels | Purpose |
 |---|---|---|---|
@@ -22,7 +22,6 @@
 | `ims-ingestion-latency` | IMS Ingestion Latency | 13 | Read-only. Real source_ts -> ingest_ts latency evidence from migration 081's ingest_ts columns -- no simulated data, no interactive write actions. Companion to tests/e2e/ingestion-latency-check.js. |
 | `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | 16 | The ingestion pipeline's own health: rows/sec insert rate, batch success rate, retry queue depth, circuit breaker state, and device poll rates. Watches the pipeline, not the fleet it monitors. |
 | `ims-noc-overview` | IMS NOC Overview | 7 | Infrastructure-only (servers) -- LDI process/quality metrics live on the Manufacturing and Machine Snapshot dashboards. |
-| `ims-sandbox-omni` | IMS Sandbox - THE OMNI-MATRIX (Hyper-Performant) | 11 | _(no description set in dashboard JSON)_ |
 
 ## LDI Manufacturing (10)
 

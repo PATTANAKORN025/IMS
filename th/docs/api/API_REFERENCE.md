@@ -5,7 +5,7 @@
 ## 1. Telemetry Ingestion API
 รับข้อมูล Time-series จากเครื่องจักร LDI
 
-**POST** `/ingest/ldi`
+**POST** `/ldi-telemetry`
 - **Host**: `node-red-internal:1880` (หรือผ่าน reverse proxy)
 - **Headers**:
   - `Content-Type: application/json`
@@ -19,8 +19,16 @@
 ## 2. Alarm Webhook API
 รับทริกเกอร์แจ้งเตือนจากภายนอกเพื่อประมวลผลผ่าน Alertmanager
 
-**POST** `/alarms/external`
+**POST** `/alert-webhook`
 - **Host**: `alertmanager:9093`
 - **Body**: Standard Prometheus Alertmanager webhook payload
 - **Responses**:
   - `200 OK`: รับและจัดการการแจ้งเตือนแล้ว
+
+## 3. การนำเข้าข้อมูล Metric ทั่วไป
+รับข้อมูล Metric ทั่วไปสำหรับอุปกรณ์ที่ไม่ใช่ LDI
+
+**POST** `/inject`
+**POST** `/metrics`
+- **Host**: `node-red-internal:1880`
+- **Body**: ข้อมูล Telemetry ในรูปแบบ JSON key-value
