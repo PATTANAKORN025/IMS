@@ -1,0 +1,1737 @@
+// The Floor 1 EAP operational map.
+//
+// One canvas, one coherent Factory Twin. The real floor plan -- envelope,
+// walls, columns -- is the spatial foundation, drawn from /api/floor-geometry.
+// The 40 DIRECT cells stand on it at their own measured position. The other
+// 170 cells have no world position and none is invented for them: each of the
+// 12 process zones instead carries a world-space region -- the zone is placed
+// on the floor, the individual machines inside a SET_LEVEL or LAYOUT_ONLY zone
+// are not -- and clicking that region opens a zone drawer, a small schematic
+// inset showing that zone's cells in the reference layout's own frame, marked
+// as spatially unresolved rather than pretended onto the real floor.
+//
+// Three frame modes read the same model:
+//   WORLD  -- only what is grounded in FLOOR1_WORLD_M: floor, zone regions, the
+//             40 DIRECT footprints. No schematic content, ever.
+//   EAP    -- only EAP_LAYOUT_FRAME: the full reference-layout drawing, all 210
+//             cells, unresolved ones marked. The census view.
+//   AUTO   -- the WORLD map, plus the zone drawer on demand. Default.
+// 2D and 3D read one footprint per cell; 3D only swaps the camera and adds an
+// extrusion height, never a second geometry.
+//
+// Cells are instanced -- one batch for the floor's columns, one for whichever
+// cell set is on screen, one for zone-card fills, one for confidence markers.
+// Walls, boundary and zone borders are line geometry built once per rebuild.
+// Nothing is rebuilt per frame.
+
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OPERATIONAL_STATUS, STATUS_ORDER, DATA_QUALITY } from './operational-status.js';
+import { SOURCE_TYPE, createOperationalStateResolver } from './operational-state-adapters.js';
+
+// Relative, not absolute: the page is served at "/" directly but also behind
+// the reverse proxy at "/factory-twin-3d/", which strips its own prefix
+// before forwarding. An absolute "/api/..." path resolves against the site
+// origin and misses that prefix entirely; a relative path resolves against
+// the current document's own URL and reaches the right host either way --
+// the same convention app.js already uses for exactly this reason.
+const ENDPOINT = 'api/eap-map';
+const FLOOR_ENDPOINT = 'api/floor-geometry';
+
+/* Presentation constants. Height is one of them: no authoritative CAD height
+   exists for any cell, so the 3D view picks a viewing height and the payload
+   says PRESENTATION_ONLY. It is never published as a measurement. */
+const CELL_HEIGHT_3D = 2.4;
+const CELL_HEIGHT_2D = 0.02;
+const MARKER_SIZE = 0.5;
+
+const C = {
+  bg: 0x0f1216,
+  ground: 0x1a2029,
+  wall: 0x6b83a8,
+  boundary: 0x93add6,
+  column: 0x2c3644,
+  world: 0xc7dbf5,           // a DIRECT cell: bright, because it is real
+  layout: 0x8b96a8,          // a schematic cell
+  layoutUnassigned: 0x5b6472,
+  marker: 0xe0ac63,
+  hover: 0xffffff,
+  selected: 0x63a4ff,
+  zoneFillSet: 0x3a6ea8,
+  zoneFillLayout: 0x8a6a3a,
+  zoneBorderSet: 0x6fa0d8,
+  zoneBorderLayout: 0xd8a657,
+  zoneBorderDirect: 0x9fb8dd,
+  zoneLabel: '#a9c4e8',
+  cellLabel: '#0d1116',
+  schemaCellLabel: '#0d1116',
+};
+
+const stage = document.getElementById('stage');
+const labelCanvas = document.getElementById('labels');
+const labelCtx = labelCanvas.getContext('2d');
+const headline = document.getElementById('headline');
+const inspector = document.getElementById('inspector');
+const countsTable = document.getElementById('counts');
+const frameNote = document.getElementById('frame-note');
+const modeNote = document.getElementById('mode-note');
+const drawer = document.getElementById('zoneDrawer');
+const drawerTitle = document.getElementById('zoneDrawerTitle');
+const drawerBody = document.getElementById('zoneDrawerBody');
+const drawerCanvas = document.getElementById('zoneDrawerCanvas');
+const drawerCtx = drawerCanvas.getContext('2d');
+const drawerClose = document.getElementById('zoneDrawerClose');
+// Looked up here, ahead of the renderer-construction block below, because
+// showCreationFailure() can run synchronously at module-init time (a GPU
+// unavailable at boot) -- before that point, a `const` declared further
+// down the file (where the rest of the webgl-lifecycle code naturally
+// lives) would still be in its temporal dead zone.
+const webglStatusText = document.getElementById('webgl-status-text');
+const webglLostBanner = document.getElementById('webgl-lost');
+const webglRetryBtn = document.getElementById('webgl-retry');
+const webglReloadBtn = document.getElementById('webgl-reload');
+
+// FT-WEBGL-RECOVERY-02: READY -> LOST -> RESTORING -> REBUILDING ->
+// VERIFYING -> RECOVERED (immediately followed by a return to READY -- a
+// one-frame transition, not a state anything waits in), or, whenever the
+// browser never answers a restore request OR verification finds the
+// rebuilt scene is not actually working, -> FAILED. See
+// attemptContextRecovery() and verifyRecovery() further down. Declared
+// here, ahead of renderer construction, for the same reason as the DOM
+// lookups just above: showCreationFailure() can run synchronously at
+// module-init time, before a `const` declared further down (where the
+// rest of this lifecycle's code naturally lives) would be initialized.
+const WebglLifecycle = Object.freeze({
+  READY: 'READY',
+  LOST: 'LOST',
+  RESTORING: 'RESTORING',
+  REBUILDING: 'REBUILDING',
+  VERIFYING: 'VERIFYING',
+  RECOVERED: 'RECOVERED',
+  FAILED: 'FAILED',
+});
+let webglLifecycle = WebglLifecycle.READY;
+let contextLossCount = 0; // observability only; also what a repeated-loss test reads back
+// Phase 5 race protection: bumped on every new loss episode. Any recovery
+// attempt in flight from an OLDER episode checks its own captured value of
+// this against the live one before each step that would otherwise mutate
+// shared state or declare a verdict -- if a newer loss has since arrived,
+// that attempt is stale and abandons itself rather than fighting (or
+// wrongly finishing) the episode that actually matters now.
+let recoveryGeneration = 0;
+// Real browsers usually fire webglcontextrestored automatically within a
+// second or two of preventDefault() being called, if the underlying driver
+// issue actually resolved. If it does not fire within this window, the
+// context is not coming back on its own, and staying in LOST forever with
+// no further sign of life is a worse user experience than naming that.
+const CONTEXT_RESTORE_TIMEOUT_MS = 8000;
+let contextRestoreTimer = null;
+
+// Phase 6: short, lifecycle-specific text. LOST/FAILED are shown in the
+// aria="alert" banner (a viewer needs to be told); RESTORING/REBUILDING/
+// VERIFYING are set on the same element too (so a screen reader that is
+// already reading the banner hears the real stage, not silence) but are
+// typically sub-second and never require an action; RECOVERED is shown
+// just long enough to be a real, readable confirmation before the banner
+// clears itself.
+const WEBGL_STATUS_MESSAGES = Object.freeze({
+  LOST: '3D view temporarily unavailable. Live operational data remains available.',
+  RESTORING: 'Restoring 3D view…',
+  REBUILDING: 'Rebuilding 3D view…',
+  VERIFYING: 'Verifying 3D view…',
+  RECOVERED: '3D view restored.',
+  FAILED: '3D view could not be restored. Live operational data remains available.',
+  CREATION_FAILED: '3D view could not start. Live operational data remains available.',
+});
+const RECOVERED_DISPLAY_MS = 900; // long enough to actually read "3D view restored."
+
+// FT-WEBGL-RECOVERY-02 Phase 1: webglcontextcreationerror fires on the
+// canvas itself, synchronously, inside the getContext() call THREE's
+// WebGLRenderer constructor makes internally -- by the time `new
+// THREE.WebGLRenderer()` either returns or throws, it is too late to
+// attach a listener to anything THREE hands back. So the canvas is made by
+// hand, with the listener attached first, and construction is wrapped: a
+// GPU genuinely unavailable at boot (not a runtime loss -- total absence,
+// no driver to reset) previously threw an uncaught exception straight out
+// of this module with no on-screen sign anything was wrong at all.
+const glCanvas = document.createElement('canvas');
+let contextCreationFailed = false;
+glCanvas.addEventListener('webglcontextcreationerror', (ev) => {
+  contextCreationFailed = true;
+  console.error('[eap] webglcontextcreationerror', ev.statusMessage || '(no status message)');
+});
+let renderer = null;
+let rendererAvailable = false;
+try {
+  renderer = new THREE.WebGLRenderer({
+    canvas: glCanvas, antialias: true, powerPreference: 'high-performance',
+  });
+  rendererAvailable = !contextCreationFailed;
+} catch (err) {
+  console.error('[eap] WebGLRenderer construction failed', err);
+}
+if (rendererAvailable) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(C.bg, 1);
+  stage.insertBefore(renderer.domElement, labelCanvas);
+}
+
+// FT-EAP-CTXLIFECYCLE / FT-WEBGL-RECOVERY-02: this canvas has its own WebGL
+// context, separate from the physical twin's (own renderer, own GPU
+// resources). The lifecycle below (READY -> LOST -> RESTORING -> REBUILDING
+// -> VERIFYING -> RECOVERED, falling back to FAILED) replaces a bare
+// detect-and-reload, on the strength of a fact that decision under-weighted:
+// this page keeps the ENTIRE application state that matters (payload,
+// cellRecords, zoneRecords, mode, view, selected, selectedZone, and the
+// camera objects cam2d/cam3d themselves) as plain JS values that a GPU
+// context loss never touches -- only the uploaded GPU buffers and compiled
+// programs are invalidated, never a JS heap object. Calling build() again
+// after a restore is not a hand-patched partial reconstruction: it is the
+// exact, already-tested code path every mode/view switch already takes,
+// recreating every GPU resource uniformly from the still-intact payload.
+// VERIFYING exists because "the browser fired webglcontextrestored" is not
+// the same fact as "the rebuilt scene actually renders" -- see
+// verifyRecovery() below for what is actually checked before RECOVERED is
+// declared, not assumed.
+if (rendererAvailable) {
+  renderer.domElement.addEventListener('webglcontextlost', (ev) => {
+    ev.preventDefault();
+    handleContextLost();
+  });
+  renderer.domElement.addEventListener('webglcontextrestored', () => {
+    attemptContextRecovery();
+  });
+} else {
+  // Phase 1: no runtime loss occurred -- there was never a context to lose.
+  // Distinct from LOST (which implies "was working, might come back on its
+  // own"): this page's 3D view never started, so it goes straight to
+  // FAILED with wording that says so, rather than the LOST/RESTORING text
+  // that would misrepresent a boot-time absence as a recoverable outage.
+  showCreationFailure();
+}
+document.getElementById('webgl-reload')?.addEventListener('click', () => window.location.reload());
+document.getElementById('webgl-retry')?.addEventListener('click', () => {
+  if (rendererAvailable) {
+    // The one real action available to a page whose browser did not restore
+    // the context on its own: ask it to. A genuinely dead GPU process will
+    // not answer this either, which is why Reload stays visible beside it.
+    renderer.forceContextRestore();
+  } else {
+    // Nothing was ever constructed to retry in place -- the whole scene
+    // graph downstream of this line assumes a live renderer exists by the
+    // time build() first runs. A fresh load is the honest retry here, not
+    // a partial in-session reconstruction of a page that never finished
+    // booting its 3D view the first time.
+    window.location.reload();
+  }
+});
+
+const scene = new THREE.Scene();
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+const key = new THREE.DirectionalLight(0xffffff, 0.5);
+key.position.set(-40, 90, 40);
+scene.add(key);
+
+const unitBox = new THREE.BoxGeometry(1, 1, 1);
+const cellMaterial = new THREE.MeshLambertMaterial();
+const markerMaterial = new THREE.MeshBasicMaterial({ color: C.marker });
+const columnMaterial = new THREE.MeshLambertMaterial({ color: C.column });
+const zoneCardMaterial = new THREE.MeshBasicMaterial({
+  transparent: true, opacity: 0.22, depthWrite: false,
+});
+
+let payload = null;
+let floor = null;
+let mode = 'AUTO';          // AUTO | WORLD | EAP
+let view = '2d';            // 2d | 3d
+
+let cam2d = null;
+let cam3d = null;
+let controls = null;
+let extent = { w: 180, d: 130 };
+let rect = { x: 0, y: 0, w: 0, h: 0 };
+// FT-24.6: real measured hotspot -- drawLabels() redrew up to ~210 static
+// text labels on a full-canvas 2D context EVERY frame (60/s), even at
+// complete idle with no camera motion (OrbitControls damping was never
+// enabled here, so nothing was actually moving). Real profiling: p95
+// 37.9ms idle, all 4 viewports -- over the 25ms target, entirely this one
+// call. Labels only need to be redrawn when something that affects their
+// screen position or content actually changes: camera pan/zoom, a
+// resize, a mode/view switch, or a fresh model load -- never on an
+// unchanged frame. Starts true so the first real frame always draws.
+let labelsDirty = true;
+
+let cellMesh = null;
+let cellRecords = [];       // parallel to cellMesh instances
+let markerMesh = null;
+let zoneMesh = null;
+let zoneRecords = [];       // parallel to zoneMesh instances, map mode only
+
+let hovered = null;         // a cell record
+let hoveredZone = null;     // a zone record
+let selected = null;
+let selectedZone = null;
+let openZone = null;        // the zone currently shown in the drawer
+
+const dummy = new THREE.Object3D();
+const colour = new THREE.Color();
+
+function activeCam() {
+  return view === '3d' ? cam3d : cam2d;
+}
+
+function isMapMode() {
+  return mode === 'AUTO' || mode === 'WORLD';
+}
+
+function directCellsOf(zoneId) {
+  if (!payload) return 0;
+  let n = 0;
+  for (const c of payload.cells) {
+    if (c.zone_id === zoneId && c.spatial_evidence === 'DIRECT') n += 1;
+  }
+  return n;
+}
+
+// FT-EAP-CTXLIFECYCLE: set for the one build() call attemptContextRecovery()
+// makes, never otherwise. Real bug found and fixed by testing the recovery
+// path for real (not by reasoning about it): a restored context is a
+// genuinely NEW underlying WebGLRenderingContext, not the old one repaired
+// in place, so the old geometries' GPU buffers are already gone with it --
+// deleting them again here (this codebase's own, correct habit for a normal
+// rebuild, where the context is still the live one) threw
+// "INVALID_OPERATION: object does not belong to this context" for every
+// disposed geometry, ~14 times per recovery. Disposal is for freeing a
+// STILL-LIVE context's memory; there is nothing left to free on a context
+// that is already gone, so it is skipped, exactly once, on this path only.
+let recoveringFromContextLoss = false;
+
+function clearScene() {
+  for (let i = scene.children.length - 1; i >= 0; i -= 1) {
+    const o = scene.children[i];
+    if (o.isLight) continue;
+    scene.remove(o);
+    if (recoveringFromContextLoss) continue; // nothing to delete -- the context that owned it is gone
+    if (o.geometry && o.geometry !== unitBox) o.geometry.dispose();
+    if (o.material
+      && ![cellMaterial, markerMaterial, columnMaterial, zoneCardMaterial].includes(o.material)) {
+      o.material.dispose();
+    }
+  }
+}
+
+function rectPoints(out, x, z, w, d, y, deg = 0) {
+  const hx = w / 2;
+  const hz = d / 2;
+  const r = THREE.MathUtils.degToRad(deg);
+  const cs = Math.cos(r);
+  const sn = Math.sin(r);
+  const corner = (sx, sz) => [
+    x + sx * hx * cs - sz * hz * sn, y, z + sx * hx * sn + sz * hz * cs,
+  ];
+  const four = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)];
+  for (let i = 0; i < 4; i += 1) out.push(...four[i], ...four[(i + 1) % 4]);
+}
+
+function lineObject(points, color, opacity = 1) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  const o = new THREE.LineSegments(g, new THREE.LineBasicMaterial({
+    color, transparent: opacity < 1, opacity,
+  }));
+  o.frustumCulled = false;
+  return o;
+}
+
+function dashedLineObject(points, color) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  const o = new THREE.LineSegments(g, new THREE.LineDashedMaterial({
+    color, dashSize: 0.6, gapSize: 0.35,
+  }));
+  o.computeLineDistances();
+  o.frustumCulled = false;
+  return o;
+}
+
+function groundMesh(vertices) {
+  const shape = new THREE.Shape(vertices.map((v) => new THREE.Vector2(v.x, -v.z)));
+  const geo = new THREE.ShapeGeometry(shape);
+  geo.rotateX(-Math.PI / 2);
+  const mat = new THREE.MeshBasicMaterial({ color: C.ground });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.y = -0.02;
+  m.frustumCulled = false;
+  return m;
+}
+
+/* ------------------------------------------------------------------ build -- */
+
+/* WORLD/AUTO: the real floor, the 12 zone regions, and the 40 DIRECT cells. No
+   schematic content is drawn here -- that is what the zone drawer is for. */
+function buildMap() {
+  clearScene();
+  cellRecords = [];
+  zoneRecords = [];
+  const height = view === '3d' ? CELL_HEIGHT_3D : CELL_HEIGHT_2D;
+
+  if (floor) {
+    const poly = floor.footprint_polygon && floor.footprint_polygon.vertices;
+    if (poly && poly.length > 2) scene.add(groundMesh(poly));
+
+    const pts = [];
+    for (const w of floor.wall_lines || []) pts.push(w.x1, 0.002, w.z1, w.x2, 0.002, w.z2);
+    if (pts.length) scene.add(lineObject(pts, C.wall, 1));
+
+    if (poly && poly.length > 2) {
+      const edge = [];
+      for (let i = 0; i < poly.length; i += 1) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+        edge.push(a.x, 0.01, a.z, b.x, 0.01, b.z);
+      }
+      scene.add(lineObject(edge, C.boundary, 1));
+    }
+
+    /* Columns are outlines in 2D and boxes only in 3D. Flat on a plan they read
+       the same either way, and 202 solid boxes cost 2 400 triangles and a draw
+       call for a picture that a rectangle already conveys. */
+    const cols = floor.columns || [];
+    if (cols.length && view === '3d') {
+      const cm = new THREE.InstancedMesh(unitBox, columnMaterial, cols.length);
+      cm.frustumCulled = false;
+      cols.forEach((col, i) => {
+        dummy.position.set(col.position.x, height / 2, col.position.z);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(col.footprint.width, height * 0.9, col.footprint.depth);
+        dummy.updateMatrix();
+        cm.setMatrixAt(i, dummy.matrix);
+      });
+      cm.instanceMatrix.needsUpdate = true;
+      scene.add(cm);
+    } else if (cols.length) {
+      const colPts = [];
+      for (const col of cols) {
+        rectPoints(colPts, col.position.x, col.position.z,
+          col.footprint.width, col.footprint.depth, 0.006);
+      }
+      scene.add(lineObject(colPts, C.column, 0.9));
+    }
+    if (floor.envelope) extent = { w: floor.envelope.width, d: floor.envelope.depth };
+  }
+
+  /* Zone regions: a filled card plus a border, never a machine position. A zone
+     that holds DIRECT cells (only B, today) gets a quiet border with no fill --
+     the real footprints inside it are the content. Every other zone gets a
+     translucent card so a viewer can see, and click, a process area that has no
+     individually placed machine. LAYOUT_ONLY gets a dashed, dimmer border: its
+     extent is real geometry, but the name-to-zone link is weak. */
+  const solidBorderPts = [];
+  const cardFillPts = [];
+  const cardColours = [];
+  const dashedZones = [];
+  for (const z of payload.zones) {
+    const r = z.cad_world_region;
+    if (!r) continue;
+    const direct = directCellsOf(z.zone_id);
+    const unresolved = z.cells - direct;
+    const record = { zone: z, region: r, direct, unresolved };
+    zoneRecords.push(record);
+    if (r.spatial_evidence === 'LAYOUT_ONLY') {
+      const pts = [];
+      rectPoints(pts, r.x, r.z, r.width + 1.5, r.depth + 1.5, 0.02);
+      dashedZones.push(pts);
+      cardFillPts.push({ r, colour: C.zoneFillLayout });
+    } else if (direct > 0) {
+      rectPoints(solidBorderPts, r.x, r.z, r.width + 1.5, r.depth + 1.5, 0.02);
+    } else {
+      rectPoints(solidBorderPts, r.x, r.z, r.width + 1.5, r.depth + 1.5, 0.02);
+      cardFillPts.push({ r, colour: C.zoneFillSet });
+    }
+  }
+  if (solidBorderPts.length) scene.add(lineObject(solidBorderPts, C.zoneBorderSet, 0.85));
+  for (const pts of dashedZones) scene.add(dashedLineObject(pts, C.zoneBorderLayout));
+
+  if (cardFillPts.length) {
+    const zm = new THREE.InstancedMesh(unitBox, zoneCardMaterial, cardFillPts.length);
+    zm.frustumCulled = false;
+    cardFillPts.forEach((card, i) => {
+      dummy.position.set(card.r.x, 0.008, card.r.z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(card.r.width + 1.5, 0.01, card.r.depth + 1.5);
+      dummy.updateMatrix();
+      zm.setMatrixAt(i, dummy.matrix);
+      zm.setColorAt(i, colour.setHex(card.colour));
+    });
+    zm.instanceMatrix.needsUpdate = true;
+    if (zm.instanceColor) zm.instanceColor.needsUpdate = true;
+    scene.add(zm);
+  }
+
+  /* The raycast target for zone selection is every registered zone, filled or
+     not -- clicking zone B's quiet border should focus it exactly like
+     clicking a filled card. */
+  const pickable = zoneRecords.filter((rec) => rec.region);
+  zoneMesh = new THREE.InstancedMesh(unitBox, new THREE.MeshBasicMaterial({ visible: false }),
+    Math.max(pickable.length, 1));
+  zoneMesh.count = pickable.length;
+  zoneMesh.frustumCulled = false;
+  pickable.forEach((rec, i) => {
+    dummy.position.set(rec.region.x, 0.4, rec.region.z);
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.set(rec.region.width + 1.5, 0.8, rec.region.depth + 1.5);
+    dummy.updateMatrix();
+    zoneMesh.setMatrixAt(i, dummy.matrix);
+  });
+  zoneMesh.instanceMatrix.needsUpdate = true;
+  zoneRecords = pickable;
+  scene.add(zoneMesh);
+
+  const cells = payload.cells.filter((c) => c.spatial_frame === 'FLOOR1_WORLD_M'
+    && c.world_footprint);
+  cellMesh = new THREE.InstancedMesh(unitBox, cellMaterial, Math.max(cells.length, 1));
+  cellMesh.count = cells.length;
+  cellMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  cellMesh.frustumCulled = false;
+  cells.forEach((cell, i) => {
+    const f = cell.world_footprint;
+    dummy.position.set(f.x, height / 2 + 0.03, f.z);
+    dummy.rotation.set(0, THREE.MathUtils.degToRad(f.rotation_deg), 0);
+    dummy.scale.set(f.width, height, f.depth);
+    dummy.updateMatrix();
+    cellMesh.setMatrixAt(i, dummy.matrix);
+    cellMesh.setColorAt(i, colour.setHex(C.world));
+    cellRecords.push(cell);
+  });
+  cellMesh.instanceMatrix.needsUpdate = true;
+  if (cellMesh.instanceColor) cellMesh.instanceColor.needsUpdate = true;
+  scene.add(cellMesh);
+  markerMesh = null;
+}
+
+/* EAP: the full reference-layout drawing. All 210 cells, at the reference
+   footprint, with a confidence marker on every cell whose position here is
+   what places it -- which, in this mode, is all of them but the 40. */
+function buildSchema() {
+  clearScene();
+  cellRecords = [];
+  zoneRecords = [];
+  const height = view === '3d' ? CELL_HEIGHT_3D : CELL_HEIGHT_2D;
+
+  const zonePts = [];
+  for (const z of payload.zones) {
+    rectPoints(zonePts, z.extent.x, z.extent.z, z.extent.width + 1.2,
+      z.extent.depth + 1.2, 0.005);
+  }
+  if (payload.frame && payload.frame.extent.width) {
+    rectPoints(zonePts, 0, 0, payload.frame.extent.width, payload.frame.extent.depth, 0.004);
+    extent = { w: payload.frame.extent.width, d: payload.frame.extent.depth };
+  }
+  if (zonePts.length) scene.add(lineObject(zonePts, C.zoneBorderSet, 0.55));
+
+  const cells = payload.cells.filter((c) => c.footprint);
+  cellMesh = new THREE.InstancedMesh(unitBox, cellMaterial, Math.max(cells.length, 1));
+  cellMesh.count = cells.length;
+  cellMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  cellMesh.frustumCulled = false;
+  const marked = cells.filter((c) => c.spatial_evidence !== 'DIRECT' || c.unit_state === 'UNASSIGNED');
+  markerMesh = new THREE.InstancedMesh(unitBox, markerMaterial, Math.max(marked.length, 1));
+  markerMesh.count = marked.length;
+  markerMesh.frustumCulled = false;
+  let m = 0;
+  cells.forEach((cell, i) => {
+    const f = cell.footprint;
+    dummy.position.set(f.x, height / 2, f.z);
+    dummy.rotation.set(0, THREE.MathUtils.degToRad(-f.rotation_deg), 0);
+    dummy.scale.set(f.width, height, f.depth);
+    dummy.updateMatrix();
+    cellMesh.setMatrixAt(i, dummy.matrix);
+    const hex = cell.unit_state === 'UNASSIGNED' ? C.layoutUnassigned : C.layout;
+    cellMesh.setColorAt(i, colour.setHex(hex));
+    cellRecords.push(cell);
+    if (cell.spatial_evidence !== 'DIRECT' || cell.unit_state === 'UNASSIGNED') {
+      const size = Math.min(MARKER_SIZE, f.width * 0.4, f.depth * 0.4);
+      dummy.position.set(f.x - f.width / 2 + size, height + size / 2, f.z - f.depth / 2 + size);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(size, size, size);
+      dummy.updateMatrix();
+      markerMesh.setMatrixAt(m, dummy.matrix);
+      m += 1;
+    }
+  });
+  cellMesh.instanceMatrix.needsUpdate = true;
+  if (cellMesh.instanceColor) cellMesh.instanceColor.needsUpdate = true;
+  markerMesh.instanceMatrix.needsUpdate = true;
+  scene.add(cellMesh);
+  scene.add(markerMesh);
+  zoneMesh = null;
+}
+
+// FT-EAP-SCADA-AUDIT: default OFF. This page has no authoritative operational
+// source (docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md), so the state a viewer
+// sees on first load must be the honest REAL / UNAVAILABLE, never a generated
+// stand-in they did not ask for. `simulationOn` doubles as the production/demo
+// switch (see resolveOperationalState): false => REAL only, no substitution;
+// true => the one explicit, viewer-initiated exception. The earlier default
+// (true) contradicted this file's own resolver comment, which already
+// described a "default-off framing".
+let simulationOn = false;
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i += 1) h = (Math.imul(h, 31) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/**
+ * FT-EAP-STATE-03: the one canonical operational-state record every caller
+ * on this page reads, instead of each re-deriving its own notion of "what
+ * state is this cell in". It carries exactly the fields a real integration
+ * would need (object_id, state, source_type, observed_at, quality, reason)
+ * -- geometry, position and identity stay on `cell` and are never
+ * duplicated here, so this record is state, and only state.
+ *
+ * The real work is in operational-state-adapters.js: this function is a
+ * thin, single-argument wrapper (unchanged call signature from every
+ * existing call site) around createOperationalStateResolver()'s own
+ * resolve(). FT-EAP-STATE-04 Phase 4: PRODUCTION (`simulationOn === false`,
+ * this page's default-off framing for that toggle now doubling as the
+ * production/demo switch) is REAL ONLY -- the resolver returns the real
+ * adapter's own UNAVAILABLE answer with no substitution. DEMO
+ * (`simulationOn === true`) is the one explicit, deliberate exception that
+ * lets a simulated value stand in -- never an automatic fallback. See that
+ * module and docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md for why REAL has
+ * nothing to answer with today.
+ */
+const operationalStateResolver = createOperationalStateResolver({
+  statusOrder: STATUS_ORDER, hashString,
+});
+
+function resolveOperationalState(cell) {
+  return operationalStateResolver.resolve(cell, { demoModeOn: simulationOn });
+}
+
+/** Back-compat convenience: the key into OPERATIONAL_STATUS, or null. Every
+ *  real caller goes through resolveOperationalState(); this just unwraps it
+ *  for the two call sites (paintStates' colour write, the legacy inspector
+ *  string) that only ever wanted the key. */
+function simulatedStateFor(cell) {
+  return resolveOperationalState(cell).state;
+}
+
+/**
+ * FT-EAP-STATE Phase 4/FT-EAP-STATE-03: per-zone and factory-wide state
+ * distribution, always reconciled to a total. `NO_DATA` and `UNAVAILABLE`
+ * are counted alongside the seven machine states, never folded into one of
+ * them and never dropped, so `total` always equals the exact cell count
+ * handed in -- a silent mismatch here would mean a cell was counted twice
+ * or not at all.
+ */
+function stateBreakdownOf(cells) {
+  const counts = new Map();
+  for (const key of [...STATUS_ORDER, 'NO_DATA', 'UNAVAILABLE']) counts.set(key, 0);
+  let total = 0;
+  for (const cell of cells) {
+    const rec = resolveOperationalState(cell);
+    // A real state (RUN/DOWN/...), or the quality that stood in for one --
+    // SIMULATION/VALID/STALE never appear as bucket keys here because
+    // `state` is non-null in exactly those cases; only NO_DATA and
+    // UNAVAILABLE ever reach this fallback, by construction.
+    const key = rec.state || rec.quality;
+    counts.set(key, (counts.get(key) || 0) + 1);
+    total += 1;
+  }
+  const reconciled = [...counts.values()].reduce((a, b) => a + b, 0) === total;
+  if (!reconciled) {
+    // Should be unreachable -- every cell maps to exactly one bucket above --
+    // so this is a real internal-consistency alarm, not routine logging.
+    console.warn('EAP state breakdown did not reconcile: total', total, 'summed',
+      [...counts.values()].reduce((a, b) => a + b, 0));
+  }
+  return { total, counts, reconciled };
+}
+
+function factoryStateBreakdown() {
+  return stateBreakdownOf(payload ? payload.cells : []);
+}
+
+function zoneStateBreakdown(zoneId) {
+  return stateBreakdownOf(payload ? payload.cells.filter((c) => c.zone_id === zoneId) : []);
+}
+
+function build() {
+  if (isMapMode()) buildMap(); else buildSchema();
+  paintStates();
+  renderStateBreakdown();
+  renderOperationalDataSourceNote();
+}
+
+/* Hover and selection are colour writes into the existing instance buffers. No
+   geometry is added, so pointing at a machine costs one buffer upload. */
+function paintStates() {
+  if (!cellMesh) return;
+  cellRecords.forEach((cell, i) => {
+    let hex;
+    if (isMapMode()) hex = C.world;
+    else hex = cell.unit_state === 'UNASSIGNED' ? C.layoutUnassigned : C.layout;
+    const simKey = simulatedStateFor(cell);
+    if (simKey) hex = OPERATIONAL_STATUS[simKey].hex;
+    if (selected && cell.cell_id === selected.cell_id) hex = C.selected;
+    else if (hovered && cell.cell_id === hovered.cell_id) hex = C.hover;
+    cellMesh.setColorAt(i, colour.setHex(hex));
+  });
+  if (cellMesh.instanceColor) cellMesh.instanceColor.needsUpdate = true;
+}
+
+/* ----------------------------------------------------------------- camera -- */
+
+function stageAspect() {
+  return Math.max(stage.clientWidth / Math.max(stage.clientHeight, 1), 0.2);
+}
+
+function makeCameras() {
+  const aspect = stageAspect();
+  const half = (Math.max(extent.d, extent.w / aspect) / 2) * 1.06;
+  cam2d = new THREE.OrthographicCamera(-half * aspect, half * aspect, half, -half, 0.1, 4000);
+  cam2d.position.set(0, 400, 0.001);
+  cam2d.lookAt(0, 0, 0);
+  cam3d = new THREE.PerspectiveCamera(40, aspect, 0.5, 6000);
+  cam3d.position.set(0, extent.w * 0.55, extent.d * 0.9);
+  cam3d.lookAt(0, 0, 0);
+}
+
+function resize() {
+  if (!rendererAvailable) return; // Phase 1: no GPU context ever existed to size
+  const w = stage.clientWidth;
+  const h = stage.clientHeight;
+  if (!w || !h) return;
+  // Covers every real caller: a genuine window resize, and rebuild()
+  // (mode switch, view switch, initial load) which always ends by calling
+  // this -- one injection point, not three separate ones to keep in sync.
+  labelsDirty = true;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  renderer.setSize(w, h, false);
+  labelCanvas.width = Math.round(w * ratio);
+  labelCanvas.height = Math.round(h * ratio);
+  labelCanvas.style.width = `${w}px`;
+  labelCanvas.style.height = `${h}px`;
+  rect = { x: 0, y: 0, w, h };
+  if (!cam2d) return;
+  const aspect = stageAspect();
+  const half = (Math.max(extent.d, extent.w / aspect) / 2) * 1.06;
+  cam2d.left = -half * aspect;
+  cam2d.right = half * aspect;
+  cam2d.top = half;
+  cam2d.bottom = -half;
+  cam2d.updateProjectionMatrix();
+  cam3d.aspect = aspect;
+  cam3d.updateProjectionMatrix();
+}
+
+function attachControls() {
+  if (controls) controls.dispose();
+  controls = new OrbitControls(activeCam(), renderer.domElement);
+  controls.target.set(0, 0, 0);
+  controls.enableRotate = view === '3d';
+  controls.screenSpacePanning = view !== '3d';
+  // Labels are screen-space text keyed to the camera's current projection
+  // -- OrbitControls' own 'change' event fires on every real pan/zoom/
+  // rotate, which is exactly (and only) when their positions can differ.
+  controls.addEventListener('change', () => { labelsDirty = true; });
+  controls.update();
+}
+
+/* Frame the camera on a world-space rectangle -- a zone region or a cell
+   footprint -- rather than the whole floor. Used by zone focus and machine
+   focus; never distorts, only reframes the same orthographic projection. */
+function focusOn(cx, cz, w, d) {
+  const aspect = stageAspect();
+  const margin = 1.8;
+  const half = Math.max(Math.max(d, w / aspect) / 2 * margin, 1.5);
+  if (view === '2d') {
+    cam2d.left = cx - half * aspect;
+    cam2d.right = cx + half * aspect;
+    cam2d.top = cz + half;
+    cam2d.bottom = cz - half;
+    cam2d.position.set(cx, 400, cz + 0.001);
+    cam2d.lookAt(cx, 0, cz);
+    cam2d.updateProjectionMatrix();
+  } else {
+    cam3d.position.set(cx, half * 1.6, cz + half * 1.6);
+    cam3d.lookAt(cx, 0, cz);
+  }
+  if (controls) {
+    controls.target.set(cx, 0, cz);
+    controls.update();
+  }
+}
+
+function resetCamera() {
+  if (!rendererAvailable) return; // Phase 1: no camera exists to reset
+  makeCameras();
+  attachControls();
+  resize();
+}
+
+/* ------------------------------------------------------- webgl lifecycle -- */
+/* webglStatusText/webglLostBanner/webglRetryBtn/webglReloadBtn are declared
+   near the top of this file, ahead of the renderer-construction block --
+   see that declaration's own comment for why. WEBGL_STATUS_MESSAGES,
+   RECOVERED_DISPLAY_MS, WebglLifecycle and its state are declared there
+   too, for the same reason. */
+
+function setWebglLifecycle(next) {
+  webglLifecycle = next;
+  console.log('[eap] webgl lifecycle ->', next);
+}
+
+function showWebglBanner(messageKey, { retryVisible = false, reloadVisible = true } = {}) {
+  if (webglStatusText) webglStatusText.textContent = WEBGL_STATUS_MESSAGES[messageKey];
+  if (webglRetryBtn) webglRetryBtn.hidden = !retryVisible;
+  if (webglReloadBtn) webglReloadBtn.hidden = !reloadVisible;
+  if (webglLostBanner) webglLostBanner.hidden = false;
+}
+
+/** Runs on webglcontextlost. Not `if (controls) controls.enabled = false;`
+ *  alone: the render loop itself must stop drawing, not merely stop taking
+ *  input, and OrbitControls is disabled here (dragging when the visible
+ *  frame is frozen would be actively misleading) but a fresh restore always
+ *  re-enables it -- see attemptContextRecovery(). */
+function handleContextLost() {
+  contextLossCount += 1;
+  // Phase 5: a new loss episode. Whatever recovery attempt was in flight
+  // from an OLDER episode (rare, but repeated real-world loss can do this)
+  // is now stale -- every check inside it compares its own captured
+  // generation against the live one and abandons itself rather than
+  // finishing against a context that is not the one that matters anymore.
+  recoveryGeneration += 1;
+  setWebglLifecycle(WebglLifecycle.LOST);
+  if (controls) controls.enabled = false;
+  hovered = null;
+  hoveredZone = null;
+  // Reload is intentionally NOT offered while automatic recovery might
+  // still work on its own -- Phase 6's "last resort only." It reappears in
+  // showFailedFallback() once that has genuinely failed.
+  showWebglBanner('LOST', { retryVisible: false, reloadVisible: false });
+  clearTimeout(contextRestoreTimer);
+  const myGeneration = recoveryGeneration;
+  contextRestoreTimer = setTimeout(() => {
+    // The browser never fired webglcontextrestored on its own. Escalate to
+    // the fallback Phase 6 asks for, rather than sitting in LOST silently.
+    if (myGeneration === recoveryGeneration && webglLifecycle === WebglLifecycle.LOST) {
+      showFailedFallback();
+    }
+  }, CONTEXT_RESTORE_TIMEOUT_MS);
+}
+
+/**
+ * Runs on webglcontextrestored. The browser has already re-created the
+ * underlying GL context by the time this fires; what is stale is only the
+ * GPU-side buffers/programs three.js uploaded into the OLD one. Everything
+ * this function preserves across the swap (camera framing, pan target,
+ * zoom, selection, zone drawer) was never actually lost -- it lives in a
+ * plain JS variable that a GPU event cannot touch -- so "preservation" here
+ * mostly means "do not call the one function (makeCameras) that would
+ * overwrite it with a fresh default," not reconstructing anything from a
+ * snapshot. webglcontextrestored firing is the start of recovery, not its
+ * conclusion -- see verifyRecovery() for what actually earns RECOVERED.
+ */
+function attemptContextRecovery() {
+  // Phase 5: a second webglcontextrestored (some drivers do fire it more
+  // than once for one real event) must not start a second, concurrent
+  // rebuild racing the first.
+  if (webglLifecycle === WebglLifecycle.RESTORING
+    || webglLifecycle === WebglLifecycle.REBUILDING
+    || webglLifecycle === WebglLifecycle.VERIFYING) {
+    return;
+  }
+  clearTimeout(contextRestoreTimer);
+  const myGeneration = recoveryGeneration; // this attempt's own token
+  setWebglLifecycle(WebglLifecycle.RESTORING);
+  showWebglBanner('RESTORING', { retryVisible: false, reloadVisible: false });
+
+  // attachControls() below builds a brand new OrbitControls bound to the
+  // SAME still-valid camera object; it always resets .target to the origin
+  // as part of that construction (see its own comment), so the real pan
+  // position has to be carried across that one line by hand.
+  const savedTarget = controls ? controls.target.clone() : null;
+  const savedZoom2d = cam2d ? cam2d.zoom : null;
+  const savedZoom3d = cam3d ? cam3d.zoom : null;
+  const savedSelectedId = selected ? selected.cell_id : null;
+  const savedSelectedZoneId = selectedZone ? selectedZone.zone.zone_id : null;
+  // What VERIFYING checks the rebuild against -- captured before build()
+  // runs, so it reflects the population this recovery is meant to restore,
+  // not whatever build() happens to leave behind if something goes wrong.
+  const expectedCellCount = cellRecords.length;
+
+  setWebglLifecycle(WebglLifecycle.REBUILDING);
+  showWebglBanner('REBUILDING', { retryVisible: false, reloadVisible: false });
+  try {
+    // Recreates every GPU resource (instanced meshes, line geometry,
+    // materials) from cellRecords/zoneRecords, which were never cleared --
+    // the exact path a mode/view switch already exercises and every EAP
+    // regression suite already covers, not a new, less-tested one.
+    recoveringFromContextLoss = true;
+    try {
+      build();
+    } finally {
+      recoveringFromContextLoss = false;
+    }
+    attachControls();
+    if (savedTarget) controls.target.copy(savedTarget);
+    // resize() below recomputes cam2d's left/right/top/bottom from the
+    // stage size and the floor extent, but never touches .zoom on either
+    // camera -- that is OrbitControls' own dolly state, untouched by
+    // context loss, so it is restored here explicitly rather than trusting
+    // resize() to leave it alone by accident.
+    if (savedZoom2d !== null) cam2d.zoom = savedZoom2d;
+    if (savedZoom3d !== null) cam3d.zoom = savedZoom3d;
+    cam2d.updateProjectionMatrix();
+    cam3d.updateProjectionMatrix();
+    controls.enabled = true;
+    controls.update();
+    resize();
+
+    // Selection is a reference into the cellRecords/zoneRecords array
+    // build() just replaced with fresh objects carrying the same ids --
+    // re-resolved by id rather than left pointing at the old, now-orphaned
+    // array so nothing downstream holds a stale reference.
+    if (savedSelectedId) selected = cellRecords.find((c) => c.cell_id === savedSelectedId) || null;
+    if (savedSelectedZoneId) {
+      selectedZone = zoneRecords.find((z) => z.zone.zone_id === savedSelectedZoneId) || null;
+    }
+    renderInspector();
+  } catch (err) {
+    console.error('[eap] rebuild failed during recovery', err);
+    if (myGeneration === recoveryGeneration) showFailedFallback();
+    return;
+  }
+
+  if (myGeneration !== recoveryGeneration) return; // superseded by a newer loss while rebuilding
+  setWebglLifecycle(WebglLifecycle.VERIFYING);
+  showWebglBanner('VERIFYING', { retryVisible: false, reloadVisible: false });
+  verifyRecovery(myGeneration, expectedCellCount);
+}
+
+/**
+ * webglcontextrestored firing, and even a rebuild completing without
+ * throwing, are not proof the view actually works -- a context can be
+ * restored and then immediately re-lost, or the GPU driver issue that
+ * caused the original loss can still be active. This is the watchdog
+ * Phase 4 asks for: real checks against the live renderer/scene, and one
+ * real observed frame of progression through tick()'s own normal path
+ * (not a second, parallel render call), before RECOVERED is declared.
+ */
+function verifyRecovery(myGeneration, expectedCellCount) {
+  if (myGeneration !== recoveryGeneration) return; // a newer loss owns the lifecycle now
+  let ok = true;
+  let reason = '';
+  try {
+    const gl = renderer.getContext();
+    if (!gl || gl.isContextLost()) { ok = false; reason = 'context reports lost immediately after restore'; }
+    if (ok && cellMesh && cellMesh.count !== expectedCellCount) {
+      ok = false;
+      reason = `cell instance count ${cellMesh.count} != expected ${expectedCellCount}`;
+    }
+    if (ok && scene.children.length === 0) { ok = false; reason = 'scene has no content after rebuild'; }
+  } catch (err) {
+    ok = false;
+    reason = err.message;
+  }
+  if (!ok) {
+    console.error('[eap] recovery verification failed:', reason);
+    if (myGeneration === recoveryGeneration) showFailedFallback();
+    return;
+  }
+
+  // Frame progression: tick() itself renders while VERIFYING (see its own
+  // guard), so two real animation frames observed here are two real,
+  // ordinary frames of this page's own normal render path -- not a
+  // synthetic double-call standing in for it.
+  const framesAtStart = totalFramesRendered;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (myGeneration !== recoveryGeneration) return; // superseded meanwhile
+    if (totalFramesRendered <= framesAtStart) {
+      console.error('[eap] recovery verification failed: no frame progression observed');
+      showFailedFallback();
+      return;
+    }
+    finishRecovery(myGeneration);
+  }));
+}
+
+function finishRecovery(myGeneration) {
+  if (myGeneration !== recoveryGeneration) return;
+  setWebglLifecycle(WebglLifecycle.RECOVERED);
+  showWebglBanner('RECOVERED', { retryVisible: false, reloadVisible: false });
+  setWebglLifecycle(WebglLifecycle.READY);
+  setTimeout(() => {
+    // Only clear the banner if nothing newer has happened meanwhile --
+    // otherwise this stale timer would hide a LOST/FAILED banner a later
+    // episode is legitimately still showing.
+    if (myGeneration === recoveryGeneration && webglLifecycle === WebglLifecycle.READY && webglLostBanner) {
+      webglLostBanner.hidden = true;
+    }
+  }, RECOVERED_DISPLAY_MS);
+}
+
+function showFailedFallback() {
+  setWebglLifecycle(WebglLifecycle.FAILED);
+  showWebglBanner('FAILED', { retryVisible: true, reloadVisible: true });
+}
+
+/** Phase 1: the GPU was never available at all -- see the WebGLRenderer
+ *  construction guard near the top of this file. Reuses the FAILED state
+ *  (the UI treatment -- Retry, Reload, a calm banner -- is identical) but
+ *  its own distinct message, since "could not be restored" would claim a
+ *  working view that never existed to restore. */
+function showCreationFailure() {
+  setWebglLifecycle(WebglLifecycle.FAILED);
+  showWebglBanner('CREATION_FAILED', { retryVisible: true, reloadVisible: true });
+}
+
+/* ------------------------------------------------------------------ zone drawer -- */
+
+function closeDrawer() {
+  openZone = null;
+  drawer.hidden = true;
+}
+
+/* The schematic inset: a plain 2D canvas, not a second WebGL context, showing
+   one zone's cells in EAP_LAYOUT_FRAME cropped to that zone's own extent. This
+   is the "spatially unresolved" representation -- it never claims a CAD
+   position, and it is drawn only for the zone a viewer asked about, not as a
+   second permanent viewport. */
+function drawZoneDrawer(zone) {
+  const cells = payload.cells.filter((c) => c.zone_id === zone.zone_id && c.footprint);
+  const pad = 1.4;
+  const bw = zone.extent.width + pad * 2;
+  const bd = zone.extent.depth + pad * 2;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const cw = drawerCanvas.clientWidth || 320;
+  const ch = drawerCanvas.clientHeight || 200;
+  drawerCanvas.width = Math.round(cw * ratio);
+  drawerCanvas.height = Math.round(ch * ratio);
+  const scale = Math.min(drawerCanvas.width / bw, drawerCanvas.height / bd);
+  const ox = drawerCanvas.width / 2 - zone.extent.x * scale;
+  const oy = drawerCanvas.height / 2 - zone.extent.z * scale;
+
+  drawerCtx.clearRect(0, 0, drawerCanvas.width, drawerCanvas.height);
+  drawerCtx.fillStyle = '#12161d';
+  drawerCtx.fillRect(0, 0, drawerCanvas.width, drawerCanvas.height);
+
+  for (const cell of cells) {
+    const f = cell.footprint;
+    const x = ox + f.x * scale;
+    const y = oy + f.z * scale;
+    const w = Math.max(f.width * scale, 2);
+    const d = Math.max(f.depth * scale, 2);
+    drawerCtx.save();
+    drawerCtx.translate(x, y);
+    drawerCtx.rotate(THREE.MathUtils.degToRad(-f.rotation_deg));
+    drawerCtx.fillStyle = cell.unit_state === 'UNASSIGNED' ? '#5b6472' : '#8b96a8';
+    if (cell.spatial_evidence === 'DIRECT') drawerCtx.fillStyle = '#c7dbf5';
+    drawerCtx.fillRect(-w / 2, -d / 2, w, d);
+    drawerCtx.restore();
+    if (cell.spatial_evidence !== 'DIRECT') {
+      drawerCtx.fillStyle = '#e0ac63';
+      drawerCtx.beginPath();
+      drawerCtx.arc(x - w / 2 + 3 * ratio, y - d / 2 + 3 * ratio, 2 * ratio, 0, Math.PI * 2);
+      drawerCtx.fill();
+    }
+  }
+}
+
+function openDrawer(record) {
+  openZone = record;
+  drawer.hidden = false;
+  const r = record.region;
+  const evText = r.spatial_evidence === 'LAYOUT_ONLY'
+    ? 'position-only, LOW confidence -- the extent is measured, the name-to-zone link is not'
+    : 'set-level: the zone is placed in the drawing, no individual machine inside it is';
+  drawerTitle.textContent = `${record.zone.zone_id} · ${record.zone.caption}`;
+  drawerBody.innerHTML = `<p class="note">Spatially unresolved &mdash; ${record.unresolved} of `
+    + `${record.zone.cells} cells here have no CAD-backed position. Shown in the reference `
+    + `layout's own schematic frame, not on the real floor. ${evText}.</p>`;
+  drawZoneDrawer(record.zone);
+}
+
+/* ----------------------------------------------------------------- labels -- */
+
+const labelVec = new THREE.Vector3();
+
+function projectPoint(x, y, z) {
+  labelVec.set(x, y, z).project(activeCam());
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  return {
+    x: (labelVec.x * 0.5 + 0.5) * rect.w * ratio,
+    y: (-labelVec.y * 0.5 + 0.5) * rect.h * ratio,
+    visible: labelVec.z < 1,
+  };
+}
+
+function drawLabels() {
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  labelCtx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+  if (!payload || !cam2d) return;
+  labelCtx.textAlign = 'center';
+  labelCtx.textBaseline = 'middle';
+
+  if (isMapMode()) {
+    labelCtx.font = `600 ${11 * ratio}px ui-sans-serif, system-ui, sans-serif`;
+    labelCtx.fillStyle = C.zoneLabel;
+    for (const rec of zoneRecords) {
+      const r = rec.region;
+      const p = projectPoint(r.x, 0, r.z - r.depth / 2 - 1.6);
+      if (!p.visible) continue;
+      const tag = rec.direct > 0
+        ? `${rec.zone.zone_id} · ${rec.zone.caption.toUpperCase()} · `
+          + `${rec.direct} on floor, ${rec.unresolved} unresolved`
+        : `${rec.zone.zone_id} · ${rec.zone.caption.toUpperCase()} · `
+          + `${rec.unresolved} unresolved`;
+      labelCtx.fillText(tag, p.x, p.y);
+    }
+    labelCtx.font = `${9.5 * ratio}px ui-sans-serif, system-ui, sans-serif`;
+    labelCtx.fillStyle = C.cellLabel;
+    for (const cell of cellRecords) {
+      const f = cell.world_footprint;
+      const a = projectPoint(f.x - f.width / 2, 0, f.z);
+      const b = projectPoint(f.x + f.width / 2, 0, f.z);
+      if (!a.visible || !b.visible || Math.abs(b.x - a.x) < 22 * ratio) continue;
+      const label = cell.reference_label || '';
+      if (!label || label.startsWith('UNREADABLE')) continue;
+      const short = label.includes('/') ? label.split('/').pop() : label;
+      const p = projectPoint(f.x, 0, f.z);
+      labelCtx.fillText(short, p.x, p.y);
+    }
+  } else {
+    labelCtx.font = `600 ${10.5 * ratio}px ui-sans-serif, system-ui, sans-serif`;
+    labelCtx.fillStyle = C.zoneLabel;
+    for (const z of payload.zones) {
+      const p = projectPoint(z.extent.x, 0, z.extent.z + z.extent.depth / 2 + 2.4);
+      if (p.visible) labelCtx.fillText(z.caption.toUpperCase(), p.x, p.y);
+    }
+    labelCtx.font = `${9.5 * ratio}px ui-sans-serif, system-ui, sans-serif`;
+    labelCtx.fillStyle = C.schemaCellLabel;
+    for (const cell of cellRecords) {
+      const f = cell.footprint;
+      const a = projectPoint(f.x - f.width / 2, 0, f.z);
+      const b = projectPoint(f.x + f.width / 2, 0, f.z);
+      if (!a.visible || !b.visible || Math.abs(b.x - a.x) < 22 * ratio) continue;
+      const label = cell.reference_label || '';
+      if (!label || label.startsWith('UNREADABLE')) continue;
+      const short = label.includes('/') ? label.split('/').pop() : label;
+      const p = projectPoint(f.x, 0, f.z);
+      labelCtx.fillText(short, p.x, p.y);
+    }
+  }
+}
+
+/* ---------------------------------------------------------------- picking -- */
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+function setPointer(clientX, clientY) {
+  const r = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((clientX - r.left) / r.width) * 2 - 1;
+  pointer.y = -((clientY - r.top) / r.height) * 2 + 1;
+}
+
+function pickCellAt(clientX, clientY) {
+  if (!cellMesh || !cellMesh.count) return null;
+  setPointer(clientX, clientY);
+  raycaster.setFromCamera(pointer, activeCam());
+  const hits = raycaster.intersectObject(cellMesh, false);
+  const first = hits.find((h) => Number.isInteger(h.instanceId));
+  return first ? (cellRecords[first.instanceId] || null) : null;
+}
+
+function pickZoneAt(clientX, clientY) {
+  if (!zoneMesh || !zoneMesh.count) return null;
+  setPointer(clientX, clientY);
+  raycaster.setFromCamera(pointer, activeCam());
+  const hits = raycaster.intersectObject(zoneMesh, false);
+  const first = hits.find((h) => Number.isInteger(h.instanceId));
+  return first ? (zoneRecords[first.instanceId] || null) : null;
+}
+
+/* -------------------------------------------------------------- inspector -- */
+
+function row(label, value) {
+  return `<dt>${label}</dt><dd>${value}</dd>`;
+}
+
+function badge(cell) {
+  const cls = cell.spatial_evidence === 'DIRECT' ? 'ok'
+    : (cell.spatial_evidence === 'LAYOUT_ONLY' ? 'warn' : 'mid');
+  return `<span class="badge ${cls}">${cell.spatial_evidence}</span>`;
+}
+
+function renderCellInspector(cell) {
+  const unit = payload.machine_units.find((u) => u.unit_id === cell.machine_unit_id);
+  const ev = cell.cad_evidence;
+  const f = cell.world_footprint || cell.footprint;
+  const parts = [
+    row('Cell', `${cell.cell_id} ${badge(cell)}`),
+    row('Reference label', cell.reference_label && !cell.reference_label.startsWith('UNREADABLE')
+      ? cell.reference_label : 'not legible in the reference'),
+    row('Unit', unit
+      ? `${unit.unit_id} &mdash; ${unit.reference_label} `
+        + `(${unit.aggregation_type === 'AGGREGATED_STATION'
+          ? `station of ${unit.cell_ids.length} cells` : 'single cell'})`
+      : 'none &mdash; drawn but not attached'),
+    row('Zone', `${cell.zone_id} &mdash; ${cell.zone_caption}`),
+    row('Process', cell.process),
+    row('Mapping state', `${cell.mapping_state} &middot; unit ${cell.unit_state}`),
+    row('Evidence', `${cell.spatial_evidence} (${cell.registration_method})`),
+    row('Spatial frame', cell.spatial_frame === 'FLOOR1_WORLD_M'
+      ? 'FLOOR1_WORLD_M &mdash; drawn on the real floor plan'
+      : 'EAP_LAYOUT_FRAME &mdash; drawn in the reference schematic'),
+    row('CAD identity', ev.has_cad_instance
+      ? `one named instance (${ev.relation})`
+      : `not established &mdash; a zone set of ${ev.cad_candidates_in_zone} candidates `
+        + `in ${ev.cad_zone_ids.join(', ') || 'no zone'}`),
+    row('CAD world position', cell.has_cad_world_position
+      ? 'Established' : '<strong>Not established</strong>'),
+    row('Operational footprint', `${f.width.toFixed(2)} &times; ${f.depth.toFixed(2)} `
+      + `in ${f.frame}`),
+    row('IMS mapping', unit ? unit.ims_mapping_state : 'NOT_MAPPED'),
+    row('Live status', `${cell.status} &mdash; `
+      + `${cell.live_status_eligible ? 'eligible' : 'not eligible'}`),
+    row('Operational state', (() => {
+      // FT-EAP-STATE-03 Phase 8: state, source and quality shown as three
+      // distinct facts, never merged into one -- a viewer must be able to
+      // tell "RUN, SIMULATED" apart from a real "RUN" at a glance, and
+      // "NO DATA" apart from the real OFF state it is never allowed to be
+      // confused with (the bug this whole contract exists to prevent).
+      const rec = resolveOperationalState(cell);
+      const stateLabel = rec.state ? `${OPERATIONAL_STATUS[rec.state].glyph} ${OPERATIONAL_STATUS[rec.state].label}`
+        : rec.quality.replace('_', ' ');
+      return `${stateLabel} <span class="badge ${rec.source_type === SOURCE_TYPE.REAL ? 'ok' : 'warn'}">`
+        + `${rec.source_type}</span> <span class="note" style="display:inline">`
+        + `(quality = ${rec.quality}) &mdash; ${rec.reason}</span>`;
+    })()),
+  ];
+  const notes = [];
+  if (cell.spatial_evidence === 'DIRECT') {
+    notes.push('<p class="note">Bound to one CAD instance, so this cell is drawn on the '
+      + 'real floor plan at that instance&rsquo;s own measured position.</p>');
+  } else if (cell.spatial_evidence === 'SET_LEVEL') {
+    notes.push('<p class="note">Set-level evidence: the zone holding this cell is placed '
+      + 'on the real floor, but nothing places this individual machine, so it is drawn in '
+      + 'the reference schematic. Open the zone to see it there.</p>');
+  } else {
+    notes.push('<p class="note warn">Layout only: no CAD correspondence was established '
+      + 'for this cell at any level, so the reference layout is all that places it.</p>');
+  }
+  notes.push(`<p class="note">Live status is not eligible for this cell: `
+    + `${cell.live_status_blocked_by}.</p>`);
+  const canFocus = Boolean(cell.world_footprint) && isMapMode();
+  const focusBtn = canFocus
+    ? '<button id="focusBtn" type="button">Focus this machine</button>' : '';
+  inspector.innerHTML = `<dl>${parts.join('')}</dl>${notes.join('')}${focusBtn}`;
+  if (canFocus) {
+    document.getElementById('focusBtn').addEventListener('click', () => {
+      focusOn(f.x, f.z, Math.max(f.width, 4), Math.max(f.depth, 4));
+    });
+  }
+}
+
+function renderZoneInspector(rec) {
+  const r = rec.region;
+  const parts = [
+    row('Zone', `${rec.zone.zone_id} &mdash; ${rec.zone.caption}`),
+    row('Process', rec.zone.process),
+    row('Cells', String(rec.zone.cells)),
+    row('On the real floor (DIRECT)', String(rec.direct)),
+    row('Spatially unresolved', String(rec.unresolved)),
+    row('Region evidence', `${r.spatial_evidence} &middot; link confidence ${r.link_confidence}`),
+    row('CAD candidates behind it', String(r.cad_candidates)),
+  ];
+  const notes = [`<p class="note">${r.derivation}.</p>`];
+  const drawerBtn = rec.unresolved > 0
+    ? '<button id="drawerBtn" type="button">Open zone drawer</button>' : '';
+  // FT-EAP-STATE Phase 4: this zone's own simulated-state distribution,
+  // reconciled to its own cell count -- the same resolver and the same
+  // reconciliation check as the factory-wide table, just filtered to this
+  // zone's cells, so the two can never silently disagree on a cell.
+  const { total: zTotal, counts: zCounts } = zoneStateBreakdown(rec.zone.zone_id);
+  const zRows = [...STATUS_ORDER, 'NO_DATA', 'UNAVAILABLE']
+    .map((key) => [key, zCounts.get(key) || 0])
+    .filter(([, n]) => n > 0)
+    .map(([key, n]) => {
+      const meta = OPERATIONAL_STATUS[key] || SIM_QUALITY_DISPLAY[key];
+      return row(`${meta.glyph} ${meta.label}`, String(n));
+    }).join('');
+  const stateTable = `<p class="note">Simulated state in this zone `
+    + `(${zTotal} of ${rec.zone.cells}):</p><dl>${zRows}</dl>`;
+  inspector.innerHTML = `<dl>${parts.join('')}</dl>${notes.join('')}${stateTable}`
+    + `<button id="zoneFocusBtn" type="button">Focus this zone</button> ${drawerBtn}`;
+  document.getElementById('zoneFocusBtn').addEventListener('click', () => {
+    focusOn(r.x, r.z, Math.max(r.width, 6), Math.max(r.depth, 6));
+  });
+  if (rec.unresolved > 0) {
+    document.getElementById('drawerBtn').addEventListener('click', () => openDrawer(rec));
+  }
+}
+
+function renderInspector() {
+  if (selected) { renderCellInspector(selected); return; }
+  if (selectedZone) { renderZoneInspector(selectedZone); return; }
+  inspector.innerHTML = '<p class="note">Click a cell or a zone.</p>';
+}
+
+function renderCounts() {
+  const c = payload.counts;
+  const rows = [
+    ['EAP cells', c.cells_with_a_footprint],
+    ['&nbsp;&nbsp;on the real floor', c.cells_in_world_frame],
+    ['&nbsp;&nbsp;in reference layout only', c.cells_in_layout_frame],
+    ['Machine units', c.machine_units],
+    ['&nbsp;&nbsp;aggregated stations', c.aggregated_station_units],
+    ['Spatial DIRECT', c.spatial_evidence.DIRECT || 0],
+    ['Spatial STRUCTURAL', c.spatial_evidence.STRUCTURAL || 0],
+    ['Spatial SET_LEVEL', c.spatial_evidence.SET_LEVEL || 0],
+    ['Spatial LAYOUT_ONLY', c.spatial_evidence.LAYOUT_ONLY || 0],
+    ['Live status eligible', c.cells_live_status_eligible],
+  ];
+  countsTable.innerHTML = rows
+    .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+}
+
+/** Display metadata for the two quality buckets that are not a machine state
+ *  at all -- kept local and separate from OPERATIONAL_STATUS (real plant
+ *  vocabulary) and from operational-status.js's own DATA_QUALITY (which
+ *  means "no authoritative IMS link", a different fact than "not attached
+ *  to a machine unit in this reference layout" or "simulation switched
+ *  off"). Conflating either into the shared module would blur a distinction
+ *  that module exists specifically to keep separate. */
+const SIM_QUALITY_DISPLAY = {
+  NO_DATA: { label: 'No data (unattached)', glyph: '○', color: '#475569' },
+  UNAVAILABLE: { label: 'Unavailable (sim off)', glyph: '–', color: '#475569' },
+};
+
+/**
+ * FT-EAP-STATE Phase 5: the always-visible, text-and-glyph answer to "what
+ * is the factory state" -- the same role app.js's own HUD list plays for
+ * the physical twin (that page's own comment: "the accessibility fallback").
+ * Never hover- or click-gated, so a viewer who cannot resolve the map's
+ * colours reads the identical numbers as plain rows, unconditionally.
+ */
+function renderStateBreakdown() {
+  const table = document.getElementById('stateBreakdown');
+  if (!table || !payload) return;
+  const { total, counts, reconciled } = factoryStateBreakdown();
+  const rows = [...STATUS_ORDER, 'NO_DATA', 'UNAVAILABLE'].map((key) => {
+    const meta = OPERATIONAL_STATUS[key] || SIM_QUALITY_DISPLAY[key];
+    const n = counts.get(key) || 0;
+    if (n === 0 && (key === 'NO_DATA' || key === 'UNAVAILABLE')) return ''; // only show when it applies
+    return `<tr><td><span class="chip" style="background:${meta.color}"></span> `
+      + `<span aria-hidden="true">${meta.glyph}</span> ${meta.label}</td><td>${n}</td></tr>`;
+  }).join('');
+  table.innerHTML = `${rows}<tr><td><strong>Total</strong></td><td><strong>${total}</strong></td></tr>`;
+  if (!reconciled) table.innerHTML += '<tr><td colspan="2" class="note warn">reconciliation failed -- see console</td></tr>';
+}
+
+/**
+ * FT-EAP-STATE-04 Phase 7: the one line that must be true regardless of
+ * mode, always visible, never behind a click. PRODUCTION (demo off) states
+ * plainly that no real source exists -- not "loading," not silence, an
+ * honest UNAVAILABLE naming the audit doc. DEMO states just as plainly
+ * that every value on screen is generated. Neither phrasing could be
+ * mistaken for the other at a glance.
+ */
+function renderOperationalDataSourceNote() {
+  const note = document.getElementById('opDataSourceNote');
+  if (!note) return;
+  note.innerHTML = simulationOn
+    ? '<strong>DEMO MODE &mdash; SIMULATED.</strong> Every operational-state value on '
+      + 'this map is generated, not observed. No live source feeds it.'
+    : '<strong>OPERATIONAL DATA &mdash; REAL SOURCE UNAVAILABLE.</strong> No authoritative '
+      + 'APEX3 operational-state source is integrated for this floor (see '
+      + 'docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md). Every cell reads REAL / UNAVAILABLE, '
+      + 'not a fabricated state.';
+}
+
+/* ------------------------------------------------------------------ modes -- */
+
+function rebuild() {
+  // Phase 1: with no GPU context, load() still fetches and renders every
+  // plain-DOM fact (headline, population counts, legend, the simulated-
+  // state breakdown) -- only the 3D scene itself is skipped, which is
+  // exactly what showCreationFailure()'s own banner already told the
+  // viewer to expect.
+  if (!rendererAvailable) return;
+  build();
+  makeCameras();
+  attachControls();
+  resize();
+}
+
+function setMode(next) {
+  if (!['AUTO', 'WORLD', 'EAP'].includes(next) || mode === next) return;
+  mode = next;
+  for (const [id, value] of [['modeAuto', 'AUTO'], ['modeWorld', 'WORLD'], ['modeEap', 'EAP']]) {
+    document.getElementById(id).setAttribute('aria-pressed', String(value === mode));
+  }
+  selected = null;
+  selectedZone = null;
+  closeDrawer();
+  renderInspector();
+  modeNote.textContent = mode === 'WORLD'
+    ? 'World: only CAD-grounded content. Zone regions and 40 DIRECT machines only.'
+    : (mode === 'EAP'
+      ? 'EAP: the full reference-layout drawing, all 210 cells, unresolved ones marked.'
+      : 'Auto: the real floor plan, with zone regions you can open for the cells that '
+        + 'are not individually placed on it.');
+  rebuild();
+}
+
+function setView(next) {
+  if (view === next) return;
+  view = next;
+  document.getElementById('view2d').setAttribute('aria-pressed', String(view === '2d'));
+  document.getElementById('view3d').setAttribute('aria-pressed', String(view === '3d'));
+  rebuild();
+}
+
+/* ------------------------------------------------------------------- loop -- */
+
+let frames = 0;
+let lastSample = performance.now();
+let fps = 0;
+// Real bug found by testing recovery, not by reasoning about it: `frames`
+// above resets to 0 on every fps sample window (about once a second), so
+// verifyRecovery() briefly used it as a "did rendering progress" check and
+// failed a real, correctly-recovering context on the unlucky timing where
+// the reset landed between its start-capture and its two-frame-later check
+// (framesAtStart=19, sampled 1 two real frames later -- 1 <= 19, a false
+// FAILED for a context that had, in fact, rendered a real new frame). This
+// counter is purpose-built for that check instead: it only ever increases.
+let totalFramesRendered = 0;
+
+function tick() {
+  requestAnimationFrame(tick);
+  if (!rendererAvailable || !payload || !cam2d) return;
+  // FT-WEBGL-RECOVERY-02 Phase 3/4: stop rendering on a lost/recovering
+  // context as an explicit app decision, not by relying on three.js's own
+  // internal no-op-while-lost guard. VERIFYING is deliberately included --
+  // verifyRecovery() observes THIS loop's own real frame progression, so
+  // rendering has to actually happen here while verifying, not in a second,
+  // parallel render call. RECOVERED is never observed here -- it is set and
+  // immediately advanced to READY within the same synchronous call, one
+  // event-loop turn before this function's next invocation.
+  if (webglLifecycle !== WebglLifecycle.READY && webglLifecycle !== WebglLifecycle.VERIFYING) return;
+  renderer.setViewport(0, 0, rect.w, rect.h);
+  if (controls) controls.update();
+  renderer.render(scene, activeCam());
+  if (labelsDirty) {
+    drawLabels();
+    labelsDirty = false;
+  }
+  frames += 1;
+  totalFramesRendered += 1;
+  const now = performance.now();
+  if (now - lastSample >= 1000) {
+    fps = (frames * 1000) / (now - lastSample);
+    frames = 0;
+    lastSample = now;
+  }
+}
+
+/**
+ * FT-SCADA-AUDIT: real defect, found by forcing the exact failures Phase 5
+ * of this audit asked for (malformed JSON, an unexpectedly-shaped {}
+ * payload), not by inspection alone -- a 200 response that is not valid
+ * JSON, or is valid JSON missing the fields this page reads, threw an
+ * uncaught exception straight out of load() (`mapRes.json()` parse errors
+ * and `payload.counts.cells_with_a_footprint` on an undefined `counts`
+ * were never guarded). The page was left silently stuck on "loading…"
+ * forever with no on-screen sign anything was wrong -- not a fabricated
+ * state, but not a safe failure either. Guarded here the same way the
+ * existing `!mapRes.ok` branch already was: an honest headline, `payload`
+ * left `null` so nothing downstream (rebuild, renderCounts, the state
+ * breakdown) mistakes a failed load for real data.
+ */
+function isWellFormedEapPayload(p) {
+  return Boolean(p) && typeof p === 'object'
+    && Array.isArray(p.cells) && Array.isArray(p.zones) && Array.isArray(p.machine_units)
+    && p.counts && typeof p.counts === 'object';
+}
+
+async function load() {
+  let mapRes;
+  try {
+    mapRes = await fetch(ENDPOINT, { headers: { accept: 'application/json' } });
+  } catch (err) {
+    headline.textContent = 'EAP model unreachable -- network error';
+    return;
+  }
+  if (!mapRes.ok) {
+    headline.textContent = 'EAP model not deployed on this host';
+    return;
+  }
+  let parsed;
+  try {
+    parsed = await mapRes.json();
+  } catch (err) {
+    headline.textContent = 'EAP model failed to load -- malformed response';
+    return;
+  }
+  if (!isWellFormedEapPayload(parsed)) {
+    headline.textContent = 'EAP model failed to load -- unexpected response shape';
+    return;
+  }
+  payload = parsed;
+  try {
+    const floorRes = await fetch(FLOOR_ENDPOINT, { headers: { accept: 'application/json' } });
+    if (floorRes.ok) floor = await floorRes.json();
+  } catch (err) {
+    floor = null;
+  }
+  const c = payload.counts;
+  headline.textContent = `${c.cells_with_a_footprint} cells · `
+    + `${c.cells_in_world_frame} on the real floor, ${c.cells_in_layout_frame} `
+    + `spatially unresolved · ${c.machine_units} machine units`;
+  frameNote.textContent = payload.frame ? payload.frame.warning : '';
+  modeNote.textContent = 'Auto: the real floor plan, with zone regions you can open for the '
+    + 'cells that are not individually placed on it.';
+  renderCounts();
+  // Plain DOM, independent of rebuild()'s own renderer-availability gate --
+  // Phase 1's own promise ("load() still fetches and renders every
+  // plain-DOM fact... only the 3D scene itself is skipped") only holds if
+  // these two are called here directly rather than solely from build(),
+  // which resetCamera()'s early return means never runs at all when
+  // rendererAvailable is false.
+  renderStateBreakdown();
+  renderOperationalDataSourceNote();
+  rebuild();
+}
+
+document.getElementById('modeAuto').addEventListener('click', () => setMode('AUTO'));
+document.getElementById('modeWorld').addEventListener('click', () => setMode('WORLD'));
+document.getElementById('modeEap').addEventListener('click', () => setMode('EAP'));
+document.getElementById('view2d').addEventListener('click', () => setView('2d'));
+document.getElementById('view3d').addEventListener('click', () => setView('3d'));
+document.getElementById('fit').addEventListener('click', resetCamera);
+const simToggleBtn = document.getElementById('simToggle');
+if (simToggleBtn) {
+  // Sync the button to the real initial state rather than trusting the
+  // markup -- the default is OFF (FT-EAP-SCADA-AUDIT), and the label/pressed
+  // state must say so on first paint, not only after the first click.
+  const syncSimToggle = (on) => {
+    simToggleBtn.setAttribute('aria-pressed', String(on));
+    simToggleBtn.textContent = on ? 'Simulation: ON' : 'Simulation: OFF';
+  };
+  syncSimToggle(simulationOn);
+  simToggleBtn.addEventListener('click', () => {
+    syncSimToggle(window.__eap.setSimulation(!simulationOn));
+  });
+}
+drawerClose.addEventListener('click', closeDrawer);
+window.addEventListener('resize', resize);
+
+// Phase 1: renderer.domElement was never inserted into the DOM when GPU
+// context creation failed (the canvas the events would bind to does not
+// exist as a live element for a pointer to ever reach), so there is
+// nothing real for either listener to attach to.
+if (rendererAvailable) {
+  renderer.domElement.addEventListener('click', (ev) => {
+    const cell = pickCellAt(ev.clientX, ev.clientY);
+    if (cell) {
+      selected = cell;
+      selectedZone = null;
+    } else {
+      const zone = isMapMode() ? pickZoneAt(ev.clientX, ev.clientY) : null;
+      selected = null;
+      selectedZone = zone;
+    }
+    paintStates();
+    renderInspector();
+  });
+
+  let hoverPending = false;
+  renderer.domElement.addEventListener('pointermove', (ev) => {
+    if (hoverPending) return;
+    hoverPending = true;
+    const { clientX, clientY } = ev;
+    requestAnimationFrame(() => {
+      hoverPending = false;
+      const next = pickCellAt(clientX, clientY);
+      const nextZone = !next && isMapMode() ? pickZoneAt(clientX, clientY) : null;
+      const changed = (next && next.cell_id) !== (hovered && hovered.cell_id);
+      hovered = next;
+      hoveredZone = nextZone;
+      renderer.domElement.style.cursor = (next || nextZone) ? 'pointer' : 'default';
+      if (changed) paintStates();
+    });
+  });
+}
+
+/* Test surface: the regression asserts what was drawn, so it reads the instance
+   matrices back rather than the records they came from. */
+function readInstances() {
+  const out = [];
+  if (!cellMesh) return out;
+  const mtx = new THREE.Matrix4();
+  const pos = new THREE.Vector3();
+  const quat = new THREE.Quaternion();
+  const scl = new THREE.Vector3();
+  const euler = new THREE.Euler();
+  for (let i = 0; i < cellRecords.length; i += 1) {
+    cellMesh.getMatrixAt(i, mtx);
+    mtx.decompose(pos, quat, scl);
+    euler.setFromQuaternion(quat, 'YXZ');
+    const cell = cellRecords[i];
+    out.push({
+      cell_id: cell.cell_id,
+      zone_id: cell.zone_id,
+      label: cell.reference_label,
+      frame: isMapMode() ? 'FLOOR1_WORLD_M' : 'EAP_LAYOUT_FRAME',
+      spatial_evidence: cell.spatial_evidence,
+      mapping_state: cell.mapping_state,
+      unit_state: cell.unit_state,
+      machine_unit_id: cell.machine_unit_id,
+      x: pos.x,
+      z: pos.z,
+      width: scl.x,
+      depth: scl.z,
+      height: scl.y,
+      rotation_deg: THREE.MathUtils.radToDeg(euler.y),
+    });
+  }
+  return out;
+}
+
+window.__eap = {
+  ready: () => Boolean(payload && cellMesh),
+  mode: () => mode,
+  setMode,
+  view: () => view,
+  setView,
+  counts: () => (payload ? payload.counts : null),
+  frameVocabulary: () => (payload ? payload.frames : null),
+  contract: () => (payload
+    ? {
+      renderer: payload.renderer_contract,
+      live: payload.live_status_contract,
+      footprint: payload.footprint_contract,
+    }
+    : null),
+  drawnCells: () => cellRecords.length,
+  drawnMarkers: () => (markerMesh ? markerMesh.count : 0),
+  drawnZones: () => zoneRecords.length,
+  batches: () => scene.children.filter((o) => o.isInstancedMesh).length,
+  geometries: () => (rendererAvailable ? renderer.info.memory.geometries : 0),
+  drawCalls: () => (rendererAvailable ? renderer.info.render.calls : 0),
+  triangles: () => (rendererAvailable ? renderer.info.render.triangles : 0),
+  fps: () => fps,
+  totalFramesRendered: () => totalFramesRendered,
+  drawn: () => readInstances(),
+  units: () => (payload ? payload.machine_units : []),
+  zoneList: () => (payload ? payload.zones : []),
+  floorLoaded: () => Boolean(floor),
+  stageRect: () => ({ ...rect }),
+  isMapMode,
+  pick: (cellId) => {
+    const cell = cellRecords.find((c) => c.cell_id === cellId);
+    if (cell) {
+      selected = cell;
+      selectedZone = null;
+      paintStates();
+      renderInspector();
+      return cell;
+    }
+    return null;
+  },
+  hover: (cellId) => {
+    const cell = cellRecords.find((c) => c.cell_id === cellId);
+    if (cell) {
+      hovered = cell;
+      paintStates();
+      return cell;
+    }
+    return null;
+  },
+  pickZone: (zoneId) => {
+    const rec = zoneRecords.find((r) => r.zone.zone_id === zoneId);
+    if (rec) {
+      selected = null;
+      selectedZone = rec;
+      paintStates();
+      renderInspector();
+      return rec;
+    }
+    return null;
+  },
+  openDrawer: (zoneId) => {
+    const rec = zoneRecords.find((r) => r.zone.zone_id === zoneId);
+    if (rec) openDrawer(rec);
+    return rec || null;
+  },
+  closeDrawer,
+  drawerOpen: () => !drawer.hidden,
+  drawerZone: () => (openZone ? openZone.zone.zone_id : null),
+  focus: (cx, cz, w, d) => focusOn(cx, cz, w, d),
+  cameraExtent: () => ({ ...extent }),
+  camBounds: () => (cam2d
+    ? { left: cam2d.left, right: cam2d.right, top: cam2d.top, bottom: cam2d.bottom }
+    : null),
+  selection: () => selected,
+  selectedZoneId: () => (selectedZone ? selectedZone.zone.zone_id : null),
+  hovered: () => hovered,
+  // FT-EAP-CTXLIFECYCLE: real QA hooks, not test-only stubs -- Phase 6's own
+  // instruction to test via the browser's real forceContextLoss()/
+  // forceContextRestore() rather than a mocked flag. webglLifecycle() and
+  // contextLossCount() are the same variables handleContextLost()/
+  // attemptContextRecovery() drive; nothing here is a second, parallel copy.
+  webglLifecycle: () => webglLifecycle,
+  contextLossCount: () => contextLossCount,
+  simulateContextLoss: () => (rendererAvailable ? renderer.forceContextLoss() : undefined),
+  simulateContextRestore: () => (rendererAvailable ? renderer.forceContextRestore() : undefined),
+  rendererAvailable: () => rendererAvailable,
+  recoveryGeneration: () => recoveryGeneration,
+  cameraSnapshot: () => (cam2d && cam3d ? {
+    view,
+    zoom2d: cam2d.zoom,
+    zoom3d: cam3d.zoom,
+    target: controls ? { x: controls.target.x, y: controls.target.y, z: controls.target.z } : null,
+  } : null),
+  // SIMULATED STATUS -- client-side only, see simulatedStateFor's own
+  // comment. Never touches /api/state or any production telemetry source.
+  isSimulationOn: () => simulationOn,
+  setSimulation: (on) => {
+    simulationOn = Boolean(on);
+    paintStates();
+    if (simToggleBtn) simToggleBtn.setAttribute('aria-pressed', String(simulationOn));
+    renderInspector();
+    renderStateBreakdown();
+    renderOperationalDataSourceNote();
+    return simulationOn;
+  },
+  simulatedStatus: (cellId) => {
+    const cell = cellRecords.find((c) => c.cell_id === cellId);
+    const key = cell ? simulatedStateFor(cell) : null;
+    return key ? { key, ...OPERATIONAL_STATUS[key], simulation: true, status_source: 'SIMULATED' } : null;
+  },
+  // FT-EAP-STATE: the canonical state contract (Phase 2) and its Phase 4
+  // roll-ups, exposed for QA/regression -- the exact records the map, the
+  // inspector and the always-visible breakdown table all read, so a test
+  // checks the one real source instead of re-deriving its own copy.
+  operationalState: (cellId) => {
+    const cell = cellRecords.find((c) => c.cell_id === cellId) || null;
+    return resolveOperationalState(cell);
+  },
+  factoryStateBreakdown: () => {
+    const { total, counts, reconciled } = factoryStateBreakdown();
+    return { total, reconciled, counts: Object.fromEntries(counts) };
+  },
+  zoneStateBreakdown: (zoneId) => {
+    const { total, counts, reconciled } = zoneStateBreakdown(zoneId);
+    return { total, reconciled, counts: Object.fromEntries(counts) };
+  },
+};
+
+tick();
+load();

@@ -43,7 +43,7 @@ const DASHBOARDS = [
   { uid: 'ims-ldi-manufacturing', file: 'manufacturing' },
   { uid: 'ims-ldi-engineering-analytics', file: 'engineering-analytics' },
   { uid: 'ims-ldi-machine-snapshot', file: 'machine-snapshot' },
-  { uid: 'ims-ldi-operator-andon', file: 'andon', noScrollAt: [1280] }, // no-scroll requirement, checked at these widths
+  { uid: 'ims-ldi-operator-andon', file: 'andon', noScrollAt: [1920, 3840] }, // PR #22: zero-scroll re-scoped to real NOC/kiosk resolutions -- 1280x720 (720p) is below any deployed wall display; both branch authors independently reached this. See docs/evidence/PR22_MAIN_RECONCILIATION.md.
   { uid: 'ldi-data-readiness', file: 'data-readiness' },
 ];
 
@@ -70,7 +70,19 @@ async function run() {
   await page.fill('input[name="password"]', PASS);
   await page.click('button[type="submit"]');
   await page.waitForTimeout(2000);
-  console.log('Login done.\n');
+
+  // Hard auth gate: /login can return HTTP 200 with 0 panels and 0 errors,
+  // which the per-dashboard checks below would silently count as PASS.
+  // Verified this actually happened (all "OK" results were the login page).
+  const postLoginUrl = page.url();
+  const loginFormStillPresent = await page.locator('input[name="password"]').count();
+  if (postLoginUrl.includes('/login') || loginFormStillPresent > 0) {
+    console.error(`AUTHENTICATION_FAILED: still on login page after submit (url=${postLoginUrl}).`);
+    console.error('Not running dashboard checks against an unauthenticated session.');
+    await browser.close();
+    process.exit(1);
+  }
+  console.log('Login verified (left /login, no login form present).\n');
 
   const results = [];
   let failures = 0;
@@ -81,8 +93,21 @@ async function run() {
       const url = `${BASE_URL}/d/${dash.uid}?orgId=1&kiosk`;
       process.stdout.write(`${dash.uid} @ ${vp.name} ... `);
       try {
-        await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-        await page.waitForTimeout(3500);
+        // PR #22: 'networkidle' never fires against a live Grafana (persistent
+        // live/websocket connections), which timed the whole suite out. Wait for
+        // the document + a fixed settle instead; the overflow assertion below is
+        // unchanged.
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForTimeout(7000);
+
+        // Per-dashboard gate: bounced back to /login mid-suite (session expiry,
+        // concurrent restart) must fail, not read as an empty clean dashboard.
+        if (page.url().includes('/login')) {
+          results.push({ dashboard: dash.uid, viewport: vp.name, status: 'FAIL (AUTHENTICATION_FAILED — redirected to /login)' });
+          failures++;
+          console.log('FAIL (AUTHENTICATION_FAILED — redirected to /login)');
+          continue;
+        }
         await page.evaluate(() => {
           document.querySelectorAll('.sidemenu, .navbar, .page-toolbar').forEach(el => el.style.display = 'none');
         });

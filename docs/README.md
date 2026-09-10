@@ -27,6 +27,17 @@ The high-level design, business value, and product capabilities.
 - **[Architecture Book](architecture/IMS_PLATFORM_BOOK.md)** - Full-stack technical architecture.
 - **[Data Flow](architecture/DATA_FLOW.md)** - Telemetry pipeline from edge to visualization.
 - **[Database Schema](architecture/DATABASE_SCHEMA.md)** - TimescaleDB hypertable structures.
+- **[Floor 1 DXF Forensic Audit](architecture/FLOOR1_DXF_FORENSIC_AUDIT.md)** - What the authoritative CAD source actually contains, why its header cannot define the coordinate system, and how the frame was derived instead.
+- **[Factory Twin Reconstruction](architecture/FACTORY_TWIN_RECONSTRUCTION.md)** - How the Floor 1 twin was reconstructed, its evidence model, and what it may not claim.
+- **[Factory Twin Runtime Architecture](architecture/FACTORY_TWIN_ARCHITECTURE.md)** - Request path, module map, HTTP surface, rendering and view semantics.
+- **[Factory Twin Service Architecture](architecture/FACTORY_TWIN_SERVICE_ARCHITECTURE.md)** - Which container serves the twin, which only look like they do, and how to run direct-mode verification safely.
+- **[Factory Twin Operator Guide](architecture/FACTORY_TWIN_OPERATOR_GUIDE.md)** - How to read the twin without over-reading it: views, layers, evidence legend, inspector.
+- **[Factory Twin Security Model](architecture/FACTORY_TWIN_SECURITY_MODEL.md)** - Trust boundaries, the 401 requirement, response shaping, private geometry handling.
+- **[Factory Twin Evidence Requirements](architecture/FACTORY_TWIN_EVIDENCE_REQUIREMENTS.md)** - What is blocked, what would unlock it, and the evidence promotion contract.
+- **[Factory Twin Presentation Model](architecture/FACTORY_TWIN_PRESENTATION_MODEL.md)** - The third layer: geometry drawn to be understood, and why it can never become evidence.
+- **[Factory Twin Provenance](architecture/FACTORY_TWIN_PROVENANCE.md)** - The four namespaces, the classification vocabulary, and why no spatial IMS mapping exists.
+- **[Factory Twin Visual Fidelity](architecture/FACTORY_TWIN_VISUAL_FIDELITY.md)** - How closely the schematic view reproduces its reference renders, element by element.
+- **[Factory Twin Visual QA](architecture/FACTORY_TWIN_VISUAL_QA.md)** - Repeatable visual and performance QA procedure, regression strategy and baseline.
 - **[Business ROI](business/BUSINESS_VALUE_ROI.md)** - Business impact and return on investment.
 
 ### 2. Operations & Administration
@@ -61,6 +72,25 @@ Historical audits and system snapshots.
 
 - **[Full System Audit](archive/IMS_FULL_SYSTEM_AUDIT.md)** - Comprehensive baseline audit.
 - **[System Trust Report](evidence/SYSTEM_TRUST_REPORT.md)** - Metric fidelity validation.
+
+### 6. Developer & Integration (World-Class Core)
+
+The blueprints for engineering, maintaining, and integrating with the system.
+
+- **[Developer Guide](developer/LOCAL_DEVELOPMENT.md)** - Local environment setup and DX.
+- **[API Reference](api/API_REFERENCE.md)** - Ingestion and Webhook API contracts.
+- **[Architecture Decisions (ADRs)](architecture/decisions/)** - Historical tech choices.
+- **[Service Level Objectives (SLO)](sre/SLO_DEFINITIONS.md)** - Reliability, Error Budgets, and SLIs.
+- **[Telemetry Ontology](data/TELEMETRY_ONTOLOGY.md)** - Data dictionaries and payload standards.
+
+### 7. Hyper-Scaler Operations & Governance
+
+Enterprise-grade frameworks for security, culture, and compliance.
+
+- **[Data Governance](data/DATA_GOVERNANCE.md)** - Data lifecycle, PII masking, and compliance.
+- **[Supply Chain Security](security/SUPPLY_CHAIN_POLICY.md)** - SBOM and dependency policies.
+- **[Post-Mortem Framework](sre/postmortems/TEMPLATE.md)** - Blameless incident RCA template.
+- **[Docs Style Guide](DOCUMENTATION_STYLE_GUIDE.md)** - Editorial standards for the knowledge base.
 
 ---
 
