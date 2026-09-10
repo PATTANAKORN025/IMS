@@ -93,8 +93,12 @@ async function run() {
       const url = `${BASE_URL}/d/${dash.uid}?orgId=1&kiosk`;
       process.stdout.write(`${dash.uid} @ ${vp.name} ... `);
       try {
-        await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-        await page.waitForTimeout(3500);
+        // PR #22: 'networkidle' never fires against a live Grafana (persistent
+        // live/websocket connections), which timed the whole suite out. Wait for
+        // the document + a fixed settle instead; the overflow assertion below is
+        // unchanged.
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForTimeout(7000);
 
         // Per-dashboard gate: bounced back to /login mid-suite (session expiry,
         // concurrent restart) must fail, not read as an empty clean dashboard.
