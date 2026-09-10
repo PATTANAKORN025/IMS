@@ -32,6 +32,23 @@
     --region: #6fa0d8;
     --region-layout: #d8a657;
     --ok: #7fd1a6;
+
+    /* MOTION SYSTEM (audit F-10). Semantic durations + eases, consumed by the
+       rules below. Values are short on purpose -- an operations map should feel
+       immediate, motion is only here to say WHERE something changed, never to
+       decorate. Every use is compositor-friendly (opacity / transform) and
+       every one is neutralised by the prefers-reduced-motion block at the end
+       of this stylesheet.  NOTE (audit F-1): the physical twin's stylesheet
+       carries a parallel copy of these tokens until the two pages share a
+       stylesheet -- tests/lint has no cross-page token check yet. */
+    --motion-fast: 110ms;
+    --motion-normal: 190ms;
+    --ease-standard: cubic-bezier(.2, 0, 0, 1);   /* enter / general */
+    --ease-exit: cubic-bezier(.4, 0, 1, 1);        /* leave */
+    /* Z-INDEX SCALE (audit: was ad-hoc). Only the overlay layer needs one here;
+       #zoneDrawer and #webgl-lost both sit over #stage's canvas. */
+    --z-drawer: 20;
+    --z-webgl-lost: 30;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -70,8 +87,12 @@
     font: inherit;
     font-size: 12px;
     cursor: pointer;
+    transition: border-color var(--motion-fast) var(--ease-standard),
+                color var(--motion-fast) var(--ease-standard),
+                background-color var(--motion-fast) var(--ease-standard);
   }
   button:hover { border-color: var(--line-strong); }
+  button:active { transform: translateY(1px); }
   #twin-link {
     color: var(--ink-dim);
     text-decoration: none;
@@ -79,6 +100,10 @@
     border: 1px solid var(--line);
     border-radius: 3px;
     padding: 5px 10px;
+  }
+  #twin-link {
+    transition: color var(--motion-fast) var(--ease-standard),
+                border-color var(--motion-fast) var(--ease-standard);
   }
   #twin-link:hover { color: var(--ink); border-color: var(--line-strong); }
   button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
@@ -116,7 +141,15 @@
     position: absolute; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 14px;
     text-align: center; padding: 24px; background: rgba(18, 21, 26, .92);
+    z-index: var(--z-webgl-lost);
+    /* audit F-10: a short fade in/out so the banner does not hard-cut over
+       the frozen frame. `allow-discrete` + @starting-style animate through
+       the display:none toggle the `hidden` attribute drives -- no JS change.
+       Degrades to an instant show/hide where unsupported. */
+    transition: opacity var(--motion-normal) var(--ease-standard),
+                display var(--motion-normal) allow-discrete;
   }
+  @starting-style { #webgl-lost { opacity: 0; } }
   /* FT-TWIN-CTXLIFECYCLE: real bug, same root cause as the physical twin's
      own copy of this pattern (index.html) -- an ID selector always beats
      the browser's own [hidden]{display:none} attribute rule, so setting
@@ -125,7 +158,7 @@
      rather than hit-testing the rendered page, so it went uncaught until
      the physical twin's own regression suite's elementFromPoint check
      found the identical flaw there. */
-  #webgl-lost[hidden] { display: none; }
+  #webgl-lost[hidden] { display: none; opacity: 0; }
   #webgl-lost p { max-width: 420px; color: var(--ink); font-size: 13px; line-height: 1.5; margin: 0; }
   #labels { position: absolute; inset: 0; pointer-events: none; }
   #zoneDrawer {
@@ -138,8 +171,17 @@
     border-radius: 6px;
     box-shadow: 0 8px 28px rgba(0,0,0,.45);
     overflow: hidden;
+    z-index: var(--z-drawer);
+    /* audit F-10: slide-and-fade up from the corner it lives in, so the eye
+       tracks it to its resting place instead of it blinking into existence.
+       transform + opacity only (compositor); animates through the `hidden`
+       display toggle via allow-discrete + @starting-style, no JS change. */
+    transition: opacity var(--motion-normal) var(--ease-standard),
+                transform var(--motion-normal) var(--ease-standard),
+                display var(--motion-normal) allow-discrete;
   }
-  #zoneDrawer[hidden] { display: none; }
+  @starting-style { #zoneDrawer { opacity: 0; transform: translateY(10px); } }
+  #zoneDrawer[hidden] { display: none; opacity: 0; transform: translateY(10px); }
   .drawer-head {
     display: flex;
     align-items: center;
@@ -185,6 +227,19 @@
   .chip { width: 6px; height: 6px; border-radius: 50%; flex: none; }
   @media (max-width: 1400px) { body { grid-template-columns: 1fr 300px; } }
   @media (min-width: 2200px) { body { font-size: 14px; grid-template-columns: 1fr 400px; } }
+
+  /* audit F-10 / F-14: honour the OS "reduce motion" setting. State changes
+     stay VISIBLE -- the drawer and the context-loss banner still appear and
+     disappear, focus and pressed states still read -- only the movement is
+     removed and the fades are collapsed to near-instant. Nothing here is
+     load-bearing for comprehension; it is all "where did that come from". */
+  @media (prefers-reduced-motion: reduce) {
+    *, #zoneDrawer, #webgl-lost, button, #twin-link {
+      transition-duration: 1ms !important;
+    }
+    #zoneDrawer, #zoneDrawer[hidden] { transform: none; }
+    button:active { transform: none; }
+  }
 </style>
 <script type="importmap">
   {
