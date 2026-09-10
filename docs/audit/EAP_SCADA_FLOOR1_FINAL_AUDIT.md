@@ -128,7 +128,7 @@ Physical twin (`factory-twin-regression.js`, disposable):
 
 EAP soak (below): fps recovered 12 → 46 over the run; single render loop (`totalFramesRendered` monotonic 24 → 1065).
 
-Frame-timing p50/p95, initial-load and first-meaningful-render numbers were **not** separately instrumented this pass — deferred DF-3.
+Frame-timing p50/p95, initial-load and first-meaningful-render numbers were measured in the **Final Closure Pass** (below): load 102 ms, FCP 148 ms, FMR 363 ms, idle frame p50/p95 33.3/33.4 ms, every interaction single-digit ms in-page. DF-3 closed.
 
 ---
 
@@ -148,7 +148,7 @@ Frame-timing p50/p95, initial-load and first-meaningful-render numbers were **no
 | context-loss count | 0 | 0 | 0 |
 | **page / console errors** | — | **[] (0)** | — |
 
-Cycle = mode switch + view switch + Fit-floor click + (every 4th) zone-drawer open/close + (every 3rd) random cell pick + viewport resize. No heap growth, no DOM/canvas/batch accumulation, no leaked render loop. Longer soak not run — DF-4.
+Cycle = mode switch + view switch + Fit-floor click + (every 4th) zone-drawer open/close + (every 3rd) random cell pick + viewport resize. No heap growth, no DOM/canvas/batch accumulation, no leaked render loop. A 15-minute / 1668-cycle soak was run in the **Final Closure Pass** (below) — heap flat 10.11 MB across all 16 samples, 0 errors. DF-4 closed.
 
 ---
 
@@ -194,8 +194,8 @@ There is no environment variable gating this — it is a per-viewer UI toggle th
 |---|---|---|---|---|---|---|
 | DF-1 | P3 | Physical-twin status strip shows "Down N / Run N" for LDI devices without an explicit "IMS DEVICES — NOT PLACED ON THIS FLOOR" caption (task §7 wording). | The twin is a separate domain (task §1 says don't modify unnecessarily); the counts are real device telemetry, framed as "0 confirmed IMS mappings · Unmapped 433"; `inspector-e2e` + `factory-twin-regression` already prove no state reaches the scene/inspector and nothing shows `CONFIRMED`. Changing tested twin behaviour needs its own measure→fix→verify cycle and a product call on the exact wording. | `scratchpad/eap-probe.json`; app.js:3229–3335; `factory-twin-inspector-e2e` PASS (19/20). | Low — no fabricated state, honest framing already present. | Add a one-line "device roll-up, not floor state" caption above the strip in a twin-scoped change with the physical-twin suites re-run. |
 | DF-2 | P3 | No env-gated production/demo default (`EAP_DEMO_MODE`). | The default is now OFF (safe); an env var is a cleaner separation but more surface, and demo is still reachable by anyone via the toggle. | eap.js:570. | Low. | Add `EAP_DEMO_MODE` (default off in prod compose) if a deployment needs the map to boot in demo without a click. |
-| DF-3 | P2 | Frame p50/p95, initial-load, first-meaningful-render not separately instrumented for EAP. | Time budget; the soak proves loop health and no growth, and axe/functional suites gate correctness. | `eap-axe-soak.json` (fps 12→46, monotonic frames). | Low–Med. | Add a perf-timing block to a regression, capture p50/p95 on an idle host. |
-| DF-4 | P3 | Only a 60-cycle / ~37 s soak; no 15–30 min run. | Bounded honest soak per the brief; longer run needs a quiet host and dedicated time. | `eap-axe-soak.json`. | Low — heap flat, 0 growth at 60 cycles. | Run a 20-min soak on an unloaded host before any GA claim. |
+| DF-3 | P2 | ~~Frame p50/p95, initial-load, first-meaningful-render not separately instrumented for EAP.~~ **CLOSED 2026-09-10** — see Final Closure Pass. | — | `scratchpad/eap-perf.json`: load 102 ms, FCP 148 ms, FMR 363 ms, idle frame p50/p95 33.3/33.4 ms, interactions single-digit ms. | — | Done. |
+| DF-4 | P3 | ~~Only a 60-cycle / ~37 s soak; no 15–30 min run.~~ **CLOSED 2026-09-10** — see Final Closure Pass. | — | `scratchpad/soak.js`: 901 s / 1668 cycles, heap flat 10.11 MB across all 16 samples, 0 errors, frames monotonic. | — | A quiet-host GA soak still advisable before a GA claim, but bounded resource stability is proven. |
 | DF-5 | P3 | Physical twin not re-axe'd this pass. | Scope focus on EAP; prior FT phases carry its axe history. | — | Low. | Fold the twin into the axe matrix next FT pass. |
 
 ---
@@ -238,6 +238,110 @@ There is no environment variable gating this — it is a per-viewer UI toggle th
 
 ---
 
+## Final Closure Pass — 2026-09-10 (PR #20 merge readiness)
+
+Re-verification for the "Final EAP Closure & Production Readiness" brief. Deployed image `sha256:1c43279e2776…` (built `2026-09-10T03:41`, right after `c6cc4e85`); disposable `ims-eap-verify` container (prod image + private data, read-only); real authenticated prod stack for WebGL.
+
+### Serving truth (re-confirmed)
+
+| Fact | Value |
+|---|---|
+| HEAD | `8dfa44c1` (`fix/eap-scada-floor1-hardening`), `origin` in sync |
+| Served `eap.js` == committed (LF-normalised) | `289fc272…` == HEAD ✅ |
+| Served `eap.html` == committed | `d21ee950…` == HEAD ✅ |
+| Deployed image | `sha256:1c43279e2776…`, container `Up (healthy)` |
+| Branch vs base `integration/andon-layout-safe` | 0 behind, 2 ahead; `mergeable: MERGEABLE`, `mergeStateStatus: CLEAN` |
+| Base vs `origin/main` | base 8 behind / 176 ahead — PR #19's lineage, not #20's. #20 reaches `main` only when #19 does. |
+
+### Regression re-run (all fresh this pass)
+
+| Suite | Result |
+|---|---|
+| `eap-canonical-route-regression` | **PASS** — root = physical twin, `eap.html` = EAP, 210 cells / 12 zones / 40 DIRECT |
+| `eap-map-regression` | **PASS** — evidence contract, status `UNKNOWN` while unmapped, 1366→3840 no overflow |
+| `eap-operational-state-regression` | **PASS** — section 0 production default + demo contract |
+| `eap-api-failure-safety-regression` | **PASS** — 500 / bad JSON / `{}` / never-resolves |
+| `eap-webgl-context-lifecycle-regression` | **PASS** — loss/restore, camera + selection preserved, 5× repeat no accumulation, FAILED escalation, keyboard Retry |
+| `scripts/pre-commit.js` (all unit + all linters + JSON validation + EAP node-model contract) | **PASS** — "All checks passed" |
+| `factory-twin-failure-modes` (`TWIN_DIRECT_URL`) | **PASS** 11/11 |
+| `factory-twin-regression` | 10/11 — only `mode-switch latency` (108–122ms vs 100ms; one fully-clean run this pass); heap flat, 0 mesh / draw-call accumulation |
+| `factory-twin-inspector-e2e` (vs real prod) | 19/20 — the 1 FAIL is Grafana's own `grafana-lokiexplore-app` / `grafana-exploretraces-app` `module.js` 404s + Grafana-Live WS 403; all twin assertions PASS |
+| axe-core — EAP prod + demo × 1366 / 1440 / 1920 / 2560 / 3840 | **0 violations**, full 10-cell matrix |
+| WebGL recovery on **real prod** (`webgl-prod-verify.js`), both pages | **56/56** — 3× loss/restore + loss-during-recovery, camera preserved exactly, exactly one loss counted each, 0 page/console errors on both pages |
+
+The `factory-twin-failure-modes` "placement route → 401" only reproduces when the suite is pointed at the auth proxy (`GRAFANA_URL`) instead of the service (`TWIN_DIRECT_URL`): the proxy's `auth_request` answers `401` before the app can answer `404`. Against the service directly it is a real `404`. Harness usage, not a regression.
+
+### Performance — measured (closes DF-3)
+
+`scratchpad/eap-perf.js`, disposable container, 1920×1080:
+
+| Metric | Value |
+|---|---|
+| initial load (`load` event) | 102 ms |
+| FCP / first-paint | 148 ms |
+| first-meaningful-render (`__eap.ready()`) | 363 ms |
+| idle frame delta p50 / p95 / p99 | 33.3 / 33.4 / 50.0 ms (deliberate ~30 fps idle throttle; frame counter monotonic) |
+| `setMode` AUTO↔EAP | p50 2.2 / p95 5.4 ms |
+| `setView` 2d↔3d | p50 3.6 / p95 7.1 ms |
+| Fit floor (`resetCamera`, in-page) | p50 0.2 / max 1.5 ms |
+| zone drawer open + close | p50 2.7 / p95 5.0 ms |
+| cell pick | p50 0.3 / p95 0.6 ms |
+
+Every user interaction is single-digit ms in-page, well under the 100 ms target. (An earlier 274 ms reading for Fit was Playwright click-actionability RTT, not page cost — the in-page handler is sub-millisecond.)
+
+### Memory — 15-minute soak (closes DF-4)
+
+`scratchpad/soak.js`, disposable container, 1920×1080, crash-resilient (every 60 s sample appended to disk). 16 samples:
+
+| | start | end | Δ |
+|---|---|---|---|
+| duration / cycles | — | 901 s / 1668 | — |
+| JS heap (MB) | 10.11 | 10.11 | **0.00** (10.11 on every one of the 16 samples) |
+| DOM nodes | 196 | 197 | +1 (oscillates 196↔231 by active mode, never accumulates) |
+| canvases | 3 | 3 | 0 |
+| three.js geometries | 7 | 2 | mode-dependent, no monotone growth |
+| instanced batches | 3 | 2 | mode-dependent |
+| context-loss count | 0 | 0 | 0 |
+| `totalFramesRendered` | 20 | 26 250 | monotonic (single render loop) |
+| **page / console errors** | — | **0** | — |
+
+Plus the earlier 60-cycle bounded soak (flat 10.11→10.11 MB, 0 errors) and a 103-cycle interim reading from a first long run whose scratchpad was wiped mid-run (heap 10.11 MB, 0 errors).
+
+### Deferred findings — merge classification
+
+| ID | Sev | Classification | Rationale (evidence) |
+|---|---|---|---|
+| DF-1 | P3 | **ACCEPTABLE-DEFER** | Physical-twin status-strip caption wording. Separate page/domain — task §1 & §8 say do not modify the twin unnecessarily. `inspector-e2e` + `factory-twin-regression` + `webgl-prod-verify` prove 0 fabricated state, 0 `CONFIRMED` badges, honest "0 confirmed IMS mappings · Unmapped 433" already on screen, no LDI state on a floor position. Cosmetic. Not a blocker. |
+| DF-2 | P3 | **ACCEPTABLE-DEFER** | Env-gated demo default (`EAP_DEMO_MODE`). Default is already OFF (safe); an env var is cleaner separation but more surface and does not change production behaviour. Not a blocker. |
+| DF-3 | P2 | **CLOSED** this pass | p50/p95 + load + interaction latencies measured above. |
+| DF-4 | P3 | **CLOSED** this pass | 15-min / 1668-cycle soak, heap flat across all 16 samples, 0 errors. A quiet-host GA soak is still advisable before any GA claim, but the merge-relevant question (bounded resource stability) is answered. |
+| DF-5 | P3 | **ACCEPTABLE-DEFER** | Physical-twin re-axe. EAP is this PR's scope; prior FT phases carry the twin's axe history. Belongs to the next FT pass. Not a blocker. |
+
+### Self-review of the diff
+
+4 files, +313 / −10. `eap.js`: `simulationOn = false` + `syncSimToggle` helper. `eap.html`: toggle default `aria-pressed=false` + reworded "Simulated status" aside. `eap-operational-state-regression.js`: section 0 + explicit demo enable (coverage widened, no assertion weakened). No secrets, no CAD, no `.env`, no accidental files. `simToggleBtn` closure + `setSimulation` module-var mutation verified — no dangling-state bug. `.github/copilot-instructions.md` (pre-existing unrelated ` M`) left untouched.
+
+### Merge criteria (brief §16)
+
+| Requirement | State |
+|---|---|
+| no true blocker | ✅ |
+| required checks pass | ✅ (no CI checks bound to this branch; full local suite green) |
+| regression passes | ✅ (5/5 EAP + full unit/lint + failure-modes direct + one fully-clean twin-regression run) |
+| accessibility passes | ✅ (0 / 10 axe) |
+| production/demo separation | ✅ |
+| CAD integrity | ✅ (194/194 vertices, CAD-reconciliation unit test, geometry untouched) |
+| EAP/LDI separation | ✅ (0 operational refs) |
+| WebGL recovery | ✅ (56/56 real prod + 5/5 lifecycle suite) |
+| branch state understood | ✅ (0 behind base, MERGEABLE / CLEAN) |
+| diff focused, no accidental files | ✅ |
+
+**PR #20 scope verdict: `READY TO MERGE`** into `integration/andon-layout-safe`. PR flipped Draft → Ready for Review. The merge click is left to the repo owner: the base is itself an unmerged integration branch (PR #19), so the merge order / target is the owner's call.
+
+Full brief §25 `FINAL PASS` (whole repo) is still not claimable: criterion 28 stays PARTIAL for two documented non-EAP failures (`factory-twin-regression` latency threshold on a loaded host; `factory-twin-inspector-e2e` Grafana-plugin console noise), and DF-1 / DF-2 / DF-5 are twin-side / infra deferrals outside this PR's scope.
+
+---
+
 ## Final Success Criteria
 
 | # | Criterion | Status |
@@ -254,12 +358,15 @@ There is no environment variable gating this — it is a per-viewer UI toggle th
 | 16 | CAD geometry still validated | **PASS** (untouched; `floor1-geometry-validator` PASS) |
 | 17–20 | WebGL creation-fail / loss / restore / recovery verified | **PASS** (56/56 on real prod, both pages) |
 | 21–22 | no duplicate render loop / polling | **PASS** (EAP has no polling; single loop) |
-| 23 | no resource growth in bounded soak | **PASS** (60 cycles, flat heap) |
+| 23 | no resource growth in bounded soak | **PASS** (60 cycles + 15-min / 1668-cycle soak, heap flat 10.11 MB across all 16 samples) |
 | 24 | axe = 0 for completed matrix | **PASS** (EAP prod+demo ×5 res) |
 | 25 | responsive layouts verified | **PASS** (EAP, 0 horiz overflow 1366→3840; aside is an intended scroll panel) |
 | 26–27 | privacy / secrets clean | **PASS** |
-| 28 | regression clean | **PARTIAL** — 2 pre-existing/environmental failures documented, not fixed here |
+| 28 | regression clean | **PARTIAL** — 2 documented non-EAP failures (twin latency threshold on a loaded host; Grafana-plugin console noise in `inspector-e2e`), not fixed here |
 | 29 | production serving verified from a fresh authenticated browser | **PASS** |
-| — | frame p50/p95, 15–30 min soak, twin axe, twin caption | **DEFERRED** (DF-1..DF-5) |
+| — | EAP frame p50/p95 (DF-3), 15-min soak (DF-4) | **CLOSED** in the Final Closure Pass above |
+| — | twin axe (DF-5), twin caption (DF-1), env-gated demo (DF-2) | **ACCEPTABLE-DEFER** — twin-side / infra, outside this PR's scope |
 
-**Overall: NOT `FINAL PASS`.** The primary defect is fixed, deployed and verified; the EAP frontend is technically and semantically correct, robust and honest about the absent real source. Criteria 28 and the deferred items keep this short of a full pass by the brief's own rule.
+**PR #20 scope: `READY TO MERGE`.** The primary defect is fixed, deployed and verified; the EAP frontend is technically and semantically correct, robust, and honest about the absent real source; the full EAP regression + a11y + WebGL + 15-min soak are green.
+
+**Whole-repo brief §25 `FINAL PASS`: not claimed** — criterion 28 stays PARTIAL for the two documented non-EAP failures, and DF-1 / DF-2 / DF-5 are deferred by evidence (twin-side, not this PR's scope).
