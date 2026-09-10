@@ -151,7 +151,7 @@
     .seg button:disabled, .btn:disabled { opacity: .35; cursor: not-allowed; }
     #floor-picker { display: flex; align-items: center; gap: 6px; }
     #floor-picker[hidden] { display: none; }
-    #floor-picker label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    #floor-picker label { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
     #floor-select {
       background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
       border-radius: var(--radius); padding: 5px 8px; font: inherit; font-size: 12px;
@@ -313,7 +313,9 @@
     }
     #machine-labels .machine-label.is-mapped .dot { background: #4ade80; }
     #machine-labels .machine-label .dim { color: #93a8c4; margin-left: 5px; }
-    .reference-toggle { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px !important; }
+    /* Selector carries a class + the #layer-controls id so it outranks the
+       `#layer-controls label { padding: 2px 0 }` rule above without !important. */
+    #layer-controls label.reference-toggle { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px; }
     .reference-note { margin: 2px 0 0; line-height: 1.4; }
     .hint { color: var(--text-dim); font-size: 10.5px; }
 
