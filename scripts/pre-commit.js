@@ -38,6 +38,12 @@ run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geomet
 run("Factory Twin Diagnostics Sanitization Tests", "node tests/unit/factory-twin-diagnostics.test.js");
 run("Factory Twin Evidence Pipeline Tests", "node tests/unit/factory-twin-evidence.test.js");
 run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.test.js");
+// Step 1 of the Next.js/R3F architecture evolution -- typed domain layer,
+// checked two ways: tsc --noEmit (cross-file type correctness) and a plain
+// Node test (runtime parity against the two existing JS vocab copies + the
+// real wire.js DTO shape). Neither touches the running application.
+run("Factory Twin Domain Typecheck", "npm run factory-twin:typecheck");
+run("Factory Twin Domain Contract Tests", "node tests/unit/factory-twin-domain.test.js");
 // FT-15: the identity-gated join between real device telemetry and a
 // physical CAD asset. Holds the critical invariant -- zero confirmed
 // mappings means zero physical live attachments, whatever telemetry exists.
