@@ -5,9 +5,11 @@ import { Canvas, useThree, type RootState } from '@react-three/fiber';
 import type { WebGLRenderer } from 'three';
 import type { ViewName } from '@twin-domain/camera';
 import { VIEW_NAMES, DEFAULT_VIEW } from '@twin-domain/camera';
+import type { Asset } from '@twin-domain/asset';
 import type { FactoryGeometryData } from '@/lib/geometry-adapter';
 import FactoryGeometry from './FactoryGeometry';
 import GeometryCameraController from './GeometryCameraController';
+import Machines from '../machines/Machines';
 
 type LifecycleState = 'READY' | 'LOST' | 'RESTORING' | 'REBUILDING' | 'VERIFYING' | 'RECOVERED';
 
@@ -22,7 +24,13 @@ type LifecycleState = 'READY' | 'LOST' | 'RESTORING' | 'REBUILDING' | 'VERIFYING
  * this step's own acceptance criteria. Flagged as a known limitation in
  * the migration doc, not silently duplicated without comment.
  */
-export default function GeometryViewport({ geometry }: { geometry: FactoryGeometryData }) {
+export default function GeometryViewport({
+  geometry,
+  machines,
+}: {
+  geometry: FactoryGeometryData;
+  machines: readonly Asset[];
+}) {
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
 
@@ -126,6 +134,7 @@ export default function GeometryViewport({ geometry }: { geometry: FactoryGeomet
           <ambientLight intensity={0.5} />
           <directionalLight position={[80, 100, 40]} intensity={0.9} />
           <FactoryGeometry geometry={geometry} />
+          <Machines machines={machines} />
           <GeometryCameraController view={view} envelope={geometry.envelope} />
           <StatsProbe readStatsRef={readStatsRef} />
         </Canvas>

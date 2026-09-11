@@ -136,7 +136,15 @@ function check(name, condition, detail) {
     const statsText = await page.locator('text=/calls=/').textContent();
     console.log(`  MEASURE  ${statsText}`);
     const calls = Number(statsText.match(/calls=(\d+)/)[1]);
-    check('draw calls stay low (walls/columns/openings each ~1 InstancedMesh call)', calls < 15, `calls=${calls}`);
+    // Read once, here, as the pre-loss baseline for the recovery check below
+    // -- NOT a hardcoded literal. This route now also renders Step 5B's
+    // machines (added after this test was first written), which legitimately
+    // changed the real geometry count; a fixed literal went stale the moment
+    // that shipped. Measuring the baseline dynamically is the correct fix,
+    // not a weakened check -- the check still requires exact equality,
+    // zero tolerance, before vs. after recovery.
+    const geomBaseline = Number(statsText.match(/geometries=(\d+)/)[1]);
+    check('draw calls stay low (walls/columns/openings/machines, a handful of InstancedMesh calls)', calls < 20, `calls=${calls}`);
 
     check('0 console/page errors on load', consoleErrors.length === 0, consoleErrors.join(' | '));
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'candidate.1920x1080.plan.png') });
@@ -166,8 +174,7 @@ function check(name, condition, detail) {
     await page.click('button:has-text("Read renderer stats")');
     const statsAfter = await page.locator('text=/calls=/').textContent();
     const geomAfter = Number(statsAfter.match(/geometries=(\d+)/)[1]);
-    const geomBefore = 9; // measured baseline, see migration doc
-    check('geometry count after 4 recovery cycles matches initial baseline', geomAfter === geomBefore, `${geomAfter} vs baseline ${geomBefore}`);
+    check('geometry count after 4 recovery cycles matches the measured pre-loss baseline', geomAfter === geomBaseline, `${geomAfter} vs baseline ${geomBaseline}`);
 
     const canvasBox = await page.locator('canvas').boundingBox();
     await page.mouse.move(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);

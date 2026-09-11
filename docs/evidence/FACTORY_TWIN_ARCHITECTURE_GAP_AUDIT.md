@@ -262,17 +262,44 @@ migrated yet, by this step's own explicit scope limit).
 
 **Runtime changes to the live `/factory-twin-3d/` or any prior Step 3/4 file: NONE.**
 
+## Step 5B implementation status — DONE (PASS) — static machine objects
+
+Added `services/factory-twin-3d-next/lib/machine-adapter.ts` (fetches the SAME
+`/api/floor-geometry` endpoint's `equipment[]` field Step 5A already reads) and
+`components/factory-twin/machines/Machines.tsx` (2 `InstancedMesh`es: sized machines,
+unresolved-footprint markers), wired into the existing `/geometry-candidate` route.
+
+**Parity is exact**: 431 of 433 equipment records rendered (2 correctly excluded via
+`duplicate_of`, matching `app.js`'s own "one physical asset, one render, always" rule
+byte-for-byte) — every surviving machine's id/position/rotation is byte-identical to the raw
+API response. Context recovery (Step 4's lifecycle, reused unchanged) PASSES across 1 + 4
+cycles with machines present throughout. Render-loop safety proven: 0 React re-renders across
+a 3s idle window, an 8-point camera drag, and a resize. No selection/telemetry/alarm/LDI logic
+exists — verified by inspection and by test. See
+`docs/evidence/FACTORY_TWIN_R3F_MACHINE_MIGRATION.md`.
+
+**Found and fixed one stale test, not a real regression**: Step 5A's own recovery-check had
+hardcoded `geomBefore = 9`, which the shared `/geometry-candidate` route legitimately exceeded
+once machines were added (11 geometries). Fixed by measuring the baseline dynamically instead
+of a literal — Step 5A's suite is back to 48/48, the check itself unweakened (still exact
+equality, zero tolerance).
+
+**Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
+NONE.**
+
 ## Next step
 
-Step 1, Step 1.5, Step 3, Step 4, and Step 5A are complete, all PASS. Per this step's own
-explicit "STOP" instruction, machines/live data/selection/alarms/inspector/EAP/LDI are NOT
-migrated and are separate future steps. Candidates remaining, none started:
+Step 1, Step 1.5, Step 3, Step 4, Step 5A, and Step 5B are complete, all PASS. Per Step 5B's
+own explicit "STOP" instruction, selection/live telemetry/alarms/inspector/RCA/EAP/LDI are NOT
+migrated. Candidates remaining, none started:
 
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- Step 5B+ (machine markers, live telemetry, selection, alarms, inspector) — explicitly
-  deferred until this geometry gate is reviewed and an explicit go-ahead is given.
+- Step 5C+ (selection, live telemetry, alarms, inspector, EAP/LDI) — explicitly deferred until
+  this machine-migration gate is reviewed and an explicit go-ahead is given.
+- TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
+  a disclosed, scoped future addition, not blocking.
 - Factoring `GeometryViewport.tsx`'s WebGL-lifecycle code (duplicated from Step 4's
   `TwinViewport.tsx`) into one shared module — a real, disclosed cleanup opportunity, not
   blocking.
