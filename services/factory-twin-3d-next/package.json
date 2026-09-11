@@ -2,7 +2,7 @@
   "name": "factory-twin-3d-next",
   "version": "0.0.0",
   "private": true,
-  "description": "Step 3 of the Factory Twin architecture evolution: the future Next.js/React UI shell. ISOLATED from production -- not referenced by proxy/nginx.conf, docker-compose.yaml, or any Dockerfile. The renderer has not been migrated yet (see components/factory-twin/ViewportFrame.tsx); the existing services/factory-twin-3d/ remains the live, authoritative implementation at /factory-twin-3d/. See docs/evidence/FACTORY_TWIN_NEXTJS_UI_SHELL.md.",
+  "description": "Steps 3+4 of the Factory Twin architecture evolution: the Next.js/React UI shell (Step 3) plus an isolated React Three Fiber runtime spike (Step 4, components/factory-twin/twin-viewport/). ISOLATED from production -- not referenced by proxy/nginx.conf, docker-compose.yaml, or any Dockerfile. The real Factory Twin scene/CAD has NOT been migrated; services/factory-twin-3d/ remains the live, authoritative implementation at /factory-twin-3d/. See docs/evidence/FACTORY_TWIN_NEXTJS_UI_SHELL.md and FACTORY_TWIN_R3F_RUNTIME_SPIKE.md.",
   "scripts": {
     "dev": "next dev -p 4310",
     "build": "next build",
@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "next": "16.3.4",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "three": "0.186.0",
+    "@react-three/fiber": "9.7.0",
+    "@react-three/drei": "10.7.8"
   },
   "devDependencies": {
     "typescript": "^5.7.3",

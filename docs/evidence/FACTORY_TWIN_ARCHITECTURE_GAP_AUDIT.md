@@ -210,14 +210,40 @@ violations at every viewport), token wiring, focus visibility, reduced-motion, f
 assumed. Not wired into CI yet (no deployment exists for CI to build against) — disclosed as
 a deferred item.
 
+## Step 4 implementation status — DONE (spike; PASS with one named blocking follow-up)
+
+Built an isolated `/r3f-spike` route in `services/factory-twin-3d-next/` proving React Three
+Fiber can host instanced rendering (64 synthetic boxes as 1 draw call, matching the legacy
+app's own `InstancedMesh` pattern), demand-loop discipline (3 frames rendered over a 3s idle
+window, not ~180 for continuous 60fps), and click-to-select wired to the Step 1 domain's
+`ViewName`/camera concepts — all measured, not assumed.
+
+**One real, unresolved, load-bearing gap found**: simulated WebGL context loss through R3F's
+`<Canvas>` never fires the browser's own `webglcontextrestored` event, confirmed NOT an
+environment artifact (an isolated bare-canvas test in the same browser/Chromium confirms the
+mechanism works fine outside of R3F/Three.js). Root cause not identified — out of a spike's
+scope — but this is exactly the highest-risk subsystem this audit already flagged (the
+duplicated `app.js`/`eap.js` WebGL lifecycle machinery), and this is now measured evidence,
+not a prediction, that R3F does not inherit that recovery guarantee for free. See
+`docs/evidence/FACTORY_TWIN_R3F_RUNTIME_SPIKE.md`.
+
+Also found and fixed: `@react-three/fiber@9.7.0`'s peer range (`react: '>=19 <19.3'`) does not
+cover React 19.3.0, which Step 3 shipped on — downgraded `services/factory-twin-3d-next`'s
+React to 19.2.8 (confirmed compatible with Next 16.3.4's own peer range), re-verified Step 3's
+full 30-test suite still passes unchanged.
+
+**Runtime changes to the live `/factory-twin-3d/` or Step 3's real route: NONE.**
+
 ## Next step
 
-Step 1, Step 1.5 (version + proxy spike), and Step 3 (UI shell) are complete. Two candidates
-remain, neither started, awaiting explicit direction:
+Step 1, Step 1.5, Step 3, and Step 4 are complete. Three candidates remain, none started,
+awaiting explicit direction:
 
+- Root-causing the WebGL context-restore gap found in Step 4 — the natural next spike-scoped
+  question, and a likely blocker for any further R3F work until resolved.
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- The actual R3F/Three.js scene migration behind `ViewportFrame.tsx`'s boundary — explicitly
-  described by the user as "a separate R3F/Three.js migration spike based on evidence from
-  this phase," i.e. not to be started automatically off the back of Step 3.
+- The actual R3F/Three.js real-scene migration behind `ViewportFrame.tsx`'s boundary —
+  explicitly described by the user as a separate future phase "based on evidence from this
+  phase," which now includes the context-restore gap as a named precondition.
