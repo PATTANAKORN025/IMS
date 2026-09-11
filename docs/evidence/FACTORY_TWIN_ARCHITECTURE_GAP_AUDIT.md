@@ -354,18 +354,56 @@ proxy auth check, unrelated to this branch, `git diff --quiet` confirmed untouch
 **Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
 NONE.**
 
+## Step 5E implementation status — DONE (PASS) — layer / reference architecture
+
+Added a typed `LayerState` (`services/factory-twin-3d/domain/layer.ts`, new file, same
+extraction convention as `camera.ts`/`selection.ts`) covering the 4 layers this candidate scene
+actually composes: `geometry` (factory shell + openings), `grid` (surveyed structural grid,
+split out of `FactoryGeometry.tsx`'s bundle so it toggles independently), `machines`
+(equipment), and `reference` (the raw CAD line-work overlay, off by default — same convention
+as legacy `app.js:499`). Toggling flows through exactly one crossing point per layer — a
+`<group visible={layers.<id>}>` wrapper — never a direct `.visible =` write on a Three.js ref
+from a button.
+
+Added the reference overlay itself: `lib/reference-adapter.ts` (new) fetches
+`/api/floor-raw-cad` — the same served endpoint legacy's own `ensureRawCad()` uses — and
+reproduces `app.js`'s own `cadToTwin()` mm-to-metre transform exactly, placed relative to the
+already-validated geometry envelope (never a second coordinate system). `Reference.tsx` (new)
+renders it as one `LineSegments` per CAD role sharing a single material, mirroring
+`app.js`'s own `buildRawCad()` reasoning.
+
+**A real bug was found and fixed during this step's own selection-coexistence testing**:
+hiding the `machines` layer via `<group visible={false}>` did NOT stop it from being clickable
+— reading `three/src/core/Raycaster.js` confirmed three.js's raycaster never checks
+`Object3D.visible` (only the renderer skips invisible objects when drawing), so
+`@react-three/fiber`'s pointer events hit the hidden `InstancedMesh` regardless. Fixed with an
+explicit `interactive` prop on `Machines.tsx`, gated by the same `layers.machines` flag,
+independent of the `visible` prop.
+
+Measured: toggling any layer produces exactly 1 discrete React render and changes draw calls
+only — geometry/texture counts never grow across repeated on/off cycles for any layer,
+including the reference layer's own one-time first-activation build (11→24 geometries once,
+then flat across every subsequent cycle). Selection and camera both remain fully correct
+through every layer-toggle combination, and both survive 1 + 4 WebGL context-recovery cycles
+alongside a non-default layer state. Full detail, including the one pre-existing out-of-scope
+legacy-stack failure (unchanged from Step 5D, `git diff --quiet` confirmed untouched), in
+`docs/evidence/FACTORY_TWIN_R3F_LAYER_ARCHITECTURE.md`.
+
+**Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
+NONE.**
+
 ## Next step
 
-Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, and Step 5D are complete, all
-PASS. Per Step 5D's own explicit "STOP" instruction, operational state/telemetry/alarms/
+Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, and Step 5E are complete,
+all PASS. Per Step 5E's own explicit "STOP" instruction, operational state/telemetry/alarms/
 inspector/RCA/EAP/LDI are NOT migrated. Candidates remaining, none started:
 
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- Next phase (live operational state, telemetry, alarms, inspector, RCA, EAP/LDI; also
-  Layers/Reference rendering per Step 5D's mission note) — explicitly deferred until this
-  camera-migration gate is reviewed and an explicit go-ahead is given.
+- Next phase (live operational state, telemetry, alarms, inspector, RCA, EAP/LDI) —
+  explicitly deferred until this layer-migration gate is reviewed and an explicit go-ahead is
+  given.
 - TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
   a disclosed, scoped future addition, not blocking.
 - Factoring `GeometryViewport.tsx`'s WebGL-lifecycle code (duplicated from Step 4's
@@ -373,3 +411,7 @@ inspector/RCA/EAP/LDI are NOT migrated. Candidates remaining, none started:
   blocking.
 - Multiple camera modes (overview/inspection/machine-focus) — explicitly out of scope for
   Step 5D, a disclosed future candidate.
+- Lazy (toggle-triggered) fetch of the reference overlay, matching legacy's own optimization
+  — explicitly deferred, disclosed in Step 5E's own evidence doc, not blocking.
+- A toggle for legacy's `functional` (zone) layer — no rendered component exists for it in this
+  migration yet, so a toggle would control nothing (Step 5E §1).

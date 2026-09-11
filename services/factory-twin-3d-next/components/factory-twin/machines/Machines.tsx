@@ -95,10 +95,24 @@ export default function Machines({
   machines,
   selectedId,
   onSelect,
+  interactive = true,
 }: {
   machines: readonly Asset[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  /**
+   * Step 5E: gates picking, controlled by the `machines` LayerState flag
+   * one level up (`GeometryViewport.tsx`). Real, measured reason this
+   * exists rather than relying on the wrapping `<group visible={false}>`
+   * alone: three.js's `Raycaster.intersectObject` never checks
+   * `Object3D.visible` (confirmed by reading `three/src/core/Raycaster.js`
+   * -- only the WebGLRenderer skips invisible objects when drawing) and
+   * R3F's own pointer-event system builds on that same raycaster, so a
+   * hidden `InstancedMesh` was still fully clickable until this gate was
+   * added -- caught by this step's own layer+selection-coexistence
+   * testing, not assumed away.
+   */
+  interactive?: boolean;
 }) {
   const sizedRef = useRef<THREE.InstancedMesh>(null);
   const markerRef = useRef<THREE.InstancedMesh>(null);
@@ -196,6 +210,7 @@ export default function Machines({
    * latency this already achieves.
    */
   function handleSizedClick(event: ThreeEvent<MouseEvent>) {
+    if (!interactive) return;
     event.stopPropagation();
     const instanceId = event.instanceId;
     if (instanceId === undefined) return;
@@ -204,6 +219,7 @@ export default function Machines({
   }
 
   function handleMarkerClick(event: ThreeEvent<MouseEvent>) {
+    if (!interactive) return;
     event.stopPropagation();
     const instanceId = event.instanceId;
     if (instanceId === undefined) return;
