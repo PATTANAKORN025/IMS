@@ -210,22 +210,27 @@ violations at every viewport), token wiring, focus visibility, reduced-motion, f
 assumed. Not wired into CI yet (no deployment exists for CI to build against) — disclosed as
 a deferred item.
 
-## Step 4 implementation status — DONE (spike; PASS with one named blocking follow-up)
+## Step 4 implementation status — DONE (spike; PASS)
 
 Built an isolated `/r3f-spike` route in `services/factory-twin-3d-next/` proving React Three
 Fiber can host instanced rendering (64 synthetic boxes as 1 draw call, matching the legacy
-app's own `InstancedMesh` pattern), demand-loop discipline (3 frames rendered over a 3s idle
-window, not ~180 for continuous 60fps), and click-to-select wired to the Step 1 domain's
-`ViewName`/camera concepts — all measured, not assumed.
+app's own `InstancedMesh` pattern), demand-loop discipline (0 extra React renders across a 3s
+idle window and a 10-point orbit drag, WebGL frames handled entirely inside three.js/refs),
+click-to-select wired to the Step 1 domain's `ViewName` concept (sub-frame in-page latency,
+p50 0.60ms/p95 2.00ms), and a working WebGL context-loss/recovery lifecycle — all measured,
+not assumed. See `docs/evidence/FACTORY_TWIN_R3F_SPIKE.md` for the full report.
 
-**One real, unresolved, load-bearing gap found**: simulated WebGL context loss through R3F's
-`<Canvas>` never fires the browser's own `webglcontextrestored` event, confirmed NOT an
-environment artifact (an isolated bare-canvas test in the same browser/Chromium confirms the
-mechanism works fine outside of R3F/Three.js). Root cause not identified — out of a spike's
-scope — but this is exactly the highest-risk subsystem this audit already flagged (the
-duplicated `app.js`/`eap.js` WebGL lifecycle machinery), and this is now measured evidence,
-not a prediction, that R3F does not inherit that recovery guarantee for free. See
-`docs/evidence/FACTORY_TWIN_R3F_RUNTIME_SPIKE.md`.
+**A first pass found what looked like a load-bearing gap** (simulated context loss never
+recovering) and was documented as such in `FACTORY_TWIN_R3F_RUNTIME_SPIKE.md`. A follow-up
+pass root-caused it: a spike-methodology bug (re-fetching the `WEBGL_lose_context` extension
+after loss, instead of `app.js`'s own proven `renderer.forceContextLoss()`/
+`forceContextRestore()` API). Fixed, then measured working: context recovery **PASS** across
+a single cycle and 4 repeated cycles, no geometry/texture growth, scene fully interactive
+after every cycle. A second real bug surfaced and was fixed along the way — a naive
+force-remount "rebuild" step (modeled by analogy on `app.js`'s own manual rebuild) caused a
+genuine 1→2 geometry leak; the measured, simpler, correct fix was to NOT remount and instead
+force one fresh render via R3F's `invalidate()`. Both corrections are disclosed in full in the
+spike doc, not silently smoothed over.
 
 Also found and fixed: `@react-three/fiber@9.7.0`'s peer range (`react: '>=19 <19.3'`) does not
 cover React 19.3.0, which Step 3 shipped on — downgraded `services/factory-twin-3d-next`'s
@@ -236,14 +241,15 @@ full 30-test suite still passes unchanged.
 
 ## Next step
 
-Step 1, Step 1.5, Step 3, and Step 4 are complete. Three candidates remain, none started,
-awaiting explicit direction:
+Step 1, Step 1.5, Step 3, and Step 4 are complete, all PASS. Two candidates remain, neither
+started, awaiting the explicit architecture decision before proceeding to Step 5:
 
-- Root-causing the WebGL context-restore gap found in Step 4 — the natural next spike-scoped
-  question, and a likely blocker for any further R3F work until resolved.
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
 - The actual R3F/Three.js real-scene migration behind `ViewportFrame.tsx`'s boundary —
   explicitly described by the user as a separate future phase "based on evidence from this
-  phase," which now includes the context-restore gap as a named precondition.
+  phase." Step 4's spike found the WebGL-recovery pattern DOES transfer to R3F once the
+  correct API is used, at spike scale (1 + 4 cycles) — a real migration would need to repeat
+  that same rigor at the twin's real scale and PR #23's 56-cycle standard, not assume it
+  transfers automatically.

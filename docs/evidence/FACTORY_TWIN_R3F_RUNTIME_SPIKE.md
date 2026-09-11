@@ -1,5 +1,13 @@
 # Factory Twin 3D — React Three Fiber Runtime Spike (Step 4)
 
+> **SUPERSEDED.** This pass's "WebGL context-loss/restore: THE real, unresolved finding"
+> section below was a genuine spike-methodology bug (simulating loss/restore via a freshly
+> re-fetched `WEBGL_lose_context` extension reference, not `app.js`'s own proven
+> `renderer.forceContextLoss()`/`forceContextRestore()` API), root-caused and fixed in the
+> follow-up pass. See `docs/evidence/FACTORY_TWIN_R3F_SPIKE.md` for the corrected, working
+> result (context recovery PASS across 1 + 4 cycles) and the full re-verified spike. Kept here
+> as historical record of the investigation, not deleted.
+
 **Date:** 2026-09-11. **Scope:** `services/factory-twin-3d-next/components/factory-twin/
 twin-viewport/` and the `/r3f-spike` route only — a technical spike, not a scene migration.
 `services/factory-twin-3d/` (the live implementation) and `app/page.tsx` (Step 3's real shell
