@@ -319,21 +319,57 @@ Step 5C's own mission (build exactly that UI) — updated to assert the new, int
 **Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
 NONE.**
 
+## Step 5D implementation status — DONE (PASS) — camera architecture
+
+Rewrote `GeometryCameraController.tsx` (Step 5A's original preset controller) into a
+production camera architecture: evidence-derived `minDistance`/`maxDistance`/`minPolarAngle`/
+`maxPolarAngle` limits computed from the real envelope span (legacy `app.js` has none of
+these — grep-confirmed, so this is new capability, not reproduction); a closed-form
+bounding-sphere "Fit Factory" (reuses legacy's own `frameBounds()` direction vector, not its
+12-pass NDC iteration); `resetToken`/`fitToken` counter props for one-shot camera actions from
+outside the R3F tree; a `commit()`-guarded `onCameraStateChange` checkpoint (mount/view-change,
+reset, fit, OrbitControls' own `onEnd`) that only fires when the camera actually changed.
+
+**A real bug was found and fixed during this step's own regression testing**: OrbitControls
+fires `onEnd` on any canvas `mousedown`→`mouseup`, including a zero-movement selection click —
+so the first implementation caused every Step 5C selection click to also produce a spurious
+camera-checkpoint render. Fixed with an exact-equality `commit()` guard before the render
+count regressions were accepted as an unavoidable cost.
+
+**Step 5B's own test had one assertion intentionally superseded** (not weakened): "camera
+orbit: 0 new React renders" was correct before Step 5D existed; Step 5D's own mission requires
+a real CameraState checkpoint on orbit end, so an orbit that moves the camera now legitimately
+produces exactly 1 render. Updated to assert exactly 1, not 0 and not scaling with drag
+samples.
+
+Measured: 0 new React renders over 3s idle; +1 render per orbit/pan gesture (not per
+pointermove sample); zoom's +1-per-wheel-notch is architecturally expected (each wheel event is
+its own complete OrbitControls gesture, per its own source); draw
+calls/geometries/textures/JS heap identical before and after a full orbit+zoom+pan+fit+reset+
+resize+3×recovery stress sequence (`11/15282/11/1/15.2MB` unchanged both sides). Full detail,
+including the one pre-existing out-of-scope legacy-stack failure (a `localhost:3000` Grafana
+proxy auth check, unrelated to this branch, `git diff --quiet` confirmed untouched), in
+`docs/evidence/FACTORY_TWIN_R3F_CAMERA_MIGRATION.md`.
+
+**Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
+NONE.**
+
 ## Next step
 
-Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, and Step 5C are complete, all PASS. Per
-Step 5C's own explicit "STOP" instruction, operational state/telemetry/alarms/inspector/RCA/
-EAP/LDI are NOT migrated. Candidates remaining, none started:
+Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, and Step 5D are complete, all
+PASS. Per Step 5D's own explicit "STOP" instruction, operational state/telemetry/alarms/
+inspector/RCA/EAP/LDI are NOT migrated. Candidates remaining, none started:
 
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- Step 5D+ (live operational state, telemetry, alarms, inspector, RCA, EAP/LDI) — explicitly
-  deferred until this selection-migration gate is reviewed and an explicit go-ahead is given.
-- Root-causing the +2-vs-+1 render-count coupling found in Step 5C (§6 of its evidence doc) —
-  bounded and non-blocking, but named as a real open question, not swept under the rug.
+- Next phase (live operational state, telemetry, alarms, inspector, RCA, EAP/LDI; also
+  Layers/Reference rendering per Step 5D's mission note) — explicitly deferred until this
+  camera-migration gate is reviewed and an explicit go-ahead is given.
 - TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
   a disclosed, scoped future addition, not blocking.
 - Factoring `GeometryViewport.tsx`'s WebGL-lifecycle code (duplicated from Step 4's
   `TwinViewport.tsx`) into one shared module — a real, disclosed cleanup opportunity, not
   blocking.
+- Multiple camera modes (overview/inspection/machine-focus) — explicitly out of scope for
+  Step 5D, a disclosed future candidate.

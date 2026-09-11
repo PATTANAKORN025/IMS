@@ -139,7 +139,18 @@ function check(name, condition, detail) {
     await page.mouse.up();
     await page.waitForTimeout(150);
     const rendersAfterOrbit = Number((await page.locator('text=/reactRenders:/').textContent()).match(/(\d+)/)[1]);
-    check('camera orbit: 0 new React renders (machines/geometry not rebuilt)', rendersAfterOrbit === rendersAtStart, `${rendersAtStart} -> ${rendersAfterOrbit}`);
+    // Step 5D supersedes this assertion's original "0 new renders" bound.
+    // Step 5D introduces a real, intentional CameraState synchronization
+    // checkpoint (Section 7 of that step's mission) fired from
+    // OrbitControls' own 'end' event -- so an orbit gesture that actually
+    // MOVES the camera now legitimately produces exactly 1 React render
+    // (the checkpoint commit), not 0. This is a disclosed correction, not
+    // a silent weakening: the assertion still fails if renders scale with
+    // drag samples (would indicate a per-frame regression) or exceed a
+    // single discrete checkpoint. Machines/geometry are still not rebuilt
+    // by this render, confirmed separately by the geometry-count check
+    // immediately below.
+    check('camera orbit: renders by exactly 1 discrete CameraState checkpoint (Step 5D), not per-frame, not machines/geometry rebuild', rendersAfterOrbit - rendersAtStart === 1, `${rendersAtStart} -> ${rendersAfterOrbit}`);
 
     await page.click('button:has-text("Read renderer stats")');
     const statsAfterOrbit = await page.locator('text=/calls=/').textContent();

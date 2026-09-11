@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { Canvas, useThree, type RootState } from '@react-three/fiber';
 import type { WebGLRenderer } from 'three';
-import type { ViewName } from '@twin-domain/camera';
+import type { ViewName, CameraState } from '@twin-domain/camera';
 import { VIEW_NAMES, DEFAULT_VIEW } from '@twin-domain/camera';
 import type { Asset } from '@twin-domain/asset';
 import type { SelectionState } from '@twin-domain/selection';
@@ -54,6 +54,14 @@ export default function GeometryViewport({
   renderCountRef.current += 1;
 
   const [view, setView] = useState<ViewName>(DEFAULT_VIEW);
+  // CameraState (Step 5D): synced ONLY at a meaningful checkpoint --
+  // OrbitControls' own 'end' event, or after an explicit reset/fit/view
+  // change -- never per frame, never per pointermove. GeometryCameraController
+  // is the sole place the renderer's live camera/controls objects are read
+  // into this domain-typed, renderer-independent snapshot.
+  const [cameraState, setCameraState] = useState<CameraState | null>(null);
+  const [resetToken, setResetToken] = useState(0);
+  const [fitToken, setFitToken] = useState(0);
   const [lifecycle, setLifecycle] = useState<LifecycleState>('READY');
   const [verifyResult, setVerifyResult] = useState<string | null>(null);
   const rendererRef = useRef<WebGLRenderer | null>(null);
@@ -137,6 +145,21 @@ export default function GeometryViewport({
           </button>
         ))}
         <span className="text-xs text-text-secondary">|</span>
+        <button
+          type="button"
+          onClick={() => setResetToken((t) => t + 1)}
+          className="rounded-sm border border-border px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
+        >
+          Reset Camera
+        </button>
+        <button
+          type="button"
+          onClick={() => setFitToken((t) => t + 1)}
+          className="rounded-sm border border-border px-2 py-1 text-xs text-text-secondary hover:text-text-primary"
+        >
+          Fit Factory
+        </button>
+        <span className="text-xs text-text-secondary">|</span>
         <button type="button" onClick={() => rendererRef.current?.forceContextLoss()} className="rounded-sm border border-border px-2 py-1 text-xs text-danger">
           Simulate context loss
         </button>
@@ -163,6 +186,13 @@ export default function GeometryViewport({
           Recovery verification: {verifyResult}
         </div>
       ) : null}
+      {cameraState ? (
+        <div className="border-b border-border bg-surface px-3 py-1 text-xs text-text-secondary">
+          cameraState: view={cameraState.view} pos=({cameraState.position.x.toFixed(1)},{' '}
+          {cameraState.position.y.toFixed(1)}, {cameraState.position.z.toFixed(1)}) target=(
+          {cameraState.target.x.toFixed(1)}, {cameraState.target.y.toFixed(1)}, {cameraState.target.z.toFixed(1)})
+        </div>
+      ) : null}
       <SelectedMachinePanel selection={selection} onClear={() => setSelectedId(null)} />
       <div className="relative flex-1">
         <Canvas
@@ -176,7 +206,13 @@ export default function GeometryViewport({
           <directionalLight position={[80, 100, 40]} intensity={0.9} />
           <FactoryGeometry geometry={geometry} />
           <Machines machines={machines} selectedId={selectedId} onSelect={setSelectedId} />
-          <GeometryCameraController view={view} envelope={geometry.envelope} />
+          <GeometryCameraController
+            view={view}
+            envelope={geometry.envelope}
+            resetToken={resetToken}
+            fitToken={fitToken}
+            onCameraStateChange={setCameraState}
+          />
           <StatsProbe readStatsRef={readStatsRef} />
         </Canvas>
       </div>
