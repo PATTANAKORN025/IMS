@@ -239,17 +239,40 @@ full 30-test suite still passes unchanged.
 
 **Runtime changes to the live `/factory-twin-3d/` or Step 3's real route: NONE.**
 
+## Step 5A implementation status — DONE (PASS) — first real production-scene migration
+
+Migrated the authoritative static CAD geometry (walls, columns, openings, structural grid,
+floor/footprint) into R3F at `/factory-twin-3d/geometry-candidate` (still isolated, not the
+production route). `services/factory-twin-3d-next/lib/geometry-adapter.ts` fetches the exact
+same `/api/floor-geometry` endpoint the legacy page uses and validates it into Step 1's
+domain geometry types — no second CAD source, no coordinate transform, no approximation.
+
+**Vertex/coordinate parity is exact, not approximate**: 587 walls, 202 columns, 52 openings,
+20 footprint vertices, and 194 total functional-zone vertices all byte-identical between the
+raw API response and the new adapter's output (zero tolerance, `===` equality). The "194"
+figure matches this step's own cited baseline by construction — `lib/wire.js` is unmodified.
+
+Context-loss recovery (Step 4's corrected architecture, reused not re-litigated) PASSES
+across a single cycle and 4 repeated cycles with the real geometry scene (9 geometries, 1
+texture, stable throughout). All 6 responsive viewports pass with 0 axe violations. See
+`docs/evidence/FACTORY_TWIN_R3F_GEOMETRY_MIGRATION.md` for full detail, including honestly
+disclosed limitations (draw-call/LCP comparisons to the legacy baseline are not yet
+apples-to-apples, since equipment/zones/labels — the legacy's largest contributors — are not
+migrated yet, by this step's own explicit scope limit).
+
+**Runtime changes to the live `/factory-twin-3d/` or any prior Step 3/4 file: NONE.**
+
 ## Next step
 
-Step 1, Step 1.5, Step 3, and Step 4 are complete, all PASS. Two candidates remain, neither
-started, awaiting the explicit architecture decision before proceeding to Step 5:
+Step 1, Step 1.5, Step 3, Step 4, and Step 5A are complete, all PASS. Per this step's own
+explicit "STOP" instruction, machines/live data/selection/alarms/inspector/EAP/LDI are NOT
+migrated and are separate future steps. Candidates remaining, none started:
 
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- The actual R3F/Three.js real-scene migration behind `ViewportFrame.tsx`'s boundary —
-  explicitly described by the user as a separate future phase "based on evidence from this
-  phase." Step 4's spike found the WebGL-recovery pattern DOES transfer to R3F once the
-  correct API is used, at spike scale (1 + 4 cycles) — a real migration would need to repeat
-  that same rigor at the twin's real scale and PR #23's 56-cycle standard, not assume it
-  transfers automatically.
+- Step 5B+ (machine markers, live telemetry, selection, alarms, inspector) — explicitly
+  deferred until this geometry gate is reviewed and an explicit go-ahead is given.
+- Factoring `GeometryViewport.tsx`'s WebGL-lifecycle code (duplicated from Step 4's
+  `TwinViewport.tsx`) into one shared module — a real, disclosed cleanup opportunity, not
+  blocking.
