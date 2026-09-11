@@ -227,6 +227,35 @@ const PRIVATE_DIR = path.join(__dirname, 'private');
 // disk. Real facility geometry now arrives through floor1-geometry.json below,
 // which is read from CAD.
 
+// PERF (deep-audit Phase 2A): loadPrivateGeometry/loadPrivateAssetMapping/
+// loadPrivateZones each did a synchronous fs.readFileSync + JSON.parse on
+// EVERY call with no cache -- and the frontend's boot() calls at least two of
+// them (geometry: once from /api/floor-geometry, once from
+// /api/physical-overlay; mapping: once from /api/physical-overlay, once from
+// /api/alarm-rca) on every single page load. Measured
+// (scratchpad/twin-deep-audit.json, PR #23): floor1-geometry.json alone costs
+// ~14ms to read+parse, and /api/floor-geometry's own wire-projection over it
+// (envelope/columns/walls/zones/431 equipment records) measured ~73-84ms
+// end-to-end via curl (bypassing any browser-specific overhead) -- redone
+// from scratch on every request for a file that never changes while the
+// container runs. This cache returns the same parsed object keyed by the
+// file's own mtime, so an edited file (a real deployment update) is still
+// picked up with no restart, but an unchanged file costs one fs.statSync
+// (sub-millisecond) instead of a full read+parse. Every caller already
+// treats the returned object as read-only input to wire.project*() (which
+// builds NEW objects) -- verified no caller mutates it -- so sharing one
+// parsed instance across requests is safe.
+const privateDocCache = new Map();
+function readPrivateJsonCached(filePath) {
+  let mtimeMs;
+  try { mtimeMs = fs.statSync(filePath).mtimeMs; } catch { return undefined; }
+  const hit = privateDocCache.get(filePath);
+  if (hit && hit.mtimeMs === mtimeMs) return hit.parsed;
+  const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  privateDocCache.set(filePath, { mtimeMs, parsed });
+  return parsed;
+}
+
 // Reads private/floor1-geometry.json if present -- anonymous building
 // envelope/columns/zones/physical-slot geometry, entirely independent of
 // the per-device placement above. Returns null (not a throw) when
@@ -243,7 +272,7 @@ function loadPrivateGeometry(floorId) {
   const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'geometry');
   if (!filePath || !fs.existsSync(filePath)) return null;
   try {
-    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const parsed = readPrivateJsonCached(filePath);
     // equipment[] is what the physical view draws. slots[] -- the raster-
     // derived positions digitised from the scanned schematic -- is no longer
     // served at all, so its presence or absence says nothing about whether
@@ -272,7 +301,7 @@ function loadPrivateAssetMapping(floorId) {
   const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'mapping');
   if (!filePath || !fs.existsSync(filePath)) return {};
   try {
-    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const parsed = readPrivateJsonCached(filePath);
     if (!Array.isArray(parsed.mappings)) throw new Error('missing mappings[]');
     const result = mappingLib.validateMappings(parsed.mappings);
     if (!result.ok) throw new Error(`invalid mapping records: ${result.errors.join('; ')}`);
@@ -309,7 +338,7 @@ function loadPrivateZones(floorId) {
   const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'zones');
   if (!filePath || !fs.existsSync(filePath)) return empty;
   try {
-    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const parsed = readPrivateJsonCached(filePath);
     const zones = Array.isArray(parsed.zones) ? parsed.zones : [];
     const conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
     const conflicted = new Set();
