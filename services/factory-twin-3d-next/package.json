@@ -1,0 +1,26 @@
+{
+  "name": "factory-twin-3d-next",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Step 3 of the Factory Twin architecture evolution: the future Next.js/React UI shell. ISOLATED from production -- not referenced by proxy/nginx.conf, docker-compose.yaml, or any Dockerfile. The renderer has not been migrated yet (see components/factory-twin/ViewportFrame.tsx); the existing services/factory-twin-3d/ remains the live, authoritative implementation at /factory-twin-3d/. See docs/evidence/FACTORY_TWIN_NEXTJS_UI_SHELL.md.",
+  "scripts": {
+    "dev": "next dev -p 4310",
+    "build": "next build",
+    "start": "next start -p 4310",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.3.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "tailwindcss": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.3",
+    "postcss": "^8.4.49"
+  }
+}

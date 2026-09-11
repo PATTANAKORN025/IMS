@@ -190,8 +190,34 @@ PR #22, and every path `services/factory-twin-3d/Dockerfile` copies remain untou
 `docker-compose.yaml`, or CI workflow, and deletable at any time with no effect on the running
 application.
 
+## Step 3 implementation status — DONE (UI shell only, isolated, no renderer migration)
+
+Built `services/factory-twin-3d-next/` — a real Next.js 16.3.4 + React 19 + TypeScript +
+Tailwind v4 UI shell consuming Step 1's domain contracts directly (via a `@twin-domain/*`
+path alias), with an explicit, empty renderer boundary (`ViewportFrame.tsx`) where the
+Three.js scene will eventually go — **not built this step**. Full detail, including a real
+accessibility defect found and fixed (the mirrored `--text-muted` token cannot reach WCAG AA
+contrast against either `--surface` or `--bg`, computed directly) and a real Turbopack
+cross-service-import constraint found and worked around: see
+`docs/evidence/FACTORY_TWIN_NEXTJS_UI_SHELL.md`.
+
+**Runtime changes to the live `/factory-twin-3d/`: NONE** (`git diff --quiet` against every
+Dockerfile-copied path confirmed empty). **Tests:** 30/30 pass
+(`tests/playwright/factory-twin-next-shell.js`) — route rendering, shell rendering, keyboard
+interaction, all 6 required responsive viewports (0 overflow), axe (0 serious/critical
+violations at every viewport), token wiring, focus visibility, reduced-motion, forced-colors,
+200% zoom. **Performance:** FCP/LCP 164ms, 58 DOM nodes, 0 console errors — all measured, not
+assumed. Not wired into CI yet (no deployment exists for CI to build against) — disclosed as
+a deferred item.
+
 ## Next step
 
-Step 1 and Step 1.5 are complete. Step 2 (duplicated WebGL-lifecycle extraction) is the next
-candidate per the migration plan table, but **not started** — awaiting explicit direction
-before proceeding, per this mission's own instruction not to continue unprompted.
+Step 1, Step 1.5 (version + proxy spike), and Step 3 (UI shell) are complete. Two candidates
+remain, neither started, awaiting explicit direction:
+
+- Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
+  shared module) — independent of the Next.js work, could proceed on the legacy codebase at
+  any time.
+- The actual R3F/Three.js scene migration behind `ViewportFrame.tsx`'s boundary — explicitly
+  described by the user as "a separate R3F/Three.js migration spike based on evidence from
+  this phase," i.e. not to be started automatically off the back of Step 3.

@@ -1,0 +1,36 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Maps the mirrored semantic tokens above to Tailwind utilities, so JSX
+ * writes `bg-surface text-text-primary border-border` instead of any
+ * arbitrary hex -- per this step's explicit "no hard-coded hex in JSX"
+ * rule. Utility names use dashes since Tailwind can't generate a utility
+ * named `text-text` from `--color-text` without a collision with the
+ * built-in `text-*` (font-size) scale, hence `text-primary`/`text-secondary`
+ * /`text-muted` here map from `--text`/`--text-secondary`/`--text-muted`. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-text-primary: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-focus: var(--focus);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Industrial-SCADA baseline, not a marketing reset: no gradients, no
+ * decorative motion by default. prefers-reduced-motion is honored by
+ * simply not adding animation in the first place. */
+* {
+  box-sizing: border-box;
+}
