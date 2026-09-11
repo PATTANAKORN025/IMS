@@ -42,6 +42,17 @@ the existing 4-viewport VR baseline, and a dedicated `@media (forced-colors: act
 were the CSS-phase's own documented deferred items (F-12/F-14 in that work) — unchanged by
 this pass, which touched no CSS or markup.
 
+## Phase 2 addendum
+
+No UI/markup/CSS file changed in Phase 2 — the only code change was a server-side file-read
+cache (`server.js`), invisible to the operator. Findings above stand unchanged.
+
+Phase 2's deep-audit work found a large (618–1177ms) startup-latency signal and root-caused it
+to this sandboxed test environment's software GPU rasterizer (SwiftShader), not to real
+hardware — see `FACTORY_TWIN_3D_DEEP_AUDIT.md` §2A. Called out here because it could otherwise
+be mistaken for a UX regression: it is not expected to reproduce on an operator's real
+workstation GPU, and no UX change was made in response to it.
+
 ## Verdict for this document
 
 No UX/accessibility/responsive regression found or introduced. No gap discovered in this pass
