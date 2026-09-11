@@ -1,15 +1,34 @@
 'use client';
 
-import { useCallback, useRef, useState, type MutableRefObject } from 'react';
+import { useCallback, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { Canvas, useThree, type RootState } from '@react-three/fiber';
 import type { WebGLRenderer } from 'three';
 import type { ViewName } from '@twin-domain/camera';
 import { VIEW_NAMES, DEFAULT_VIEW } from '@twin-domain/camera';
 import type { Asset } from '@twin-domain/asset';
+import type { SelectionState } from '@twin-domain/selection';
 import type { FactoryGeometryData } from '@/lib/geometry-adapter';
 import FactoryGeometry from './FactoryGeometry';
 import GeometryCameraController from './GeometryCameraController';
 import Machines from '../machines/Machines';
+import SelectedMachinePanel from '../machines/SelectedMachinePanel';
+
+/**
+ * Hoisted to module scope on general React/R3F good practice: an inline
+ * `camera={{...}}` / `dpr={[1, 2]}` object/array literal is otherwise a
+ * NEW reference on every GeometryViewport render. Tried specifically as a
+ * fix for a render-count coupling Step 5C's own testing found (see
+ * FACTORY_TWIN_R3F_SELECTION_MIGRATION.md's "Known limitations": clicking
+ * a DOM toolbar button immediately before the FIRST-ever canvas click
+ * causes that click to register 2 React renders instead of 1, confirmed
+ * NOT present when the canvas click is the first interaction on the page
+ * at all). Measured after this change: the coupling persists unchanged --
+ * this hoist did not fix it. Kept anyway because passing stable
+ * references to <Canvas> is correct regardless; the actual cause is
+ * disclosed as unresolved, not claimed fixed here.
+ */
+const CANVAS_CAMERA = { fov: 45, near: 0.1, far: 400 } as const;
+const CANVAS_DPR: [number, number] = [1, 2];
 
 type LifecycleState = 'READY' | 'LOST' | 'RESTORING' | 'REBUILDING' | 'VERIFYING' | 'RECOVERED';
 
@@ -42,6 +61,21 @@ export default function GeometryViewport({
   const baselineRef = useRef<{ geometries: number; textures: number } | null>(null);
   const readStatsRef = useRef<(() => { calls: number; triangles: number; geometries: number; textures: number }) | null>(null);
   const [stats, setStats] = useState<{ calls: number; triangles: number; geometries: number; textures: number } | null>(null);
+
+  // Selection (Step 5C): low-frequency state, updated only on a discrete
+  // click/clear -- never per-frame, never per-pointermove. `selectedId` is
+  // the primitive React tracks (cheap equality checks, cheap Map lookups
+  // in Machines.tsx); `selection` below is the canonical Step 1
+  // SelectionState derived from it for anything DOM-facing, per Section 1's
+  // rule that machine.id (via a full Asset) is the domain identity, not a
+  // raw instanceId or a bare string threaded through the UI layer.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const assetById = useMemo(() => new Map(machines.map((a) => [a.id, a])), [machines]);
+  const selection: SelectionState = useMemo(() => {
+    if (selectedId === null) return { kind: 'none' };
+    const asset = assetById.get(selectedId);
+    return asset ? { kind: 'equipment', asset } : { kind: 'none' };
+  }, [selectedId, assetById]);
 
   const handleContextLost = useCallback(() => {
     const gl = rendererRef.current;
@@ -129,12 +163,19 @@ export default function GeometryViewport({
           Recovery verification: {verifyResult}
         </div>
       ) : null}
+      <SelectedMachinePanel selection={selection} onClear={() => setSelectedId(null)} />
       <div className="relative flex-1">
-        <Canvas frameloop="demand" onCreated={handleCreated} camera={{ fov: 45, near: 0.1, far: 400 }} dpr={[1, 2]}>
+        <Canvas
+          frameloop="demand"
+          onCreated={handleCreated}
+          camera={CANVAS_CAMERA}
+          dpr={CANVAS_DPR}
+          onPointerMissed={() => setSelectedId(null)}
+        >
           <ambientLight intensity={0.5} />
           <directionalLight position={[80, 100, 40]} intensity={0.9} />
           <FactoryGeometry geometry={geometry} />
-          <Machines machines={machines} />
+          <Machines machines={machines} selectedId={selectedId} onSelect={setSelectedId} />
           <GeometryCameraController view={view} envelope={geometry.envelope} />
           <StatsProbe readStatsRef={readStatsRef} />
         </Canvas>

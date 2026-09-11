@@ -287,17 +287,51 @@ equality, zero tolerance).
 **Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
 NONE.**
 
+## Step 5C implementation status — DONE (PASS) — machine selection/picking
+
+Added click-to-select on `Machines.tsx`'s two `InstancedMesh`es (Step 5B, unchanged rendering
+logic otherwise): `instanceId` resolves through an explicit, tested `machineIds[]` mapping to
+the canonical `machine.id`, which `GeometryViewport.tsx` turns into the Step 1 domain's
+`SelectionState` for anything outside `Machines.tsx`. Selection highlight is an `instanceColor`
+swap on the existing mesh — no new geometry, no new draw call. `SelectedMachinePanel.tsx`
+exposes the selected id in semantic HTML outside the canvas, with a keyboard-reachable Clear
+button.
+
+**Parity/determinism is exact**: 431 of 431 machines uniquely addressable, no duplicates, the
+mapping stable across rebuilds. Context recovery (Step 4's lifecycle, reused unchanged) PASSES
+across 1 + 4 cycles with selection fully functional afterward (select a different machine,
+deselect, re-select the original — all confirmed). In-page click-to-select latency: p50 1.20ms,
+p95 8.80ms.
+
+**One bounded, disclosed-not-hidden finding**: clicking a DOM toolbar button immediately
+before the first-ever canvas click causes that click to register 2 React re-renders instead of
+1 (a stable-reference fix was tried and measured to NOT resolve it — kept for its own general
+merit, not claimed as a fix). Never compounds, never appears on any later click, resource
+counts unaffected — the underlying "no per-frame updates" rule is satisfied regardless. See
+`docs/evidence/FACTORY_TWIN_R3F_SELECTION_MIGRATION.md` for full detail, including a real
+camera-settle characteristic of damped `OrbitControls` (present in the legacy app too, same
+damping setting) found while deriving stable test click-coordinates.
+
+**Step 5B's own test had one assertion intentionally superseded** (not weakened): its "clicking
+a machine does NOT create selection UI" check was correct for Step 5B's scope and is retired by
+Step 5C's own mission (build exactly that UI) — updated to assert the new, intended behavior.
+
+**Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
+NONE.**
+
 ## Next step
 
-Step 1, Step 1.5, Step 3, Step 4, Step 5A, and Step 5B are complete, all PASS. Per Step 5B's
-own explicit "STOP" instruction, selection/live telemetry/alarms/inspector/RCA/EAP/LDI are NOT
-migrated. Candidates remaining, none started:
+Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, and Step 5C are complete, all PASS. Per
+Step 5C's own explicit "STOP" instruction, operational state/telemetry/alarms/inspector/RCA/
+EAP/LDI are NOT migrated. Candidates remaining, none started:
 
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- Step 5C+ (selection, live telemetry, alarms, inspector, EAP/LDI) — explicitly deferred until
-  this machine-migration gate is reviewed and an explicit go-ahead is given.
+- Step 5D+ (live operational state, telemetry, alarms, inspector, RCA, EAP/LDI) — explicitly
+  deferred until this selection-migration gate is reviewed and an explicit go-ahead is given.
+- Root-causing the +2-vs-+1 render-count coupling found in Step 5C (§6 of its evidence doc) —
+  bounded and non-blocking, but named as a real open question, not swept under the rug.
 - TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
   a disclosed, scoped future addition, not blocking.
 - Factoring `GeometryViewport.tsx`'s WebGL-lifecycle code (duplicated from Step 4's

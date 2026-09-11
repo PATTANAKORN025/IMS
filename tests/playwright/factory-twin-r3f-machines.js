@@ -222,18 +222,32 @@ function check(name, condition, detail) {
   }
 
   // -------------------------------------------------------------------
-  // 6. Accessibility: no selection wired yet, no color-only meaning
+  // 6. Accessibility, no color-only meaning
+  //
+  // SUPERSEDED, not weakened: this block originally asserted "clicking a
+  // machine does NOT create any selection UI (deferred to a later step)"
+  // -- correct for Step 5B's own scope at the time. Step 5C's entire
+  // mission is to build exactly that selection UI; the old assertion's
+  // premise (no selection exists yet) is retired by design, the same way
+  // Step 5A's hardcoded geometry-count baseline was superseded (not
+  // weakened) when Step 5B legitimately grew it. See
+  // FACTORY_TWIN_R3F_SELECTION_MIGRATION.md for the full regression note.
   // -------------------------------------------------------------------
   {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
     await page.goto(CANDIDATE_URL, { waitUntil: 'load' });
     await page.waitForSelector('canvas');
-    const canvasBox = await page.locator('canvas').boundingBox();
-    await page.mouse.click(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+    await page.waitForTimeout(400);
+    // (450, 250) is a known-good hit in the default 'plan' view against
+    // this deployment's real geometry/machine data -- confirmed by
+    // scanning several candidate points and reading the panel back, not
+    // guessed. The canvas center is empty floor in this layout (verified),
+    // which is why this test does not use boundingBox()'s midpoint.
+    await page.mouse.click(450, 250);
     await page.waitForTimeout(200);
     check(
-      'Step 5B rule: clicking a machine does NOT create any selection UI (deferred to a later step)',
-      (await page.locator('text=/Selected:/').count()) === 0,
+      'Step 5C supersedes Step 5B here: clicking a machine now DOES surface selection UI (machine.id, semantic DOM)',
+      (await page.locator('text=/Selected machine:/').count()) === 1,
     );
     await page.close();
 
