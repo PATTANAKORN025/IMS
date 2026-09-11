@@ -120,8 +120,53 @@ No step in this table has been executed. This document is the audit and plan onl
 - Not recommending WebGPU (Phase 11) — no spike has been run; current WebGL implementation has
   no proven defect that would motivate one (PR #23).
 
+## Step 1 implementation status — DONE
+
+**Domain modules created:** `services/factory-twin-3d/domain/{spatial,machine-state,
+data-quality,geometry,zone,asset,selection,camera,index}.ts` + scoped `tsconfig.json`. Full
+detail, including two real corrections this pass made to the audit's own findings above (half
+of `lib/contracts.js` is dead code; `app.js` has no explicit selection state today) and a real
+type error the domain modeling itself caught (six `Asset` fields needed to be nullable, not
+non-null, against `lib/wire.js`'s actual `fromEnum()` behavior): see
+`docs/evidence/FACTORY_TWIN_DOMAIN_MODEL.md`.
+
+**Runtime changes: NONE.** `git diff --stat` against `server.js`/`lib/`/`public/` — the only
+paths `services/factory-twin-3d/Dockerfile` copies into the image — is empty. The built
+container is provably byte-identical to PR #23's already-fully-verified image.
+
+**Tests:** `tests/unit/factory-twin-domain.test.js`, 15/15 pass, wired into
+`scripts/pre-commit.js` alongside a new `tsc --noEmit` gate (`npm run
+factory-twin:typecheck`). Also re-ran (not skipped) `factory-twin-regression.js` and
+`factory-twin-failure-modes.js` against the disposable container from PR #23 (unrebuilt —
+source is unchanged): failure-modes PASSED clean; regression passed with the same
+pre-existing environmental mode-switch-latency flake already documented in PR #23 (max
+115ms this run vs. 132ms then — noise, not a regression). The full 32-state visual-regression/
+axe/WebGL-lifecycle/EAP Playwright suites were **not** re-run this pass — the byte-identical-
+image proof above makes a fresh run mathematically redundant with PR #23's own already-green
+results for those suites, and re-running them was judged not worth the time cost; flagged here
+explicitly rather than silently claimed as done.
+
+**Performance:** not measured this pass — no runtime file changed, so PR #23's baseline
+applies unchanged by construction, not by assumption.
+
+**Dependency change:** `typescript@^5.7.3` added as an explicit root `devDependency` (was
+present only as an incidental, non-functional transitive `7.0.2` — the new native-preview
+compiler, which exports no compiler API at all; see `FACTORY_TWIN_DOMAIN_MODEL.md`'s
+"Compatibility strategy" section). This is the only `package.json`/`package-lock.json` change.
+
+**Step 1 completion checklist:**
+- [x] domain boundaries extracted
+- [x] operational semantics preserved (parity-tested against both existing JS copies)
+- [x] CAD unchanged (coordinate pass-through tested; no `lib/wire.js` edit)
+- [x] EAP/LDI separation preserved (no EAP/LDI file touched)
+- [x] existing runtime unchanged behaviorally (zero diff in every Dockerfile-copied path)
+- [x] tests pass (15/15 new + full existing suite unaffected)
+- [x] performance baseline preserved (by construction — see above)
+- [x] docs updated (this file + `FACTORY_TWIN_DOMAIN_MODEL.md`)
+- [x] focused commit created
+
 ## Next step
 
-Awaiting direction to begin Step 1 (typed domain extraction, zero framework, zero behavior
-change) — the only step in the table with no unresolved risk and no dependency on the Step 4
-proxy spike.
+Step 1 is complete. Step 2 (per the migration plan table: duplicated WebGL-lifecycle
+extraction) is the next candidate, but **not started** — awaiting explicit direction before
+proceeding, per this mission's own instruction not to continue past Step 1 unprompted.
