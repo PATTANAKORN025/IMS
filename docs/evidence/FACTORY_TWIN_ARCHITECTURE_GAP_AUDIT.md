@@ -100,8 +100,8 @@ raw API-shaped object directly into template strings).
 |---|---|---|---|---|---|---|---|
 | 1 | No TS/domain types anywhere | `domain/factory/*.ts` typed contracts | zero type safety, DTO/domain/UI state mixed | Extract `Machine`/`Zone`/`OperationalState`/`DataQuality` types from current object shapes in `app.js`/`lib/*.js`, no behavior change, no new framework yet | Low | existing unit tests unchanged and green; new type-only files, nothing wired in yet | delete new files, zero blast radius |
 | 2 | Duplicated WebGL lifecycle in `app.js` + `eap.js` | one shared, tested lifecycle module | 6 duplicated functions, correctness-critical | Extract to a framework-agnostic module first (plain JS/TS, no React yet), have both `app.js` and `eap.js` import it, prove behavior identical | Med (touches the highest-risk subsystem) | `eap-webgl-context-lifecycle-regression.js` + PR #23's 5-cycle GPU-resource-stability method, re-run against both pages | revert the two call sites to their inline copies; module deletion is safe since nothing else depends on it yet |
-| 3 | No Next.js app anywhere | `app/factory-twin-3d/` shell, empty/placeholder page | no framework, no build step, no dev-server story | Stand up Next.js 15 app **alongside** (not replacing) the current Express app, on a separate dev port, prove it can build/serve a static shell; do not wire it behind nginx yet | Low (isolated, nothing in production path touches it) | `next build` succeeds, manual local load | delete the new app directory |
-| 4 | `proxy/nginx.conf` routes `/factory-twin-3d/` to Express:4100 | Next.js served at the same prefix, same port contract | `basePath`/`assetPrefix`/`auth_request` compatibility unverified | Point the disposable-container measurement rig (same pattern as PR #23) at a Next.js build with `basePath: '/factory-twin-3d'`, confirm assets resolve under the proxy prefix in a **local nginx copy**, not production `proxy/nginx.conf` | Med — this is the step most likely to reveal a hard blocker | manual + scripted request against every route Next.js would own (`/`, `/_next/*`, API) through a disposable nginx copy | no change made to real `proxy/nginx.conf` until this passes; if it fails, migration halts here, current app is completely unaffected |
+| 3 | No Next.js app anywhere | `app/factory-twin-3d/` shell, empty/placeholder page | no framework, no build step, no dev-server story | ~~Stand up Next.js 15 app~~ Stand up a **Next.js 16.x** app (version corrected — see `FACTORY_TWIN_NEXTJS_VERSION_DECISION.md`; 15 is 40 days from EOL) **alongside** (not replacing) the current Express app, on a separate dev port, prove it can build/serve a static shell; do not wire it behind nginx yet | Low (isolated, nothing in production path touches it) | `next build` succeeds, manual local load — **DONE, spiked**, see `FACTORY_TWIN_NEXTJS_PROXY_SPIKE.md` | delete `spikes/factory-twin-nextjs/` |
+| 4 | `proxy/nginx.conf` routes `/factory-twin-3d/` to Express:4100 | Next.js served at the same prefix, same port contract | `basePath`/`assetPrefix`/`auth_request` compatibility — **RESOLVED BY SPIKE, not yet implemented**: today's exact `proxy_pass` shape 404s against a basePath'd Next app; the fix (drop the trailing slash + add one exact-match `location = /factory-twin-3d {}` block) is documented, not applied to the real file | Point the disposable-container measurement rig (same pattern as PR #23) at a Next.js build with `basePath: '/factory-twin-3d'`, confirm assets resolve under the proxy prefix in a **local nginx copy**, not production `proxy/nginx.conf` — **DONE** | Med — a real blocker was found (see spike doc), but it is now a known, documented two-line fix rather than an open question | manual + scripted request against every route Next.js would own (`/`, `/_next/*`, API) through a disposable nginx copy — **DONE, `FACTORY_TWIN_NEXTJS_PROXY_SPIKE.md`: `:8081` (today's shape) 404s, `:8082` (naive fix) loops, `:8083` (documented fix) 200s end-to-end** | no change made to real `proxy/nginx.conf` — the two-line fix identified is deferred to the actual cutover, not applied speculatively now |
 | 5 | Inspector = `innerHTML` template strings | typed `Inspector.tsx` | DOM coupling, no types | Port `showEquipmentInspector`/`showColumnInspector` to a typed React component consuming the Step-1 domain types, rendered inside the *existing* Express-served page first (React mounted into a `<div>`, no R3F yet) — smallest possible React introduction | Low–Med | `factory-twin-inspector-e2e.js` re-run against the React-rendered inspector, must pass unchanged | remove the mount point, restore the innerHTML function (kept, not deleted, until this step is proven) |
 | 6 | Full scene in `app.js` | `TwinScene` + child R3F components | large, correctness-sensitive, CAD-authoritative | Migrate one leaf component at a time per the spec's split (`FactoryGeometry` first — static, lowest risk — then `MachineMarkers`/`SelectionLayer`/`ReferenceLayer`/`CameraController`/`InteractionLayer` in risk order), each gated by Phase 8's perf-parity table before promotion | High | full VR (32/32) + `factory-twin-regression.js` + `factory-twin-failure-modes.js` + PR #23's WebGL-resource-count method, per component | each component migration is its own branch/PR; a failing perf-parity gate blocks that specific component's promotion without affecting the others already merged |
 | 7 | Tailwind absent | Tailwind theme extended from existing `:root` tokens | risk of "utility-class chaos" regressing the PR #21 token discipline | Generate Tailwind theme config **from** the existing token values (source of truth stays the token list, not re-invented in Tailwind), keep `css-token-parity.js`-equivalent enforcement | Med | visual regression (32/32) must stay 32/32 pixel-for-pixel, not just "looks similar" (explicit spec requirement) | keep the existing CSS files in place until Tailwind output is proven byte-for-byte equivalent in rendered layout |
@@ -112,8 +112,9 @@ No step in this table has been executed. This document is the audit and plan onl
 
 ## 5. What this audit is explicitly NOT concluding
 
-- Not concluding the migration is safe to start — Step 4 (proxy compatibility) is an unresolved
-  technical risk with no spike run yet.
+- Not concluding the migration is safe to start — Step 4 (proxy compatibility) now has a spiked,
+  documented fix (see `FACTORY_TWIN_NEXTJS_PROXY_SPIKE.md`), but that fix has not been applied
+  to `proxy/nginx.conf`, and no other migration step has been executed.
 - Not concluding React/Next.js will improve anything measurable — Phase 8's perf-parity gate
   is the only thing allowed to make that claim, and no migration code exists yet to measure.
 - Not touching `main`, PR #22, or GitHub Actions billing, per standing instruction.
@@ -165,8 +166,32 @@ compiler, which exports no compiler API at all; see `FACTORY_TWIN_DOMAIN_MODEL.m
 - [x] docs updated (this file + `FACTORY_TWIN_DOMAIN_MODEL.md`)
 - [x] focused commit created
 
+## Step 1.5 implementation status — DONE (spike only, disposable)
+
+Resolved the two largest open architecture risks ahead of Step 2/3, without starting the
+actual migration:
+
+1. **Next.js version** — corrected from the original brief's "15" to **16.x**: Next 15 is
+   Maintenance-LTS-only and reaches EOL 2026-10-21 (40 days from this pass), Next 16 is
+   Active LTS through 2027-10-22. See `FACTORY_TWIN_NEXTJS_VERSION_DECISION.md`.
+2. **Reverse-proxy/basePath compatibility** — spiked with a real Next.js 16.3.4 build
+   (`spikes/factory-twin-nextjs/`, `basePath: '/factory-twin-3d'`, `output: 'standalone'`)
+   against a disposable `nginx:alpine` container reproducing `proxy/nginx.conf`'s exact
+   `auth_request` + `proxy_pass` shape. **Found a real incompatibility**: today's config 404s
+   against a basePath'd Next app. Found and verified the fix (drop the `proxy_pass` trailing
+   slash + add one exact-match `location = /factory-twin-3d {}` block) — confirmed working
+   end-to-end (page, a real `_next/static` chunk, and a static asset all `200`). See
+   `FACTORY_TWIN_NEXTJS_PROXY_SPIKE.md`.
+
+**Runtime/production changes: NONE.** `proxy/nginx.conf` was not touched — only a local copy
+inside the disposable `nginx:alpine` container (removed after the spike). Grafana, `main`,
+PR #22, and every path `services/factory-twin-3d/Dockerfile` copies remain untouched.
+`spikes/factory-twin-nextjs/` is self-contained, not referenced by any Dockerfile,
+`docker-compose.yaml`, or CI workflow, and deletable at any time with no effect on the running
+application.
+
 ## Next step
 
-Step 1 is complete. Step 2 (per the migration plan table: duplicated WebGL-lifecycle
-extraction) is the next candidate, but **not started** — awaiting explicit direction before
-proceeding, per this mission's own instruction not to continue past Step 1 unprompted.
+Step 1 and Step 1.5 are complete. Step 2 (duplicated WebGL-lifecycle extraction) is the next
+candidate per the migration plan table, but **not started** — awaiting explicit direction
+before proceeding, per this mission's own instruction not to continue unprompted.
