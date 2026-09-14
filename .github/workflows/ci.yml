@@ -161,6 +161,11 @@ jobs:
       - name: Run Alarm API Security/Regression Tests
         run: node scripts/run-alarm-api-tests.js
 
+      # Phase 12G: tools/floor1/'s streaming DXF group-code parser --
+      # tested against a tiny synthetic fixture only, no external deps.
+      - name: Run Floor1 DXF Parser Tests
+        run: node tests/unit/floor1-dxf-parser.test.js
+
       # Factory Twin contract suites. These encode the system's REFUSALS --
       # that an observation cannot be promoted to a confirmation, that a
       # mapping cannot be inferred from proximity or a property lookup, that

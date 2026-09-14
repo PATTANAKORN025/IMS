@@ -38,6 +38,9 @@ run("Security Exception Matching Tests", "node tests/unit/security-exceptions.te
 // committed lockfile), then runs the real test file. No real DB, no real
 // network at test-execution time.
 run("Alarm API Security/Regression Tests", "node scripts/run-alarm-api-tests.js");
+// Phase 12G: streaming DXF group-code parser (tools/floor1/) -- tested
+// against a tiny synthetic fixture only, never the real 412MB drawing.
+run("Floor1 DXF Parser Tests", "node tests/unit/floor1-dxf-parser.test.js");
 run("Factory Twin Mapping Contract Tests", "node tests/unit/factory-twin-mapping.test.js");
 run("Factory Twin MES Import Boundary Tests", "node tests/unit/factory-twin-mes-import.test.js");
 run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geometry-mutation.test.js");
