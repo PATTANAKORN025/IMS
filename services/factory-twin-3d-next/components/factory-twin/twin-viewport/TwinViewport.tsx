@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber';
 import type { WebGLRenderer } from 'three';
 import type { ViewName } from '@twin-domain/camera';
@@ -33,6 +33,19 @@ export default function TwinViewport() {
   // interactions (button clicks), not anywhere near the WebGL frame count.
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
+  // Same hydration fix as GeometryViewport.tsx's own renderCountRef
+  // (found and fixed alongside it -- same bug class, same file shape).
+  // Reading the ref's already-mutated value straight into JSX diverges
+  // between the server's single render pass and the client's hydration
+  // pass (Strict Mode double-invokes in development). `hydrated` is false
+  // on every render up to and including the one that hydrates (server and
+  // client agree: "reactRenders: 0"), then flips true exactly once via
+  // this mount-only effect (empty deps -- cannot re-fire itself, not a
+  // loop), after which the real per-render count is shown.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const [view, setView] = useState<ViewName>(DEFAULT_VIEW);
   const [selected, setSelected] = useState<SpikeInstance | null>(null);
@@ -166,7 +179,7 @@ export default function TwinViewport() {
           Restore context
         </button>
         <span className="text-xs text-text-secondary">lifecycle: {lifecycle}</span>
-        <span className="text-xs text-text-secondary">reactRenders: {renderCountRef.current}</span>
+        <span className="text-xs text-text-secondary">reactRenders: {hydrated ? renderCountRef.current : 0}</span>
         <button
           type="button"
           onClick={() => setStats(readStatsRef.current?.() ?? null)}

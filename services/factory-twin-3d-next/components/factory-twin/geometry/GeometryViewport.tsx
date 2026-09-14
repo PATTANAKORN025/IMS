@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, type RootState } from '@react-three/fiber';
 import type { WebGLRenderer } from 'three';
 import type { ViewName, CameraState } from '@twin-domain/camera';
@@ -83,6 +83,27 @@ export default function GeometryViewport({
 }) {
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
+  // Hydration fix: `renderCountRef.current` is mutated during render (by
+  // design -- that mutation itself is what makes this a true per-render
+  // counter, and mutating a ref during render is not a React rule
+  // violation on its own). The bug was reading that already-mutated value
+  // straight into JSX in the SAME render: the server renders this
+  // component's function body exactly once (ref -> 1), but React's client
+  // hydration pass evaluates the SAME function body separately to produce
+  // the tree it diffs against the server HTML -- in development, Strict
+  // Mode intentionally double-invokes it (ref -> 2), which is exactly why
+  // this bug surfaced as "server=1, client=2" rather than being hidden.
+  // `hydrated` starts false on both server and every client render up to
+  // and including the one that hydrates, so both produce identical
+  // "reactRenders: 0" markup -- no mismatch. The mount-only effect below
+  // (empty deps, fires exactly once) flips it true post-commit, causing
+  // one ordinary follow-up render that then shows the real count. This is
+  // not a loop: `hydrated` never toggles again, so the effect cannot
+  // re-fire itself.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   // LayerState (Step 5E): presentation-only, deliberately separate from
   // CameraState/SelectionState (Section "Layer model"). A toggle here flips
@@ -291,7 +312,7 @@ export default function GeometryViewport({
           Restore context
         </button>
         <span className="text-xs text-text-secondary">lifecycle: {lifecycle}</span>
-        <span className="text-xs text-text-secondary">reactRenders: {renderCountRef.current}</span>
+        <span className="text-xs text-text-secondary">reactRenders: {hydrated ? renderCountRef.current : 0}</span>
         <span className="text-xs text-text-secondary">
           controllerMounts: {controllerMounts} contextLost: {contextLostCount} contextRestored: {contextRestoredCount}
         </span>
