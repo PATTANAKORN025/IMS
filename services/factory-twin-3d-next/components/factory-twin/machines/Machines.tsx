@@ -4,6 +4,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { ThreeEvent } from '@react-three/fiber';
 import type { Asset } from '@twin-domain/asset';
+import { MACHINE_STATE_THEME, type MachineStateCode } from '@twin-domain/machine-state';
+import type { OperationalStateResolution } from '@twin-domain/data-quality';
 
 /**
  * Static machine rendering (Step 5B) + selection/picking (Step 5C). This
@@ -32,6 +34,27 @@ const UNRESOLVED_COLOR = new THREE.Color(0x2b3a4d);
 /** Accent color, matching this app's own mirrored --accent/--focus token
  *  (app/tokens.css) -- not a new color invented for selection. */
 const SELECTED_COLOR = new THREE.Color(0x38bdf8);
+/**
+ * Step 6A: NO_DATA/UNAVAILABLE render as this distinct neutral, matching
+ * operational-status.js's own DATA_QUALITY.UNMAPPED color (0x64748b) --
+ * never DOWN's red (0xef4444) and never any of the other 7 machine-state
+ * colors either. This is the visual proof of the hard rule "NO_DATA != DOWN,
+ * UNAVAILABLE != DOWN": a machine with no data source is a distinct color
+ * from a machine that is actually down, on the same instanced mesh, at a
+ * glance.
+ */
+const NO_DATA_COLOR = new THREE.Color(0x64748b);
+
+function operationalColorFor(res: OperationalStateResolution | undefined): THREE.Color {
+  if (res && res.quality === 'SIMULATION' && res.state) {
+    const theme = MACHINE_STATE_THEME[res.state as MachineStateCode];
+    if (theme) return new THREE.Color(theme.hex);
+  }
+  // Covers NO_DATA, UNAVAILABLE, and the currently-unreachable VALID/STALE
+  // cases uniformly -- anything that is not a real simulated state renders
+  // as "no data," never a guessed color.
+  return NO_DATA_COLOR;
+}
 
 interface SizedInstance {
   id: string;
@@ -96,6 +119,8 @@ export default function Machines({
   selectedId,
   onSelect,
   interactive = true,
+  showOperationalState = false,
+  operationalStateByAssetId,
 }: {
   machines: readonly Asset[];
   selectedId: string | null;
@@ -113,6 +138,16 @@ export default function Machines({
    * testing, not assumed away.
    */
   interactive?: boolean;
+  /**
+   * Step 6A: when true, the base instance color (before any selection
+   * highlight) comes from each asset's resolved operational state instead
+   * of its footprint tier. Default false -- the presentation-only feature
+   * is opt-in, matching `operational-state-adapters.js`'s own default-off
+   * demo-mode convention (eap.js:578), never surprising a viewer with a
+   * wall of simulated color on load.
+   */
+  showOperationalState?: boolean;
+  operationalStateByAssetId?: ReadonlyMap<string, OperationalStateResolution>;
 }) {
   const sizedRef = useRef<THREE.InstancedMesh>(null);
   const markerRef = useRef<THREE.InstancedMesh>(null);
@@ -125,6 +160,29 @@ export default function Machines({
   const markerIds = useMemo(() => markers.map((m) => m.id), [markers]);
   const sizedIndexById = useMemo(() => new Map(sizedIds.map((id, i) => [id, i])), [sizedIds]);
   const markerIndexById = useMemo(() => new Map(markerIds.map((id, i) => [id, i])), [markerIds]);
+
+  /**
+   * Step 6A: the single source of truth for each instance's BASE color
+   * (tier color, or operational-state color when the toggle is on) --
+   * both the initial paint effect and the selection-revert branch below
+   * read from these same two arrays, so a selected instance always reverts
+   * to whichever base is currently active, never a stale one. Recomputed
+   * only when `sized`/`markers`/`showOperationalState`/the resolution map
+   * change -- a bounded, discrete recompute (once per toggle), never
+   * per-frame, never per-machine-component.
+   */
+  const sizedDisplayColors = useMemo(
+    () => sized.map((inst) => (showOperationalState
+      ? operationalColorFor(operationalStateByAssetId?.get(inst.id))
+      : inst.color)),
+    [sized, showOperationalState, operationalStateByAssetId],
+  );
+  const markerDisplayColors = useMemo(
+    () => markers.map((inst) => (showOperationalState
+      ? operationalColorFor(operationalStateByAssetId?.get(inst.id))
+      : UNRESOLVED_COLOR)),
+    [markers, showOperationalState, operationalStateByAssetId],
+  );
 
   useLayoutEffect(() => {
     const mesh = sizedRef.current;
@@ -139,11 +197,11 @@ export default function Machines({
       pos.set(inst.x, inst.y, inst.z);
       scale.set(inst.w, inst.h, inst.d);
       mesh.setMatrixAt(i, m.compose(pos, q, scale));
-      mesh.setColorAt(i, inst.color);
+      mesh.setColorAt(i, sizedDisplayColors[i] ?? inst.color);
     });
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  }, [sized]);
+  }, [sized, sizedDisplayColors]);
 
   useLayoutEffect(() => {
     const mesh = markerRef.current;
@@ -155,11 +213,11 @@ export default function Machines({
     markers.forEach((inst, i) => {
       pos.set(inst.x, inst.y, inst.z);
       mesh.setMatrixAt(i, m.compose(pos, q, scale));
-      mesh.setColorAt(i, UNRESOLVED_COLOR);
+      mesh.setColorAt(i, markerDisplayColors[i] ?? UNRESOLVED_COLOR);
     });
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  }, [markers]);
+  }, [markers, markerDisplayColors]);
 
   /**
    * Selection visual feedback (Section 5): the cheapest measured option --
@@ -174,10 +232,10 @@ export default function Machines({
     const prev = previousSelectionRef.current;
     if (prev) {
       if (prev.mesh === 'sized' && sizedRef.current) {
-        sizedRef.current.setColorAt(prev.index, sized[prev.index]?.color ?? UNRESOLVED_COLOR);
+        sizedRef.current.setColorAt(prev.index, sizedDisplayColors[prev.index] ?? UNRESOLVED_COLOR);
         if (sizedRef.current.instanceColor) sizedRef.current.instanceColor.needsUpdate = true;
       } else if (prev.mesh === 'marker' && markerRef.current) {
-        markerRef.current.setColorAt(prev.index, UNRESOLVED_COLOR);
+        markerRef.current.setColorAt(prev.index, markerDisplayColors[prev.index] ?? UNRESOLVED_COLOR);
         if (markerRef.current.instanceColor) markerRef.current.instanceColor.needsUpdate = true;
       }
       previousSelectionRef.current = null;
@@ -197,7 +255,11 @@ export default function Machines({
       if (markerRef.current.instanceColor) markerRef.current.instanceColor.needsUpdate = true;
       previousSelectionRef.current = { mesh: 'marker', index: markerIndex };
     }
-  }, [selectedId, sized, sizedIndexById, markerIndexById]);
+    // sizedDisplayColors/markerDisplayColors intentionally included: toggling
+    // showOperationalState must re-run this effect so a currently-selected
+    // instance re-reverts to (and stays on top of) the newly active base
+    // color source, never a stale tier/operational color underneath it.
+  }, [selectedId, sized, sizedIndexById, markerIndexById, sizedDisplayColors, markerDisplayColors]);
 
   /**
    * Picking (Section 2): R3F's own pointer-event raycasting, attached ONLY

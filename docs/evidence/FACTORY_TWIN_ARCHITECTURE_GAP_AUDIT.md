@@ -430,18 +430,57 @@ against `services/factory-twin-3d/` confirmed legacy stack untouched.
 **Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
 NONE.**
 
+## Step 6A implementation status — DONE (PASS) — operational state presentation
+
+Integrated the existing operational-state semantics (`operational-status.js`,
+`operational-state-adapters.js`, Step 1's `machine-state.ts`/`data-quality.ts`) into the R3F
+Factory Twin as a presentation layer, still no live telemetry connected. New
+`lib/operational-state-adapter.ts` structurally ports EAP's real/simulated adapter pair
+(FT-EAP-STATE-03/04) onto `Asset[]`: the real adapter is honest `UNAVAILABLE` always (no
+PLC/SCADA/MES/historian integration exists for these 431 machines either), and only an
+explicit, default-off demo toggle substitutes a deterministic per-asset simulated state, gated
+by the same `isMachine()`/`live_status_eligible` check `statusForAsset()` already enforces.
+
+**A real, honest finding, not a bug**: this deployment has 0 confirmed IMS mappings today
+(verified against `/api/floor-geometry`), matching `operational-state-adapters.js`'s own
+documented reality — so with the demo toggle on, every asset today resolves to `NO_DATA`,
+never a fabricated colorful state. `NO_DATA`/`UNAVAILABLE` render as a color distinct from
+`DOWN` (never conflated, Section 1's own hard rule), and the full 8-state vocabulary is proven
+correct via a real, accessible legend (glyph + label text, not color alone) rather than via
+live variety this dataset cannot honestly produce.
+
+`Machines.tsx` gained operational-state coloring using the SAME `InstancedMesh.setColorAt()`
+mechanism Step 5B/5C already proved correct — no new mesh, no per-machine React component.
+Measured: toggling causes 0 resource growth and a small, bounded React-render delta, direct
+proof of this step's own mission ("real operational semantics can drive the new renderer
+without coupling React rendering to 431 machines"). Selection and WebGL context recovery both
+verified to coexist correctly with operational state. Full detail in
+`docs/evidence/FACTORY_TWIN_R3F_OPERATIONAL_STATE.md`.
+
+Full regression re-run (Step 3, Step 4, Step 5A-5F, this step's own 40-assertion suite, plus
+the legacy `factory-twin-failure-modes.js` check) all green except the same single
+pre-existing, out-of-scope `:3000` placement-route failure unchanged since Step 5D.
+`git diff --quiet` against `services/factory-twin-3d/` confirmed legacy stack untouched.
+
+**Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
+NONE.**
+
 ## Next step
 
-Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, and Step 5F are
-complete, all PASS. Per Step 5F's own explicit "STOP" instruction, operational state/telemetry/
-alarms/inspector/RCA/EAP/LDI are NOT migrated. Candidates remaining, none started:
+Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, and
+Step 6A are complete, all PASS. Per this migration's own hard rules, live telemetry/alarms/
+inspector/RCA/EAP/LDI are still NOT connected — Step 6A is presentation-only. Candidates
+remaining, none started:
 
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- Next phase (live operational state, telemetry, alarms, inspector, RCA, EAP/LDI) —
-  explicitly deferred until this scene-orchestration gate is reviewed and an explicit
-  go-ahead is given.
+- Live telemetry connection for operational state (a real source for `resolveReal()` to
+  report) — blocked on an actual PLC/SCADA/MES/historian integration existing at all, tracked
+  the same way `docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md` already tracks it for EAP; not
+  something this migration can create.
+- Next phase (telemetry, alarms, inspector, RCA, EAP/LDI) — explicitly deferred until this
+  gate is reviewed and an explicit go-ahead is given.
 - TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
   a disclosed, scoped future addition, not blocking.
 - Factoring the `geometry-candidate` route's WebGL-lifecycle code (still duplicated by Step 4's

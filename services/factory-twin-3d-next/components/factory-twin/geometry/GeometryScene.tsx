@@ -6,6 +6,7 @@ import type { ViewName, CameraState } from '@twin-domain/camera';
 import type { Asset } from '@twin-domain/asset';
 import type { LayerState } from '@twin-domain/layer';
 import type { ReferenceOverlay } from '@twin-domain/reference';
+import type { OperationalStateResolution } from '@twin-domain/data-quality';
 import type { FactoryGeometryData } from '@/lib/geometry-adapter';
 import FactoryGeometry from './FactoryGeometry';
 import StructuralGrid from './StructuralGrid';
@@ -60,6 +61,8 @@ export default function GeometryScene({
   onCameraStateChange,
   onControllerMount,
   readStatsRef,
+  showOperationalState = false,
+  operationalStateByAssetId,
 }: {
   geometry: FactoryGeometryData;
   machines: readonly Asset[];
@@ -73,6 +76,12 @@ export default function GeometryScene({
   onCameraStateChange?: (state: CameraState) => void;
   onControllerMount?: () => void;
   readStatsRef: MutableRefObject<(() => SceneStats) | null>;
+  /** Step 6A: presentation-only operational-state coloring, threaded
+   *  straight through to `Machines` -- this component still owns no
+   *  lifecycle or adapter logic of its own, same composition-only rule as
+   *  every other prop here. */
+  showOperationalState?: boolean;
+  operationalStateByAssetId?: ReadonlyMap<string, OperationalStateResolution>;
 }) {
   return (
     <>
@@ -94,7 +103,14 @@ export default function GeometryScene({
         <StructuralGrid grid={geometry.grid} />
       </group>
       <group visible={layers.machines}>
-        <Machines machines={machines} selectedId={selectedId} onSelect={onSelect} interactive={layers.machines} />
+        <Machines
+          machines={machines}
+          selectedId={selectedId}
+          onSelect={onSelect}
+          interactive={layers.machines}
+          showOperationalState={showOperationalState}
+          operationalStateByAssetId={operationalStateByAssetId}
+        />
       </group>
       <group visible={layers.reference}>
         <Reference overlay={reference} />

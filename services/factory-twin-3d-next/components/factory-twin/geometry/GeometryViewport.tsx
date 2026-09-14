@@ -10,7 +10,10 @@ import type { SelectionState } from '@twin-domain/selection';
 import type { LayerId, LayerState } from '@twin-domain/layer';
 import { LAYER_IDS, DEFAULT_LAYER_STATE } from '@twin-domain/layer';
 import type { ReferenceOverlay } from '@twin-domain/reference';
+import { MACHINE_STATE_THEME, MACHINE_STATE_ORDER, type MachineStateCode } from '@twin-domain/machine-state';
+import type { OperationalStateResolution } from '@twin-domain/data-quality';
 import type { FactoryGeometryData } from '@/lib/geometry-adapter';
+import { resolveOperationalState } from '@/lib/operational-state-adapter';
 import GeometryScene, { type SceneStats } from './GeometryScene';
 import SelectedMachinePanel from '../machines/SelectedMachinePanel';
 
@@ -93,6 +96,50 @@ export default function GeometryViewport({
   const toggleLayer = useCallback((id: LayerId) => {
     setLayers((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
+
+  /**
+   * Step 6A: operational-state presentation, default OFF (Section 1/2 --
+   * "must NOT connect live telemetry yet"; the real adapter is honest
+   * UNAVAILABLE, and only an explicit viewer toggle substitutes a
+   * deterministic simulation, mirroring `operational-state-adapters.js`'s
+   * own default-off demo-mode convention). `resolutions` is recomputed only
+   * when `machines` or the toggle itself changes -- a bounded, discrete
+   * recompute over 431 plain-object resolutions, never a per-machine React
+   * component and never re-derived per frame; this is the direct proof
+   * this step's own mission asks for ("real operational semantics can
+   * drive the new renderer without coupling React rendering to 431
+   * machines").
+   */
+  const [demoModeOn, setDemoModeOn] = useState(false);
+  const operationalStateByAssetId = useMemo(() => {
+    const map = new Map<string, OperationalStateResolution>();
+    for (const asset of machines) map.set(asset.id, resolveOperationalState(asset, demoModeOn));
+    return map;
+  }, [machines, demoModeOn]);
+  /**
+   * Real, DOM-readable proof of the resolution pipeline's own output,
+   * matching this codebase's established verification convention (a
+   * regex-parsed toolbar readout, e.g. `controllerMounts:`/`contextLost:`
+   * in Step 5F) rather than a WebGL pixel readback -- Section 1's own
+   * "NO_DATA != DOWN, UNAVAILABLE != DOWN" rule is checkable here
+   * directly: `simulated` only ever comes from a real `isMachine()` asset,
+   * `noData`/`unavailable` never collapse into it. This deployment has 0
+   * confirmed IMS mappings today (verified via `/api/floor-geometry`), so
+   * `simulated` is honestly 0 and every asset reads `noData` (demo on) or
+   * `unavailable` (demo off) -- not a bug, the same honesty
+   * `operational-state-adapters.js` itself already documents.
+   */
+  const operationalSummary = useMemo(() => {
+    let simulated = 0;
+    let noData = 0;
+    let unavailable = 0;
+    for (const res of operationalStateByAssetId.values()) {
+      if (res.quality === 'SIMULATION') simulated += 1;
+      else if (res.quality === 'NO_DATA') noData += 1;
+      else if (res.quality === 'UNAVAILABLE') unavailable += 1;
+    }
+    return { simulated, noData, unavailable };
+  }, [operationalStateByAssetId]);
 
   const [view, setView] = useState<ViewName>(DEFAULT_VIEW);
   // CameraState (Step 5D): synced ONLY at a meaningful checkpoint --
@@ -281,6 +328,42 @@ export default function GeometryViewport({
             </label>
           ))}
         </fieldset>
+        <span className="text-xs text-text-secondary">|</span>
+        {/* relative for the same reason the layers fieldset above needs it
+            -- see that fieldset's own comment. */}
+        <fieldset className="relative flex items-center gap-2">
+          <legend className="sr-only">Operational state (Step 6A, presentation only)</legend>
+          <label className="flex items-center gap-1 text-xs text-text-secondary">
+            <input
+              type="checkbox"
+              checked={demoModeOn}
+              onChange={() => setDemoModeOn((v) => !v)}
+              className="h-3.5 w-3.5 accent-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
+            />
+            Simulate operational state
+          </label>
+        </fieldset>
+        <span className="text-xs text-text-secondary">
+          operational: simulated={operationalSummary.simulated} noData={operationalSummary.noData} unavailable={operationalSummary.unavailable}
+        </span>
+        {demoModeOn ? (
+          <ul className="flex flex-wrap items-center gap-2" aria-label="Operational state legend">
+            {MACHINE_STATE_ORDER.map((code: MachineStateCode) => (
+              <li key={code} className="flex items-center gap-1 text-xs text-text-secondary">
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: MACHINE_STATE_THEME[code].color }}
+                />
+                <span>{MACHINE_STATE_THEME[code].glyph} {MACHINE_STATE_THEME[code].label}</span>
+              </li>
+            ))}
+            <li className="flex items-center gap-1 text-xs text-text-secondary">
+              <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#64748b' }} />
+              <span>○ No data / unavailable</span>
+            </li>
+          </ul>
+        ) : null}
         <button
           type="button"
           onClick={() => setStats(readStatsRef.current?.() ?? null)}
@@ -328,6 +411,8 @@ export default function GeometryViewport({
             onCameraStateChange={setCameraState}
             onControllerMount={handleControllerMount}
             readStatsRef={readStatsRef}
+            showOperationalState={demoModeOn}
+            operationalStateByAssetId={operationalStateByAssetId}
           />
         </Canvas>
       </div>
