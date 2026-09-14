@@ -12,6 +12,7 @@
 
 import type { Envelope } from '@twin-domain/geometry';
 import type { ReferenceOverlay, ReferenceRole, ReferenceSegment } from '@twin-domain/reference';
+import { fetchBackendJson } from './backend-fetch';
 
 function isFiniteNumber(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v);
@@ -60,9 +61,9 @@ function validateRole(raw: unknown, halfWidth: number, halfDepth: number): Refer
  * `buildingBounds` (app.js:1311-1312), never a separately-derived bound.
  */
 export async function fetchReferenceOverlay(baseUrl: string, envelope: Envelope): Promise<ReferenceOverlay> {
-  const res = await fetch(`${baseUrl}/api/floor-raw-cad`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`fetchReferenceOverlay: ${res.status} ${res.statusText}`);
-  const raw = await res.json();
+  // Phase 12D: bounded timeout + typed transport-error classification --
+  // see lib/backend-fetch.ts, same helper all three adapters now share.
+  const raw = (await fetchBackendJson(`${baseUrl}/api/floor-raw-cad`)) as Record<string, unknown>;
 
   if (raw.available !== true) return { available: false, roles: [] };
 

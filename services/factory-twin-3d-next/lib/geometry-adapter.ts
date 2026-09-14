@@ -19,6 +19,7 @@
 
 import type { Envelope, Column, Wall, WallLine, Opening, FootprintPolygon, StructuralGrid } from '@twin-domain/geometry';
 import type { Zone } from '@twin-domain/zone';
+import { fetchBackendJson } from './backend-fetch';
 
 export interface FactoryGeometryData {
   readonly envelope: Envelope;
@@ -171,9 +172,12 @@ function validateZone(raw: unknown): Zone | null {
  * second copy of the CAD data.
  */
 export async function fetchFactoryGeometry(baseUrl: string): Promise<FactoryGeometryData> {
-  const res = await fetch(`${baseUrl}/api/floor-geometry`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`fetchFactoryGeometry: ${res.status} ${res.statusText}`);
-  const raw = await res.json();
+  // Phase 12D: transport-level failures (timeout/network/non-2xx/invalid
+  // JSON) are classified and thrown by fetchBackendJson itself now -- this
+  // function's own `if (!envelope) throw` below is a SEPARATE, later
+  // concern: the response WAS valid JSON but failed this domain's own
+  // semantic validation, which is not a transport failure.
+  const raw = (await fetchBackendJson(`${baseUrl}/api/floor-geometry`)) as Record<string, unknown>;
 
   const envelope = validateEnvelope(raw.envelope);
   if (!envelope) throw new Error('fetchFactoryGeometry: envelope failed validation');

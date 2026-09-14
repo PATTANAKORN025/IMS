@@ -21,6 +21,7 @@
  */
 
 import type { Asset } from '@twin-domain/asset';
+import { fetchBackendJson } from './backend-fetch';
 
 function isFiniteNumber(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v);
@@ -114,9 +115,14 @@ function validateAsset(raw: unknown): Asset | null {
  * tests/playwright/factory-twin-r3f-machines.js.
  */
 export async function fetchMachines(baseUrl: string): Promise<readonly Asset[]> {
-  const res = await fetch(`${baseUrl}/api/floor-geometry`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`fetchMachines: ${res.status} ${res.statusText}`);
-  const raw = await res.json();
+  // Phase 12D: bounded timeout + typed transport-error classification, via
+  // the same shared helper geometry-adapter.ts and reference-adapter.ts
+  // now use -- see lib/backend-fetch.ts. Same endpoint as Step 5A's own
+  // geometry fetch (both read /api/floor-geometry); a caller wanting both
+  // still pays for two round trips today, unchanged from before this
+  // phase -- de-duplicating that fetch is a separate, unrelated concern
+  // this phase does not take on.
+  const raw = (await fetchBackendJson(`${baseUrl}/api/floor-geometry`)) as Record<string, unknown>;
   const equipment = Array.isArray(raw.equipment) ? raw.equipment : [];
   return equipment
     .map(validateAsset)
