@@ -499,22 +499,59 @@ complete candidate-source inventory, measured latency against the real productio
 
 **Runtime changes: NONE.**
 
+## Step 6C implementation status — DONE (PASS) — typed real operational-state adapter
+
+Establishes a typed adapter architecture for `/api/state` (the real source Step 6B audited)
+without enabling it as production truth — zero production/UI wiring, verified by grep: nothing
+under `components/` or `app/` imports the new module
+(`services/factory-twin-3d-next/lib/operational-source-adapter.ts`). Types the endpoint's exact
+response shape (nullable fields preserved as observed, `alarm.logdate_ms` kept as a string —
+the driver's own BIGINT serialization, never widened), validates it fail-closed (hand-rolled,
+matching `wire.js`'s `fromEnum()` convention), and adapts it into Step 1's own
+`OperationalStateResolution` shape — the SAME domain type Step 6A's simulated adapter already
+produces, so a future caller changes nothing about how the rest of the system reads a state
+record.
+
+The identity mapping gate (Section 4's "most important rule") is enforced literally: the
+adapter's only identity input is an explicit, caller-supplied `assetIdToDeviceId` map — no
+array index, alphabetical order, fuzzy name match, or coordinate proximity is ever consulted
+(the function doesn't even receive geometry). Re-verified, not just cited: 0/431 mapping
+coverage still holds through this new code path exactly as Step 6B measured it.
+
+Stale data is defensively guaranteed to never resolve as `DOWN`, independent of `STATE_SQL`
+already enforcing the same rule in SQL — even a hypothetically malformed record reporting
+`is_stale=true` alongside `machine_state='DOWN'` resolves to `STALE`. A source-wide
+`sourceQuality: 'REAL'|'SIMULATED'|'UNKNOWN'` (via a live-verified `"SIM-"`-prefix heuristic,
+defaulting to `UNKNOWN` — never `REAL` — when no signal exists) is kept deliberately separate
+from each record's own freshness-driven `quality`, so a future caller cannot mistake
+`VALID`-at-`UNKNOWN`-provenance for confirmed real data.
+
+27/27 new unit tests (`tests/unit/factory-twin-operational-source.test.js`) plus full
+regression (Step 3, 4, 5A-5F, 6A) green — one documented pre-existing Step 4 `/r3f-spike` flake,
+unrelated to this step's own changes, clean on re-run. Full detail, including the exact DTO,
+fresh live latency/payload/detection measurements, and error-semantics table, in
+`docs/evidence/FACTORY_TWIN_OPERATIONAL_SOURCE_ADAPTER.md`.
+
+**Runtime changes: NONE** (`git diff --stat` confirmed empty for `services/factory-twin-3d/`,
+`database/`, `postgres/`, `proxy/`, `monitoring/grafana/`).
+
+**Result: ADAPTER READY — PRODUCTION DATA MAPPING NOT READY.**
+
 ## Next step
 
 Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, Step 6A,
-and Step 6B are complete, all PASS. Per this migration's own hard rules, live telemetry/alarms/
-inspector/RCA/EAP/LDI are still NOT connected — Step 6B is audit-only. Candidates remaining,
-none started:
+Step 6B, and Step 6C are complete, all PASS. Per this migration's own hard rules, live
+telemetry/alarms/inspector/RCA/EAP/LDI are still NOT connected — Step 6C created an adapter
+only, wired to nothing. Candidates remaining, none started:
 
+- **Step 6D — Machine Identity Mapping / Data Readiness Gate** (named by Step 6C's own spec as
+  the next phase): populate `private/floor1-asset-mapping.json` with real, evidence-backed
+  `CONFIRMED` entries, and/or switch this deployment's LDI data mode to REAL for the devices
+  being mapped. Both are data/evidence tasks outside this migration's own scope (a
+  rendering/frontend effort), not something Step 6D can invent on its own authority.
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- Live telemetry connection for operational state — per Step 6B's own audit, blocked on two
-  specific, non-code conditions being met OUTSIDE this migration's scope: real `CONFIRMED`
-  identity-mapping evidence in `private/floor1-asset-mapping.json` (currently 0 of 431), and
-  the deployment's LDI data mode being switched to REAL (currently simulator-fed). The
-  integration point (`/api/physical-overlay`) already exists and would need no new legacy code
-  once both conditions are met — see `docs/evidence/FACTORY_TWIN_OPERATIONAL_SOURCE_AUDIT.md`.
 - Next phase (telemetry, alarms, inspector, RCA, EAP/LDI) — explicitly deferred until this
   gate is reviewed and an explicit go-ahead is given.
 - TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
