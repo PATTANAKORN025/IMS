@@ -647,11 +647,38 @@ Source orphans: 23 (every discovered device). Asset orphans: 431. Zero duplicate
 **Result: FLOOR 1 MASTER DATA — INCOMPLETE.** Full detail in the three new evidence docs above
 and the Step 7 addendum to `docs/evidence/FACTORY_TWIN_IDENTITY_MAPPING_READINESS.md`.
 
+## Step 8 implementation status — DONE (PASS) — standalone Next.js service boundary
+
+A deployment-boundary spike, not a migration-content step: proves `factory-twin-3d-next` can
+run as a fully independent, production-style service. Real, disposable artifacts only —
+`Dockerfile.spike` (multi-stage, non-root, healthcheck hitting a new `/factory-twin-3d/health`
+route), a disposable nginx config reusing Step 2's own proven proxy shape against the real
+containerized service this time, both removed at the end of this step
+(`docker rm -f`/`docker rmi`, proven live, not just described). Zero production files touched
+(`git diff --stat` empty for legacy/DB/nginx/Grafana).
+
+Measured, not assumed: 1.2s container startup to first healthy `/health`, 36 MiB idle memory /
+65 MiB after a full 417-assertion regression pass, 0.02% idle CPU under a 512MB/1-CPU
+disposable limit (never hit). Service isolation verified live in both directions (stopping
+legacy leaves the Next candidate healthy; stopping the candidate leaves legacy unaffected). All
+417 Playwright assertions (Step 3 through Step 6A) plus 71 unit assertions (Step 6C-6E) re-run
+against the CONTAINERIZED service — full parity with every prior step's own host-process
+results, one pre-existing documented flake clean on retry. Load/FCP measured measurably higher
+through the container than the bare host process — disclosed honestly, not smoothed over, with
+a stated-but-unconfirmed hypothesis (Docker Desktop's WSL2 network virtualization layer on this
+host), not claimed as resolved. 0/431 identity mapping re-verified unchanged. Full detail,
+including every remaining deployment risk this spike does NOT resolve, in
+`docs/evidence/FACTORY_TWIN_NEXTJS_SERVICE_BOUNDARY.md`.
+
+**Result: NEXTJS SERVICE BOUNDARY — READY** (as a spike; several real, disclosed risks remain
+open for an actual cutover — see that doc's own "Remaining deployment risks" section).
+
 ## Next step
 
 Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, Step 6A,
-Step 6B, Step 6C, Step 6D, Step 6E, and Step 7 are complete, all PASS. Per this migration's own
-hard rules, live telemetry/alarms/inspector/RCA/EAP/LDI are still NOT connected — Step 7 was a
+Step 6B, Step 6C, Step 6D, Step 6E, Step 7, and Step 8 are complete, all PASS. Per this
+migration's own hard rules, live telemetry/alarms/inspector/RCA/EAP/LDI are still NOT
+connected — Step 8 was a deployment-boundary spike, nothing production-facing wired. Step 7's
 read-only reconciliation, nothing wired. `/api/state` is not to be connected next either.
 Candidates remaining, none started:
 
