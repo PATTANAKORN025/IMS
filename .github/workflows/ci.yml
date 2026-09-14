@@ -338,6 +338,12 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Phase 12C: proves the app.js/eap.js escaping fixes against a real
+      # DOM, not a live stack -- about:blank + the two files' own source,
+      # so it runs before the twin container even starts.
+      - name: Factory Twin XSS hardening (offline, real DOM)
+        run: node tests/playwright/factory-twin-xss-hardening.js
+
       - name: Seed environment
         run: cp .env.example .env
 
