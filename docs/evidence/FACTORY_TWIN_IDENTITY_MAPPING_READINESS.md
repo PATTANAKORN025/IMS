@@ -186,3 +186,15 @@ Exact blocker: no authoritative CAD-asset-to-device identity relationship exists
 this repository today (§1/§6) — a data/evidence gap, not a code or architecture gap. The
 adapter built in Step 6C is ready to consume a real mapping the moment one exists; this step's
 own job was determining whether one does, and it does not.
+
+---
+
+## Addendum (Step 6E — Canonical Equipment Identity & Master-Data Contract)
+
+Step 6E gave the gap this doc identifies a typed vocabulary to be closed in
+(`FactoryTwinAssetId`/`EquipmentId`/`PhysicalAssetId`/`DeviceId`/`SourceSystemId`, an explicit
+6-state lifecycle, required provenance for `CONFIRMED`) without asserting any real relationship
+— the 0/431 result above is unchanged, independently re-verified against the same live FT-14
+file. A stricter readiness function (`computeCanonicalReadiness()`, `PARTIALLY_READY` gated
+behind an explicit future-policy flag) reaches the same `NOT_READY` conclusion this doc already
+reports. Full detail in `docs/evidence/FACTORY_TWIN_CANONICAL_IDENTITY_CONTRACT.md`.

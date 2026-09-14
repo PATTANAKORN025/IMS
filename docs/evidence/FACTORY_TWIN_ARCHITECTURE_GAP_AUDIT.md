@@ -577,19 +577,51 @@ authoritative CAD-asset-to-device relationship exists anywhere in this repositor
 data/evidence gap, not a code or architecture gap. Not forced, not padded: every independent
 `NOT_READY` trigger this step's own rules define is genuinely true today.
 
+## Step 6E implementation status — DONE (PASS) — canonical equipment identity & master-data contract
+
+Gives the master-data gap Step 6D named a typed vocabulary to close it in, asserting no real
+relationship of its own. New `services/factory-twin-3d-next/lib/canonical-identity.ts`
+(self-contained, unwired to production — grep-verified zero importers under `components/`/
+`app/`, same isolation as Step 6C/6D's own modules): 5 branded id types
+(`FactoryTwinAssetId`/`EquipmentId`/`PhysicalAssetId`/`DeviceId`/`SourceSystemId`, TypeScript
+prevents one standing in for another), an explicit relationship chain with independently
+KNOWN/UNKNOWN links, a required-provenance model (7 authoritative categories), a 6-state
+lifecycle reconciled explicitly against the real legacy `MappingStatus` (which remains the only
+engine governing actual production eligibility), and a stricter readiness function than Step
+6D's own — `PARTIALLY_READY` reachable only behind an explicit future-policy flag, never a
+silent middle ground.
+
+Two new concepts this repository's existing 3-namespace model didn't distinguish:
+`PhysicalAssetId` (a replaceable physical unit, separate from the CAD position it occupies —
+solves the "replaced hardware breaks Twin identity" bug class this step's own Section 5 named)
+and `SourceSystemId` (which external system asserted a relationship, for future multi-source
+provenance). `isProductionEligible()` makes `CANDIDATE -> production` and `AMBIGUOUS ->
+production` impossible by construction, not merely disallowed by convention.
+
+24/24 new unit tests; 6 existing suites (Step 6C adapter, Step 6D readiness, legacy mapping,
+Step 1 domain, legacy wire, FT-15 telemetry) re-run with zero assertions changed. `npm run
+typecheck` clean. `git diff --stat` empty for `services/factory-twin-3d/`, `database/`,
+`postgres/`, `proxy/`, `monitoring/grafana/`. Full detail, including a clearly-labeled
+illustrative-only example (never written to any production mapping file), in
+`docs/evidence/FACTORY_TWIN_CANONICAL_IDENTITY_CONTRACT.md`.
+
+**Result: CANONICAL IDENTITY CONTRACT — ESTABLISHED. IDENTITY MAPPING — NOT READY (unchanged).
+Coverage: 0.0% (0/431).**
+
 ## Next step
 
 Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, Step 6A,
-Step 6B, Step 6C, and Step 6D are complete, all PASS. Per this migration's own hard rules, live
-telemetry/alarms/inspector/RCA/EAP/LDI are still NOT connected — Step 6D is a readiness gate
-only, wired to nothing. Candidates remaining, none started:
+Step 6B, Step 6C, Step 6D, and Step 6E are complete, all PASS. Per this migration's own hard
+rules, live telemetry/alarms/inspector/RCA/EAP/LDI are still NOT connected — Step 6E defined a
+contract, wired to nothing. Per Step 6E's own explicit STOP instruction, `/api/state` is not to
+be connected next either. Candidates remaining, none started:
 
-- Populate `private/floor1-asset-mapping.json` with real, evidence-backed `CONFIRMED` entries,
-  and/or switch this deployment's LDI data mode to REAL for the devices being mapped — the
-  ONE thing standing between Step 6D's `NOT_READY` result and a future re-run producing
-  `PARTIALLY_READY`/`READY`. Both are data/evidence tasks outside this migration's own scope
-  (a rendering/frontend effort), not something any further step here can invent on its own
-  authority.
+- Populate `private/floor1-asset-mapping.json` with real, evidence-backed `CONFIRMED` entries
+  (now expressible in Step 6E's own canonical vocabulary), and/or switch this deployment's LDI
+  data mode to REAL for the devices being mapped — the ONE thing standing between the current
+  `NOT_READY` result and a future re-run producing `PARTIALLY_READY`/`READY`. Both are
+  data/evidence tasks outside this migration's own scope (a rendering/frontend effort), not
+  something any further step here can invent on its own authority.
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
