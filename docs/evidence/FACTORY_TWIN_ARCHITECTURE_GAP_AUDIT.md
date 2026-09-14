@@ -537,18 +537,59 @@ fresh live latency/payload/detection measurements, and error-semantics table, in
 
 **Result: ADAPTER READY — PRODUCTION DATA MAPPING NOT READY.**
 
+## Step 6D implementation status — DONE (PASS) — machine identity mapping / data readiness gate
+
+A pure data-readiness gate: determines whether a trustworthy identity mapping exists between
+`/api/state`'s source devices and the Twin's 431 assets. New
+`services/factory-twin-3d-next/lib/identity-mapping-readiness.ts` (self-contained, unwired to
+production, same as Step 6C's own adapter): `computeCoverageCounts()`,
+`detectBidirectionalAnomalies()` (all 5 anomaly kinds — fan-out both directions, exact
+duplicate, orphan source, orphan asset), and `computeReadinessDecision()` (pure; `confirmed ===
+0`, any critical anomaly, or a simulator-only source each independently force `NOT_READY`; an
+undefined agreed coverage target can never produce `READY`, only `PARTIALLY_READY`).
+
+Re-audited identity RELATIONSHIPS specifically (distinct from Step 6B's own operational-state-
+source search) across every candidate named: FT-14's mapping file (`{"mappings":[]}`, re-
+verified live), the `devices` registry (23 rows — a registry, not an asset-mapping), `mes-
+import.js` (unused), EAP's `eap-map.js` (a separate namespace, not a Twin-asset candidate),
+Node-RED flows (grep-confirmed 0 `asset_id` hits in any flow file), Grafana dashboards (query
+bindings, not identity assertions). **Zero repository sources assert a CAD-asset-to-device
+relationship** — same conclusion as Step 6B, reached independently.
+
+Directly exercised, not merely cited, the real unmodified legacy engine
+(`services/factory-twin-3d/lib/mapping.js`'s `validateMappings()`) against the real FT-14 file
+(`ok: true, confirmed: 0`) and against two synthetic violations it correctly rejects (missing
+provenance, duplicate device claim) — proving the existing rejection rules still work, not
+assuming they do. Identity stability assessed: `device_id`/`Asset.id` both verified stable
+across repeated live API calls this step; stability across an actual container restart is
+disclosed as schema-based inference (persisted DB/CAD-derived values, not request-time
+generated), not a live restart test, judged an unnecessary production-adjacent action for an
+audit step.
+
+20/20 new unit tests, full re-run of 5 existing suites (Step 6C's adapter, legacy mapping,
+Step 1 domain, legacy wire, FT-15 telemetry) with zero assertions changed. `npm run typecheck`
+clean. `git diff --stat` empty for `services/factory-twin-3d/`, `database/`, `postgres/`,
+`proxy/`, `monitoring/grafana/`. Full detail in
+`docs/evidence/FACTORY_TWIN_IDENTITY_MAPPING_READINESS.md`.
+
+**Result: IDENTITY MAPPING — NOT READY. Coverage: 0.0% (0/431).** Exact blocker: no
+authoritative CAD-asset-to-device relationship exists anywhere in this repository — a
+data/evidence gap, not a code or architecture gap. Not forced, not padded: every independent
+`NOT_READY` trigger this step's own rules define is genuinely true today.
+
 ## Next step
 
 Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, Step 6A,
-Step 6B, and Step 6C are complete, all PASS. Per this migration's own hard rules, live
-telemetry/alarms/inspector/RCA/EAP/LDI are still NOT connected — Step 6C created an adapter
+Step 6B, Step 6C, and Step 6D are complete, all PASS. Per this migration's own hard rules, live
+telemetry/alarms/inspector/RCA/EAP/LDI are still NOT connected — Step 6D is a readiness gate
 only, wired to nothing. Candidates remaining, none started:
 
-- **Step 6D — Machine Identity Mapping / Data Readiness Gate** (named by Step 6C's own spec as
-  the next phase): populate `private/floor1-asset-mapping.json` with real, evidence-backed
-  `CONFIRMED` entries, and/or switch this deployment's LDI data mode to REAL for the devices
-  being mapped. Both are data/evidence tasks outside this migration's own scope (a
-  rendering/frontend effort), not something Step 6D can invent on its own authority.
+- Populate `private/floor1-asset-mapping.json` with real, evidence-backed `CONFIRMED` entries,
+  and/or switch this deployment's LDI data mode to REAL for the devices being mapped — the
+  ONE thing standing between Step 6D's `NOT_READY` result and a future re-run producing
+  `PARTIALLY_READY`/`READY`. Both are data/evidence tasks outside this migration's own scope
+  (a rendering/frontend effort), not something any further step here can invent on its own
+  authority.
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.

@@ -293,3 +293,18 @@ mode is switched to REAL for those devices. Neither condition is something this 
 (a rendering/frontend effort) can create — both are data/evidence tasks outside this step's and
 this migration's own scope. Step 6C, if and when undertaken, should design the typed adapter
 contract against `/api/physical-overlay`'s existing shape rather than inventing a new interface.
+
+---
+
+## Addendum (Step 6D — Identity Mapping / Data Readiness Gate)
+
+Step 6C built the typed adapter this doc anticipated
+(`services/factory-twin-3d-next/lib/operational-source-adapter.ts`), unwired to production, per
+its own step's own rule. Step 6D then formally re-audited condition (a) above — a
+repository-wide search specifically for identity RELATIONSHIPS (not operational-state sources
+generally) — and confirmed the same finding from an independent angle: 0 repository sources
+assert any CAD-asset-to-device relationship. Full detail, including a per-candidate table and
+the exact bidirectional-validation/readiness-decision logic, in
+`docs/evidence/FACTORY_TWIN_IDENTITY_MAPPING_READINESS.md`. Verdict: **IDENTITY MAPPING — NOT
+READY, coverage 0.0% (0/431)** — unchanged from this doc's own condition (a), now measured
+through a dedicated, tested readiness gate rather than cited alone.
