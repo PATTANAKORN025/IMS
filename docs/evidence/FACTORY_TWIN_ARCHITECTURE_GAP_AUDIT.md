@@ -608,13 +608,52 @@ illustrative-only example (never written to any production mapping file), in
 **Result: CANONICAL IDENTITY CONTRACT — ESTABLISHED. IDENTITY MAPPING — NOT READY (unchanged).
 Coverage: 0.0% (0/431).**
 
+## Step 7 implementation status — DONE (PASS) — Floor 1 reality & master data reconciliation
+
+Read-only reconciliation across CAD, EAP, and identity — zero application/DB/nginx/Grafana
+changes (`git diff --stat` confirmed empty for `services/factory-twin-3d/`, `database/`,
+`postgres/`, `proxy/`, `monitoring/grafana/`), `/api/state` not connected.
+
+Built a complete, field-by-field master-data registry for all 431 assets
+(`docs/evidence/FLOOR1_MASTER_DATA_REGISTRY.md`): 7 of the 15 requested fields have real data
+(id, position, orientation, footprint, spatial confidence, mapping status — all 431/431), 8 are
+honestly 0/431 populated (equipment name/type, logical equipment id, physical asset id, device
+id, source system, provenance, EAP reference) — not a defect, the accurate current state.
+
+Classified every spatial-discrepancy category the prior Phase-12 validation surfaced
+(`docs/evidence/FLOOR1_SPATIAL_RECONCILIATION.md`), each sourced directly from `lib/wire.js`'s
+own code comments (not guessed): 160 `overlaps_neighbour` and 9 `orientation_geometry_mismatch`
+→ `MODEL_REPRESENTATION` (documented measurement-method artifacts, e.g. the overlap check's own
+disclosed convex-hull over-reporting for L-shaped machines); 76 `UNRESOLVED` footprints and 227
+`display_area_error` cases → `EXPECTED_ABSTRACTION` (the marker fallback and "the price of the
+[rectangle] abstraction," both in the source's own words); 67 `RECOVERED`-tier assets →
+`MODEL_REPRESENTATION` (a real, disclosed second extraction pass, not uncertain data). Zero
+`CONFIRMED_ERROR`, zero `INSUFFICIENT_EVIDENCE` — no CAD correction indicated.
+
+Reconciled all 210 EAP cells against CAD/Twin identity
+(`docs/evidence/FLOOR1_EAP_RECONCILIATION.md`): 170 cells carry zone-level CAD correspondence
+only, 40 carry a real, documented instance-level (`DIRECT`) spatial correspondence via a
+disclosed grid-registration rule — but **0 of 210, including all 40 `DIRECT` cells, carry any
+identity evidence** (`cells_live_status_eligible: 0`), and the one internal linkage that could
+theoretically name which CAD asset a `DIRECT` cell matches is deliberately inaccessible to any
+client by the existing system's own design (`lib/eap-map.js`'s own comment on why the CAD
+handle stays private). **EAP alone creates no device mapping — verified, not merely asserted.**
+
+0/431 identity coverage re-verified via the existing, unmodified Step 6D/6E readiness functions
+run against the real current inventory (no new validation code needed — this step's own
+"validation utilities" allowance covered running them): both independently answer `NOT_READY`.
+Source orphans: 23 (every discovered device). Asset orphans: 431. Zero duplicate identities.
+
+**Result: FLOOR 1 MASTER DATA — INCOMPLETE.** Full detail in the three new evidence docs above
+and the Step 7 addendum to `docs/evidence/FACTORY_TWIN_IDENTITY_MAPPING_READINESS.md`.
+
 ## Next step
 
 Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, Step 6A,
-Step 6B, Step 6C, Step 6D, and Step 6E are complete, all PASS. Per this migration's own hard
-rules, live telemetry/alarms/inspector/RCA/EAP/LDI are still NOT connected — Step 6E defined a
-contract, wired to nothing. Per Step 6E's own explicit STOP instruction, `/api/state` is not to
-be connected next either. Candidates remaining, none started:
+Step 6B, Step 6C, Step 6D, Step 6E, and Step 7 are complete, all PASS. Per this migration's own
+hard rules, live telemetry/alarms/inspector/RCA/EAP/LDI are still NOT connected — Step 7 was a
+read-only reconciliation, nothing wired. `/api/state` is not to be connected next either.
+Candidates remaining, none started:
 
 - Populate `private/floor1-asset-mapping.json` with real, evidence-backed `CONFIRMED` entries
   (now expressible in Step 6E's own canonical vocabulary), and/or switch this deployment's LDI

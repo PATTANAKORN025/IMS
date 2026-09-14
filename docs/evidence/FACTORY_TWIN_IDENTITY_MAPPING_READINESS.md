@@ -198,3 +198,52 @@ Step 6E gave the gap this doc identifies a typed vocabulary to be closed in
 file. A stricter readiness function (`computeCanonicalReadiness()`, `PARTIALLY_READY` gated
 behind an explicit future-policy flag) reaches the same `NOT_READY` conclusion this doc already
 reports. Full detail in `docs/evidence/FACTORY_TWIN_CANONICAL_IDENTITY_CONTRACT.md`.
+
+## Addendum (Step 7 — Floor 1 Reality & Master Data Reconciliation)
+
+Master-data readiness, computed against the real current inventory via the existing, unmodified
+Step 6D/6E readiness functions (not new code — this step's own "validation utilities" allowance
+covered running them, not rewriting them):
+
+```
+total assets              431
+spatial confirmed         355   (measured/observed CAD footprint)
+spatial unresolved         76   (UNRESOLVED footprint_status -- see FLOOR1_SPATIAL_RECONCILIATION.md)
+identity confirmed          0
+identity candidate          0
+identity ambiguous          0
+identity unmapped         431
+duplicate identities        0
+source orphans              23  (every discovered device, 0 confirmed mappings reference any)
+asset orphans              431  (every Twin asset, same reason)
+coverage                  0.0%
+```
+
+`computeReadinessDecision()` (6D) and `computeCanonicalReadiness()` (6E) both independently
+re-run against this exact input this step: **`NOT_READY`**, **`NOT_READY`** — unchanged, not
+re-derived from a different method that happened to agree.
+
+New this step: a full EAP reconciliation (`docs/evidence/FLOOR1_EAP_RECONCILIATION.md`)
+confirms EAP alone creates no device mapping (0/210 cells `live_status_eligible`, including all
+40 with a real, documented spatial `DIRECT` correspondence to a specific CAD instance — the
+instance handle itself is deliberately inaccessible to any client, by the existing system's own
+design), and a full spatial-discrepancy reconciliation
+(`docs/evidence/FLOOR1_SPATIAL_RECONCILIATION.md`) classifies all 5 (now 6) previously-flagged
+discrepancy categories as `MODEL_REPRESENTATION` or `EXPECTED_ABSTRACTION`, zero
+`CONFIRMED_ERROR` — no CAD or EAP correction is indicated, and none of these categories bear on
+identity-mapping readiness.
+
+**What closes the gap** — not something any further audit step can produce, only real evidence
+can:
+- An authoritative source (an approved registry, MES, SCADA, PLC/OPC-UA gateway, vendor device
+  registry, or a manually-approved site record) asserting specific `asset_id ↔ device_id`
+  correspondences, each with `source`/`source_record`/`verified_at` provenance
+  (`lib/mapping.js`'s own confirmed-record requirement, unchanged since Step 6D).
+- Those `CONFIRMED` entries written into `private/floor1-asset-mapping.json` — the one file
+  `server.js`'s `loadPrivateAssetMapping()` reads for identity, per Step 6B's own audit.
+- The deployment's LDI data mode switched from simulator to real for whichever devices get
+  mapped (`LDI_SIMULATOR_ENABLED=true` currently, re-verified unchanged).
+
+**Who/what must provide it**: whoever owns the physical floor's actual device inventory and can
+attest, per-asset, which real device occupies which CAD position — outside this migration's own
+scope (a rendering/frontend effort), and outside what any code-only audit can manufacture.
