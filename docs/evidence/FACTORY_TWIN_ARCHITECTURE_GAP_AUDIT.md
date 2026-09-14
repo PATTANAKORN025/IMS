@@ -465,20 +465,56 @@ pre-existing, out-of-scope `:3000` placement-route failure unchanged since Step 
 **Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
 NONE.**
 
+## Step 6B implementation status — DONE (PASS) — authoritative operational data source audit
+
+Audit and architecture-decision phase only — zero application code, database, or production
+changes (`git diff --stat -- services/ database/ postgres/ nodered_data/ proxy/` empty,
+verified). Answers whether an authoritative source of real machine operational state exists for
+the Twin's 431 physical assets, separate from the already-answered EAP-cell question
+(`docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md`).
+
+**Corrects Step 6A's own "Next step" note** (previous entry below, now superseded): the block
+is NOT "no PLC/SCADA/MES/historian integration exists at all." A real, live, well-built
+mechanism already exists for the physical Twin specifically — `/api/state` (`STATE_SQL`, real
+query over `v_ldi_machine_latest_full`/`ldi_alarm_log`, correct `NO_DATA`/stale-never-`DOWN`
+handling, documented 5-minute freshness threshold) and `/api/physical-overlay` (FT-15, the
+already-built identity-gated bridge from CAD `asset_id` to that state). What actually blocks it,
+measured live, not assumed:
+
+1. **0.0% identity mapping coverage** — 0 of 431 CAD assets have a `CONFIRMED` entry in
+   `private/floor1-asset-mapping.json` (FT-14), confirmed independently by
+   `/api/physical-overlay`'s own live response (`counts.confirmed: 0`).
+2. **Current data mode is simulator-fed, not real telemetry** — `LDI_SIMULATOR_ENABLED=true`;
+   the only 10 devices with any `ldi_data` rows at all are the mock set (`LDI-01`..`LDI-10`),
+   verified via direct query against the real TimescaleDB.
+
+Decision: **OPTION B** (source mechanism exists but is not currently trustworthy for this
+purpose) — a more precise finding than a blanket "unavailable," and a concrete future
+integration point (`/api/physical-overlay`) is documented without connecting it. Real/demo
+adapter boundary from Step 6A verified correct and left unmodified. Full detail, including the
+complete candidate-source inventory, measured latency against the real production container
+(`docker exec ims-factory-twin-3d`), and the security boundary
+(`auth_request` behind Grafana's session cookie, `proxy/nginx.conf:103-107`), in
+`docs/evidence/FACTORY_TWIN_OPERATIONAL_SOURCE_AUDIT.md`.
+
+**Runtime changes: NONE.**
+
 ## Next step
 
-Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, and
-Step 6A are complete, all PASS. Per this migration's own hard rules, live telemetry/alarms/
-inspector/RCA/EAP/LDI are still NOT connected — Step 6A is presentation-only. Candidates
-remaining, none started:
+Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, Step 6A,
+and Step 6B are complete, all PASS. Per this migration's own hard rules, live telemetry/alarms/
+inspector/RCA/EAP/LDI are still NOT connected — Step 6B is audit-only. Candidates remaining,
+none started:
 
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
-- Live telemetry connection for operational state (a real source for `resolveReal()` to
-  report) — blocked on an actual PLC/SCADA/MES/historian integration existing at all, tracked
-  the same way `docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md` already tracks it for EAP; not
-  something this migration can create.
+- Live telemetry connection for operational state — per Step 6B's own audit, blocked on two
+  specific, non-code conditions being met OUTSIDE this migration's scope: real `CONFIRMED`
+  identity-mapping evidence in `private/floor1-asset-mapping.json` (currently 0 of 431), and
+  the deployment's LDI data mode being switched to REAL (currently simulator-fed). The
+  integration point (`/api/physical-overlay`) already exists and would need no new legacy code
+  once both conditions are met — see `docs/evidence/FACTORY_TWIN_OPERATIONAL_SOURCE_AUDIT.md`.
 - Next phase (telemetry, alarms, inspector, RCA, EAP/LDI) — explicitly deferred until this
   gate is reviewed and an explicit go-ahead is given.
 - TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
