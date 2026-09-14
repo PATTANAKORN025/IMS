@@ -2689,24 +2689,28 @@ const summaryLine = document.getElementById('summary-line');
 function stateRowHtml(row) {
   const color = row.state_color || `#${DEFAULT_MACHINE_COLOR.toString(16).padStart(6, '0')}`;
   const label = row.state_label || 'Undefined';
-  const alarmText = row.alarm ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${row.alarm.owner} · ${row.alarm.elapsed}` : '—';
+  const alarmText = row.alarm ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${esc(row.alarm.owner)} · ${esc(row.alarm.elapsed)}` : '—';
   // The synthetic grid reference is gone with the grid that produced it.
   const gridRefText = 'UNMAPPED';
+  // Phase 12C: every field on this row is DB-sourced (v_ldi_machine_latest_full
+  // via /api/state) -- device_id/board_no/total_board/mo/state_label/
+  // state_color are all escaped at this sink rather than trusted from the
+  // caller, matching every other innerHTML-writing renderer in this file.
   return `
     <div class="machine-row">
       <div class="machine-row-top">
-        <span class="mini-pill" style="background:${color}">${label}</span>
-        <span class="machine-id">${row.device_id}</span>
+        <span class="mini-pill" style="background:${esc(color)}">${esc(label)}</span>
+        <span class="machine-id">${esc(row.device_id)}</span>
       </div>
       <div class="machine-row-detail">
-        <span>${row.board_no ?? '—'} / ${row.total_board ?? '—'} bd</span>
-        <span>${row.mo || '—'}</span>
+        <span>${esc(row.board_no ?? '—')} / ${esc(row.total_board ?? '—')} bd</span>
+        <span>${esc(row.mo || '—')}</span>
       </div>
       <div class="machine-row-detail">
         <span>Grid: ${gridRefText}</span>
       </div>
       <div class="machine-row-alarm">${alarmText}</div>
-      <button type="button" class="btn-mini" data-history-device="${row.device_id}">History</button>
+      <button type="button" class="btn-mini" data-history-device="${esc(row.device_id)}">History</button>
     </div>`;
 }
 
@@ -2740,8 +2744,8 @@ async function renderDeviceHistory() {
     historySummaryEl.innerHTML = `
       <div>avg <b>${fmt(s.avg)}</b> · min <b>${fmt(s.min)}</b> · max <b>${fmt(s.max)}</b>
         · p95 <b>${fmt(s.p95)}</b> · stddev <b>${fmt(s.stddev)}</b></div>
-      <div class="hint">${s.sample_count} sample(s) · ${data.points.length} bucket(s) from ${data.tier}
-        · quality ${s.quality}</div>`;
+      <div class="hint">${s.sample_count} sample(s) · ${data.points.length} bucket(s) from ${esc(data.tier)}
+        · quality ${esc(s.quality)}</div>`;
   } catch (err) {
     historySummaryEl.textContent = `Fetch failed: ${err.message}`;
   }
@@ -4101,7 +4105,7 @@ function updateMachineLabels() {
     // The id is a model identifier (EQP-F1-nnnn), not a CAD block or layer
     // name, and never a vendor's. textContent is not used because of the two
     // spans; both are built here, neither carries served free text.
-    el.innerHTML = `<span class="dot"></span>${escapeHtml(c.item.id)}${dims}`;
+    el.innerHTML = `<span class="dot"></span>${esc(c.item.id)}${dims}`;
     el.classList.toggle('is-mapped', mapped);
     el.style.left = `${Math.round(c.x)}px`;
     el.style.top = `${Math.round(c.y)}px`;
@@ -4120,14 +4124,6 @@ function worldToPixels(position, width) {
   return Math.abs(labelB.x - labelA.x) * 0.5 * width;
 }
 
-/** Escapes the four characters that could turn an id into markup. */
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 let labelsShown = 0;
 

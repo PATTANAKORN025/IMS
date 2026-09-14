@@ -1,0 +1,2016 @@
+{
+  "generatedBy": "tools/floor1/extract-grid-from-dxf.js",
+  "sourceFile": "Apex3Layout\\Floor1.dxf",
+  "sourceSha256": "b74278af1d87b0c99db0d6ec4fb29fe5fd09b95cb95acb6dd4bc834cb08cc1fa",
+  "minGridLengthMm": 60000,
+  "axisAlignEpsMm": 5,
+  "worldSpaceCandidates": [
+    {
+      "axis": "Z",
+      "label_if_detected": null,
+      "entity_handle": "FCC3A",
+      "layer": "00.Wall FCD",
+      "x1": -822592.3916326584,
+      "y1": -116028.6323468708,
+      "z1": 0,
+      "x2": -885858.2260390716,
+      "y2": -116028.6323468708,
+      "z2": 0,
+      "derived_orientation": "constant-Y (Z grid line)",
+      "derived_position": -116028.6323468708,
+      "extent_mm": 63265.83440641314,
+      "section": "ENTITIES",
+      "source_type": "world-space LINE/XLINE",
+      "confidence": "geometric-signal-only"
+    },
+    {
+      "axis": "Z",
+      "label_if_detected": null,
+      "entity_handle": "FCC3B",
+      "layer": "00.Wall FCD",
+      "x1": -822592.3916326584,
+      "y1": -114867.7459407542,
+      "z1": 0,
+      "x2": -885858.2260390716,
+      "y2": -114867.7459407542,
+      "z2": 0,
+      "derived_orientation": "constant-Y (Z grid line)",
+      "derived_position": -114867.7459407542,
+      "extent_mm": 63265.83440641314,
+      "section": "ENTITIES",
+      "source_type": "world-space LINE/XLINE",
+      "confidence": "geometric-signal-only"
+    }
+  ],
+  "blockLocalResolvedCandidates": [
+    {
+      "axis": "X",
+      "position": -709491.0970536555,
+      "extent": 61849.99999996275,
+      "layer": "FRAME",
+      "handle": "EA76F",
+      "viaInsertHandle": "FCAF1",
+      "blockName": "A$Cdce29b4d",
+      "insertPoint": {
+        "x": -716331.5335437106,
+        "y": -66929.1604820467,
+        "z": 0
+      },
+      "scaleX": 1,
+      "scaleY": 1
+    }
+  ],
+  "blockLocalUnresolvedCandidates": [
+    {
+      "axis": "Z",
+      "position": 11516.31932345613,
+      "extent": 174500.49999999802,
+      "layer": "00.TIM",
+      "handle": "FD350",
+      "x1": -888916.3470536539,
+      "y1": 11516.31932345613,
+      "z1": 0,
+      "x2": -714415.8470536559,
+      "y2": 11516.31932345613,
+      "z2": 0,
+      "section": "BLOCKS",
+      "blockName": "*D555",
+      "reason": "UNRESOLVED_EXTERNAL_REFERENCE: no INSERT in ENTITIES references this block"
+    },
+    {
+      "axis": "X",
+      "position": -897416.472053636,
+      "extent": 120300.50000000044,
+      "layer": "00.TIM",
+      "handle": "FD357",
+      "x1": -897416.472053636,
+      "y1": 4271.089143043138,
+      "z1": 0,
+      "x2": -897416.472053636,
+      "y2": -116029.4108569573,
+      "z2": 0,
+      "section": "BLOCKS",
+      "blockName": "*D556",
+      "reason": "UNRESOLVED_EXTERNAL_REFERENCE: no INSERT in ENTITIES references this block"
+    }
+  ],
+  "candidateLabels": [
+    {
+      "label": "5",
+      "axisGuess": "X",
+      "x": 14134.67916873649,
+      "y": -4425.271707076503,
+      "layer": "DIM",
+      "handle": "7A977",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "5",
+      "axisGuess": "X",
+      "x": 14134.67916873649,
+      "y": -5454.924576384201,
+      "layer": "DIM",
+      "handle": "7A9E2",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 1017.614404206281,
+      "y": 183.4244539160281,
+      "layer": "0",
+      "handle": "77FA3",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 726.6163436415372,
+      "y": 183.4244539160281,
+      "layer": "0",
+      "handle": "77FA5",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 111.8787064772332,
+      "y": 183.4244539160281,
+      "layer": "0",
+      "handle": "77FA7",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 400.5480911341729,
+      "y": 183.4244539160281,
+      "layer": "0",
+      "handle": "77FBB",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 1017.614404206281,
+      "y": 183.4112360249273,
+      "layer": "0",
+      "handle": "78026",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 726.6163436415372,
+      "y": 183.4112360249273,
+      "layer": "0",
+      "handle": "78028",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 111.8787064772332,
+      "y": 183.4112360249273,
+      "layer": "0",
+      "handle": "7802A",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 400.5480911341729,
+      "y": 183.4112360249273,
+      "layer": "0",
+      "handle": "78036",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 1317.614404206281,
+      "y": 183.4112360249273,
+      "layer": "0",
+      "handle": "7805E",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 1617.614404206281,
+      "y": 183.4112360249273,
+      "layer": "0",
+      "handle": "78075",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "D",
+      "axisGuess": "Z",
+      "x": 132168.7146311373,
+      "y": -1558.816289775547,
+      "layer": "F1-layout$0$M-EQPM-DC",
+      "handle": "EA246",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 132941.5858856946,
+      "y": -1533.449761508098,
+      "layer": "F1-layout$0$M-EQPM-DC",
+      "handle": "EA248",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "D",
+      "axisGuess": "Z",
+      "x": 99125.9684563021,
+      "y": 26709.29786095781,
+      "layer": "F1-layout$0$M-EQPM-DC",
+      "handle": "EA24E",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 100000.061336642,
+      "y": 26734.66438922526,
+      "layer": "F1-layout$0$M-EQPM-DC",
+      "handle": "EA250",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "D",
+      "axisGuess": "Z",
+      "x": 27.41605491063092,
+      "y": 154.4260125059518,
+      "layer": "F1-layout$0$M-EQPM-DC",
+      "handle": "EA256",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 1300.287309467982,
+      "y": 179.7925407734001,
+      "layer": "F1-layout$0$M-EQPM-DC",
+      "handle": "EA258",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "D",
+      "axisGuess": "Z",
+      "x": 27.41605491063092,
+      "y": 154.4260125058972,
+      "layer": "F1-layout$0$M-EQPM-DC",
+      "handle": "EA25E",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 1601.508935250546,
+      "y": 179.7925407733455,
+      "layer": "F1-layout$0$M-EQPM-DC",
+      "handle": "EA260",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": 13.82555416188916,
+      "y": 2.913804530744528,
+      "layer": "0",
+      "handle": "ED583",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "7",
+      "axisGuess": "X",
+      "x": 15.93340614846056,
+      "y": 1.716972557096597,
+      "layer": "0",
+      "handle": "ED598",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "7",
+      "axisGuess": "X",
+      "x": 7.162439369411004,
+      "y": 1.716972557092049,
+      "layer": "0",
+      "handle": "ED5C5",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": 11.3808693460287,
+      "y": 0.4899275016546198,
+      "layer": "0",
+      "handle": "ED682",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "7",
+      "axisGuess": "X",
+      "x": 11.33860078788166,
+      "y": 1.955114273475374,
+      "layer": "0",
+      "handle": "ED685",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": 4.92917385862529,
+      "y": 1.710535027238166,
+      "layer": "0",
+      "handle": "ED692",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": 13.83340231446709,
+      "y": 1.691673093675945,
+      "layer": "0",
+      "handle": "ED6C7",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "7",
+      "axisGuess": "X",
+      "x": 7.154697898109589,
+      "y": 0.5454275079982835,
+      "layer": "0",
+      "handle": "ED706",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": 11.37564513441248,
+      "y": 2.150809766701968,
+      "layer": "0",
+      "handle": "ED7C7",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "7",
+      "axisGuess": "X",
+      "x": 11.33345260114584,
+      "y": 0.6970493305479977,
+      "layer": "0",
+      "handle": "ED7CA",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": 4.921318037952005,
+      "y": 0.5346786498867004,
+      "layer": "0",
+      "handle": "ED7D7",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 3086.614800520358,
+      "y": 783.4111840692349,
+      "layer": "0",
+      "handle": "136E7E",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 2460.546548012994,
+      "y": 783.4111840692349,
+      "layer": "0",
+      "handle": "136E83",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 5865.546367585455,
+      "y": 783.4111577175499,
+      "layer": "0",
+      "handle": "136EB0",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 2760.546548012994,
+      "y": 783.4111840692349,
+      "layer": "0",
+      "handle": "136EDA",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 6182.612680657563,
+      "y": 783.4111577175499,
+      "layer": "0",
+      "handle": "1371DE",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 9327.617271934403,
+      "y": 783.4111840692349,
+      "layer": "0",
+      "handle": "137236",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 8701.549019427039,
+      "y": 783.4111840692349,
+      "layer": "0",
+      "handle": "13723B",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 9001.549019427039,
+      "y": 783.4111840692349,
+      "layer": "0",
+      "handle": "137257",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 8153.547594134492,
+      "y": 783.4111577175499,
+      "layer": "0",
+      "handle": "13725D",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": -1001.320364289489,
+      "y": 68.23712145647914,
+      "layer": "0",
+      "handle": "1D86E8",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": -1005.268384229348,
+      "y": 68.23712145647914,
+      "layer": "0",
+      "handle": "1D86EC",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -1007.312758334203,
+      "y": 68.23712145647914,
+      "layer": "0",
+      "handle": "1D86ED",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": -1003.130190031885,
+      "y": 68.23712145647914,
+      "layer": "0",
+      "handle": "1D86EE",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -998.5919958344211,
+      "y": 68.23712145647914,
+      "layer": "0",
+      "handle": "1D86F1",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": -999.5105377994696,
+      "y": 68.23712145647914,
+      "layer": "0",
+      "handle": "1D86F2",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": -146.9051901655148,
+      "y": -649.8722608624739,
+      "layer": "0",
+      "handle": "1D88BE",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": -146.9051901655148,
+      "y": -645.9242409226144,
+      "layer": "0",
+      "handle": "1D88C2",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -146.9051901655148,
+      "y": -643.8798668177596,
+      "layer": "0",
+      "handle": "1D88C3",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": -146.9051901655148,
+      "y": -648.0624351200786,
+      "layer": "0",
+      "handle": "1D88C4",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -146.9051901655148,
+      "y": -652.6006293175415,
+      "layer": "0",
+      "handle": "1D88C7",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": -146.9051901655148,
+      "y": -651.682087352493,
+      "layer": "0",
+      "handle": "1D88C8",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": -1001.320364289489,
+      "y": -1367.952498212721,
+      "layer": "0",
+      "handle": "1D9191",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": -1005.268384229348,
+      "y": -1367.952498212721,
+      "layer": "0",
+      "handle": "1D9195",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -1007.312758334203,
+      "y": -1367.952498212721,
+      "layer": "0",
+      "handle": "1D9196",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": -1003.130190031884,
+      "y": -1367.952498212721,
+      "layer": "0",
+      "handle": "1D9197",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -998.5919958344207,
+      "y": -1367.952498212721,
+      "layer": "0",
+      "handle": "1D919A",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": -999.5105377994691,
+      "y": -1367.952498212721,
+      "layer": "0",
+      "handle": "1D919B",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": -1926.094809834538,
+      "y": -649.8722608624739,
+      "layer": "0",
+      "handle": "1D9398",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": -1926.094809834538,
+      "y": -645.9242409226144,
+      "layer": "0",
+      "handle": "1D939C",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -1926.094809834538,
+      "y": -643.8798668177596,
+      "layer": "0",
+      "handle": "1D939D",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": -1926.094809834538,
+      "y": -648.0624351200786,
+      "layer": "0",
+      "handle": "1D939E",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -1926.094809834538,
+      "y": -652.6006293175415,
+      "layer": "0",
+      "handle": "1D93A1",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": -1926.094809834538,
+      "y": -651.682087352493,
+      "layer": "0",
+      "handle": "1D93A2",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": -2087.538222540735,
+      "y": -1363.134858638144,
+      "layer": "0",
+      "handle": "1D9A20",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -2096.900122584743,
+      "y": -1365.145458604501,
+      "layer": "0",
+      "handle": "1D9A21",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": 12.46177745926525,
+      "y": -1363.134858638144,
+      "layer": "0",
+      "handle": "1DA010",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 3.099877415256741,
+      "y": -1365.145458604501,
+      "layer": "0",
+      "handle": "1DA011",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": -1312.838224467056,
+      "y": -10.63336640505596,
+      "layer": "0",
+      "handle": "1DDCA8",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -1322.200124511064,
+      "y": -12.64396637141285,
+      "layer": "0",
+      "handle": "1DDCA9",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": 787.1617755329444,
+      "y": -10.63336640505596,
+      "layer": "0",
+      "handle": "1DDF40",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 777.7998754889359,
+      "y": -12.64396637141285,
+      "layer": "0",
+      "handle": "1DDF41",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": 5473.102838248753,
+      "y": -0.0164141399015989,
+      "layer": "0",
+      "handle": "1E5DDD",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": 5473.102838248757,
+      "y": 3.931605799956969,
+      "layer": "0",
+      "handle": "1E5DE1",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 5473.102838248757,
+      "y": 5.975979904812675,
+      "layer": "0",
+      "handle": "1E5DE2",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": 5473.102838248757,
+      "y": 1.793411602493734,
+      "layer": "0",
+      "handle": "1E5DE3",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 5473.102838248753,
+      "y": -2.744782594970047,
+      "layer": "0",
+      "handle": "1E5DE6",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": 5473.102838248753,
+      "y": -1.826240629921585,
+      "layer": "0",
+      "handle": "1E5DE7",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": 4526.91322937893,
+      "y": -0.0164141399015989,
+      "layer": "0",
+      "handle": "1E611A",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": 4526.91322937893,
+      "y": 3.931605799956969,
+      "layer": "0",
+      "handle": "1E611E",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 4526.91322937893,
+      "y": 5.975979904812675,
+      "layer": "0",
+      "handle": "1E611F",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": 4526.91322937893,
+      "y": 1.793411602493734,
+      "layer": "0",
+      "handle": "1E6120",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 4526.91322937893,
+      "y": -2.744782594970047,
+      "layer": "0",
+      "handle": "1E6123",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": 4526.91322937893,
+      "y": -1.826240629921585,
+      "layer": "0",
+      "handle": "1E6124",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": 2973.102838248742,
+      "y": -0.0164241026848231,
+      "layer": "0",
+      "handle": "1E6963",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": 2973.102838248742,
+      "y": 3.931595837173745,
+      "layer": "0",
+      "handle": "1E6967",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 2973.102838248742,
+      "y": 5.975969942029451,
+      "layer": "0",
+      "handle": "1E6968",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": 2973.102838248742,
+      "y": 1.79340163971051,
+      "layer": "0",
+      "handle": "1E6969",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 2973.102838248742,
+      "y": -2.744792557753271,
+      "layer": "0",
+      "handle": "1E696C",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": 2973.102838248742,
+      "y": -1.82625059270481,
+      "layer": "0",
+      "handle": "1E696D",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": 2026.913229378919,
+      "y": -0.0164241026848231,
+      "layer": "0",
+      "handle": "1E6CA0",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": 2026.913229378919,
+      "y": 3.931595837173745,
+      "layer": "0",
+      "handle": "1E6CA4",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 2026.913229378919,
+      "y": 5.975969942029451,
+      "layer": "0",
+      "handle": "1E6CA5",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": 2026.913229378919,
+      "y": 1.79340163971051,
+      "layer": "0",
+      "handle": "1E6CA6",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 2026.913229378919,
+      "y": -2.744792557753271,
+      "layer": "0",
+      "handle": "1E6CA9",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": 2026.913229378919,
+      "y": -1.82625059270481,
+      "layer": "0",
+      "handle": "1E6CAA",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": 1382.59849340532,
+      "y": 788.1838385500014,
+      "layer": "0",
+      "handle": "1EAFA4",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": 1382.59849340532,
+      "y": 793.9416849798581,
+      "layer": "0",
+      "handle": "1EAFB2",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 1382.59849340532,
+      "y": 795.9860590847384,
+      "layer": "0",
+      "handle": "1EAFB3",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": 1382.59849340532,
+      "y": 791.8034907824185,
+      "layer": "0",
+      "handle": "1EAFB4",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": 1382.59849340532,
+      "y": 789.993665040005,
+      "layer": "0",
+      "handle": "1EAFB5",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 1382.59849340532,
+      "y": 787.2652965849556,
+      "layer": "0",
+      "handle": "1EAFC0",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": 2082.59849340532,
+      "y": 788.1838385500014,
+      "layer": "0",
+      "handle": "1EB0EF",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": 2082.59849340532,
+      "y": 793.9416849798581,
+      "layer": "0",
+      "handle": "1EB0FD",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 2082.59849340532,
+      "y": 795.9860590847384,
+      "layer": "0",
+      "handle": "1EB0FE",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": 2082.59849340532,
+      "y": 791.8034907824185,
+      "layer": "0",
+      "handle": "1EB0FF",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": 2082.59849340532,
+      "y": 789.993665040005,
+      "layer": "0",
+      "handle": "1EB100",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": 2082.59849340532,
+      "y": 787.2652965849556,
+      "layer": "0",
+      "handle": "1EB10B",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": 356394.7451810504,
+      "y": -4636.23712396109,
+      "layer": "0",
+      "handle": "2BC115",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": -729969.3674678565,
+      "y": -36731.05950017809,
+      "layer": "0",
+      "handle": "2B361A",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 2926.613747029071,
+      "y": 783.4111852305941,
+      "layer": "0",
+      "handle": "3120A8",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 2300.545494521706,
+      "y": 783.4111852305941,
+      "layer": "0",
+      "handle": "3120AD",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 6322.611627166276,
+      "y": 783.4111588789092,
+      "layer": "0",
+      "handle": "3120EF",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 6031.613566601533,
+      "y": 783.4111588789092,
+      "layer": "0",
+      "handle": "3120F1",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 5705.545314094168,
+      "y": 783.4111588789092,
+      "layer": "0",
+      "handle": "3120FA",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 9020.613213643259,
+      "y": 783.4109993701277,
+      "layer": "0",
+      "handle": "31214D",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 8729.615153078514,
+      "y": 783.4109993701277,
+      "layer": "0",
+      "handle": "31214F",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 8114.87751591421,
+      "y": 783.4109993701277,
+      "layer": "0",
+      "handle": "312151",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 8403.54690057115,
+      "y": 783.4109993701277,
+      "layer": "0",
+      "handle": "31215D",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 2600.545494521706,
+      "y": 783.4111852305941,
+      "layer": "0",
+      "handle": "31218D",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 1967.613214540339,
+      "y": 783.4109982087684,
+      "layer": "0",
+      "handle": "312339",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 1676.61515397561,
+      "y": 783.4109982087684,
+      "layer": "0",
+      "handle": "31233B",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 1061.877516811306,
+      "y": 783.4109982087684,
+      "layer": "0",
+      "handle": "31233D",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": 1350.546901468246,
+      "y": 783.4109982087684,
+      "layer": "0",
+      "handle": "312349",
+      "section": "BLOCKS"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -747436.8201819381,
+      "y": -64270.66734908544,
+      "layer": "00.Machine",
+      "handle": "77D3C",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -747435.422480337,
+      "y": -60242.74325458612,
+      "layer": "00.Machine",
+      "handle": "77D66",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -747435.422480337,
+      "y": -62467.10823674732,
+      "layer": "00.Machine",
+      "handle": "77D6A",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -747435.422480337,
+      "y": -57571.62523505277,
+      "layer": "00.Machine",
+      "handle": "77D7A",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -747435.422480337,
+      "y": -59780.99021721374,
+      "layer": "00.Machine",
+      "handle": "77D8B",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -742523.0685766571,
+      "y": -64270.66734908544,
+      "layer": "00.Machine",
+      "handle": "780B5",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -742524.4662782582,
+      "y": -60242.74325458612,
+      "layer": "00.Machine",
+      "handle": "780C7",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -742524.4662782582,
+      "y": -62467.10823674732,
+      "layer": "00.Machine",
+      "handle": "780CB",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -742524.4662782582,
+      "y": -57571.62523505277,
+      "layer": "00.Machine",
+      "handle": "780DB",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -742524.4662782582,
+      "y": -59780.99021721374,
+      "layer": "00.Machine",
+      "handle": "780EC",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -751728.0685766564,
+      "y": -64270.66734908536,
+      "layer": "00.Machine",
+      "handle": "782AF",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -751729.4662782575,
+      "y": -60242.74325458604,
+      "layer": "00.Machine",
+      "handle": "782C1",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -751729.4662782575,
+      "y": -62467.10823674725,
+      "layer": "00.Machine",
+      "handle": "782C5",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -751729.4662782575,
+      "y": -57571.6252350527,
+      "layer": "00.Machine",
+      "handle": "782D5",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -751729.4662782575,
+      "y": -59780.99021721367,
+      "layer": "00.Machine",
+      "handle": "782E6",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -889078.036322425,
+      "y": 12913.31932345613,
+      "layer": "00.TIM",
+      "handle": "F7314",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "2",
+      "axisGuess": "X",
+      "x": -879659.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7316",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "3",
+      "axisGuess": "X",
+      "x": -871159.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7319",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "4",
+      "axisGuess": "X",
+      "x": -862800.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F731C",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "5",
+      "axisGuess": "X",
+      "x": -854159.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F731F",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "6",
+      "axisGuess": "X",
+      "x": -845659.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7322",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "7",
+      "axisGuess": "X",
+      "x": -837159.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7325",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "8",
+      "axisGuess": "X",
+      "x": -828659.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7328",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "9",
+      "axisGuess": "X",
+      "x": -820159.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F732B",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "10",
+      "axisGuess": "X",
+      "x": -811948.536322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F732E",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "11",
+      "axisGuess": "X",
+      "x": -804466.536322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7331",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "12",
+      "axisGuess": "X",
+      "x": -794926.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7334",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "13",
+      "axisGuess": "X",
+      "x": -786019.5363224264,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7337",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "14",
+      "axisGuess": "X",
+      "x": -777188.036322425,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F733A",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "15",
+      "axisGuess": "X",
+      "x": -768301.0363224249,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F733D",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "16",
+      "axisGuess": "X",
+      "x": -759475.0363224249,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7340",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "17",
+      "axisGuess": "X",
+      "x": -750696.0363224249,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7343",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "18",
+      "axisGuess": "X",
+      "x": -741840.0363224249,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7346",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "19",
+      "axisGuess": "X",
+      "x": -732927.5363224249,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F7349",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "20",
+      "axisGuess": "X",
+      "x": -724191.0363224265,
+      "y": 12913.31932345608,
+      "layer": "00.TIM",
+      "handle": "F734C",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "21",
+      "axisGuess": "X",
+      "x": -714877.5363224267,
+      "y": 12913.69932345608,
+      "layer": "00.TIM",
+      "handle": "F734F",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "A",
+      "axisGuess": "Z",
+      "x": -900093.0448663406,
+      "y": 3870.839143043195,
+      "layer": "00.TIM",
+      "handle": "F7360",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "B",
+      "axisGuess": "Z",
+      "x": -900024.4734377692,
+      "y": -7729.160856956922,
+      "layer": "00.TIM",
+      "handle": "F7362",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "C",
+      "axisGuess": "Z",
+      "x": -900058.7591520551,
+      "y": -17729.16085695692,
+      "layer": "00.TIM",
+      "handle": "F7365",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "D",
+      "axisGuess": "Z",
+      "x": -900146.9734377692,
+      "y": -27729.16085695692,
+      "layer": "00.TIM",
+      "handle": "F7368",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "E",
+      "axisGuess": "Z",
+      "x": -900099.6877234838,
+      "y": -37729.16085695823,
+      "layer": "00.TIM",
+      "handle": "F736B",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -900146.6877234838,
+      "y": -47729.16085695823,
+      "layer": "00.TIM",
+      "handle": "F736E",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "G",
+      "axisGuess": "Z",
+      "x": -900058.7591520551,
+      "y": -57729.16085695692,
+      "layer": "00.TIM",
+      "handle": "F7371",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "H",
+      "axisGuess": "Z",
+      "x": -900024.4734377692,
+      "y": -67729.16085695823,
+      "layer": "00.TIM",
+      "handle": "F7374",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "I",
+      "axisGuess": "Z",
+      "x": -899833.9734377697,
+      "y": -77729.16085695692,
+      "layer": "00.TIM",
+      "handle": "F7377",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "J",
+      "axisGuess": "Z",
+      "x": -899968.8305806265,
+      "y": -85729.16085695695,
+      "layer": "00.TIM",
+      "handle": "F737A",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "K",
+      "axisGuess": "Z",
+      "x": -900106.4734377697,
+      "y": -87729.16085695695,
+      "layer": "00.TIM",
+      "handle": "F737D",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "L",
+      "axisGuess": "Z",
+      "x": -900098.4020091983,
+      "y": -97729.16085695698,
+      "layer": "00.TIM",
+      "handle": "F7380",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "M",
+      "axisGuess": "Z",
+      "x": -900093.044866341,
+      "y": -107729.160856957,
+      "layer": "00.TIM",
+      "handle": "F7383",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "N",
+      "axisGuess": "Z",
+      "x": -900024.4734377692,
+      "y": -116429.1608569572,
+      "layer": "00.TIM",
+      "handle": "F7386",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -835592.7247328138,
+      "y": -22967.20982190885,
+      "layer": "00.Area",
+      "handle": "1068F1",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -792192.9962626392,
+      "y": -59919.31213553932,
+      "layer": "00.Area",
+      "handle": "1068FA",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -792849.0934481461,
+      "y": -91121.2560965434,
+      "layer": "00.Area",
+      "handle": "106903",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "2",
+      "axisGuess": "X",
+      "x": -766145.0818756751,
+      "y": -103954.1806765485,
+      "layer": "00.Area",
+      "handle": "10690C",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "3",
+      "axisGuess": "X",
+      "x": -731172.5365638777,
+      "y": -34244.4999999851,
+      "layer": "00.Area",
+      "handle": "106912",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -756553.2247328184,
+      "y": -11265.68067654921,
+      "layer": "00.Area",
+      "handle": "10691A",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "3",
+      "axisGuess": "X",
+      "x": -727342.0818756269,
+      "y": -44548.18067653041,
+      "layer": "00.Area",
+      "handle": "106923",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -772464.0634616689,
+      "y": -24576.18865368486,
+      "layer": "00.Area",
+      "handle": "10692C",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -774995.2247328198,
+      "y": -114291.1806765263,
+      "layer": "00.Area",
+      "handle": "106935",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -802971.2247328194,
+      "y": -76121.18067652633,
+      "layer": "00.Area",
+      "handle": "106942",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -731682.2735411563,
+      "y": 1732.882449826226,
+      "layer": "00.Area",
+      "handle": "106954",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "3",
+      "axisGuess": "X",
+      "x": -722221.8422095401,
+      "y": -63788.58463934442,
+      "layer": "00.Area",
+      "handle": "10695D",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "3",
+      "axisGuess": "X",
+      "x": -740099.8348735215,
+      "y": -42831.76101806335,
+      "layer": "00.Area",
+      "handle": "106965",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "3",
+      "axisGuess": "X",
+      "x": -722501.2911260012,
+      "y": -18052.16776621342,
+      "layer": "00.Area",
+      "handle": "10696E",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "3",
+      "axisGuess": "X",
+      "x": -741085.9542191627,
+      "y": -35690.15810991044,
+      "layer": "00.Area",
+      "handle": "106977",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -743684.5532122158,
+      "y": -80529.01074507524,
+      "layer": "00.Area",
+      "handle": "106981",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -790109.6831885913,
+      "y": -114850.5199038608,
+      "layer": "00.Area",
+      "handle": "106994",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -802239.4009896789,
+      "y": -109463.9899041246,
+      "layer": "00.Area",
+      "handle": "10699D",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -753131.7330320542,
+      "y": -104270.9999999702,
+      "layer": "00.Area",
+      "handle": "1069BB",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -766133.4449569284,
+      "y": -73258.4999999702,
+      "layer": "00.Area",
+      "handle": "1069F3",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -785530.3548629609,
+      "y": -114748.8236485951,
+      "layer": "00.Area",
+      "handle": "1069FF",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -769851.777972407,
+      "y": -5011.87850370165,
+      "layer": "00.Area",
+      "handle": "106A05",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -729127.5685766567,
+      "y": -64270.66734908544,
+      "layer": "00.Machine",
+      "handle": "132F5F",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -729128.9662782579,
+      "y": -60242.74325458612,
+      "layer": "00.Machine",
+      "handle": "132F71",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -729128.9662782579,
+      "y": -62467.10823674732,
+      "layer": "00.Machine",
+      "handle": "132F75",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -729128.9662782579,
+      "y": -57571.62523505277,
+      "layer": "00.Machine",
+      "handle": "132F85",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -729128.9662782579,
+      "y": -59780.99021721374,
+      "layer": "00.Machine",
+      "handle": "132F96",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -778453.3263254509,
+      "y": -85126.99999999988,
+      "layer": "00.Area",
+      "handle": "139777",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -792195.3381094425,
+      "y": -84955.49999999988,
+      "layer": "00.Area",
+      "handle": "13978B",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -770604.6428571432,
+      "y": -64265.49999998498,
+      "layer": "00.Area",
+      "handle": "13AF14",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -736359.5589449874,
+      "y": -64118.88141763326,
+      "layer": "00.Machine",
+      "handle": "1796CA",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -736358.1612433862,
+      "y": -60090.95732313394,
+      "layer": "00.Machine",
+      "handle": "1796DC",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -736358.1612433862,
+      "y": -62315.32230529514,
+      "layer": "00.Machine",
+      "handle": "1796E0",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -736358.1612433862,
+      "y": -57419.83930360059,
+      "layer": "00.Machine",
+      "handle": "1796F0",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "F",
+      "axisGuess": "Z",
+      "x": -736358.1612433862,
+      "y": -59629.20428576157,
+      "layer": "00.Machine",
+      "handle": "179701",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -770604.6428571432,
+      "y": -64265.49999998498,
+      "layer": "00.Area",
+      "handle": "18A507",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -888140.581990616,
+      "y": -30489.85672522071,
+      "layer": "00.Area",
+      "handle": "1FABA7",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -884098.032163541,
+      "y": -30450.1512093721,
+      "layer": "00.Area",
+      "handle": "1FABB0",
+      "section": "ENTITIES"
+    },
+    {
+      "label": "1",
+      "axisGuess": "X",
+      "x": -651348.2829811116,
+      "y": -13408.15626167007,
+      "layer": "00.Area",
+      "handle": "322840",
+      "section": "ENTITIES"
+    }
+  ]
+}

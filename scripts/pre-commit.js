@@ -32,12 +32,27 @@ run("Parser v2 Tests", "node tests/unit/v2-parser.test.js");
 run("Query Budget Linter Tests", "node tests/unit/query-budget-linter.test.js");
 run("Gate Decision Tests", "node tests/unit/gate.test.js");
 run("Security Exception Matching Tests", "node tests/unit/security-exceptions.test.js");
+// Phase 12B: alarm-api's dependencies (express, pg) stay scoped to its own
+// package.json rather than joining root's -- this wrapper installs them
+// into services/alarm-api's own node_modules only when missing (from its
+// committed lockfile), then runs the real test file. No real DB, no real
+// network at test-execution time.
+run("Alarm API Security/Regression Tests", "node scripts/run-alarm-api-tests.js");
+// Phase 12G: streaming DXF group-code parser (tools/floor1/) -- tested
+// against a tiny synthetic fixture only, never the real 412MB drawing.
+run("Floor1 DXF Parser Tests", "node tests/unit/floor1-dxf-parser.test.js");
 run("Factory Twin Mapping Contract Tests", "node tests/unit/factory-twin-mapping.test.js");
 run("Factory Twin MES Import Boundary Tests", "node tests/unit/factory-twin-mes-import.test.js");
 run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geometry-mutation.test.js");
 run("Factory Twin Diagnostics Sanitization Tests", "node tests/unit/factory-twin-diagnostics.test.js");
 run("Factory Twin Evidence Pipeline Tests", "node tests/unit/factory-twin-evidence.test.js");
 run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.test.js");
+// Step 1 of the Next.js/R3F architecture evolution -- typed domain layer,
+// checked two ways: tsc --noEmit (cross-file type correctness) and a plain
+// Node test (runtime parity against the two existing JS vocab copies + the
+// real wire.js DTO shape). Neither touches the running application.
+run("Factory Twin Domain Typecheck", "npm run factory-twin:typecheck");
+run("Factory Twin Domain Contract Tests", "node tests/unit/factory-twin-domain.test.js");
 // FT-15: the identity-gated join between real device telemetry and a
 // physical CAD asset. Holds the critical invariant -- zero confirmed
 // mappings means zero physical live attachments, whatever telemetry exists.

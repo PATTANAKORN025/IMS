@@ -5,7 +5,8 @@
   "description": "Write path for ldi_alarm_lifecycle: operator acknowledge/resolve endpoints.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node ../../tests/unit/alarm-api-server.test.js"
   },
   "dependencies": {
     "express": "^4.19.2",

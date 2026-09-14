@@ -117,6 +117,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Phase 12D: this job had no Node setup or npm install of its own --
+      # every test wired in below this point had been dependency-free pure
+      # JS. requireTs() (tests/unit/lib/require-ts.js) needs the root
+      # `typescript` devDependency to transpile a .ts file at test time;
+      # without this step every requireTs()-based test (identity-mapping,
+      # canonical-identity, operational-source, the floor1 readiness
+      # suites, and this phase's own backend-fetch/log tests) would fail
+      # here with MODULE_NOT_FOUND the moment it was added.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run Parser Tests
         run: node tests/unit/parser.test.js
 
@@ -134,6 +150,21 @@ jobs:
 
       - name: Run Gate Decision Tests
         run: node tests/unit/gate.test.js
+
+      # Phase 12B: actor-identity/RBAC/DB-timeout/graceful-shutdown
+      # regression for services/alarm-api -- the alarm ack/resolve write
+      # path. Installs alarm-api's own express/pg into its own
+      # node_modules (scoped to that service's lockfile, not root's) only
+      # if missing, then runs the real test file against a fake pool and
+      # fake Grafana identity resolver. No real DB, no real network call
+      # at test-execution time.
+      - name: Run Alarm API Security/Regression Tests
+        run: node scripts/run-alarm-api-tests.js
+
+      # Phase 12G: tools/floor1/'s streaming DXF group-code parser --
+      # tested against a tiny synthetic fixture only, no external deps.
+      - name: Run Floor1 DXF Parser Tests
+        run: node tests/unit/floor1-dxf-parser.test.js
 
       # Factory Twin contract suites. These encode the system's REFUSALS --
       # that an observation cannot be promoted to a confirmation, that a
@@ -183,6 +214,32 @@ jobs:
 
       - name: Run Factory Twin Operational Status Tests
         run: node tests/unit/factory-twin-operational-status.test.js
+
+      # Phase 12D: services/factory-twin-3d-next/'s own unit suites --
+      # Step 6D/6E readiness+identity engines and the Phase 10/10B floor1
+      # evidence-governance tests -- existed but had never run in CI
+      # (confirmed via a fresh audit this same phase: zero references in
+      # this file before this change). All requireTs()-based, needing the
+      # "Install dependencies" step above.
+      - name: Run Factory Twin Identity Mapping Readiness Tests
+        run: node tests/unit/factory-twin-identity-mapping.test.js
+
+      - name: Run Factory Twin Canonical Identity Tests
+        run: node tests/unit/factory-twin-canonical-identity.test.js
+
+      - name: Run Factory Twin Operational Source Adapter Tests
+        run: node tests/unit/factory-twin-operational-source.test.js
+
+      - name: Run Floor1 Evidence Readiness Adapter Tests
+        run: node tests/unit/floor1-evidence-readiness-adapter.test.js
+
+      - name: Run Floor1 Pilot Readiness Report Tests
+        run: node tests/unit/floor1-pilot-readiness-report.test.js
+
+      # Phase 12D's own new backend-request-timeout/structured-logging
+      # modules (lib/backend-fetch.ts, lib/log.ts).
+      - name: Run Factory Twin Next Backend Fetch/Log Tests
+        run: node tests/unit/factory-twin-next-backend-fetch.test.js
 
       # F-3: the EAP status colours are hand-copied into eap.html's static
       # legend and eap.js -- this fails if any copy drifts from
@@ -328,6 +385,12 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Phase 12C: proves the app.js/eap.js escaping fixes against a real
+      # DOM, not a live stack -- about:blank + the two files' own source,
+      # so it runs before the twin container even starts.
+      - name: Factory Twin XSS hardening (offline, real DOM)
+        run: node tests/playwright/factory-twin-xss-hardening.js
+
       - name: Seed environment
         run: cp .env.example .env
 
@@ -371,6 +434,63 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down -v
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Stage 3b: Factory Twin Next.js candidate (Steps 3+4) -- shell + R3F
+  # spike route only, no docker stack. Phase 12D: these tests already
+  # existed (tests/playwright/factory-twin-next-shell.js,
+  # factory-twin-r3f-spike.js) but had never run in CI -- confirmed via a
+  # fresh grep this same phase: zero references in this file before this
+  # job. The other 7 factory-twin-r3f-*.js suites (camera/geometry/layers/
+  # machines/operational-state/scene-orchestration/selection) need a real
+  # running factory-twin-3d backend for real CAD data and are deliberately
+  # NOT wired in here -- disclosed deferral, not an oversight (see this
+  # phase's own commit message).
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  factory-twin-next-shell:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install root dependencies (Playwright, axe-core)
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Install factory-twin-3d-next dependencies
+        working-directory: services/factory-twin-3d-next
+        run: npm ci
+
+      - name: Build factory-twin-3d-next
+        working-directory: services/factory-twin-3d-next
+        run: npm run build
+
+      - name: Start factory-twin-3d-next (standalone, no docker/backend needed)
+        working-directory: services/factory-twin-3d-next
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:4310/factory-twin-3d/health >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:4310/factory-twin-3d/health >/dev/null || (echo "shell not ready"; exit 1)
+
+      - name: Factory Twin Next.js UI shell regression
+        env:
+          SHELL_URL: http://127.0.0.1:4310/factory-twin-3d/
+        run: node tests/playwright/factory-twin-next-shell.js
+
+      - name: Factory Twin R3F runtime spike regression
+        env:
+          SPIKE_URL: http://127.0.0.1:4310/factory-twin-3d/r3f-spike
+        run: node tests/playwright/factory-twin-r3f-spike.js
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 4: LDI Visual / Layout Regression

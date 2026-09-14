@@ -1,0 +1,72 @@
+# Step 8: DISPOSABLE deployment-boundary spike. Never referenced by
+# docker-compose.yaml or any production build. Does NOT modify
+# services/factory-twin-3d/Dockerfile (the real, unmodified legacy image).
+#
+# Build from the REPO ROOT (not this directory) -- this app imports Step 1's
+# domain layer from a SIBLING service directory at build time
+# (@twin-domain/* -> ../factory-twin-3d/domain/*, next.config.ts's own
+# comment), and Next's own workspace-root inference (which package-lock.json
+# it treats as the monorepo root, and therefore how deep .next/standalone/
+# nests its output) was empirically confirmed throughout this migration to
+# land on the REPO ROOT lockfile, not this app's own directory. Building
+# from anywhere narrower risks a different standalone output layout than
+# every prior manual verification in this migration already used --
+# untested, not assumed safe, so this Dockerfile replicates the exact
+# context every other step's own manual build already proved out:
+#
+#   docker build -f services/factory-twin-3d-next/Dockerfile.spike \
+#     -t factory-twin-3d-next-spike .
+#
+# Build-time dependency, disclosed explicitly (Section 1's own "document
+# all runtime dependencies" -- this one is build-time, not runtime, and the
+# distinction matters): services/factory-twin-3d/domain/**. Nothing else
+# from the legacy service tree is copied, and the built RUNTIME image below
+# has zero dependency on the legacy server PROCESS -- it never calls it,
+# proxies to it, or shares a port/socket/volume with it.
+
+FROM node:22-alpine AS deps
+WORKDIR /repo
+COPY services/factory-twin-3d-next/package.json services/factory-twin-3d-next/package-lock.json* services/factory-twin-3d-next/
+RUN cd services/factory-twin-3d-next && npm install --no-fund
+
+FROM node:22-alpine AS build
+WORKDIR /repo
+COPY package-lock.json* ./
+COPY services/factory-twin-3d-next/ services/factory-twin-3d-next/
+COPY services/factory-twin-3d/domain/ services/factory-twin-3d/domain/
+COPY --from=deps /repo/services/factory-twin-3d-next/node_modules services/factory-twin-3d-next/node_modules
+WORKDIR /repo/services/factory-twin-3d-next
+RUN npm run build
+
+# ---------------------------------------------------------------------
+# Runtime: minimal, production-only. No devDependencies (Next's own
+# standalone output tree-shakes to exactly the runtime deps it traced,
+# never the full node_modules built above), no source files beyond the
+# compiled output, no build toolchain.
+# ---------------------------------------------------------------------
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /repo/services/factory-twin-3d-next/.next/standalone/ ./
+COPY --from=build /repo/services/factory-twin-3d-next/.next/static ./services/factory-twin-3d-next/.next/static
+# No public/ COPY -- this app has no public/ directory (confirmed: the
+# real Factory Twin CAD/geometry data is served by the legacy backend's
+# own API, never a static file in this Next app's own tree).
+
+# node:22-alpine already ships a pre-created, non-root `node` user (uid
+# 1000) -- reused rather than creating a new one, same convention the
+# real factory-twin-3d/Dockerfile already follows.
+USER node
+
+EXPOSE 4310
+ENV PORT=4310
+ENV HOSTNAME=0.0.0.0
+
+# Hits this app's own new /factory-twin-3d/health route (Section 3) --
+# proves the healthcheck exercises the real app, not merely "is the
+# process alive."
+HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get({host:'127.0.0.1',port:process.env.PORT||4310,path:'/factory-twin-3d/health'}, r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))"
+
+WORKDIR /app/services/factory-twin-3d-next
+CMD ["node", "server.js"]
