@@ -135,6 +135,16 @@ jobs:
       - name: Run Gate Decision Tests
         run: node tests/unit/gate.test.js
 
+      # Phase 12B: actor-identity/RBAC/DB-timeout/graceful-shutdown
+      # regression for services/alarm-api -- the alarm ack/resolve write
+      # path. Installs alarm-api's own express/pg into its own
+      # node_modules (scoped to that service's lockfile, not root's) only
+      # if missing, then runs the real test file against a fake pool and
+      # fake Grafana identity resolver. No real DB, no real network call
+      # at test-execution time.
+      - name: Run Alarm API Security/Regression Tests
+        run: node scripts/run-alarm-api-tests.js
+
       # Factory Twin contract suites. These encode the system's REFUSALS --
       # that an observation cannot be promoted to a confirmation, that a
       # mapping cannot be inferred from proximity or a property lookup, that

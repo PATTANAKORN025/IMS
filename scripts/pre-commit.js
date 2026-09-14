@@ -32,6 +32,12 @@ run("Parser v2 Tests", "node tests/unit/v2-parser.test.js");
 run("Query Budget Linter Tests", "node tests/unit/query-budget-linter.test.js");
 run("Gate Decision Tests", "node tests/unit/gate.test.js");
 run("Security Exception Matching Tests", "node tests/unit/security-exceptions.test.js");
+// Phase 12B: alarm-api's dependencies (express, pg) stay scoped to its own
+// package.json rather than joining root's -- this wrapper installs them
+// into services/alarm-api's own node_modules only when missing (from its
+// committed lockfile), then runs the real test file. No real DB, no real
+// network at test-execution time.
+run("Alarm API Security/Regression Tests", "node scripts/run-alarm-api-tests.js");
 run("Factory Twin Mapping Contract Tests", "node tests/unit/factory-twin-mapping.test.js");
 run("Factory Twin MES Import Boundary Tests", "node tests/unit/factory-twin-mes-import.test.js");
 run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geometry-mutation.test.js");
