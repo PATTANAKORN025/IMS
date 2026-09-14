@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState, type MutableRefObject } from 'react';
-import { Canvas, useThree, type RootState } from '@react-three/fiber';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Canvas, type RootState } from '@react-three/fiber';
 import type { WebGLRenderer } from 'three';
 import type { ViewName, CameraState } from '@twin-domain/camera';
 import { VIEW_NAMES, DEFAULT_VIEW } from '@twin-domain/camera';
@@ -11,11 +11,7 @@ import type { LayerId, LayerState } from '@twin-domain/layer';
 import { LAYER_IDS, DEFAULT_LAYER_STATE } from '@twin-domain/layer';
 import type { ReferenceOverlay } from '@twin-domain/reference';
 import type { FactoryGeometryData } from '@/lib/geometry-adapter';
-import FactoryGeometry from './FactoryGeometry';
-import StructuralGrid from './StructuralGrid';
-import Reference from './Reference';
-import GeometryCameraController from './GeometryCameraController';
-import Machines from '../machines/Machines';
+import GeometryScene, { type SceneStats } from './GeometryScene';
 import SelectedMachinePanel from '../machines/SelectedMachinePanel';
 
 const LAYER_LABEL: Record<LayerId, string> = {
@@ -45,15 +41,33 @@ const CANVAS_DPR: [number, number] = [1, 2];
 type LifecycleState = 'READY' | 'LOST' | 'RESTORING' | 'REBUILDING' | 'VERIFYING' | 'RECOVERED';
 
 /**
- * The Step 5A viewport root. Same WebGL-lifecycle architecture as Step 4's
- * corrected TwinViewport.tsx (renderer.forceContextLoss()/
- * forceContextRestore(), invalidate()-only rebuild -- NOT a force-remount,
- * which Step 4 measured as a real leak for InstancedMesh content).
- * Reproduced here rather than shared via a common module: this candidate
- * is still an isolated migration artifact, and factoring out a shared
- * viewport-lifecycle hook is a reasonable future cleanup, not required for
- * this step's own acceptance criteria. Flagged as a known limitation in
- * the migration doc, not silently duplicated without comment.
+ * Step 5F single WebGL lifecycle owner (Section 2 of this step's mission).
+ * This is the ONLY component in the geometry-candidate tree that touches a
+ * WebGL context event (`webglcontextlost`/`webglcontextrestored`) or calls
+ * `forceContextLoss()`/`forceContextRestore()` -- Geometry, Machines,
+ * StructuralGrid, Reference, and the camera controller (all composed one
+ * level down, in `GeometryScene.tsx`) have no lifecycle code of their own,
+ * grep-verified against this step's own source. Same underlying mechanism
+ * as Step 4's corrected TwinViewport.tsx (invalidate()-only rebuild, NOT a
+ * force-remount, which Step 4 measured as a real leak for InstancedMesh
+ * content) -- reproduced here rather than factored into a shared module
+ * across the two isolated candidate routes (`/r3f-spike` and
+ * `/geometry-candidate`), a disclosed, still-open cleanup opportunity
+ * (see the migration doc's "Known limitations"), not silently duplicated
+ * without comment.
+ *
+ * REBUILDING contract (Section 5): on `webglcontextrestored`, exactly one
+ * `invalidate()` call repaints the EXISTING R3F tree. Nothing is
+ * unmounted or remounted -- no component in `GeometryScene.tsx` receives
+ * a new `key`, so every `useMemo`-built geometry/material stays the same
+ * JS object it always was (no disposal, no recreation) and every ref
+ * (`OrbitControls`, the `InstancedMesh` picking refs) stays attached to
+ * the same underlying object. `controllerMountCountRef` and the
+ * `contextLost`/`contextRestored` counters below exist specifically to
+ * make that contract checkable rather than assumed: a real duplicate
+ * listener or an accidental remount would show up as those counters
+ * incrementing by more than 1 per user-triggered event, or the mount
+ * counter exceeding 1 across any number of recovery cycles.
  */
 export default function GeometryViewport({
   geometry,
@@ -94,8 +108,21 @@ export default function GeometryViewport({
   const rendererRef = useRef<WebGLRenderer | null>(null);
   const invalidateRef = useRef<(() => void) | null>(null);
   const baselineRef = useRef<{ geometries: number; textures: number } | null>(null);
-  const readStatsRef = useRef<(() => { calls: number; triangles: number; geometries: number; textures: number }) | null>(null);
-  const [stats, setStats] = useState<{ calls: number; triangles: number; geometries: number; textures: number } | null>(null);
+  const readStatsRef = useRef<(() => SceneStats) | null>(null);
+  const [stats, setStats] = useState<SceneStats | null>(null);
+
+  // Scene-rebuild-contract evidence (Section 5): incremented exactly once
+  // per real event, never per render. `controllerMounts` staying at 1
+  // across any number of recovery cycles is direct proof the camera
+  // controller (and its OrbitControls instance) is never duplicated or
+  // remounted by context loss/restore -- not an assumption. `contextLost`/
+  // `contextRestored` staying in lockstep with the number of times the
+  // user actually triggered loss/restore is direct proof the listeners
+  // attached in `handleCreated` below are never double-attached.
+  const [controllerMounts, setControllerMounts] = useState(0);
+  const [contextLostCount, setContextLostCount] = useState(0);
+  const [contextRestoredCount, setContextRestoredCount] = useState(0);
+  const handleControllerMount = useCallback(() => setControllerMounts((n) => n + 1), []);
 
   // Selection (Step 5C): low-frequency state, updated only on a discrete
   // click/clear -- never per-frame, never per-pointermove. `selectedId` is
@@ -115,10 +142,12 @@ export default function GeometryViewport({
   const handleContextLost = useCallback(() => {
     const gl = rendererRef.current;
     if (gl) baselineRef.current = { geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
+    setContextLostCount((n) => n + 1);
     setLifecycle('LOST');
   }, []);
 
   const handleContextRestored = useCallback(() => {
+    setContextRestoredCount((n) => n + 1);
     setLifecycle('RESTORING');
     setLifecycle('REBUILDING');
     invalidateRef.current?.();
@@ -159,7 +188,28 @@ export default function GeometryViewport({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden border border-border">
-      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface px-3 py-1.5">
+      {/*
+        `flex-nowrap` + `overflow-x-auto` (NOT `flex-wrap`), deliberately.
+        Real, measured bug this fixes: with `flex-wrap`, this row's height
+        depends on its CONTENT -- once enough toolbar text was present to
+        cross the wrap threshold (e.g. the "Read renderer stats" readout
+        populating), the row grew an extra line and the <Canvas> element
+        below it shifted down by that line's height (measured: 158px ->
+        182px). Every Playwright test across Steps 5C-5F that clicks a
+        FIXED page pixel coordinate to hit a known machine assumes the
+        canvas's on-screen position is constant -- a wrap-driven shift
+        silently broke that assumption. A single non-wrapping, horizontally
+        scrollable row keeps the canvas's Y position invariant to toolbar
+        content length, for this content and any future addition. `min-w-0`
+        is required alongside `overflow-x-auto` on a flex child -- without
+        it, a flex item's default `min-width: auto` lets it grow to its
+        content's intrinsic width instead of respecting the row's own
+        width. (`min-w-0` alone did NOT fully fix the narrow-viewport/200%-
+        zoom page-level overflow finding -- that had a separate root cause,
+        the `sr-only` legend inside the layers fieldset below; see the
+        comment on that fieldset.)
+      */}
+      <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-border bg-surface px-3 py-1.5">
         {VIEW_NAMES.map((v) => (
           <button
             key={v}
@@ -195,8 +245,29 @@ export default function GeometryViewport({
         </button>
         <span className="text-xs text-text-secondary">lifecycle: {lifecycle}</span>
         <span className="text-xs text-text-secondary">reactRenders: {renderCountRef.current}</span>
+        <span className="text-xs text-text-secondary">
+          controllerMounts: {controllerMounts} contextLost: {contextLostCount} contextRestored: {contextRestoredCount}
+        </span>
         <span className="text-xs text-text-secondary">|</span>
-        <fieldset className="flex items-center gap-2">
+        {/*
+          `relative` on fieldset is load-bearing, not decorative: Tailwind's
+          `sr-only` legend below is `position: absolute` with no inset
+          properties, so its containing block is whichever ancestor is
+          itself positioned -- with none positioned, that containing block
+          jumps all the way to the viewport (initial containing block),
+          which lets its layout box escape every intervening `overflow-
+          hidden`/`overflow-x-auto` clip up the tree (they only clip
+          descendants whose containing block passes through them) and
+          silently inflate `document.documentElement.scrollWidth` by
+          however far the (fully invisible, 1px, clip-rect'd) legend's
+          static position lands -- this, not a missing `min-w-0`, was the
+          real cause of the "no horizontal overflow @ 1024x768" /
+          "200% zoom" failures. Giving the fieldset `position: relative`
+          makes it the legend's containing block again, so the legend
+          stays correctly clipped inside this toolbar's own scroll
+          container like everything else.
+        */}
+        <fieldset className="relative flex items-center gap-2">
           <legend className="sr-only">Layers</legend>
           {LAYER_IDS.map((id) => (
             <label key={id} className="flex items-center gap-1 text-xs text-text-secondary">
@@ -219,7 +290,7 @@ export default function GeometryViewport({
         </button>
         {stats ? (
           <span className="text-xs text-text-secondary">
-            calls={stats.calls} tris={stats.triangles} geometries={stats.geometries} textures={stats.textures}
+            calls={stats.calls} tris={stats.triangles} geometries={stats.geometries} textures={stats.textures} programs={stats.programs}
           </span>
         ) : null}
       </div>
@@ -244,61 +315,22 @@ export default function GeometryViewport({
           dpr={CANVAS_DPR}
           onPointerMissed={() => setSelectedId(null)}
         >
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[80, 100, 40]} intensity={0.9} />
-          {/*
-            Step 5E scene composition: UI control -> LayerState -> visibility
-            only. Each layer's mesh/InstancedMesh tree is ALWAYS mounted --
-            toggling a layer flips only the wrapping <group>'s `visible`
-            prop (R3F sets Object3D.visible in place, no unmount/remount, no
-            geometry disposal/recreation), the exact same architecture as
-            app.js's own setLayerVisible() (app.js:813-820: "the objects
-            stay in the scene graph, keep their geometry and keep polling").
-          */}
-          <group visible={layers.geometry}>
-            <FactoryGeometry geometry={geometry} />
-          </group>
-          <group visible={layers.grid}>
-            <StructuralGrid grid={geometry.grid} />
-          </group>
-          <group visible={layers.machines}>
-            <Machines machines={machines} selectedId={selectedId} onSelect={setSelectedId} interactive={layers.machines} />
-          </group>
-          <group visible={layers.reference}>
-            <Reference overlay={reference} />
-          </group>
-          <GeometryCameraController
+          <GeometryScene
+            geometry={geometry}
+            machines={machines}
+            reference={reference}
+            layers={layers}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
             view={view}
-            envelope={geometry.envelope}
             resetToken={resetToken}
             fitToken={fitToken}
             onCameraStateChange={setCameraState}
+            onControllerMount={handleControllerMount}
+            readStatsRef={readStatsRef}
           />
-          <StatsProbe readStatsRef={readStatsRef} />
         </Canvas>
       </div>
     </div>
   );
-}
-
-/**
- * Reads renderer.info on demand (via readStatsRef, populated inside the
- * Canvas where useThree() is valid), never written to React state
- * per-frame -- same discipline as Step 4's StatsProbe. Must live inside
- * <Canvas>; the button that triggers a read lives outside it, in the
- * toolbar, and calls through the ref.
- */
-function StatsProbe({
-  readStatsRef,
-}: {
-  readStatsRef: MutableRefObject<(() => { calls: number; triangles: number; geometries: number; textures: number }) | null>;
-}) {
-  const { gl } = useThree();
-  readStatsRef.current = () => ({
-    calls: gl.info.render.calls,
-    triangles: gl.info.render.triangles,
-    geometries: gl.info.memory.geometries,
-    textures: gl.info.memory.textures,
-  });
-  return null;
 }

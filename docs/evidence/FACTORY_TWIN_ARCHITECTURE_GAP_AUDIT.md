@@ -392,23 +392,61 @@ legacy-stack failure (unchanged from Step 5D, `git diff --quiet` confirmed untou
 **Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
 NONE.**
 
+## Step 5F implementation status — DONE (PASS) — scene orchestration & WebGL lifecycle integration
+
+Integrated Geometry, Machines, Selection, Camera, Layers, and Reference into one deterministic
+orchestration boundary. Added `GeometryScene.tsx` (new) as the sole composition point — it
+mounts inside `GeometryViewport`'s `<Canvas>`, composes all five scene components plus
+lighting, and owns no WebGL lifecycle state of its own. `GeometryViewport.tsx` remains the sole
+lifecycle owner (unchanged state machine, `READY -> LOST -> RESTORING -> REBUILDING ->
+VERIFYING -> RECOVERED`, established since Step 4/5A), now instrumented with
+`controllerMounts`/`contextLost`/`contextRestored` counters giving direct, measured proof
+(not assumed) that no scene component duplicates controls, listeners, or lifecycle handling
+across any number of recovery cycles.
+
+Ran the full 9-scenario context-loss matrix (idle, orbit, after-selection, machines-hidden,
+reference-enabled, grid-disabled, after-resize, after-layer-toggle, repeated 4-cycle) plus a
+3-iteration select/toggle/orbit/resize/recover stress loop — all PASS, no resource growth
+(geometries/textures/programs, the disclosed three.js proxy for "materials") across any
+scenario or cycle, every layer/selection/camera state preserved through repeated recovery.
+
+**A real regression was found and fixed during this step's own testing, root-caused with fresh
+DOM measurement rather than guessed**: adding this step's own new lifecycle-counter readout to
+the toolbar pushed its `flex-wrap` row past its wrap threshold, shifting the `<Canvas>`
+element's Y position and silently breaking every fixed-pixel-coordinate Playwright test since
+Step 5C. Fixed with `flex-nowrap` + `overflow-x-auto` + `min-w-0` on the toolbar row. A second,
+separate page-level horizontal-overflow finding (1024x768, 200% zoom) survived that first fix;
+its actual root cause was the layers `<fieldset>`'s `sr-only` `<legend>` being
+`position: absolute` with no positioned ancestor, letting its containing block escape to the
+viewport and bypass every ancestor `overflow-hidden`/`overflow-x-auto` clip — fixed with
+`position: relative` on the `<fieldset>`. Full detail, including the incorrect intermediate
+hypothesis, in `docs/evidence/FACTORY_TWIN_R3F_SCENE_ORCHESTRATION.md`.
+
+Full regression re-run (Step 3, Step 4, Step 5A-5E, this step's own 76-assertion suite, plus the
+legacy `factory-twin-failure-modes.js` check) all green except the same single pre-existing,
+out-of-scope `:3000` placement-route failure unchanged since Step 5D. `git diff --quiet`
+against `services/factory-twin-3d/` confirmed legacy stack untouched.
+
+**Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
+NONE.**
+
 ## Next step
 
-Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, and Step 5E are complete,
-all PASS. Per Step 5E's own explicit "STOP" instruction, operational state/telemetry/alarms/
-inspector/RCA/EAP/LDI are NOT migrated. Candidates remaining, none started:
+Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, and Step 5F are
+complete, all PASS. Per Step 5F's own explicit "STOP" instruction, operational state/telemetry/
+alarms/inspector/RCA/EAP/LDI are NOT migrated. Candidates remaining, none started:
 
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
   any time.
 - Next phase (live operational state, telemetry, alarms, inspector, RCA, EAP/LDI) —
-  explicitly deferred until this layer-migration gate is reviewed and an explicit go-ahead is
-  given.
+  explicitly deferred until this scene-orchestration gate is reviewed and an explicit
+  go-ahead is given.
 - TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
   a disclosed, scoped future addition, not blocking.
-- Factoring `GeometryViewport.tsx`'s WebGL-lifecycle code (duplicated from Step 4's
-  `TwinViewport.tsx`) into one shared module — a real, disclosed cleanup opportunity, not
-  blocking.
+- Factoring the `geometry-candidate` route's WebGL-lifecycle code (still duplicated by Step 4's
+  separate, disposable `TwinViewport.tsx` on the unrelated `/r3f-spike` route) into one shared
+  module — a real, disclosed cleanup opportunity, not blocking.
 - Multiple camera modes (overview/inspection/machine-focus) — explicitly out of scope for
   Step 5D, a disclosed future candidate.
 - Lazy (toggle-triggered) fetch of the reference overlay, matching legacy's own optimization

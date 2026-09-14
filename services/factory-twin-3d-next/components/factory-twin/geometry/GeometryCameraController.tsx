@@ -43,6 +43,7 @@ export default function GeometryCameraController({
   resetToken,
   fitToken,
   onCameraStateChange,
+  onMount,
 }: {
   view: ViewName;
   envelope: Envelope;
@@ -54,6 +55,17 @@ export default function GeometryCameraController({
   /** Called ONLY at a meaningful checkpoint (orbit/zoom/pan interaction
    *  END, or after reset/fit) -- never per frame, never per pointermove. */
   onCameraStateChange?: (state: CameraState) => void;
+  /**
+   * Step 5F: fired exactly once, on mount, never on re-render. Exists
+   * solely as scene-rebuild-contract evidence (`GeometryViewport.tsx`'s own
+   * `controllerMounts` counter) -- this component is never unmounted by a
+   * WebGL context-loss/restore cycle (the R3F tree is untouched;
+   * `invalidate()` repaints the existing tree, it does not remount it), so
+   * this counter staying at 1 across any number of recovery cycles is
+   * direct, measured proof of "no duplicate controls" (Section 5), not an
+   * assumption.
+   */
+  onMount?: () => void;
 }) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const { camera } = useThree();
@@ -179,6 +191,11 @@ export default function GeometryCameraController({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitToken]);
+
+  useEffect(() => {
+    onMount?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <OrbitControls
