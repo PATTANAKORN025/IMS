@@ -26,8 +26,21 @@
  * page.tsx's catch block and lib/log.ts. An operator correlates a
  * specific failure using `error.digest` against that server log, not
  * anything rendered here.
+ *
+ * Step 11 production spike fix: uses `retry`, not `reset`. This app's own
+ * bundled Next 16.3.4 docs (node_modules/next/dist/docs/01-app/
+ * 03-api-reference/03-file-conventions/error.md) state `retry` became
+ * stable in v16.3.0 and is the function that "will try to re-fetch and
+ * re-render the error boundary's children" -- `reset` (this file's
+ * original Phase 12D implementation, predating that stabilization) only
+ * "clear[s] the error state and re-render[s] ... WITHOUT re-fetching the
+ * contents." Reproduced live: with `reset`, clicking Retry after the
+ * backend genuinely recovered produced ZERO new network requests and
+ * re-displayed the identical stale error -- a real user had no way to
+ * recover from this boundary short of a full manual page reload, despite
+ * the button being labeled "Retry."
  */
-export default function GeometryCandidateError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GeometryCandidateError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
     <main className="flex h-dvh flex-col items-center justify-center gap-3 bg-bg p-6 text-center">
       <h1 className="text-sm font-semibold text-text-primary">Factory Twin data unavailable</h1>
@@ -41,7 +54,7 @@ export default function GeometryCandidateError({ error, reset }: { error: Error 
       )}
       <button
         type="button"
-        onClick={() => reset()}
+        onClick={() => retry()}
         className="rounded-sm border border-border px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
       >
         Retry
