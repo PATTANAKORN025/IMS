@@ -1,0 +1,34 @@
+/*
+ * Mirrors the semantic subset of services/factory-twin-3d/public/index.html's
+ * :root token vocabulary (PR #21) EXACTLY -- same names, same values. This is
+ * a values mirror, not a second design system: no color here is invented,
+ * and tests/factory-twin-next-tokens.test.js asserts these stay byte-identical
+ * to index.html's :root. If they ever need to diverge, index.html is the
+ * source of truth and this file must be updated to match, not the reverse.
+ *
+ * Only the roles this step's brief lists are mirrored (background, surface,
+ * border, text-primary/secondary/muted, accent, success, warning, danger,
+ * info, focus) -- not the full token set (motion/space/status-glyph colors
+ * etc. stay in the domain layer / legacy CSS until an actual component
+ * needs them, per "do not create unnecessary abstraction").
+ *
+ * `--info` does not exist as its own token in index.html today -- neither
+ * does the legacy page invent one. Aliased to --accent here, the same
+ * pattern index.html already uses for --focus ("diverges: = --accent").
+ * Disclosed, not fabricated.
+ */
+
+:root {
+  --bg: #0b1017;
+  --surface: #111a26;
+  --border: #1e2c3d;
+  --text: #dbe6f3;
+  --text-secondary: #8ba0b8;
+  --text-muted: #5f7387;
+  --accent: #38bdf8;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: var(--accent);
+  --focus: var(--accent);
+}

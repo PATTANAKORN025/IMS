@@ -1158,6 +1158,17 @@ function pickZoneAt(clientX, clientY) {
 
 /* -------------------------------------------------------------- inspector -- */
 
+/**
+ * Phase 12C: this file had no escaping helper at all -- every inspector
+ * sink below builds real HTML strings out of reference-layout/EAP field
+ * values (reference_label, process, derivation text, etc.) with those
+ * values interpolated raw. Matches app.js's own esc() exactly (same five
+ * characters), so the two files agree on what "escaped" means.
+ */
+function esc(v) {
+  return String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
 function row(label, value) {
   return `<dt>${label}</dt><dd>${value}</dd>`;
 }
@@ -1165,7 +1176,7 @@ function row(label, value) {
 function badge(cell) {
   const cls = cell.spatial_evidence === 'DIRECT' ? 'ok'
     : (cell.spatial_evidence === 'LAYOUT_ONLY' ? 'warn' : 'mid');
-  return `<span class="badge ${cls}">${cell.spatial_evidence}</span>`;
+  return `<span class="badge ${cls}">${esc(cell.spatial_evidence)}</span>`;
 }
 
 function renderCellInspector(cell) {
@@ -1173,31 +1184,31 @@ function renderCellInspector(cell) {
   const ev = cell.cad_evidence;
   const f = cell.world_footprint || cell.footprint;
   const parts = [
-    row('Cell', `${cell.cell_id} ${badge(cell)}`),
+    row('Cell', `${esc(cell.cell_id)} ${badge(cell)}`),
     row('Reference label', cell.reference_label && !cell.reference_label.startsWith('UNREADABLE')
-      ? cell.reference_label : 'not legible in the reference'),
+      ? esc(cell.reference_label) : 'not legible in the reference'),
     row('Unit', unit
-      ? `${unit.unit_id} &mdash; ${unit.reference_label} `
+      ? `${esc(unit.unit_id)} &mdash; ${esc(unit.reference_label)} `
         + `(${unit.aggregation_type === 'AGGREGATED_STATION'
           ? `station of ${unit.cell_ids.length} cells` : 'single cell'})`
       : 'none &mdash; drawn but not attached'),
-    row('Zone', `${cell.zone_id} &mdash; ${cell.zone_caption}`),
-    row('Process', cell.process),
-    row('Mapping state', `${cell.mapping_state} &middot; unit ${cell.unit_state}`),
-    row('Evidence', `${cell.spatial_evidence} (${cell.registration_method})`),
+    row('Zone', `${esc(cell.zone_id)} &mdash; ${esc(cell.zone_caption)}`),
+    row('Process', esc(cell.process)),
+    row('Mapping state', `${esc(cell.mapping_state)} &middot; unit ${esc(cell.unit_state)}`),
+    row('Evidence', `${esc(cell.spatial_evidence)} (${esc(cell.registration_method)})`),
     row('Spatial frame', cell.spatial_frame === 'FLOOR1_WORLD_M'
       ? 'FLOOR1_WORLD_M &mdash; drawn on the real floor plan'
       : 'EAP_LAYOUT_FRAME &mdash; drawn in the reference schematic'),
     row('CAD identity', ev.has_cad_instance
-      ? `one named instance (${ev.relation})`
+      ? `one named instance (${esc(ev.relation)})`
       : `not established &mdash; a zone set of ${ev.cad_candidates_in_zone} candidates `
-        + `in ${ev.cad_zone_ids.join(', ') || 'no zone'}`),
+        + `in ${esc(ev.cad_zone_ids.join(', ')) || 'no zone'}`),
     row('CAD world position', cell.has_cad_world_position
       ? 'Established' : '<strong>Not established</strong>'),
     row('Operational footprint', `${f.width.toFixed(2)} &times; ${f.depth.toFixed(2)} `
-      + `in ${f.frame}`),
-    row('IMS mapping', unit ? unit.ims_mapping_state : 'NOT_MAPPED'),
-    row('Live status', `${cell.status} &mdash; `
+      + `in ${esc(f.frame)}`),
+    row('IMS mapping', unit ? esc(unit.ims_mapping_state) : 'NOT_MAPPED'),
+    row('Live status', `${esc(cell.status)} &mdash; `
       + `${cell.live_status_eligible ? 'eligible' : 'not eligible'}`),
     row('Operational state', (() => {
       // FT-EAP-STATE-03 Phase 8: state, source and quality shown as three
@@ -1207,10 +1218,10 @@ function renderCellInspector(cell) {
       // confused with (the bug this whole contract exists to prevent).
       const rec = resolveOperationalState(cell);
       const stateLabel = rec.state ? `${OPERATIONAL_STATUS[rec.state].glyph} ${OPERATIONAL_STATUS[rec.state].label}`
-        : rec.quality.replace('_', ' ');
+        : esc(rec.quality.replace('_', ' '));
       return `${stateLabel} <span class="badge ${rec.source_type === SOURCE_TYPE.REAL ? 'ok' : 'warn'}">`
-        + `${rec.source_type}</span> <span class="note" style="display:inline">`
-        + `(quality = ${rec.quality}) &mdash; ${rec.reason}</span>`;
+        + `${esc(rec.source_type)}</span> <span class="note" style="display:inline">`
+        + `(quality = ${esc(rec.quality)}) &mdash; ${esc(rec.reason)}</span>`;
     })()),
   ];
   const notes = [];
@@ -1226,7 +1237,7 @@ function renderCellInspector(cell) {
       + 'for this cell at any level, so the reference layout is all that places it.</p>');
   }
   notes.push(`<p class="note">Live status is not eligible for this cell: `
-    + `${cell.live_status_blocked_by}.</p>`);
+    + `${esc(cell.live_status_blocked_by)}.</p>`);
   const canFocus = Boolean(cell.world_footprint) && isMapMode();
   const focusBtn = canFocus
     ? '<button id="focusBtn" type="button">Focus this machine</button>' : '';
@@ -1241,15 +1252,15 @@ function renderCellInspector(cell) {
 function renderZoneInspector(rec) {
   const r = rec.region;
   const parts = [
-    row('Zone', `${rec.zone.zone_id} &mdash; ${rec.zone.caption}`),
-    row('Process', rec.zone.process),
+    row('Zone', `${esc(rec.zone.zone_id)} &mdash; ${esc(rec.zone.caption)}`),
+    row('Process', esc(rec.zone.process)),
     row('Cells', String(rec.zone.cells)),
     row('On the real floor (DIRECT)', String(rec.direct)),
     row('Spatially unresolved', String(rec.unresolved)),
-    row('Region evidence', `${r.spatial_evidence} &middot; link confidence ${r.link_confidence}`),
+    row('Region evidence', `${esc(r.spatial_evidence)} &middot; link confidence ${esc(r.link_confidence)}`),
     row('CAD candidates behind it', String(r.cad_candidates)),
   ];
-  const notes = [`<p class="note">${r.derivation}.</p>`];
+  const notes = [`<p class="note">${esc(r.derivation)}.</p>`];
   const drawerBtn = rec.unresolved > 0
     ? '<button id="drawerBtn" type="button">Open zone drawer</button>' : '';
   // FT-EAP-STATE Phase 4: this zone's own simulated-state distribution,

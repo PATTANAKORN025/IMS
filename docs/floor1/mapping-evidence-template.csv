@@ -1,0 +1,2 @@
+factory_twin_asset_id,claim_type,claimed_value,source_system,source_record,verification_method,verified_at,verifier_or_process,confidence,mapping_status,notes
+EXAMPLE-DO-NOT-USE,device_id,EXAMPLE-DEVICE-01,EXAMPLE-VENDOR-REGISTRY,EXAMPLE-TICKET-0001,nameplate photo cross-checked against vendor registry export,2026-01-01T00:00:00Z,EXAMPLE-APPROVER-NAME,high,CONFIRMED,"Illustrative row only, per docs/floor1/README.md -- never a real evidence claim. Delete before real use."
