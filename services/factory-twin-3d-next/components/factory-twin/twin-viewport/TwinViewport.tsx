@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
-import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber';
-import type { WebGLRenderer } from 'three';
+import { useRef, useState, type MutableRefObject } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import type { ViewName } from '@twin-domain/camera';
 import { VIEW_NAMES, DEFAULT_VIEW } from '@twin-domain/camera';
+import { useWebglLifecycle } from '@/hooks/useWebglLifecycle';
 import TwinScene, { type SpikeInstance } from './TwinScene';
 import CameraController from './CameraController';
 
@@ -23,45 +23,18 @@ import CameraController from './CameraController';
  * StatsProbe below.
  */
 
-type LifecycleState = 'READY' | 'LOST' | 'RESTORING' | 'REBUILDING' | 'VERIFYING' | 'RECOVERED';
-
 export default function TwinViewport() {
-  // Section 5 proof: increments once per TwinViewport React render. WebGL
-  // frames (StatsProbe's idleFrameCount) happen entirely inside R3F's own
-  // render loop via refs/useFrame, never touching this component's state --
-  // so this counter should stay near the number of discrete UI
-  // interactions (button clicks), not anywhere near the WebGL frame count.
-  const renderCountRef = useRef(0);
-  renderCountRef.current += 1;
-  // Same hydration fix as GeometryViewport.tsx's own renderCountRef
-  // (found and fixed alongside it -- same bug class, same file shape).
-  // Reading the ref's already-mutated value straight into JSX diverges
-  // between the server's single render pass and the client's hydration
-  // pass (Strict Mode double-invokes in development). `hydrated` is false
-  // on every render up to and including the one that hydrates (server and
-  // client agree: "reactRenders: 0"), then flips true exactly once via
-  // this mount-only effect (empty deps -- cannot re-fire itself, not a
-  // loop), after which the real per-render count is shown.
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
-
-  const [view, setView] = useState<ViewName>(DEFAULT_VIEW);
-  const [selected, setSelected] = useState<SpikeInstance | null>(null);
-  const [lifecycle, setLifecycle] = useState<LifecycleState>('READY');
-  const [stats, setStats] = useState<{ calls: number; triangles: number; idleFrames: number } | null>(null);
-  const [verifyResult, setVerifyResult] = useState<string | null>(null);
-  const rendererRef = useRef<WebGLRenderer | null>(null);
-  const invalidateRef = useRef<(() => void) | null>(null);
-  const readStatsRef = useRef<(() => { calls: number; triangles: number; idleFrames: number }) | null>(null);
-  const baselineRef = useRef<{ geometries: number; textures: number } | null>(null);
-
   /**
-   * Spike-level lifecycle, mirroring app.js's own state machine
-   * (handleContextLost/attemptContextRecovery/verifyRecovery, app.js:256-364)
-   * in SHAPE, not claimed equivalent to it. Two real findings drove this
-   * implementation, both disclosed in FACTORY_TWIN_R3F_SPIKE.md:
+   * Step 9: state machine (`READY -> LOST -> RESTORING -> REBUILDING ->
+   * VERIFYING -> RECOVERED`), context-loss/restore handling, and the
+   * hydration-safe render-count display all now live in
+   * `hooks/useWebglLifecycle.ts` -- extracted from this component and
+   * `GeometryViewport.tsx`'s own former copy (previously verbatim-
+   * duplicated, mirroring app.js's own state machine in SHAPE only,
+   * `handleContextLost`/`attemptContextRecovery`/`verifyRecovery`,
+   * app.js:256-364). Two real findings that drove the original
+   * implementation, still true of the shared hook, both disclosed in
+   * FACTORY_TWIN_R3F_SPIKE.md:
    *
    * 1. Simulating loss/restore via the raw `WEBGL_lose_context` extension
    *    fetched fresh on each button click never fired `webglcontextrestored`
@@ -79,75 +52,15 @@ export default function TwinViewport() {
    *    cycle -- a real leak, because unmounting the OLD TwinScene while the
    *    context is mid-restore does not reliably dispose its GPU geometry
    *    before the NEW instance's is counted. The correct fix, confirmed by
-   *    measurement: do NOT remount. The InstancedMesh's `instanceMatrix`
-   *    buffer attribute lives in a plain JS Float32Array the context loss
-   *    never touches; three.js re-uploads it to the GPU on the next render
-   *    on its own. REBUILDING below only needs to force that next render to
-   *    happen at all (frameloop="demand" won't render on its own after a
-   *    state change that doesn't touch three.js props) via `invalidate()`.
+   *    measurement: do NOT remount -- the hook's REBUILDING step only
+   *    forces the next render via `invalidate()`.
    */
-  const handleContextLost = useCallback(() => {
-    // Re-captured at the MOMENT OF LOSS, not only once at mount: a
-    // legitimate scene change made for an unrelated reason before this
-    // particular loss (e.g. SelectionHighlight adding its own wireframe
-    // box on selection, TwinScene.tsx) is not "growth caused by recovery"
-    // -- comparing against a stale mount-time baseline flagged exactly
-    // that as a false leak during testing. Comparing pre-loss -> post-
-    // restore is the correct, real question: did RECOVERY itself grow
-    // anything, independent of whatever the scene legitimately contained
-    // right before the loss.
-    const gl = rendererRef.current;
-    if (gl) {
-      baselineRef.current = { geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
-    }
-    setLifecycle('LOST');
-  }, []);
+  const { lifecycle, verifyResult, renderCount, rendererRef, invalidateRef, handleCreated } = useWebglLifecycle();
 
-  const handleContextRestored = useCallback(() => {
-    setLifecycle('RESTORING');
-    setLifecycle('REBUILDING');
-    invalidateRef.current?.();
-    // VERIFYING: give the forced render one frame to land, then compare
-    // renderer.info against the pre-loss baseline.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const gl = rendererRef.current;
-        const baseline = baselineRef.current;
-        setLifecycle('VERIFYING');
-        if (gl && baseline) {
-          const now = { geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
-          const grew = now.geometries > baseline.geometries || now.textures > baseline.textures;
-          setVerifyResult(
-            grew
-              ? `FAIL: geometries ${baseline.geometries}->${now.geometries}, textures ${baseline.textures}->${now.textures} (growth)`
-              : `PASS: geometries ${baseline.geometries}->${now.geometries}, textures ${baseline.textures}->${now.textures} (no growth)`,
-          );
-        }
-        setLifecycle('RECOVERED');
-      });
-    });
-  }, []);
-
-  const handleCreated = useCallback(
-    ({ gl, invalidate }: RootState) => {
-      rendererRef.current = gl;
-      invalidateRef.current = invalidate;
-      gl.domElement.addEventListener('webglcontextlost', handleContextLost);
-      gl.domElement.addEventListener('webglcontextrestored', handleContextRestored);
-      setLifecycle('READY');
-      // Baseline must be captured AFTER the scene's own geometry/texture
-      // upload, not at onCreated time (which fires before TwinScene's JSX
-      // children have created their GPU resources) -- captured too early,
-      // every real 0->N first-upload would misread as "growth" on
-      // recovery. Two rAFs is the same settle margin VERIFYING below uses.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          baselineRef.current = { geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
-        });
-      });
-    },
-    [handleContextLost, handleContextRestored],
-  );
+  const [view, setView] = useState<ViewName>(DEFAULT_VIEW);
+  const [selected, setSelected] = useState<SpikeInstance | null>(null);
+  const [stats, setStats] = useState<{ calls: number; triangles: number; idleFrames: number } | null>(null);
+  const readStatsRef = useRef<(() => { calls: number; triangles: number; idleFrames: number }) | null>(null);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden border border-border">
@@ -179,7 +92,7 @@ export default function TwinViewport() {
           Restore context
         </button>
         <span className="text-xs text-text-secondary">lifecycle: {lifecycle}</span>
-        <span className="text-xs text-text-secondary">reactRenders: {hydrated ? renderCountRef.current : 0}</span>
+        <span className="text-xs text-text-secondary">reactRenders: {renderCount}</span>
         <button
           type="button"
           onClick={() => setStats(readStatsRef.current?.() ?? null)}

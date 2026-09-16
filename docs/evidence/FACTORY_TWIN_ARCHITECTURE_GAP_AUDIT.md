@@ -673,10 +673,43 @@ including every remaining deployment risk this spike does NOT resolve, in
 **Result: NEXTJS SERVICE BOUNDARY — READY** (as a spike; several real, disclosed risks remain
 open for an actual cutover — see that doc's own "Remaining deployment risks" section).
 
+## Step 9 implementation status — DONE (PASS) — shared WebGL lifecycle hook (Next.js candidates)
+
+Closes the "Factoring the `geometry-candidate` route's WebGL-lifecycle code" candidate below.
+Extracted the context-loss/restore state machine, recovery verification, and hydration-safe
+render-count display — previously an independent, verbatim-duplicated copy in
+`GeometryViewport.tsx` and `TwinViewport.tsx` — into
+`services/factory-twin-3d-next/hooks/useWebglLifecycle.ts`, consumed by both. Direct
+motivation: the ref-mutated-during-render hydration bug (commit `727c98cd`) was found and
+fixed independently in both files precisely because they were independent copies.
+
+Component-specific instrumentation (`GeometryViewport.tsx`'s own `contextLostCount`/
+`contextRestoredCount`/`controllerMounts`, Step 5F's scene-rebuild-contract evidence) stays
+outside the hook, wired via optional `onContextLost`/`onContextRestored` callbacks — so
+`TwinViewport.tsx` (which never had these counters) gains zero extra state, and
+`GeometryViewport.tsx`'s counters keep their exact prior semantics.
+
+`npx tsc --noEmit` clean, `npm run build` succeeds (route rendering modes unchanged).
+`tests/playwright/factory-twin-next-hydration.js` 10/10 (updated to assert both files import
+the shared hook rather than reimplementing it). Full regression re-run: `factory-twin-r3f-
+spike.js` 45/45, `-camera.js` 66/66, `-layers.js` 69/69, `-operational-state.js` 40/40,
+`-scene-orchestration.js` 76/76 (including exact `controllerMounts`/`contextLost`/
+`contextRestored` counter proofs). `node scripts/pre-commit.js` clean.
+
+**A pre-existing, unrelated test-harness gap was found and disclosed, not fixed**:
+`factory-twin-r3f-geometry.js`/`-machines.js`/`-selection.js` fail with `Cannot find module
+'./backend-fetch'` — `tests/unit/lib/require-ts.js`'s single-file TS transpiler doesn't resolve
+`geometry-adapter.ts`'s own sibling `.ts` import (added Phase 12D). Confirmed via `git stash`
+A/B against the unmodified pre-Step-9 code: identical failure, identical stack — not a
+regression this step introduced, and out of scope for a WebGL-lifecycle extraction to fix.
+
+**Runtime changes to the live `/factory-twin-3d/`, Step 3's shell route, or Step 4's spike:
+NONE.** Full detail in `docs/evidence/FACTORY_TWIN_WEBGL_LIFECYCLE_DEDUP_NEXT.md`.
+
 ## Next step
 
 Step 1, Step 1.5, Step 3, Step 4, Step 5A, Step 5B, Step 5C, Step 5D, Step 5E, Step 5F, Step 6A,
-Step 6B, Step 6C, Step 6D, Step 6E, Step 7, and Step 8 are complete, all PASS. Per this
+Step 6B, Step 6C, Step 6D, Step 6E, Step 7, Step 8, and Step 9 are complete, all PASS. Per this
 migration's own hard rules, live telemetry/alarms/inspector/RCA/EAP/LDI are still NOT
 connected — Step 8 was a deployment-boundary spike, nothing production-facing wired. Step 7's
 read-only reconciliation, nothing wired. `/api/state` is not to be connected next either.
@@ -690,14 +723,12 @@ Candidates remaining, none started:
   something any further step here can invent on its own authority.
 - Migration-plan Step 2 (duplicated WebGL-lifecycle extraction from `app.js`/`eap.js` into a
   shared module) — independent of the Next.js work, could proceed on the legacy codebase at
-  any time.
+  any time. (Step 9 above did the equivalent extraction for the Next.js candidates only;
+  the legacy `app.js`/`eap.js` duplication is untouched.)
 - Next phase (telemetry, alarms, inspector, RCA, EAP/LDI) — explicitly deferred until this
   gate is reviewed and an explicit go-ahead is given.
 - TRUE_POLYGON true-outline rendering (14 machines currently use their bounding rectangle) —
   a disclosed, scoped future addition, not blocking.
-- Factoring the `geometry-candidate` route's WebGL-lifecycle code (still duplicated by Step 4's
-  separate, disposable `TwinViewport.tsx` on the unrelated `/r3f-spike` route) into one shared
-  module — a real, disclosed cleanup opportunity, not blocking.
 - Multiple camera modes (overview/inspection/machine-focus) — explicitly out of scope for
   Step 5D, a disclosed future candidate.
 - Lazy (toggle-triggered) fetch of the reference overlay, matching legacy's own optimization

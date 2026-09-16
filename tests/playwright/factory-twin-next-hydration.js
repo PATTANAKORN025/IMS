@@ -14,8 +14,10 @@
  * location, /geometry-candidate); that route needs a live
  * factory-twin-3d backend to render past its own error boundary, so it
  * is verified manually per this fix's own commit message rather than in
- * this offline suite -- both components share the exact same render-count
- * code shape, proven identical via a source-level check below.
+ * this offline suite. Step 9 (see docs/evidence/) later extracted the
+ * fix out of both files into the single shared `hooks/
+ * useWebglLifecycle.ts` -- the source-level checks below now prove that
+ * extraction rather than comparing two independent inline copies.
  *
  * Usage:
  *   cd services/factory-twin-3d-next && npm run build && npm run start
@@ -104,18 +106,41 @@ async function readLifecycle(page) {
 
   await browser.close();
 
-  // Source-level check: GeometryViewport.tsx (the originally reported
-  // file) carries the exact same fix shape as TwinViewport.tsx (tested
-  // live above) -- confirms the two are not allowed to drift apart
-  // silently.
+  // Source-level check: Step 9 extracted the hydration-guard/lifecycle
+  // fix (originally duplicated independently in GeometryViewport.tsx and
+  // TwinViewport.tsx, tested live above) into hooks/useWebglLifecycle.ts.
+  // Confirms both components consume the ONE shared hook rather than
+  // reimplementing the guard inline again -- the exact regression class
+  // that let the hydration bug land twice in the first place.
+  const hookSrc = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'services', 'factory-twin-3d-next', 'hooks', 'useWebglLifecycle.ts'),
+    'utf8',
+  );
+  check(
+    'shared useWebglLifecycle hook still carries the hydration guard',
+    /const \[hydrated, setHydrated\] = useState\(false\);/.test(hookSrc)
+      && /renderCount: hydrated \? renderCountRef\.current : 0/.test(hookSrc),
+  );
+
   const geometryViewportSrc = fs.readFileSync(
     path.join(__dirname, '..', '..', 'services', 'factory-twin-3d-next', 'components', 'factory-twin', 'geometry', 'GeometryViewport.tsx'),
     'utf8',
   );
+  const twinViewportSrc = fs.readFileSync(
+    path.join(__dirname, '..', '..', 'services', 'factory-twin-3d-next', 'components', 'factory-twin', 'twin-viewport', 'TwinViewport.tsx'),
+    'utf8',
+  );
+  const usesSharedHook = (src) =>
+    /import \{ useWebglLifecycle \} from ['"]@\/hooks\/useWebglLifecycle['"]/.test(src) && /useWebglLifecycle\(/.test(src);
+  const reimplementsInline = (src) =>
+    /const renderCountRef = useRef\(0\);/.test(src) || /const \[hydrated, setHydrated\] = useState\(false\);/.test(src);
   check(
-    'GeometryViewport.tsx (originally reported location) carries the identical hydration-guard fix',
-    /const \[hydrated, setHydrated\] = useState\(false\);/.test(geometryViewportSrc)
-      && /reactRenders: \{hydrated \? renderCountRef\.current : 0\}/.test(geometryViewportSrc),
+    'GeometryViewport.tsx consumes the shared hook, not its own inline copy',
+    usesSharedHook(geometryViewportSrc) && !reimplementsInline(geometryViewportSrc),
+  );
+  check(
+    'TwinViewport.tsx consumes the shared hook, not its own inline copy',
+    usesSharedHook(twinViewportSrc) && !reimplementsInline(twinViewportSrc),
   );
 
   console.log(`\n${passed} passed, ${failed} failed`);

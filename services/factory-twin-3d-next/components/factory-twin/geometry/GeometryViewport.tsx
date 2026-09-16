@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, type RootState } from '@react-three/fiber';
-import type { WebGLRenderer } from 'three';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
 import type { ViewName, CameraState } from '@twin-domain/camera';
 import { VIEW_NAMES, DEFAULT_VIEW } from '@twin-domain/camera';
 import type { Asset } from '@twin-domain/asset';
@@ -14,6 +13,7 @@ import { MACHINE_STATE_THEME, MACHINE_STATE_ORDER, type MachineStateCode } from 
 import type { OperationalStateResolution } from '@twin-domain/data-quality';
 import type { FactoryGeometryData } from '@/lib/geometry-adapter';
 import { resolveOperationalState } from '@/lib/operational-state-adapter';
+import { useWebglLifecycle } from '@/hooks/useWebglLifecycle';
 import GeometryScene, { type SceneStats } from './GeometryScene';
 import SelectedMachinePanel from '../machines/SelectedMachinePanel';
 
@@ -41,8 +41,6 @@ const LAYER_LABEL: Record<LayerId, string> = {
 const CANVAS_CAMERA = { fov: 45, near: 0.1, far: 400 } as const;
 const CANVAS_DPR: [number, number] = [1, 2];
 
-type LifecycleState = 'READY' | 'LOST' | 'RESTORING' | 'REBUILDING' | 'VERIFYING' | 'RECOVERED';
-
 /**
  * Step 5F single WebGL lifecycle owner (Section 2 of this step's mission).
  * This is the ONLY component in the geometry-candidate tree that touches a
@@ -53,11 +51,11 @@ type LifecycleState = 'READY' | 'LOST' | 'RESTORING' | 'REBUILDING' | 'VERIFYING
  * grep-verified against this step's own source. Same underlying mechanism
  * as Step 4's corrected TwinViewport.tsx (invalidate()-only rebuild, NOT a
  * force-remount, which Step 4 measured as a real leak for InstancedMesh
- * content) -- reproduced here rather than factored into a shared module
- * across the two isolated candidate routes (`/r3f-spike` and
- * `/geometry-candidate`), a disclosed, still-open cleanup opportunity
- * (see the migration doc's "Known limitations"), not silently duplicated
- * without comment.
+ * content) -- Step 9 factored this mechanism into `hooks/
+ * useWebglLifecycle.ts`, shared by both isolated candidate routes
+ * (`/r3f-spike` and `/geometry-candidate`) instead of the verbatim
+ * duplication the migration doc previously disclosed as a "Known
+ * limitation."
  *
  * REBUILDING contract (Section 5): on `webglcontextrestored`, exactly one
  * `invalidate()` call repaints the EXISTING R3F tree. Nothing is
@@ -81,29 +79,25 @@ export default function GeometryViewport({
   machines: readonly Asset[];
   reference: ReferenceOverlay;
 }) {
-  const renderCountRef = useRef(0);
-  renderCountRef.current += 1;
-  // Hydration fix: `renderCountRef.current` is mutated during render (by
-  // design -- that mutation itself is what makes this a true per-render
-  // counter, and mutating a ref during render is not a React rule
-  // violation on its own). The bug was reading that already-mutated value
-  // straight into JSX in the SAME render: the server renders this
-  // component's function body exactly once (ref -> 1), but React's client
-  // hydration pass evaluates the SAME function body separately to produce
-  // the tree it diffs against the server HTML -- in development, Strict
-  // Mode intentionally double-invokes it (ref -> 2), which is exactly why
-  // this bug surfaced as "server=1, client=2" rather than being hidden.
-  // `hydrated` starts false on both server and every client render up to
-  // and including the one that hydrates, so both produce identical
-  // "reactRenders: 0" markup -- no mismatch. The mount-only effect below
-  // (empty deps, fires exactly once) flips it true post-commit, causing
-  // one ordinary follow-up render that then shows the real count. This is
-  // not a loop: `hydrated` never toggles again, so the effect cannot
-  // re-fire itself.
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  /**
+   * Step 9: state machine, context-loss/restore handling, and the
+   * hydration-safe render-count display (previously its own inline
+   * `renderCountRef`/`hydrated` pair here -- the ref-mutated-during-render
+   * hydration bug fixed in commit 727c98cd) now live in
+   * `hooks/useWebglLifecycle.ts`, shared with `TwinViewport.tsx`.
+   * `contextLostCount`/`contextRestoredCount` (Step 5F's own scene-
+   * rebuild-contract evidence, referenced in the doc comment above) stay
+   * this component's own bookkeeping on top of the shared hook, wired via
+   * `onContextLost`/`onContextRestored` so their semantics -- incremented
+   * exactly once per real event, never per render -- are unchanged by the
+   * extraction.
+   */
+  const [contextLostCount, setContextLostCount] = useState(0);
+  const [contextRestoredCount, setContextRestoredCount] = useState(0);
+  const { lifecycle, verifyResult, renderCount, rendererRef, invalidateRef, handleCreated } = useWebglLifecycle({
+    onContextLost: () => setContextLostCount((n) => n + 1),
+    onContextRestored: () => setContextRestoredCount((n) => n + 1),
+  });
 
   // LayerState (Step 5E): presentation-only, deliberately separate from
   // CameraState/SelectionState (Section "Layer model"). A toggle here flips
@@ -171,11 +165,6 @@ export default function GeometryViewport({
   const [cameraState, setCameraState] = useState<CameraState | null>(null);
   const [resetToken, setResetToken] = useState(0);
   const [fitToken, setFitToken] = useState(0);
-  const [lifecycle, setLifecycle] = useState<LifecycleState>('READY');
-  const [verifyResult, setVerifyResult] = useState<string | null>(null);
-  const rendererRef = useRef<WebGLRenderer | null>(null);
-  const invalidateRef = useRef<(() => void) | null>(null);
-  const baselineRef = useRef<{ geometries: number; textures: number } | null>(null);
   const readStatsRef = useRef<(() => SceneStats) | null>(null);
   const [stats, setStats] = useState<SceneStats | null>(null);
 
@@ -184,12 +173,11 @@ export default function GeometryViewport({
   // across any number of recovery cycles is direct proof the camera
   // controller (and its OrbitControls instance) is never duplicated or
   // remounted by context loss/restore -- not an assumption. `contextLost`/
-  // `contextRestored` staying in lockstep with the number of times the
-  // user actually triggered loss/restore is direct proof the listeners
-  // attached in `handleCreated` below are never double-attached.
+  // `contextRestored` (declared above, alongside the shared lifecycle
+  // hook) staying in lockstep with the number of times the user actually
+  // triggered loss/restore is direct proof the listeners attached in
+  // `handleCreated` are never double-attached.
   const [controllerMounts, setControllerMounts] = useState(0);
-  const [contextLostCount, setContextLostCount] = useState(0);
-  const [contextRestoredCount, setContextRestoredCount] = useState(0);
   const handleControllerMount = useCallback(() => setControllerMounts((n) => n + 1), []);
 
   // Selection (Step 5C): low-frequency state, updated only on a discrete
@@ -206,53 +194,6 @@ export default function GeometryViewport({
     const asset = assetById.get(selectedId);
     return asset ? { kind: 'equipment', asset } : { kind: 'none' };
   }, [selectedId, assetById]);
-
-  const handleContextLost = useCallback(() => {
-    const gl = rendererRef.current;
-    if (gl) baselineRef.current = { geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
-    setContextLostCount((n) => n + 1);
-    setLifecycle('LOST');
-  }, []);
-
-  const handleContextRestored = useCallback(() => {
-    setContextRestoredCount((n) => n + 1);
-    setLifecycle('RESTORING');
-    setLifecycle('REBUILDING');
-    invalidateRef.current?.();
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const gl = rendererRef.current;
-        const baseline = baselineRef.current;
-        setLifecycle('VERIFYING');
-        if (gl && baseline) {
-          const now = { geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
-          const grew = now.geometries > baseline.geometries || now.textures > baseline.textures;
-          setVerifyResult(
-            grew
-              ? `FAIL: geometries ${baseline.geometries}->${now.geometries}, textures ${baseline.textures}->${now.textures} (growth)`
-              : `PASS: geometries ${baseline.geometries}->${now.geometries}, textures ${baseline.textures}->${now.textures} (no growth)`,
-          );
-        }
-        setLifecycle('RECOVERED');
-      });
-    });
-  }, []);
-
-  const handleCreated = useCallback(
-    ({ gl, invalidate }: RootState) => {
-      rendererRef.current = gl;
-      invalidateRef.current = invalidate;
-      gl.domElement.addEventListener('webglcontextlost', handleContextLost);
-      gl.domElement.addEventListener('webglcontextrestored', handleContextRestored);
-      setLifecycle('READY');
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          baselineRef.current = { geometries: gl.info.memory.geometries, textures: gl.info.memory.textures };
-        });
-      });
-    },
-    [handleContextLost, handleContextRestored],
-  );
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden border border-border">
@@ -312,7 +253,7 @@ export default function GeometryViewport({
           Restore context
         </button>
         <span className="text-xs text-text-secondary">lifecycle: {lifecycle}</span>
-        <span className="text-xs text-text-secondary">reactRenders: {hydrated ? renderCountRef.current : 0}</span>
+        <span className="text-xs text-text-secondary">reactRenders: {renderCount}</span>
         <span className="text-xs text-text-secondary">
           controllerMounts: {controllerMounts} contextLost: {contextLostCount} contextRestored: {contextRestoredCount}
         </span>
