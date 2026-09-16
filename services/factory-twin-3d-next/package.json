@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev -p 4310",
     "build": "next build",
-    "start": "next start -p 4310",
+    "postbuild": "node scripts/copy-standalone-static.js",
+    "start": "node scripts/start-standalone.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
