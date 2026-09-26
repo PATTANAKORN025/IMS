@@ -49,7 +49,7 @@ after 1546ms; `waitForFunction` then resolved in **14ms**, because
 `window.__twin` had already been true for hundreds of milliseconds before
 `goto()`'s own artificial wait finished):
 
-```
+```text
 run1 [waitUntil=networkidle]: goto=1546ms, goto->twinDefined=14ms, TOTAL=1560ms, internal twinBootMs=994
 ```
 

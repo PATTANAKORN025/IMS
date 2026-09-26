@@ -16,7 +16,7 @@ inspector, the zone inspector, the factory-wide breakdown table, and the
 (`factoryStateBreakdown`, `zoneStateBreakdown`) rather than re-deriving its
 own notion of "what state is this."
 
-```
+```json
 {
   object_id:    string            // the cell this record describes
   state:        one of the 8 plant states, or null

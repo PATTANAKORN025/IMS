@@ -54,7 +54,7 @@ So the model holds **two** geometries per machine, and they have different jobs:
 
 ## 2. The pipeline, and the rule about it
 
-```
+```text
 RAW CAD → CAD TRANSFORM → PHYSICAL EQUIPMENT MODEL → PHYSICAL RECONCILIATION
         → OPERATIONAL FOOTPRINT → 2D EAP → 3D DERIVED VIEW
 ```

@@ -23,7 +23,7 @@ Status: **Plan only. No implementation.** Builds on the approved audit/spec (`do
 
 **Final hierarchy:**
 
-```
+```text
 IMS LDI - Manufacturing Command Center  (repaired, reordered)
 ├─ C-LEVEL AT A GLANCE          [existing Executive HUD, relabeled/regrouped — no new panels]
 │   PRODUCTION / QUALITY / RISK rows (13 panels, already live)
@@ -61,7 +61,7 @@ Both link out from the new TRACEABILITY section (and optionally the C-Level sect
 
 **Full path and what backs each hop, verified against live schema/views this session:**
 
-```
+```text
 Factory → Zone → Machine → Alarm → Production → Machine Snapshot → Raw Record
 ```
 

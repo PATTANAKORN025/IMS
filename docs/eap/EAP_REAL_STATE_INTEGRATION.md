@@ -19,7 +19,7 @@ outcome was manufactured.
 
 ## Canonical adapter (Phase 3) — unchanged shape, restated in this phase's field names
 
-```
+```json
 {
   object_id:   string | null
   state:       one of RUN/DOWN/IDLE/OFF/INITIAL/PM/STOP, or null

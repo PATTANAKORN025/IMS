@@ -14,7 +14,7 @@ not in prior reports.
 
 ## 1. System architecture map
 
-```
+```text
 DXF/CAD source (private, gitignored)
         │  scripts/extract-floor1-equipment.js, scripts/lib/cad-blocks.js
         ▼

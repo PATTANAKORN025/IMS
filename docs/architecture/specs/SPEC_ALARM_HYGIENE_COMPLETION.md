@@ -29,7 +29,7 @@ Still a 1x1 functional watchdog panel on `ims-ldi-manufacturing`/`ims-ldi-operat
 
 The original spec called for a synthetic stress test (force every machine's telemetry out-of-spec simultaneously, mock-mode only, and assert the debounce caps re-fires). Chose not to build and run that this pass: forcing artificial out-of-spec conditions across the fleet would contaminate the exact data-integrity baselines this reliability program just spent P0 proving clean, and a real answer already exists from organic operation --
 
-```
+```bash
 docker exec ims-timescaledb psql -c "
   WITH gaps AS (SELECT equipmentid, errorcode, logdate,
     logdate - LAG(logdate) OVER (PARTITION BY equipmentid, errorcode ORDER BY logdate) AS gap

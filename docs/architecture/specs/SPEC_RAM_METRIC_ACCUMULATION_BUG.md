@@ -17,7 +17,7 @@
 
 **Layer 2 (runtime/DB):** every device in `public.sys_metrics`, as of 2026-08-15T02:2x UTC, has `ram_used_mb` exactly equal to `ram_total_mb` exactly equal to `1048576`:
 
-```
+```text
      device_id      | ram_used_mb | ram_total_mb
 --------------------+-------------+--------------
  LINUX-SERVER-01  |     1048576 |      1048576

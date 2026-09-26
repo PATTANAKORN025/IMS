@@ -14,7 +14,7 @@ estimated.
 
 ## LDI coupling scan (Phase 0/this phase's own core requirement): NONE, confirmed
 
-```
+```bash
 grep -n "ldi\|LDI\|telemetry\|alarm\|spc\|predictive\|Cpk\|EWMA\|CUSUM\|Nelson" \
   services/factory-twin-3d/public/eap.js
 ```
@@ -37,7 +37,7 @@ bootstraps, zero shared runtime state.
 discipline (unlike `index.html`, audited every phase since FT-18). Real
 first scan, authenticated production:
 
-```
+```text
 axe violations: 4
   color-contrast serious 7
   landmark-one-main moderate 1

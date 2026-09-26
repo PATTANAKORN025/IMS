@@ -104,7 +104,7 @@ No dashboard currently presents these as one connected click-path (Factory → Z
 
 Both twins and the Action Queue / Alarm Console pattern converge on the same URL contract, independently verified across four SDD tasks this session:
 
-```
+```text
 /d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=<eqp_id>&var-factory=<factory>&from=...&to=...
 ```
 

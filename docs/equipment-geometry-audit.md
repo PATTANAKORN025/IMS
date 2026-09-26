@@ -58,13 +58,13 @@ geometry is in the block definition and there is nothing to approximate.
 
 ### 2.1 The transform chain
 
-```
+```text
 p_world = R(rot) · diag(sx, sy) · (p_block − base) + insertion
 ```
 
 composed through every nesting level as a **matrix product**:
 
-```
+```text
 T_total = T_parent × T_child
 ```
 

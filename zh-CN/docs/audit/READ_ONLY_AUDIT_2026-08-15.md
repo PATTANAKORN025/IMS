@@ -73,7 +73,7 @@ SELECT COUNT(*) AS total_rows, COUNT(*) - COUNT(DISTINCT (device_id,time)) AS ex
 
 根本原因在于 `monitoring/snmpsim/ubuntu.snmprec` 本身：
 
-```
+```text
 1.3.6.1.2.1.25.2.3.1.5.2|2|52428800          <- hrStorageSize (磁盘), 静态
 1.3.6.1.2.1.25.2.3.1.6.2|2:numeric|min=65536000,max=125000000,rate=50000   <- hrStorageUsed (磁盘), 随机漫步
 ```

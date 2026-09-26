@@ -43,7 +43,7 @@ The chrome **docks**. Header, status strip, floor and inspection drawer are
 layout tracks, not floating windows, so nothing is ever drawn on top of the
 floor plan. Opening the drawer narrows the plan; it never covers it.
 
-```
+```text
 HEADER          factory identity · view controls · data quality · build id · Inspection
 STATUS STRIP    Off  Down  Idle  Initial  PM  Stop  Run  Undefined  |  Unmapped
 FLOOR                                                        INSPECTION DRAWER

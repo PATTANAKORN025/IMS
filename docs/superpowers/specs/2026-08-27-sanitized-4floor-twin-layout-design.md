@@ -27,7 +27,7 @@ If real floor-assignment or floor-footprint data is ever supplied, it goes throu
 
 Four floors, stacked bottom-up on the Z axis, generic industrial floor-to-floor height:
 
-```
+```text
 FLOOR_HEIGHT = 6          // scene units (~generic industrial storey height; not a real measurement)
 pos_z(floor_index) = floor_index * FLOOR_HEIGHT     // floor_index: 0=ground .. 3=top
 ```

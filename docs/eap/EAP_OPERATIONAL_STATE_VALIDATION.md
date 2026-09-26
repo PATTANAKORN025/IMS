@@ -15,7 +15,7 @@ real authenticated production. Nothing is estimated.
 
 Disposable container, EAP mode, simulation on:
 
-```
+```text
 factory breakdown: {"total":210,"reconciled":true,
   "counts":{"OFF":0,"DOWN":29,"IDLE":30,"INITIAL":30,"PM":30,
             "STOP":30,"RUN":30,"UNDEFINED":29,"NO_DATA":2,"UNAVAILABLE":0}}
@@ -25,7 +25,7 @@ sum of zone totals: 210 vs factory total: 210
 
 Simulation off:
 
-```
+```text
 factory breakdown sim off: {"total":210,"reconciled":true,
   "counts":{"OFF":0,"DOWN":0,"IDLE":0,"INITIAL":0,"PM":0,"STOP":0,"RUN":0,
             "UNDEFINED":0,"NO_DATA":0,"UNAVAILABLE":210}}
@@ -38,7 +38,7 @@ FT-EAP-UX), so it is a real, permanent zero, not a bug.
 
 Spot check, one attached cell:
 
-```
+```text
 attached cell state: {"object_id":"EAP-F1-0001","state":"STOP",
   "state_source":"SIMULATED","observed_at":null,"quality":"SIMULATED",
   "reason":"deterministic per-cell simulation, not live telemetry"}
@@ -51,7 +51,7 @@ The always-visible breakdown table, read back from the live DOM (not from
 `window.__eap`, so this confirms the table is not a second, driftable
 copy):
 
-```
+```text
 ■ Off        0
 ◆ Down       29
 ▲ Idle       30
@@ -182,7 +182,7 @@ quality value `SIMULATED` → `SIMULATION` (to avoid colliding with the new
 `source_type: 'SIMULATED'` value one field over). Verified via the updated
 regression suite and a real DOM read of the cell inspector:
 
-```
+```text
 Operational state row: ▬ Stop [SIMULATED] (quality = SIMULATION) —
   deterministic per-cell simulation, not live telemetry
 ```
@@ -250,7 +250,7 @@ shipped default) is the one explicit case that substitutes a simulated
 value. Verified real, disposable container and production, both
 identical:
 
-```
+```text
 demoModeOn=false -> every one of 210 cells: source_type=REAL, quality=UNAVAILABLE,
   reason="no authoritative APEX3 operational-state source exists..."
 demoModeOn=true  -> source_type=SIMULATED distribution (171 generated, 39 NO_DATA)

@@ -17,7 +17,7 @@
 
 **เลเยอร์ 2 (runtime/DB):** อุปกรณ์ทุกเครื่องใน `public.sys_metrics` ณ วันที่ 2026-08-15T02:2x UTC มีค่า `ram_used_mb` เท่ากับ `ram_total_mb` พอดี ซึ่งเท่ากับ `1048576` พอดี:
 
-```
+```text
      device_id      | ram_used_mb | ram_total_mb
 --------------------+-------------+--------------
   LINUX-SERVER-01  |     1048576 |      1048576

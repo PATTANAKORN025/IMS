@@ -14,7 +14,7 @@ One shape, returned by `resolveOperationalState(cell)` in `eap.js`
 `operational-state-adapters.js`), read by every caller on the page — the
 WebGL cell colour, the cell inspector, the zone/factory breakdown tables:
 
-```
+```json
 {
   object_id:   string | null
   state:       one of the 8 plant states, or null
@@ -92,7 +92,7 @@ fixed: sim-off text once read "OFF (simulation disabled)").
 The cell inspector's "Operational state" row shows all three facts,
 never merged into one string a viewer has to parse apart:
 
-```
+```text
 ▬ Stop  [SIMULATED]   (quality = SIMULATION) — deterministic per-cell simulation, not live telemetry
 ```
 

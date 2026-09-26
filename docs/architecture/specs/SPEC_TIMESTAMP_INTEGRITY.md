@@ -11,7 +11,7 @@
 
 ## The real timestamp model, as it actually exists (not as claimed)
 
-```
+```text
 source/event  ->  ingest (Node-RED/JS)  ->  processing (Node-RED batch buffer)  ->  DB commit  ->  query  ->  dashboard
 ```
 

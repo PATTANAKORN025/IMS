@@ -14,7 +14,7 @@ re-derive their numbers.
 
 ## 1. Physical floor shell (walls, columns, envelope)
 
-```
+```text
 Floor1.dxf (real CAD drawing)
   → CAD extraction (existing physical-twin pipeline, lib/wire.js + build tooling)
   → floor1-geometry.json (private: envelope, walls, columns, zones)
@@ -32,7 +32,7 @@ second extraction pipeline.
 
 ## 2. EAP cells and machine units (the 210/171 population)
 
-```
+```text
 Reference SCADA/EAP layout image (a snapshot of another system, on the day it was captured)
   → manual/tooled placement + reconciliation against the Floor 1 CAD drawing's
     331 raw machine candidates (docs/eap-operational-node-reconciliation-floor1.md)
@@ -53,7 +53,7 @@ anisotropic -- `docs/eap-floor1-operational-footprint.md`'s own contract).
 **Only** cells with real CAD-backed identity or a residual-tested
 structural registration additionally get a `FLOOR1_WORLD_M` footprint:
 
-```
+```text
 CAD candidate's own measured body + INSERT transform (Floor1.dxf)
   → spatial registration test (docs/eap-floor1-spatial-registration.md:
     40 cells DIRECT/STRUCTURAL, 167 SET_LEVEL/zone-region-only, 3 neither)
@@ -79,7 +79,7 @@ passing).
 
 ## 4. Zone regions (the process-area rectangles)
 
-```
+```text
 Either: (a) the extent of the CAD candidates a zone's registration entry
   found (spatial_registration.zones[], real CAD measurement, LOW-to-HIGH
   link_confidence) -- lib/eap-map.js's zoneOutlines() (line 210)
@@ -95,7 +95,7 @@ Or, as a fallback: (b) the bounding box of the zone's own member cells'
 
 Two, deliberately separate, sources:
 
-```
+```text
 5a. REAL status (what the map actually asserts today):
   No authoritative IMS mapping exists for any cell
     → lib/eap-map.js's status field: hardcoded 'UNKNOWN' for every cell

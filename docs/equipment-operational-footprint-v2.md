@@ -46,7 +46,7 @@ and no physical dimension — see §5, which proves that with residuals.
 
 ## 2. Architecture
 
-```
+```text
 RAW CAD
   → CAD TRANSFORM        composed INSERT chain, nesting, scale, mirror
   → PHYSICAL EQUIPMENT MODEL   hull of the block's own physical geometry
@@ -349,7 +349,7 @@ Frame time (ms, p95) and interaction latency (ms, p95):
 layer from 344 scene objects to 2, and it did **not** produce a reliable frame
 time improvement. It cannot: the reported renderer is
 
-```
+```text
 ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)
 ```
 

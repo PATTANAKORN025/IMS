@@ -37,7 +37,7 @@
 界面各部分**以停靠方式排列**。标题栏、状态条、平面图与检查抽屉都是布局轨道，而非浮动窗口，因此平面图上不会覆盖任何内容。
 打开抽屉会让平面图变窄，但绝不会遮住它。
 
-```
+```text
 HEADER          factory identity · view controls · data quality · build id · Inspection
 STATUS STRIP    Off  Down  Idle  Initial  PM  Stop  Run  Undefined  |  Unmapped
 FLOOR                                                        INSPECTION DRAWER

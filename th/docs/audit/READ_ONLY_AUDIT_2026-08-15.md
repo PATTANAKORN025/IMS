@@ -73,7 +73,7 @@ SELECT COUNT(*) AS total_rows, COUNT(*) - COUNT(DISTINCT (device_id,time)) AS ex
 
 สาเหตุหลักอยู่ใน `monitoring/snmpsim/ubuntu.snmprec` เอง:
 
-```
+```text
 1.3.6.1.2.1.25.2.3.1.5.2|2|52428800          <- hrStorageSize (ดิสก์), คงที่
 1.3.6.1.2.1.25.2.3.1.6.2|2:numeric|min=65536000,max=125000000,rate=50000   <- hrStorageUsed (ดิสก์), การสุ่มเดิน
 ```

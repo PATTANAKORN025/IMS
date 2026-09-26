@@ -24,7 +24,7 @@ Companion to **[Reconstruction Methodology](FACTORY_TWIN_RECONSTRUCTION.md)**
 
 ## 1. Request path
 
-```
+```text
 browser
   └─ proxy  (nginx)
        ├─ location = /auth-check      internal; validates against Grafana /api/user
@@ -273,7 +273,7 @@ Exact commands and failure symptoms live in
 
 ### There is exactly one user-facing Factory Twin
 
-```
+```text
 browser
   -> http://localhost:3000/factory-twin-3d/
   -> ims-proxy (nginx:1.27-alpine, the only container publishing a host port)

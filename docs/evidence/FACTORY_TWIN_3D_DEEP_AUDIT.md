@@ -29,7 +29,7 @@ directory mounted read-only, on a direct host port (bypasses the proxy, not prod
 architecture change was made to "get it to start" — it already starts correctly; this is
 purely a measurement rig.
 
-```
+```bash
 docker run -d --network ims_ims-internal -p 4196:4100 -e PORT=4100 -e NODE_ENV=production \
   -v ".../services/factory-twin-3d/private:/app/private:ro" ims-factory-twin-3d
 ```

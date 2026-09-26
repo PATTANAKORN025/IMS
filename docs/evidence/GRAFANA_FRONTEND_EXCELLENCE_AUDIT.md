@@ -97,7 +97,7 @@ The same CSS-injection mechanism (Section 3) also sets panel title typography co
 
 A full sweep of every `fieldConfig.defaults.thresholds.steps[].color` value across all 19 dashboards found:
 
-```
+```text
 Named Grafana theme colors: green, red, blue, orange, yellow, purple,
                              dark-red, dark-purple, dark-gray, transparent
 Raw hex values:             #22C55E, #3B82F6, #EF4444, #F59E0B,

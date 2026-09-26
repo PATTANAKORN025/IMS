@@ -204,7 +204,7 @@ Every panel checked this pass either (a) returned real rows confirming pipeline 
 
 ## Status
 
-```
+```text
 Slices completed: 6/6 (security, mock-data, no-data fleet scan, variable stress, performance, viewport)
 Critical findings: 1 found, 1 fixed (alarm_code textbox injection)
 High findings: 1 found, 1 fixed (machine_id alias injection, 2 panels)
@@ -230,7 +230,7 @@ Scope: verify remaining open items and close what's safely closable with live ev
 
 ### Final Status
 
-```
+```text
 PASS:  SQL injection (fixed+verified), mock-data (0 found), no-data fleet scan (0 unexplained),
        ldi-data-readiness remaining panel (false positive, reconfirmed), net_metrics gap (resolved,
        reconfirmed), sre_parser offline-duplication (found+fixed+verified live), lint/pre-commit
@@ -257,7 +257,7 @@ Scope: close the highest-value remaining NOT VERIFIED items from P27 that don't 
 
 ### Final Status (supersedes P27's)
 
-```
+```text
 PASS:  SQL injection (fixed+verified), mock-data (0 found), no-data fleet scan (0 unexplained),
        ldi-data-readiness remaining panel (false positive, reconfirmed), net_metrics gap (resolved,
        reconfirmed), sre_parser offline-duplication (found+fixed+verified live), lint/pre-commit
@@ -289,7 +289,7 @@ User-directed: `docker compose down -v` then `docker compose up -d`, specificall
 
 ### Final Production-Readiness Matrix
 
-```
+```text
 FIXED: Action Queue NO_DATA link leak (1e5cf92) -- root-caused, fixed, verified live before/after
 PASS:  post-reset container health, Grafana provisioning + real telemetry, credential mismatch
        resolved, 2560x1440 + 4096x2160 dashboard rendering (5 fleet-critical dashboards, real

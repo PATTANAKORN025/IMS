@@ -32,7 +32,7 @@ So the map reads `/api/eap-map`, which projects the EAP node model. The physical
 pipeline is untouched and still drives the existing twin view. The 331 CAD candidates
 never reach a client at all: they are forensic evidence behind the wire boundary.
 
-```
+```text
 RAW CAD → PHYSICAL MODEL → EAP MODEL → EAP CELL GEOMETRY → 2D EAP RENDERER → 3D DERIVED
 ```
 
@@ -78,7 +78,7 @@ acquires one.
 
 There is no independent 3D geometry and no second set of 3D dimensions.
 
-```
+```text
         EAP footprint  { x, z, rotation_deg, width, depth }
                  │
         ┌────────┴────────┐

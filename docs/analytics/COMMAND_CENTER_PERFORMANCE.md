@@ -50,7 +50,7 @@ it yet.
 
 ## Complete user journey (Phase 8), real authenticated production, 3 fresh-tab runs
 
-```
+```text
 page load -> executive data ready -> interactive-ready -> click Inspect -> Machine Snapshot link visible
 ```
 

@@ -13,7 +13,7 @@
 
 ## Live Environment
 
-```
+```text
 URL: http://localhost:3000/
 Grafana: 13.1.2
 Database: TimescaleDB (ims-timescaledb container)
@@ -81,7 +81,7 @@ Confirmed the mechanism: re-ran the identical scan with viewport height increase
 
 ## Status
 
-```
+```text
 P20 STATUS: INCOMPLETE (scope: Andon-only subset of the requested fleet-wide audit)
 
 Expected No-data: legitimate empty states not separately enumerated this pass (none observed live regardless)

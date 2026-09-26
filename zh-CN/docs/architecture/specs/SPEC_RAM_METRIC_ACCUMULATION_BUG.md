@@ -17,7 +17,7 @@
 
 **层级 2 (运行时/数据库)：** 截至 2026-08-15T02:2x UTC，`public.sys_metrics` 中的每个设备的 `ram_used_mb` 都完全等于 `ram_total_mb`，并且完全等于 `1048576`：
 
-```
+```text
      device_id      | ram_used_mb | ram_total_mb
 --------------------+-------------+--------------
   LINUX-SERVER-01  |     1048576 |      1048576

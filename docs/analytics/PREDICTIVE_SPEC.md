@@ -48,7 +48,7 @@ What it adds, composing only from those existing outputs:
 
 ## Canonical contract (Phase 1)
 
-```
+```text
 GET /api/predictive?device_id=<id>&metric=<PE|JE|AVG_METRICS>&range=<15m|1h|6h>
 ```
 

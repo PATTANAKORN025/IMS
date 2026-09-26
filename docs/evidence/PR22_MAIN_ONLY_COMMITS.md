@@ -25,7 +25,7 @@ and how it is preserved in the reconciled merge. **None dropped.**
 
 After committing the merge, all 8 are ancestors of the merge commit:
 
-```
+```bash
 git merge-base --is-ancestor <each> HEAD   # exit 0 for all 8
 ```
 

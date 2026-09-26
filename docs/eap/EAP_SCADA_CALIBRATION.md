@@ -92,7 +92,7 @@ the model itself already admits.
 One correction, in `lib/eap-map.js`'s `projectFootprint`, applied only to
 zone H (Bonding)'s `EAP_LAYOUT_FRAME` z, never to `x`:
 
-```
+```text
 SCADA_LAYOUT_CALIBRATION = { H: { dx: 0, dz: 7.3 } }
 ```
 

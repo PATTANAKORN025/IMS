@@ -27,7 +27,7 @@ Fixed at the root cause, not bypassed: `docker exec ims-grafana grafana cli admi
 
 ### Real live run, post-fix: 14/15 passed, one genuine flagship defect found
 
-```
+```text
 ims-ldi-manufacturing            @ 1280x720 / 1920x1080 / 3840x2160  OK
 ims-ldi-engineering-analytics    @ 1280x720 / 1920x1080 / 3840x2160  OK
 ims-ldi-machine-snapshot         @ 1280x720 / 1920x1080 / 3840x2160  OK

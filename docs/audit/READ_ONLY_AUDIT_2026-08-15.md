@@ -74,7 +74,7 @@ Every single `(device_id, time)` pair has either exactly 3 or exactly 4 rows —
 
 Root cause is in `monitoring/snmpsim/ubuntu.snmprec` itself:
 
-```
+```text
 1.3.6.1.2.1.25.2.3.1.5.2|2|52428800          <- hrStorageSize (disk), STATIC
 1.3.6.1.2.1.25.2.3.1.6.2|2:numeric|min=65536000,max=125000000,rate=50000   <- hrStorageUsed (disk), RANDOM WALK
 ```

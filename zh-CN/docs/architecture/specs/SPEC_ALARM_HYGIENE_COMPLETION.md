@@ -29,7 +29,7 @@
 
 最初的规范要求进行合成压力测试（在模拟模式下，强行让每台机器的遥测数据同时超出规范要求，并断言防抖机制限制了重复触发）。本轮选择不构建也不运行这个测试：因为强行对整个机群的模拟失控状态，会污染这个可靠性计划刚刚耗费 P0 级别精力证明其准确无误的数据完整性基线，并且自然运行状态下已经存在确凿的答案 ——
 
-```
+```bash
 docker exec ims-timescaledb psql -c "
   WITH gaps AS (SELECT equipmentid, errorcode, logdate,
     logdate - LAG(logdate) OVER (PARTITION BY equipmentid, errorcode ORDER BY logdate) AS gap

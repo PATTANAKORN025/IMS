@@ -127,7 +127,7 @@ authenticated pass.
 
 ## Request path, end to end
 
-```
+```text
 browser
   └─ GET http://localhost:3000/factory-twin-3d/
        └─ ims-proxy (nginx :80, published :3000)

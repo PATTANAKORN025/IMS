@@ -31,7 +31,7 @@ Before: `.legend-row` DOM enumeration showed 6 of 7 canonical states (Off
 absent). After: 7 of 7 present, verified via the same DOM enumeration,
 disposable container, all 4 viewports:
 
-```
+```json
 ["...", "■ Off (listed for completeness; never assigned by this simulation)",
  "● Run", "▲ Idle", "◆ Down", "◙ Initial", "◇ PM", "▬ Stop",
  "? Undefined", "○ Unmapped (not a machine state)"]

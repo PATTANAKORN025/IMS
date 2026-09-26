@@ -36,7 +36,7 @@ is wrong.
 
 ## B. The two relations
 
-```
+```text
 CAD_CANDIDATE  ──many-to-one──▶  EAP_LAYOUT_CELL  ──one-to-one or aggregated──▶  MACHINE_UNIT
      331                              210                                            171
 ```
@@ -48,7 +48,7 @@ evidence.
 `EAP_LAYOUT_CELL → MACHINE_UNIT` decomposes exactly, and the two decompositions are
 different sums over the same population:
 
-```
+```text
 171 machine units   = 160 single-cell units  +  11 aggregated station units
 210 EAP cells       = 160 cells in single-cell units
                     +  48 cells inside the 11 aggregated stations

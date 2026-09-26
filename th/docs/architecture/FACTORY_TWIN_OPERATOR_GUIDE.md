@@ -40,7 +40,7 @@
 ส่วนประกอบของหน้าจอ **ต่อกันเป็นแถบ** ส่วนหัว แถบสถานะ ผังพื้น และลิ้นชักตรวจสอบเป็นช่องของเลย์เอาต์
 ไม่ใช่หน้าต่างลอย จึงไม่มีสิ่งใดถูกวาดทับผังพื้น การเปิดลิ้นชักทำให้ผังแคบลง แต่ไม่ปิดทับผัง
 
-```
+```text
 HEADER          factory identity · view controls · data quality · build id · Inspection
 STATUS STRIP    Off  Down  Idle  Initial  PM  Stop  Run  Undefined  |  Unmapped
 FLOOR                                                        INSPECTION DRAWER
