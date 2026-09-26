@@ -102,8 +102,8 @@ sudo systemctl start snmpd
 | #   | งาน (Task)                        | สถานะ (Status) | คำสั่ง (Command)                                                      |
 | --- | --------------------------------- | -------------- | --------------------------------------------------------------------- |
 | 1   | คัดลอก repository (Clone)         |                | `git clone https://github.com/PATTANAKORN025/IMS.git`                 |
-| 2   | สร้าง secrets                     |                | `mkdir -p secrets && echo "password" > secrets/postgres_password.txt` |
-| 3   | คัดลอก environment                |                | `cp .env.example .env`                                                |
+| 2   | คัดลอก environment                |                | `cp .env.example .env`                                                |
+| 3   | เปลี่ยน secret ทุกค่า              |                | แก้ `.env`: ใส่ค่าใหม่ให้รหัสผ่าน token และ key ทุกตัว (ค่าใน `.env.example` เป็นข้อมูลสาธารณะ) — ดูรายการตรวจความปลอดภัยในคู่มือผู้ดูแลระบบ |
 | 4   | เริ่มบริการต่างๆ (Start services) |                | `docker compose up -d`                                                |
 | 5   | รอจนกว่าระบบจะเริ่มทำงาน          |                | `sleep 40`                                                            |
 | 6   | ตรวจสอบ containers                |                | `docker compose ps`                                                   |

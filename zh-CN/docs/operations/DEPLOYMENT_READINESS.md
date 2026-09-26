@@ -106,8 +106,8 @@ sudo systemctl start snmpd
 | #   | 任务             | 状态 | 命令                                                                  |
 | --- | ---------------- | ---- | --------------------------------------------------------------------- |
 | 1   | 克隆代码库       |      | `git clone https://github.com/PATTANAKORN025/IMS.git`                 |
-| 2   | 创建密钥         |      | `mkdir -p secrets && echo "password" > secrets/postgres_password.txt` |
-| 3   | 复制环境变量     |      | `cp .env.example .env`                                                |
+| 2   | 复制环境变量     |      | `cp .env.example .env`                                                |
+| 3   | 替换所有密钥     |      | 编辑 `.env`：为每个密码、令牌与密钥设置新值（`.env.example` 中的值是公开的）——见管理员手册的安全检查清单 |
 | 4   | 启动服务         |      | `docker compose up -d`                                                |
 | 5   | 等待启动         |      | `sleep 40`                                                            |
 | 6   | 验证容器运行状态 |      | `docker compose ps`                                                   |
