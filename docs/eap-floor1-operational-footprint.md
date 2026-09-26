@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../README.md"><img src="assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="README.md"><img src="assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 <!--
   The canonical operational-footprint contract for Floor 1: which frames exist,
   which source wins, what a footprint means, and what the renderer is allowed to

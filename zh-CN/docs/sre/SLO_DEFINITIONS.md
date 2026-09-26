@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+</div>
+<br/>
+
 # 服务级别目标 (SLO) 与指标 (SLI)
 
 本文档定义了 IMS (工业监控系统) 平台的可靠性目标。

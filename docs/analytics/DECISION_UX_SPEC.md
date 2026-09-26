@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # FT-23 — Decision UX / Executive Intelligence (Factory Twin)
 
 Presentation layer over FT-21's SPC engine and FT-22's predictive

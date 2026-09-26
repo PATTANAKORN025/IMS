@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # FT-17.5 — Findings
 
 Every finding below is grounded in a command or test actually run this

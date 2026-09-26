@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # FT-24.6 Phase 7 — EAP Data Lineage
 
 Every visible object on the EAP Operational Map, traced SOURCE → TRANSFORM

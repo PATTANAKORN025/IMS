@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Dashboard Correctness and Gap Analysis — 2026-08-24
 
 **Scope:** Draft PR #14, isolated Grafana preview on port 3300, and the mentor-provided read-only PostgreSQL database

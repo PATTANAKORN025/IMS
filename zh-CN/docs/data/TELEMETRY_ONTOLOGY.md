@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+</div>
+<br/>
+
 # 遥测数据本体与数据字典 (Ontology)
 
 本体定义了集成到 IMS 的所有设备的标准命名约定、单位和 JSON 有效载荷结构。

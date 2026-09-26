@@ -6,7 +6,7 @@ function findMarkdownFiles(dir, fileList = []) {
   for (const file of files) {
     const filePath = path.join(dir, file);
     if (fs.statSync(filePath).isDirectory()) {
-      if (!filePath.includes('node_modules') && !filePath.includes('.git') && !filePath.includes('grafana')) {
+      if (!filePath.includes('node_modules') && !filePath.includes('.git') && !filePath.includes('private') && !filePath.includes('grafana')) {
         findMarkdownFiles(filePath, fileList);
       }
     } else if (filePath.endsWith('.md')) {
@@ -16,15 +16,16 @@ function findMarkdownFiles(dir, fileList = []) {
   return fileList;
 }
 
-const mdFiles = findMarkdownFiles('C:\\Projects\\IMS');
+const mdFiles = findMarkdownFiles(process.cwd());
 let brokenLinks = 0;
 
 mdFiles.forEach(file => {
-  const content = fs.readFileSync(file, 'utf-8');
+  const rawContent = fs.readFileSync(file, 'utf-8');
+  const content = rawContent.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]+`/g, '');
   const dir = path.dirname(file);
   
   // Find standard markdown links: [text](link)
-  const linkRegex = /\[[^\]]+\]\((?!http|mailto|#)([^\)]+)\)/g;
+  const linkRegex = /\[[^\]]+\]\((?!https?:\/\/|mailto:|#)([^\)]+)\)/g;
   let match;
   
   while ((match = linkRegex.exec(content)) !== null) {

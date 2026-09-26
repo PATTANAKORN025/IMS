@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+</div>
+<br/>
+
 # นโยบายการกำกับดูแลข้อมูล (Data Governance & Compliance)
 
 ## 1. การจัดระดับชั้นข้อมูล (Data Classification)

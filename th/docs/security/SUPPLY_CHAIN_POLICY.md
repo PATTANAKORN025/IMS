@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+</div>
+<br/>
+
 # นโยบายความปลอดภัย Supply Chain และ Dependency
 
 เอกสารนี้กำหนดมาตรฐานความปลอดภัยสำหรับไลบรารี, Base Images, และปลั๊กอินของบุคคลที่สามทั้งหมดที่ใช้ใน IMS

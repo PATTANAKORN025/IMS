@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+</div>
+<br/>
+
 # คู่มือการพัฒนาและตั้งค่าระบบในเครื่อง (Local Development)
 
 ยินดีต้อนรับสู่ IMS Core Team คู่มือนี้จะช่วยให้คุณสามารถรันระบบ Telemetry Stack แบบเต็มรูปแบบในเครื่องของคุณได้ภายในไม่กี่นาที

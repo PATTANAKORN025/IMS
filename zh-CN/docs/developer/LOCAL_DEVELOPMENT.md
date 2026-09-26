@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+</div>
+<br/>
+
 # 本地开发与贡献指南
 
 欢迎来到 IMS 核心团队。本指南将帮助您在几分钟内在本地运行完整的遥测技术栈。

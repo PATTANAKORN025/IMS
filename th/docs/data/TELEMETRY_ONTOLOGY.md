@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+</div>
+<br/>
+
 # พจนานุกรมและโครงสร้างข้อมูล Telemetry (Ontology)
 
 Ontology นี้กำหนดมาตรฐานชื่อ หน่วย และโครงสร้าง JSON Payload สำหรับอุปกรณ์ทั้งหมดที่เชื่อมต่อกับ IMS

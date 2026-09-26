@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../README.md"><img src="assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="README.md"><img src="assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 <!--
   The Floor 1 EAP node model: three entity types and the two relations between them.
   Data-model work only. No renderer, 2D UI, 3D UI, Grafana, telemetry, Node-RED,

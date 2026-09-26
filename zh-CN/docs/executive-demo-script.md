@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+</div>
+<br/>
+
 > [!NOTE]
 > **自动翻译 / 深度技术数据**
 > 本文档为深度技术审计/证据报告。为了保持专业术语的准确性，目前主要以英文原文为准。

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # รายงานสถานะงาน Dashboard / Grafana / UX / Traceability
 
 **ผู้รับผิดชอบ:** Person 1 — Dashboard / Grafana / UX / Traceability  

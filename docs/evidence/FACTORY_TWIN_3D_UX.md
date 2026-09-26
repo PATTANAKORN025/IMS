@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Factory Twin 3D — UX / Accessibility / Responsive Status
 
 **Date:** 2026-09-11. Companion to `FACTORY_TWIN_3D_DEEP_AUDIT.md` and `_PERFORMANCE.md`.

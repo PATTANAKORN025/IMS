@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../../README.md"><img src="../../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="../../README.md"><img src="../../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+</div>
+<br/>
+
 # 无指责事故回顾模板 (Blameless Post-Mortem)
 
 > **核心理念**: 我们假设每个人都利用当时拥有的信息做出了最好的决定。回顾的目的是调查*系统*，而不是*个人*。
