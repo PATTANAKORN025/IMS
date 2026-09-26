@@ -270,7 +270,8 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ### ตำแหน่งของกฎการแจ้งเตือน
 
-ไฟล์: `monitoring/prometheus/rules/ims-alerts.yml`
+- Prometheus (แพลตฟอร์มและไปป์ไลน์): `monitoring/prometheus/rules/ims-alerts.yml`
+- กฎที่ Grafana จัดการ (เงื่อนไขของเครื่องและ LDI): `monitoring/grafana/provisioning/alerting/rules.yml` และ `ldi-rules.yml` ส่วน contact point และการ route อยู่ใน `contactpoints.yml` / `policies.yml` กฎที่ provision ไว้แก้ใน UI ของ Grafana ไม่ได้ ให้แก้ที่ไฟล์แล้วรีสตาร์ต Grafana
 
 ### การแก้ไขกฎการแจ้งเตือน
 

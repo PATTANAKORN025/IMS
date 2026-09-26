@@ -270,7 +270,8 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ### 告警规则位置
 
-文件：`monitoring/prometheus/rules/ims-alerts.yml`
+- Prometheus（平台与流水线）：`monitoring/prometheus/rules/ims-alerts.yml`
+- Grafana 管理（设备与 LDI 条件）：`monitoring/grafana/provisioning/alerting/rules.yml` 与 `ldi-rules.yml`，联络点与路由位于 `contactpoints.yml` / `policies.yml`。预置规则在 Grafana 界面中为只读；请修改文件后重启 Grafana。
 
 ### 编辑告警规则
 

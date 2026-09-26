@@ -270,7 +270,8 @@ If a dedicated dashboard is required for the new machine:
 
 ### Alert Rules Location
 
-File: `monitoring/prometheus/rules/ims-alerts.yml`
+- Prometheus (platform and pipeline): `monitoring/prometheus/rules/ims-alerts.yml`
+- Grafana-managed (machine and LDI conditions): `monitoring/grafana/provisioning/alerting/rules.yml` and `ldi-rules.yml`, with contact points and routing in `contactpoints.yml` / `policies.yml`. Provisioned rules are read-only in the Grafana UI; edit the files and restart Grafana.
 
 ### Editing Alert Rules
 

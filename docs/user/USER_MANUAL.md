@@ -15,7 +15,7 @@
 <div align="center">
 
 <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Manual:** User Guide
-<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.1
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.2
 <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Audience:** IT Support
 
 </div>
@@ -38,34 +38,42 @@
 
 ### Accessing the System
 
-| Service               | URL                     | Credentials              |
-| --------------------- | ----------------------- | ------------------------ |
-| **Grafana Dashboard** | `http://localhost:3000` | admin / admin            |
-| **Node-RED Editor**   | `http://localhost:1880` | (configured in settings) |
-| **Prometheus**        | `http://localhost:9090` | —                        |
-| **Alertmanager**      | `http://localhost:9093` | —                        |
+Users reach everything through the nginx front door on port 3000 of the IMS host. The other ports below are bound to `127.0.0.1` and are for administrators working on the host itself.
+
+| Service | URL | Sign-in |
+| --- | --- | --- |
+| **Grafana dashboards** | `http://<ims-host>:3000/` | Your Grafana account (ask the administrator). Sign-up and anonymous access are disabled. |
+| **Factory Twin 3D** | `http://<ims-host>:3000/factory-twin-3d/` | Same Grafana session |
+| **Node-RED editor** | `http://127.0.0.1:1880` (on the host only) | Node-RED admin account |
+| **Prometheus** | `http://127.0.0.1:9090` (on the host only) | — |
+| **Alertmanager** | `http://127.0.0.1:9093` (on the host only) | — |
 
 ### Dashboard Overview
 
-Upon accessing Grafana, 15 distinct dashboards are available:
+Grafana provisions 15 dashboards in two folders:
 
 ```text
  IMS Dashboards
 ├── Infrastructure (servers/network)
-│ ├── NOC Overview   — Executive fleet envelope (infra only -- LDI lives below)
-│ ├── Engineering Drill-Down — Per-server deep dive: CPU/RAM/disk/temp/network
-│ ├── Capacity Planning  — Linear-regression forecasting (days until disk/RAM full)
-│ └── Meta-Monitoring   — The pipeline's own health (rows/sec, batch success, retry queue)
+│ ├── NOC Overview        — Fleet envelope for servers (infrastructure only; LDI lives below)
+│ ├── Engineering Drill-Down — Per-server deep dive: CPU/RAM/disk/temperature/network, plus LDI quality scatter
+│ ├── AIOps & Capacity    — Days-until-full forecasts and Z-Score anomaly detection
+│ ├── Meta-Monitoring     — The pipeline's own health (rows/sec, batch success, retry queue, circuit breakers)
+│ └── Ingestion Latency   — Real source-to-database latency, read-only
 └── LDI Manufacturing (PCB laser direct imaging fleet)
- ├── Easy Overview   — Zero-config whole-fleet glance, no filters to set
- ├── LDI Manufacturing  — Executive KPIs + machine telemetry + alarm stream (main command center)
- ├── LDI Operator Andon  — Factory-floor kiosk, 1280x720, zero-scroll, read-only (no interactive elements)
- ├── LDI Alarm Console  — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
- ├── LDI Alarm Dictionary — Reference lookup: full vendor alarm definitions + recent occurrences
+ ├── Easy Overview        — Zero-config whole-fleet glance, no filters to set
+ ├── LDI Manufacturing    — Command Center: executive KPIs + machine telemetry + alarm stream
+ ├── LDI Operator Andon   — Factory-floor kiosk, read-only, zero-scroll at 1920×1080 and above
+ ├── LDI Alarm Console    — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
+ ├── LDI Alarm Response   — MTTA/MTTR from the real alarm lifecycle
+ ├── LDI Alarm Dictionary — Reference lookup: vendor alarm definitions + recent occurrences
  ├── LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
  ├── LDI Machine Snapshot — Click any alarm/log to inspect the exact millisecond
- └── LDI Data Readiness  — Self-auditing data-quality dashboard (coverage %, gaps)
+ ├── LDI Factory Digital Twin — Canvas floor view of the reporting LDI machines by zone
+ └── LDI Data Readiness   — Self-auditing data-quality dashboard (coverage %, gaps)
 ```
+
+The complete, generated list with panel counts is the [Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md).
 
 ---
 
@@ -79,95 +87,101 @@ Upon accessing Grafana, 15 distinct dashboards are available:
 
 ### 2. Server Health Metrics (NOC Overview / Engineering Drill-Down)
 
-**Purpose**: Comprehensive health overview of all servers — these panel types are distributed across the **NOC Overview** (fleet envelope) and **Engineering Drill-Down** (per-server deep dive) dashboards; they do not constitute a standalone dashboard.
+**Purpose**: Health overview of all servers. These panels are spread across the **NOC Overview** (fleet envelope) and **Engineering Drill-Down** (per-server) dashboards; they are not a standalone dashboard.
 
-| Panel               | Metrics                            | Color Coding                                                                                                                                                                                                    |
-| ------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CPU Usage**       | `cpu_load_percent` per core        | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 60%, <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 60-80%, > 80%    |
-| **Memory Usage**    | `ram_used_mb / ram_total_mb`       | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 70-85%, > 85%    |
-| **Disk Usage**      | `disk_used_gb / disk_total_gb`     | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 70-80%, > 80%    |
-| **Network Traffic** | `rx_mbps`, `tx_mbps` per interface | Blue = RX, Light Blue = TX                                                                                                                                                                                      |
-| **Temperature**     | `temp_c`                           | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 65°C, <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 65-80°C, > 80°C |
+| Panel | Metric | Colour bands on the panel |
+| --- | --- | --- |
+| **CPU Load** | `cpu_load_percent` | green < 80 %, amber 80–90 %, red ≥ 90 % |
+| **RAM Usage / Saturation** | `ram_used_mb / ram_total_mb` | green < 85 %, amber 85–95 %, red ≥ 95 % |
+| **Storage Saturation** | `disk_used_gb / disk_total_gb` | green < 80 %, amber 80–90 %, red ≥ 90 % |
+| **Network Bandwidth** | `rx_mbps`, `tx_mbps` per interface | trend lines, no bands |
+| **Temperature** | `temp_c` | green 20–24 °C, amber within 1 °C outside that range, red below 19 °C or from 25 °C |
 
-### 3. Engineering Drilldown Dashboard
+### 3. Engineering Drill-Down Dashboard
 
 **Purpose**: Detailed analytical deep dive per individual server for engineers.
 
 ![Engineering Drilldown Dashboard](../../assets/engineering-drilldown.png)
 
-**LDI Scatter Plot Tolerance Box:**
+**LDI Quality Scatter — tolerance zone:**
 
-The Scatter Plot illustrates PE (Position Error) vs JE (Judgment Error) measured in µm:
+The scatter plots PE against JE per minute (µm), with a ±10 µm tolerance band:
 
-| Zone          | Color                                                                                             | Meaning                                         |
-| ------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Inside ±10µm  | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy Green | Normal — The laser head is functioning properly |
-| Outside ±10µm | Red                                                                                               | Abnormal — The laser head requires inspection   |
+| Zone | Colour | Meaning |
+| --- | --- | --- |
+| Inside ±10 µm | green band | Normal — the laser head is within tolerance |
+| Outside ±10 µm | outside the band | Quality risk — inspect the laser head |
 
 **Instructions:**
 
-- Data points within the green bounding box indicate that PCB quality is within acceptable thresholds.
-- Data points deviating into the red zone require immediate inspection of the laser head.
-- Correlate this data with the **LDI Throughput** panel to verify if production rates remain nominal.
+- Points inside the green band mean PCB quality is within the accepted tolerance.
+- Points outside the band call for an inspection of the laser head.
+- Cross-check with the **LDI Throughput & Process Efficiency** panel to see whether production rate is also affected.
 
-### 4. Capacity Planning Dashboard
+### 4. AIOps & Capacity Dashboard
 
-**Purpose**: Resource capacity forecasting to aid in infrastructure planning.
+**Purpose**: Resource capacity forecasting to support infrastructure planning.
 
-| Panel                | What It Shows                                | Use Case               |
-| -------------------- | -------------------------------------------- | ---------------------- |
-| **CPU Forecast**     | Linear regression slope → when CPU hits 100% | Plan server upgrades   |
-| **Disk Forecast**    | Predicted disk full date                     | Plan storage expansion |
-| **Memory Trend**     | Memory usage growth rate                     | Plan RAM upgrades      |
-| **Network Capacity** | Bandwidth utilization trend                  | Plan network upgrades  |
+| Panel | What it shows | Use case |
+| --- | --- | --- |
+| **Days Until Full (Resource Battery)** | Remaining days for disk, RAM and CPU at the current trend | Prioritise upgrades |
+| **Disk Usage Trend + Linear Regression Forecast** | Predicted disk-full date | Plan storage expansion |
+| **CPU / RAM Load Trend (30-day average)** | Long-term consumption trend | Plan server and RAM upgrades |
+| **CPU / Temperature Z-Score Anomaly (3σ)** | Deviations beyond three standard deviations | Spot unusual behaviour early |
 
 ### 5. Easy Overview Dashboard
 
-**Purpose**: Rapid overview of the entire LDI fleet requiring zero configuration — no template variables, no filters; immediately visible upon loading.
+**Purpose**: Rapid overview of the entire LDI fleet requiring zero configuration — no template variables, no filters; everything is visible on load.
 
-Every metric on this dashboard is sourced from the exact same shared views/functions utilized by other dashboards (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) — thereby ensuring strong data consistency across dashboards, as no redundant isolated queries are executed.
+Every metric on this dashboard comes from the same shared views and functions the other dashboards use (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`), so its numbers match the rest of the system — there are no isolated one-off queries.
 
 ### 6. LDI Manufacturing Command Center
 
-**Purpose**: Primary operational dashboard for the LDI manufacturing line — featuring a 4-layer RCA architecture.
+**Purpose**: Primary operational dashboard for the LDI line, organised as a 4-layer RCA view.
 
-| Layer                  | Content                                                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Executive HUD**      | Yield %, Running machines, Fleet Status, Avg Cpk, Fleet Availability, Critical Alarms                  |
-| **Machine Telemetry**  | Temperature/Humidity compliance, Scan Speed/Air Vacuum, Thickness/Resist Dosage, Scale X/Y             |
+| Layer | Content |
+| --- | --- |
+| **Executive HUD** | Yield %, Running machines, Fleet Status, Avg Cpk, Fleet Availability, Critical Alarms |
+| **Machine Telemetry** | Temperature/Humidity compliance, Scan Speed/Air Vacuum, Thickness/Resist Dosage, Scale X/Y |
 | **Production Context** | Live production table (Machine/Job/Part/Layer/Progress), Board Traceability, Calculated Time per Board |
-| **Alarm Stream**       | Recent Alarm Events (last 50), Top Correlated Alarms (24h, RCA)                                        |
+| **Alarm Stream** | Recent Alarm Events (last 50), Top Correlated Alarms (24h, RCA) |
 
-Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, System Alarms, RCA Fleet Summary, Cycle Time & Traceability) are collapsed by default — click a row header to expand. This keeps the initial glance to the executive KPI strip only.
+Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, System Alarms, RCA Fleet Summary, Cycle Time & Traceability) are collapsed by default — click a row header to expand. The first glance is the executive KPI strip only.
 
 ### 7. LDI Operator Andon Board
 
-**Purpose**: Factory floor kiosk display — strictly ISA-101 compliant, completely touchless with zero scrolling requirements optimized for a 1280x720 resolution.
+**Purpose**: Factory-floor kiosk display — ISA-101 style, touch-free and read-only. Supported display resolutions are **1920×1080 and above**, where the board fits without scrolling; 1280×720 is not supported (the layout overflows).
 
-Displays Fleet Availability, Critical Alarm count, Environmental Compliance %, Machines Running, individual machine statuses (OK/IDLE/NO_DATA indicated via background color coding), alongside the Live Production tracking table.
+Shows Fleet Availability, Active Critical/Major Alarms, Environmental Compliance, Machines Running, per-machine status tiles, a pipeline heartbeat, Temperature (22 ± 2 °C) and Humidity (55 ± 5 %) compliance timelines, and the **Action Queue** of Critical/Major alarms from the last 5 minutes. Acknowledge and Resolve happen on the **LDI Alarm Console**, not on the Andon board.
 
 ### 8. LDI Engineering Analytics & SPC
 
-**Purpose**: Comprehensive in-depth analysis for engineering personnel — Cpk/SPC ranking, RCA Truth Test, and PE/JE spatial distributions.
+**Purpose**: In-depth analysis for engineers — Cpk/SPC ranking, RCA Truth Test, and PE/JE distributions.
 
-| Section                     | Content                                                                                           |
-| --------------------------- | ------------------------------------------------------------------------------------------------- |
-| **Environmental**           | Temperature vs Humidity, synchronized across all machines simultaneously                          |
-| **SPC Control Charts**      | Thickness Control Chart (mean ± 3σ), Scale X/Y Control Chart                                      |
-| **Variation Analysis**      | PE/JE Standard Deviation by Machine, PE/JE Error Distribution (Box Plot)                          |
-| **RCA / Alarm Correlation** | RCA Truth Test — Lift/Confidence metrics categorized by alarm type (Thermal/Humidity/Vacuum/etc.) |
+| Section | Content |
+| --- | --- |
+| **Environmental** | Temperature vs Humidity, synchronised across all machines |
+| **SPC Control Charts** | Thickness control chart (mean ± 3σ), Scale X/Y control chart |
+| **Variation Analysis** | PE/JE standard deviation by machine, PE/JE error distribution (box plot) |
+| **RCA / Alarm Correlation** | RCA Truth Test — Lift/Confidence by alarm category (Thermal/Humidity/Vacuum/etc.) |
 
 ### 9. LDI Machine Snapshot
 
-**Purpose**: Exact millisecond-level machine state inspection triggered via click-through from the Process Timeline (a drill-down capability integrated across other dashboards).
+**Purpose**: Millisecond-level machine state, opened by clicking through from the Process Timeline or from alarm and log tables on other dashboards.
 
-Provides detailed job context, physical variables, PE alignment, Cpk, and correlated alarms within close temporal proximity to the selected event — intended specifically for pinpoint incident investigation rather than high-level overviews.
+Shows job context, physical variables, PE alignment, Cpk, and alarms close in time to the selected event — built for pinpoint incident investigation rather than overviews.
 
 ### 10. LDI Data Readiness
 
-**Purpose**: Self-auditing data quality verification dashboard — relies exclusively on actual PostgreSQL production data with zero simulated inputs.
+**Purpose**: Self-auditing data-quality dashboard that reads only real PostgreSQL rows, with no simulated input.
 
-Utilized to detect board-key duplication, verify overall coverage %, and validate the matching rate against the alarm master database prior to trusting metrics presented on primary dashboards.
+Use it to detect board-key duplication, check coverage %, and confirm the match rate against the alarm master before trusting the numbers on the primary dashboards.
+
+### 11. Alarm Console, Alarm Response and Alarm Dictionary
+
+- **Alarm Console** — the only interactive dashboard: Acknowledge and Resolve write real state to `public.ldi_alarm_lifecycle` through `alarm-api`.
+- **Alarm Response (MTTA/MTTR)** — how quickly alarms are acknowledged and resolved, computed from that lifecycle table.
+- **Alarm Dictionary** — the vendor definition of any alarm code plus its recent occurrences; opened from the Alarm Code links on other dashboards.
 
 ---
 
@@ -175,58 +189,58 @@ Utilized to detect board-key duplication, verify overall coverage %, and validat
 
 ### CPU Metrics
 
-| Metric             | Unit  | Healthy | Warning | Critical |
-| ------------------ | ----- | ------- | ------- | -------- |
-| `cpu_load_percent` | %     | < 60%   | 60-80%  | > 80%    |
-| `cpu_cores`        | count | —       | —       | —        |
+| Metric | Unit | Panel colour | Alert rule |
+| --- | --- | --- | --- |
+| `cpu_load_percent` | % | green < 80, amber 80–90, red ≥ 90 | **High CPU Usage** — 5-minute average > 85 % for 5 min (warning) |
+| `cpu_cores` | count | — | — |
 
 **Instructions:**
 
-- **Average CPU** — The mean value across all cores during the selected time frame.
-- **Peak CPU** — The maximum recorded value (which may indicate a transient spike).
-- **CPU per Core** — Identifies which specific core is experiencing heavy utilization.
+- **Average CPU** — mean across all cores for the selected time range.
+- **Peak CPU** — the maximum recorded value (may be a transient spike).
+- **CPU per core** — shows which core carries the load.
 
 **Example:**
 
 ```text
 Machine: server-01
-CPU Load: 72% (Warning)
-├── Core 1: 85%
-├── Core 2: 45%
-├── Core 3: 78%
-└── Core 4: 80%
-→ Cores 1, 3, and 4 are under heavy load; investigate running processes.
+CPU Load: 86% (amber band, High CPU Usage alert pending)
+├── Core 1: 95%
+├── Core 2: 70%
+├── Core 3: 88%
+└── Core 4: 91%
+→ Cores 1, 3 and 4 are under heavy load; investigate running processes.
 ```
 
 ### Memory Metrics
 
-| Metric         | Unit | Healthy | Warning | Critical |
-| -------------- | ---- | ------- | ------- | -------- |
-| `ram_used_mb`  | MB   | —       | —       | —        |
-| `ram_total_mb` | MB   | —       | —       | —        |
-| **Usage %**    | %    | < 70%   | 70-85%  | > 85%    |
+| Metric | Unit | Panel colour | Alert rule |
+| --- | --- | --- | --- |
+| `ram_used_mb` | MB | — | — |
+| `ram_total_mb` | MB | — | — |
+| **Usage %** | % | green < 85, amber 85–95, red ≥ 95 | **High RAM Usage** — > 90 % for 5 min (warning) |
 
 **Instructions:**
 
 - **Usage %** = `(ram_used_mb / ram_total_mb) × 100`
 - **Available** = `ram_total_mb - ram_used_mb`
-- Elevated memory usage is not inherently indicative of a problem — Linux architectures proactively utilize memory for caching purposes.
+- High memory usage is not a problem in itself — Linux uses free memory for caching.
 
 ### Network Metrics
 
-| Metric          | Unit  | Description                            |
-| --------------- | ----- | -------------------------------------- |
-| `rx_mbps`       | Mbps  | Download speed (incoming traffic)      |
-| `tx_mbps`       | Mbps  | Upload speed (outgoing traffic)        |
+| Metric | Unit | Description |
+| --- | --- | --- |
+| `rx_mbps` | Mbps | Incoming traffic |
+| `tx_mbps` | Mbps | Outgoing traffic |
 | `net_rx_errors` | count | Receive errors (hardware/driver issue) |
-| `net_rx_drops`  | count | Dropped packets (buffer overflow)      |
-| `net_if_status` | 1/2   | 1 = UP, 2 = DOWN                       |
+| `net_rx_drops` | count | Dropped packets (buffer overflow) |
+| `net_if_status` | 1/2 | 1 = UP, 2 = DOWN |
 
 **Instructions:**
 
-- **Bandwidth Utilization** = `(rx_mbps / link_speed) × 100`
-- **Error Rate** = `net_rx_errors / total_packets × 100`
-- **Interface DOWN** = Indicates a severed network cable or a disabled switch port.
+- **Bandwidth utilisation** = `(rx_mbps / link_speed) × 100`
+- **Error rate** = `net_rx_errors / total_packets × 100`
+- **Interface DOWN** = a disconnected cable or a disabled switch port. Related alert rules: **Interface Down** (critical), **High Network Error Rate** (warning), **Network Packet Drops** (critical), **Bandwidth Saturation Forecast** (warning).
 
 **Example:**
 
@@ -237,34 +251,32 @@ CPU Load: 72% (Warning)
 | eth0 | 1200 | 850 | 0 | 0 | UP |
 | wlan0 | 320 | 180 | 0 | 12 | UP |
 
-→ *wlan0 registers 12 dropped packets — investigate wireless signal integrity.*
-
+→ *wlan0 shows 12 dropped packets — check the wireless signal.*
 
 ### Disk Metrics
 
-| Metric          | Unit | Healthy | Warning | Critical |
-| --------------- | ---- | ------- | ------- | -------- |
-| `disk_used_gb`  | GB   | —       | —       | —        |
-| `disk_total_gb` | GB   | —       | —       | —        |
-| **Usage %**     | %    | < 70%   | 70-80%  | > 80%    |
+| Metric | Unit | Panel colour | Alert rule |
+| --- | --- | --- | --- |
+| `disk_used_gb` | GB | — | — |
+| `disk_total_gb` | GB | — | — |
+| **Usage %** | % | green < 80, amber 80–90, red ≥ 90 | **High Disk Usage** — > 90 % for 10 min (critical) |
 
 **Instructions:**
 
 - **Usage %** = `(disk_used_gb / disk_total_gb) × 100`
-- **Free Space** = `disk_total_gb - disk_used_gb`
-- **IOPS** = Input/Output Operations Per Second (if supplementary metrics are configured).
+- **Free space** = `disk_total_gb - disk_used_gb`
 
 ### Temperature Metrics
 
-| Metric   | Unit | Healthy | Warning | Critical |
-| -------- | ---- | ------- | ------- | -------- |
-| `temp_c` | °C   | < 65°C  | 65-80°C | > 80°C   |
+| Metric | Unit | Panel colour | Alert rule |
+| --- | --- | --- | --- |
+| `temp_c` | °C | green 20–24, amber within 1 °C outside, red < 19 or ≥ 25 | **High Temperature** — maximum > 80 °C for 5 min (critical) |
 
 **Instructions:**
 
-- **Average Temp** — Mean temperature reading.
-- **Max Temp** — Peak temperature recorded.
-- **Temperature Trend** — Indicates whether the temperature is ascending or descending.
+- **Average temperature** — mean reading.
+- **Maximum temperature** — the peak recorded.
+- **Z-Score anomaly** — the AIOps rows flag readings more than 3σ from the recent baseline (**Temperature Z-Score Anomaly**, warning).
 
 ---
 
@@ -272,19 +284,20 @@ CPU Load: 72% (Warning)
 
 ### Alert Severity Levels
 
-| Level        | Color                                                                                              | Response Time                 | Example                                 |
-| ------------ | -------------------------------------------------------------------------------------------------- | ----------------------------- | --------------------------------------- |
-| **Critical** | Red                                                                                                | Immediate (< 15 minutes)      | InterfaceDown, ServiceDown, CriticalCPU |
-| **Warning**  | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning Yellow | Prompt (< 1 hour)             | HighCPU, HighMemory, DiskSpaceLow       |
-| **Info**     | Blue                                                                                               | Standard priority (< 4 hours) | TelemetryGap, PredictiveDiskFull        |
+Alert rules live in two places: Grafana-managed rules for machine and LDI conditions (`monitoring/grafana/provisioning/alerting/`) and Prometheus rules for the platform itself (`monitoring/prometheus/rules/ims-alerts.yml`).
+
+| Level | Colour | Target response time | Examples |
+| --- | --- | --- | --- |
+| **Critical** | Red | Immediate (< 15 minutes) | Interface Down, High Disk Usage, High Temperature, LDI Machine Offline (Stale), `ServiceDown`, `PipelineDataStalled` |
+| **Warning** | Amber | Prompt (< 1 hour) | High CPU Usage, High RAM Usage, Z-Score anomalies, `PipelineHighErrorRate`, `CircuitBreakerOpen` |
 
 ### Incident Response Playbook
 
-#### Scenario 1: InterfaceDown (Critical)
+#### Scenario 1: Interface Down (Critical)
 
 ```text
 Symptoms:
-- Alert: InterfaceDown on server-01
+- Alert: Interface Down on server-01
 - Network panels show "No Data"
 - Other machines still reporting
 
@@ -305,12 +318,12 @@ Escalation:
 - If switch port is down → contact data center team
 ```
 
-#### Scenario 2: HighCPUUsage (Warning)
+#### Scenario 2: High CPU Usage (Warning)
 
 ```text
 Symptoms:
-- Alert: HighCPUUsage on server-01
-- CPU panels showing > 80%
+- Alert: High CPU Usage on server-01
+- CPU panels showing > 85%
 - System may be slow
 
 Investigation Steps:
@@ -329,12 +342,12 @@ Escalation:
 - If affecting other services → consider scaling
 ```
 
-#### Scenario 3: DiskSpaceLow (Warning)
+#### Scenario 3: High Disk Usage (Critical)
 
 ```text
 Symptoms:
-- Alert: DiskSpaceLow on server-01
-- Disk panels showing > 80%
+- Alert: High Disk Usage on server-01
+- Disk panels showing > 90%
 
 Investigation Steps:
 1. SSH to server-01
@@ -364,7 +377,7 @@ Symptoms:
 Investigation Steps:
 1. Check service status: systemctl status <service>
 2. Check service logs: journalctl -u <service> -n 50
-3. Check port binding: netstat -tlnp | grep <port>
+3. Check port binding: ss -tlnp | grep <port>
 4. Check firewall: iptables -L -n
 
 Resolution:
@@ -379,24 +392,24 @@ Escalation:
 - If system-level issue → contact system admin
 ```
 
-#### <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning Scenario 5: PipelineDataStalled (Warning)
+#### Scenario 5: PipelineDataStalled (Critical)
 
 ```text
 Symptoms:
-- Alert: PipelineDataStalled (formerly named TelemetryGap in older docs) on server-01
-- No data for 3+ minutes
-- Other machines still reporting
+- Alert: PipelineDataStalled (named TelemetryGap in older documents)
+- No successful database inserts for 3+ minutes
+- Dashboards stop updating for every machine
 
 Investigation Steps:
 1. Check Node-RED logs: docker compose logs --tail=50 node-red
-2. Check SNMP simulator: docker compose ps snmpsim
-3. Check network connectivity
-4. Check if machine_id matches
+2. Check PgBouncer and TimescaleDB: docker compose ps pgbouncer timescaledb
+3. Check the SNMP simulator (demo stacks): docker compose ps snmpsim
+4. Check that the device is registered in public.devices
 
 Resolution:
 - If snmpsim down → docker compose restart snmpsim
 - If Node-RED error → check flow JSON syntax
-- If machine not in registry → add to database
+- If machine not in registry → add it to public.devices
 
 Escalation:
 - If persistent → check SNMP community string
@@ -446,11 +459,11 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 # Restart Node-RED (after flow changes)
 docker compose restart node-red
 
-# Restart Prometheus (after rule changes)
-docker compose restart prometheus
+# Reload Prometheus rules without a restart (see the Admin Manual first)
+curl -X POST http://localhost:9090/-/reload
 
-# Full restart (no data loss)
-docker compose restart node-red grafana alertmanager prometheus
+# Restart the core services (no data loss)
+make restart
 ```
 
 ---
@@ -459,25 +472,26 @@ docker compose restart node-red grafana alertmanager prometheus
 
 ### Common Issues
 
-| Symptom                           | Possible Cause               | Solution                                 |
-| --------------------------------- | ---------------------------- | ---------------------------------------- |
-| **"No Data" on all panels**       | Node-RED not running         | `docker compose restart node-red`        |
-| **"No Data" on specific machine** | Machine not in registry      | Add to `machines` table                  |
-| **Alertmanager restarting**       | Config YAML syntax error     | Check `docker compose logs alertmanager` |
-| **All blackbox targets DOWN**     | Wrong service name in config | Use `blackbox-exporter:9115`             |
-| **Grafana shows stale data**      | Dashboard not refreshed      | Hard refresh: Ctrl+Shift+R               |
-| **High memory usage**             | Memory leak in Node-RED      | Check `docker stats ims-node-red`        |
-| **Database connection refused**   | PgBouncer down               | `docker compose restart pgbouncer`       |
+| Symptom | Possible cause | Solution |
+| --- | --- | --- |
+| **"No Data" on all panels** | Node-RED or PgBouncer not running | `docker compose restart node-red pgbouncer` |
+| **"No Data" on one machine** | Machine not in the registry | Add it to `public.devices` (see the Admin Manual) |
+| **Alertmanager restarting** | Config YAML syntax error | Check `docker compose logs alertmanager` |
+| **All blackbox targets DOWN** | Wrong service name in config | Use `blackbox-exporter:9115` |
+| **Grafana shows stale data** | Dashboard not refreshed | Hard refresh: Ctrl+Shift+R |
+| **High memory usage** | Memory growth in Node-RED | Check `docker stats ims-node-red` |
+| **Database connection refused** | PgBouncer down | `docker compose restart pgbouncer` |
 
 ### Log Locations
 
-| Service          | Command                            | What to Look For                                |
-| ---------------- | ---------------------------------- | ----------------------------------------------- |
-| **Node-RED**     | `docker compose logs node-red`     | `Started flows`, `TypeError`, `ETIMEOUT`        |
-| **TimescaleDB**  | `docker compose logs timescaledb`  | `connection refused`, `authentication failed`   |
-| **Prometheus**   | `docker compose logs prometheus`   | `failed to check config`, `target down`         |
-| **Alertmanager** | `docker compose logs alertmanager` | `Loading configuration file failed`             |
-| **Grafana**      | `docker compose logs grafana`      | `Failed to look up user`, `dashboard not found` |
+| Service | Command | What to look for |
+| --- | --- | --- |
+| **Node-RED** | `docker compose logs node-red` | `Started flows`, `TypeError`, `ETIMEOUT` |
+| **TimescaleDB** | `docker compose logs timescaledb` | `connection refused`, `authentication failed` |
+| **Prometheus** | `docker compose logs prometheus` | `failed to check config`, `target down` |
+| **Alertmanager** | `docker compose logs alertmanager` | `Loading configuration file failed` |
+| **Grafana** | `docker compose logs grafana` | `Failed to look up user`, `dashboard not found` |
+| **nginx front door** | `docker compose logs proxy` | `502`, `upstream`, `auth_request` |
 
 ### Quick Diagnostics Script
 
@@ -504,43 +518,41 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 ### Keyboard Shortcuts (Grafana)
 
-| Shortcut       | Action                |
-| -------------- | --------------------- |
-| `Ctrl+S`       | Save dashboard        |
-| `Ctrl+Z`       | Undo                  |
-| `Ctrl+Shift+Z` | Redo                  |
-| `F`            | Toggle fullscreen     |
-| `R`            | Refresh dashboard     |
-| `T`            | Open time picker      |
-| `D`            | Open dashboard search |
-| `Ctrl+Shift+P` | Open command palette  |
+Press `?` in Grafana to see the full list for your version.
 
-### Color Coding Reference
+| Shortcut | Action |
+| --- | --- |
+| `?` | Show all keyboard shortcuts |
+| `Ctrl+K` / `Cmd+K` | Search and command palette |
+| `Ctrl+S` | Save dashboard (editors only) |
+| `d r` | Refresh all panels |
+| `d k` | Toggle kiosk mode |
+| `t z` | Zoom out the time range |
+| `Esc` | Exit panel view or close a drawer |
 
-| Metric          | Healthy                                                                                           | Warning                                                                                                          | Critical      |
-| --------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- |
-| **CPU**         | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy Green | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning Yellow → Orange      | Red           |
-| **Memory**      | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy Green | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning Purple → Dark Orange | Red           |
-| **Disk**        | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy Green | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning Cyan → Blue          | Red           |
-| **Network RX**  | Dark Blue (#1F60C4)                                                                               | —                                                                                                                | Red           |
-| **Network TX**  | Light Blue (#5794F2)                                                                              | —                                                                                                                | Red           |
-| **Temperature** | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy Green | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning Yellow               | Red           |
-| **Errors**      | —                                                                                                 | —                                                                                                                | Red (#C4162A) |
-| **Drops**       | —                                                                                                 | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning Orange (#FF9830)     | Red           |
+### Colour Coding Reference
 
-### Alert Contacts
+| State | Colour | Token |
+| --- | --- | --- |
+| Healthy | Green | `#22C55E` |
+| Warning | Amber | `#F59E0B` |
+| Critical | Red | `#EF4444` |
 
-| Role             | Contact        | Channel            |
-| ---------------- | -------------- | ------------------ |
-| **NOC Team**     | LINE Group     | LINE Messaging API |
-| **System Admin** | MS Teams       | Webhook            |
-| **Management**   | Email (Future) | SMTP               |
+Panels show the numeric value alongside the colour, so a state can be read without relying on colour alone.
+
+### Alert Channels
+
+| Audience | Channel | Delivery |
+| --- | --- | --- |
+| **NOC team** | LINE group | LINE Messaging API (needs `LINE_CHANNEL_ACCESS_TOKEN` and `LINE_USER_ID`) |
+| **System administrators** | Microsoft Teams | Incoming webhook (needs `TEAMS_WEBHOOK_URL`) |
+| **Management** | E-mail | Not configured |
 
 ---
 
 <div align="center">
 
-**IMS User Manual — Version 1.1**
+**IMS User Manual — Version 1.2 (verified against `main`, 2026-09-26)**
 
 _For IT Support & NOC Team_
 

@@ -1,22 +1,22 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
 </div>
 <br/>
 
 # IMS — 用户手册
 
-> **IT 支持与 NOC 团队用户指南**
-> 解释如何阅读仪表盘、解读指标以及应对警报
+> **面向 IT 支持与 NOC 团队的用户指南**
+> 说明如何解读仪表板、分析指标以及执行告警响应。
 
 ---
 
 <div align="center">
 
-<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Manual:** User Guide
-<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.1
-<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Audience:** IT Support
+<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **手册：** 用户指南
+<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **版本：** 1.2
+<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **读者：** IT 支持
 
 </div>
 
@@ -24,388 +24,403 @@
 
 ## 目录
 
-1. [快速入门](#快速入门)
-2. [Grafana 仪表盘指南](#grafana-仪表盘指南)
-3. [指标解读](#指标解读)
-4. [警报响应程序](#警报响应程序)
-5. [常见操作](#常见操作)
+1. [快速上手](#快速上手)
+2. [Grafana 仪表板指南](#grafana-仪表板指南)
+3. [解读指标](#解读指标)
+4. [告警响应流程](#告警响应流程)
+5. [常用操作](#常用操作)
 6. [故障排除](#故障排除)
 7. [快速参考](#快速参考)
 
 ---
 
-## 快速入门
+## 快速上手
 
 ### 访问系统
 
-| 服务                | URL                     | 凭据           |
-| ------------------- | ----------------------- | -------------- |
-| **Grafana 仪表盘**  | `http://localhost:3000` | admin / admin  |
-| **Node-RED 编辑器** | `http://localhost:1880` | (在设置中配置) |
-| **Prometheus**      | `http://localhost:9090` | —              |
-| **Alertmanager**    | `http://localhost:9093` | —              |
+用户通过 IMS 主机 3000 端口上的 nginx 统一入口访问所有内容。下表中的其他端口均绑定在 `127.0.0.1`，仅供在主机上操作的管理员使用。
 
-### 仪表盘概览
+| 服务 | URL | 登录方式 |
+| --- | --- | --- |
+| **Grafana 仪表板** | `http://<ims-host>:3000/` | 您的 Grafana 账号（向管理员申请）。已禁用自助注册与匿名访问。 |
+| **Factory Twin 3D** | `http://<ims-host>:3000/factory-twin-3d/` | 与 Grafana 共用会话 |
+| **Node-RED 编辑器** | `http://127.0.0.1:1880`（仅限主机本地） | Node-RED 管理员账号 |
+| **Prometheus** | `http://127.0.0.1:9090`（仅限主机本地） | — |
+| **Alertmanager** | `http://127.0.0.1:9093`（仅限主机本地） | — |
 
-登录 Grafana 后，您将看到 15 个仪表盘：
+### 仪表板概览
+
+Grafana 在两个文件夹中预置了 15 个仪表板：
 
 ```text
  IMS Dashboards
-├── Infrastructure (服务器/网络)
-│ ├── NOC 概览   — 管理层设备包络 (仅限基础设施 -- LDI 在下面)
-│ ├── 工程深入分析 — 单个服务器深入分析: CPU/内存/磁盘/温度/网络
-│ ├── 容量规划  — 线性回归预测 (距离磁盘/内存占满的天数)
-│ └── 元监控   — 数据管道自身的健康状况 (行/秒, 批处理成功, 重试队列)
-└── LDI Manufacturing (PCB 激光直接成像设备)
- ├── 简易概览   — 零配置全设备一览，无需设置过滤器
- ├── LDI 制造  — 管理层 KPI + 机器遥测 + 警报流 (主指挥中心)
- ├── LDI 操作员安灯  — 工厂车间信息亭，1280x720，零滚动，只读 (无交互元素)
- ├── LDI 警报控制台  — 交互式确认/解决工作流，只读安灯板的配套组件
- ├── LDI 警报字典 — 参考查询：完整供应商警报定义 + 最近发生事件
- ├── LDI 工程分析 — Cpk/SPC 排名，RCA 真理测试，PE/JE 分布
- ├── LDI 机器快照 — 单击任何警报/日志以检查确切的毫秒
- └── LDI 数据就绪度  — 自我审计数据质量仪表盘 (覆盖率 %, 差距)
+├── Infrastructure（服务器/网络）
+│ ├── NOC Overview        — 服务器设备群总览（仅基础设施；LDI 见下方）
+│ ├── Engineering Drill-Down — 单台服务器深入分析：CPU/内存/磁盘/温度/网络，以及 LDI 质量散点图
+│ ├── AIOps & Capacity    — 距离耗尽天数预测与 Z-Score 异常检测
+│ ├── Meta-Monitoring     — 流水线自身健康（行/秒、批次成功率、重试队列、熔断器）
+│ └── Ingestion Latency   — 从源头到数据库的真实延迟，只读
+└── LDI Manufacturing（PCB 激光直接成像设备群）
+ ├── Easy Overview        — 零配置的全设备群一览，无需设置筛选
+ ├── LDI Manufacturing    — 指挥中心：管理层 KPI + 设备遥测 + 告警流
+ ├── LDI Operator Andon   — 产线 kiosk 看板，只读，1920×1080 及以上无需滚动
+ ├── LDI Alarm Console    — 交互式确认/解决流程，与只读的 Andon 看板配套
+ ├── LDI Alarm Response   — 基于真实告警生命周期的 MTTA/MTTR
+ ├── LDI Alarm Dictionary — 参考查询：设备厂商告警定义 + 最近发生记录
+ ├── LDI Engineering Analytics — Cpk/SPC 排名、RCA Truth Test、PE/JE 分布
+ ├── LDI Machine Snapshot — 点击任意告警/日志，查看该毫秒的设备状态
+ ├── LDI Factory Digital Twin — 按区域展示上报数据的 LDI 设备的 Canvas 平面图
+ └── LDI Data Readiness   — 自检式数据质量仪表板（覆盖率 %、缺口）
 ```
+
+含面板数量的完整自动生成列表见 [Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md)。
 
 ---
 
-## Grafana 仪表盘指南
+## Grafana 仪表板指南
 
-### 1. NOC 概览仪表盘
+### 1. NOC Overview 仪表板
 
-**目的**：为管理层和 NOC 团队提供概览
+**用途**：面向管理层与 NOC 团队的高层概览。
 
 ![IMS NOC Overview Dashboard](../../../assets/noc-overview.png)
 
-### 2. 服务器健康指标 (NOC 概览 / 工程深入分析)
+### 2. 服务器健康指标（NOC Overview / Engineering Drill-Down）
 
-**目的**：所有服务器的健康概览 — 此类面板分布在 **NOC 概览** (设备包络) 和 **工程深入分析** (单台服务器深入分析) 上，而不是单独的仪表盘
+**用途**：所有服务器的健康概览。这些面板分布在 **NOC Overview**（设备群总览）与 **Engineering Drill-Down**（单台服务器）两个仪表板中，并非独立仪表板。
 
-| 面板           | 指标                           | 颜色编码                                                                                                                                                                                                        |
-| -------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CPU 使用率** | 每核心 `cpu_load_percent`      | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 60%, <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 60-80%, > 80%    |
-| **内存使用率** | `ram_used_mb / ram_total_mb`   | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 70-85%, > 85%    |
-| **磁盘使用率** | `disk_used_gb / disk_total_gb` | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 70-80%, > 80%    |
-| **网络流量**   | 每接口 `rx_mbps`, `tx_mbps`    | 蓝色 = RX, 浅蓝色 = TX                                                                                                                                                                                          |
-| **温度**       | `temp_c`                       | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 65°C, <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 65-80°C, > 80°C |
+| 面板 | 指标 | 面板颜色区间 |
+| --- | --- | --- |
+| **CPU Load** | `cpu_load_percent` | 绿 < 80 %，琥珀 80–90 %，红 ≥ 90 % |
+| **RAM Usage / Saturation** | `ram_used_mb / ram_total_mb` | 绿 < 85 %，琥珀 85–95 %，红 ≥ 95 % |
+| **Storage Saturation** | `disk_used_gb / disk_total_gb` | 绿 < 80 %，琥珀 80–90 %，红 ≥ 90 % |
+| **Network Bandwidth** | 各接口 `rx_mbps`、`tx_mbps` | 趋势线，无颜色区间 |
+| **Temperature** | `temp_c` | 绿 20–24 °C，超出该范围 1 °C 以内为琥珀，低于 19 °C 或达到 25 °C 及以上为红 |
 
-### 3. 工程深入分析仪表盘
+### 3. Engineering Drill-Down 仪表板
 
-**目的**：工程师对每台机器进行深入分析
+**用途**：供工程师对单台服务器进行深入分析。
 
 ![Engineering Drilldown Dashboard](../../../assets/engineering-drilldown.png)
 
-**LDI 散点图容差框：**
+**LDI Quality Scatter——公差区：**
 
-散点图显示 PE (位置误差) vs JE (判断误差)，单位为 µm：
+散点图按分钟绘制 PE 与 JE（µm），并标出 ±10 µm 公差带：
 
-| 区域     | 颜色                                                                                             | 含义                      |
-| -------- | ------------------------------------------------------------------------------------------------ | ------------------------- |
-| ±10µm 内 | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | 正常 — 激光头工作正常     |
-| ±10µm 外 | 红色                                                                                             | 异常 — 激光头开始出现问题 |
+| 区域 | 颜色 | 含义 |
+| --- | --- | --- |
+| ±10 µm 以内 | 绿色区带 | 正常——激光头在公差范围内 |
+| ±10 µm 以外 | 区带之外 | 质量风险——检查激光头 |
 
-**使用方法：**
+**使用说明：**
 
-- 绿色框内的点 = PCB 质量在标准内
-- 跳出红色框的点 = 必须立即检查激光头
-- 与 **LDI 吞吐量** 面板结合使用，以查看生产率是否仍然正常
+- 落在绿色区带内的点表示 PCB 质量处于可接受公差内。
+- 落在区带外的点需要检查激光头。
+- 对照 **LDI Throughput & Process Efficiency** 面板，确认生产节拍是否也受到影响。
 
-### 4. 容量规划仪表盘
+### 4. AIOps & Capacity 仪表板
 
-**目的**：用于资源规划的预测
+**用途**：资源容量预测，支撑基础设施规划。
 
-| 面板         | 显示内容                         | 用例           |
-| ------------ | -------------------------------- | -------------- |
-| **CPU 预测** | 线性回归斜率 → CPU 何时达到 100% | 规划服务器升级 |
-| **磁盘预测** | 预测的磁盘满载日期               | 规划存储扩展   |
-| **内存趋势** | 内存使用增长率                   | 规划内存升级   |
-| **网络容量** | 带宽利用率趋势                   | 规划网络升级   |
+| 面板 | 显示内容 | 用途 |
+| --- | --- | --- |
+| **Days Until Full (Resource Battery)** | 按当前趋势，磁盘、内存与 CPU 的剩余天数 | 确定升级优先级 |
+| **Disk Usage Trend + Linear Regression Forecast** | 预测磁盘写满日期 | 规划存储扩容 |
+| **CPU / RAM Load Trend（30 天平均）** | 长期消耗趋势 | 规划服务器与内存升级 |
+| **CPU / Temperature Z-Score Anomaly (3σ)** | 超出三个标准差的偏离 | 及早发现异常行为 |
 
-### 5. 简易概览仪表盘
+### 5. Easy Overview 仪表板
 
-**目的**：无需任何设置即可即时查看整个 LDI 设备的概览 — 无模板变量，无过滤器，打开即可见。
+**用途**：零配置快速查看整个 LDI 设备群——没有模板变量、没有筛选器，打开即可看到全部内容。
 
-此仪表盘上的每个数字均从与其他仪表盘相同的共享视图/函数中提取 (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) — 数字永远不会跨仪表盘冲突，因为没有单独计算的冗余查询。
+该仪表板的每个指标都来自其他仪表板共用的视图与函数（`v_ldi_machine_latest_full`、`v_ldi_alarm_context`、`f_ldi_yield_pct`、`v_machine_spc_fleet`），因此数字与系统其他部分一致，不存在临时的独立查询。
 
-### 6. LDI 制造指挥中心
+### 6. LDI Manufacturing Command Center
 
-**目的**：LDI 生产线的主要仪表盘 — 4层 RCA 设计
+**用途**：LDI 产线的主运营仪表板，按 4 层 RCA 视图组织。
 
-| 层级           | 内容                                                            |
-| -------------- | --------------------------------------------------------------- |
-| **高管 HUD**   | 良率 %，运行的机器，设备状态，平均 Cpk，设备可用性，严重警报    |
-| **机器遥测**   | 温湿度合规性，扫描速度/空气真空，厚度/光刻胶剂量，比例 X/Y      |
-| **生产上下文** | 实时生产表 (机器/作业/零件/层/进度)，板追溯性，每块板的计算时间 |
-| **警报流**     | 最近警报事件 (过去 50 个)，相关度最高的警报 (24小时，RCA)       |
+| 层级 | 内容 |
+| --- | --- |
+| **Executive HUD** | 良率 %、运行设备数、设备群状态、平均 Cpk、Fleet Availability、Critical Alarms |
+| **Machine Telemetry** | 温湿度达标情况、Scan Speed/Air Vacuum、Thickness/Resist Dosage、Scale X/Y |
+| **Production Context** | 实时生产表（Machine/Job/Part/Layer/Progress）、板件追溯、单板计算耗时 |
+| **Alarm Stream** | 最近告警事件（最近 50 条）、关联度最高的告警（24 小时，RCA） |
 
-深入分析行 (生产与合规性、工艺指标、分析与 SPC、系统警报、RCA 设备摘要、周期时间与可追溯性) 默认折叠 — 单击行标题即可展开。这样可以使初步浏览仅关注高管 KPI 栏。
+下钻行（Production & Compliance、Process Metrics、Analytics & SPC、System Alarms、RCA Fleet Summary、Cycle Time & Traceability）默认折叠——点击行标题即可展开。首屏只显示管理层 KPI 条。
 
-### 7. LDI 操作员安灯板
+### 7. LDI Operator Andon Board
 
-**目的**：现场 (工厂车间) 信息亭显示屏 — 兼容 ISA-101，无需触摸，在 1280x720 分辨率下无滚动。
+**用途**：遵循 ISA-101 风格的产线 kiosk 看板，无需触控，只读。支持的显示分辨率为 **1920×1080 及以上**，此时看板无需滚动即可完整显示；不支持 1280×720（布局会溢出）。
 
-显示设备可用性、严重警报计数、环境合规性 %、运行的机器、每台机器的状态 (OK/IDLE/NO_DATA 显示为背景颜色)，以及实时生产表。
+显示 Fleet Availability、Active Critical/Major Alarms、Environmental Compliance、Machines Running、各设备状态卡片、流水线心跳、温度（22 ± 2 °C）与湿度（55 ± 5 %）达标时间线，以及最近 5 分钟 Critical/Major 告警的 **Action Queue**。确认与解决操作在 **LDI Alarm Console** 上完成，而不是在 Andon 看板上。
 
-### 8. LDI 工程分析与 SPC
+### 8. LDI Engineering Analytics & SPC
 
-**目的**：工程师的深入分析 — Cpk/SPC 排名，RCA 真理测试，PE/JE 分布。
+**用途**：面向工程师的深入分析——Cpk/SPC 排名、RCA Truth Test 与 PE/JE 分布。
 
-| 章节               | 内容                                                                  |
-| ------------------ | --------------------------------------------------------------------- |
-| **环境**           | 温度与湿度，所有机器同时显示                                          |
-| **SPC 控制图**     | 厚度控制图 (平均值 ± 3σ)，比例 X/Y 控制图                             |
-| **变异分析**       | 每台机器的 PE/JE 标准差，PE/JE 误差分布 (箱线图)                      |
-| **RCA / 警报关联** | RCA 真理测试 — 每个警报类别的提升度/置信度 (热力/湿度/真空/对准/运动) |
+| 部分 | 内容 |
+| --- | --- |
+| **Environmental** | 温度与湿度对比，所有设备同步显示 |
+| **SPC Control Charts** | Thickness 控制图（均值 ± 3σ）、Scale X/Y 控制图 |
+| **Variation Analysis** | 各设备 PE/JE 标准差、PE/JE 误差分布（箱线图） |
+| **RCA / Alarm Correlation** | RCA Truth Test——按告警类别（Thermal/Humidity/Vacuum 等）统计的 Lift/Confidence |
 
-### 9. LDI 机器快照
+### 9. LDI Machine Snapshot
 
-**目的**：从工艺时间线 (从其他仪表盘深入) 中点击的确切毫秒数查看详细的机器状态。
+**用途**：毫秒级设备状态，可从 Process Timeline 或其他仪表板上的告警与日志表点击进入。
 
-显示作业上下文、物理变量、PE 对准、Cpk 以及该时间点附近的警报 — 当需要调查特定事件时使用，而非用于查看概览。
+显示作业上下文、物理变量、PE 对位、Cpk，以及与所选事件时间相近的告警——专为精确定位事件调查而设计，而非用于总览。
 
-### 10. LDI 数据就绪度
+### 10. LDI Data Readiness
 
-**目的**：自我审计数据质量的仪表盘 — 仅使用 PostgreSQL 的真实数据，没有模拟数据。
+**用途**：自检式数据质量仪表板，只读取 PostgreSQL 中的真实数据行，不含任何模拟输入。
 
-用于检查 board-key 重复、覆盖率 % 以及与警报主表的匹配率，然后再信任其他仪表盘的数字。
+用于检测板件键重复、检查覆盖率 %，并在信任主仪表板上的数字之前，确认与告警主数据的匹配率。
+
+### 11. Alarm Console、Alarm Response 与 Alarm Dictionary
+
+- **Alarm Console**——唯一可交互的仪表板：确认与解决操作经 `alarm-api` 将真实状态写入 `public.ldi_alarm_lifecycle`。
+- **Alarm Response (MTTA/MTTR)**——告警被确认与解决的速度，基于上述生命周期表计算。
+- **Alarm Dictionary**——任意告警代码的厂商定义及其最近发生记录；从其他仪表板的 Alarm Code 链接打开。
 
 ---
 
-## 指标解读
+## 解读指标
 
 ### CPU 指标
 
-| 指标               | 单位 | 健康  | 警告   | 严重  |
-| ------------------ | ---- | ----- | ------ | ----- |
-| `cpu_load_percent` | %    | < 60% | 60-80% | > 80% |
-| `cpu_cores`        | 数量 | —     | —      | —     |
+| 指标 | 单位 | 面板颜色 | 告警规则 |
+| --- | --- | --- | --- |
+| `cpu_load_percent` | % | 绿 < 80，琥珀 80–90，红 ≥ 90 | **High CPU Usage**——5 分钟平均值 > 85 %，持续 5 分钟（warning） |
+| `cpu_cores` | 个 | — | — |
 
-**如何解读：**
+**使用说明：**
 
-- **平均 CPU** — 所选时间段内所有核心的平均值。
-- **峰值 CPU** — 记录的最高值 (可能会出现暂时的高峰)。
-- **每核心 CPU** — 查看哪个核心正在被大量使用。
+- **Average CPU**——所选时间范围内所有核心的平均值。
+- **Peak CPU**——记录到的最大值（可能是瞬时尖峰）。
+- **CPU per core**——显示负载集中在哪个核心。
 
 **示例：**
 
 ```text
 Machine: server-01
-CPU Load: 72% (Warning)
-├── Core 1: 85%
-├── Core 2: 45%
-├── Core 3: 78%
-└── Core 4: 80%
-→ Core 1, 3, 4 正在被大量使用。检查哪些进程正在运行。
+CPU Load: 86% (amber band, High CPU Usage alert pending)
+├── Core 1: 95%
+├── Core 2: 70%
+├── Core 3: 88%
+└── Core 4: 91%
+→ Cores 1, 3 and 4 are under heavy load; investigate running processes.
 ```
 
 ### 内存指标
 
-| 指标           | 单位 | 健康  | 警告   | 严重  |
-| -------------- | ---- | ----- | ------ | ----- |
-| `ram_used_mb`  | MB   | —     | —      | —     |
-| `ram_total_mb` | MB   | —     | —      | —     |
-| **使用率 %**   | %    | < 70% | 70-85% | > 85% |
+| 指标 | 单位 | 面板颜色 | 告警规则 |
+| --- | --- | --- | --- |
+| `ram_used_mb` | MB | — | — |
+| `ram_total_mb` | MB | — | — |
+| **Usage %** | % | 绿 < 85，琥珀 85–95，红 ≥ 95 | **High RAM Usage**——> 90 %，持续 5 分钟（warning） |
 
-**如何解读：**
+**使用说明：**
 
-- **使用率 %** = `(ram_used_mb / ram_total_mb) × 100`
-- **可用** = `ram_total_mb - ram_used_mb`
-- 内存使用率高不一定是坏事 — Linux 使用内存进行缓存。
+- **Usage %** = `(ram_used_mb / ram_total_mb) × 100`
+- **Available** = `ram_total_mb - ram_used_mb`
+- 内存使用率高本身并不代表有问题——Linux 会把空闲内存用作缓存。
 
 ### 网络指标
 
-| 指标            | 单位 | 描述                           |
-| --------------- | ---- | ------------------------------ |
-| `rx_mbps`       | Mbps | 下载速度 (流入流量)            |
-| `tx_mbps`       | Mbps | 上传速度 (流出流量)            |
-| `net_rx_errors` | 数量 | 接收错误 (硬件/驱动程序问题)   |
-| `net_rx_drops`  | 数量 | 丢弃的数据包 (缓冲区溢出)      |
-| `net_if_status` | 1/2  | 1 = UP (上线), 2 = DOWN (下线) |
+| 指标 | 单位 | 说明 |
+| --- | --- | --- |
+| `rx_mbps` | Mbps | 入站流量 |
+| `tx_mbps` | Mbps | 出站流量 |
+| `net_rx_errors` | 个 | 接收错误（硬件/驱动问题） |
+| `net_rx_drops` | 个 | 丢弃的数据包（缓冲区溢出） |
+| `net_if_status` | 1/2 | 1 = UP，2 = DOWN |
 
-**如何解读：**
+**使用说明：**
 
 - **带宽利用率** = `(rx_mbps / link_speed) × 100`
 - **错误率** = `net_rx_errors / total_packets × 100`
-- **接口下线 (DOWN)** = 网线断开或交换机端口关闭。
+- **Interface DOWN** = 网线断开或交换机端口被禁用。相关告警规则：**Interface Down**（critical）、**High Network Error Rate**（warning）、**Network Packet Drops**（critical）、**Bandwidth Saturation Forecast**（warning）。
 
 **示例：**
 
-**Machine:** `server-01`
+**设备：** `server-01`
 
 | Interface | RX Mbps | TX Mbps | Errors | Drops | Status |
 | --- | --- | --- | --- | --- | --- |
 | eth0 | 1200 | 850 | 0 | 0 | UP |
 | wlan0 | 320 | 180 | 0 | 12 | UP |
 
-→ *wlan0 有 12 个丢包 — 请检查无线信号*
-
+→ *wlan0 有 12 个丢包——检查无线信号。*
 
 ### 磁盘指标
 
-| 指标            | 单位 | 健康  | 警告   | 严重  |
-| --------------- | ---- | ----- | ------ | ----- |
-| `disk_used_gb`  | GB   | —     | —      | —     |
-| `disk_total_gb` | GB   | —     | —      | —     |
-| **使用率 %**    | %    | < 70% | 70-80% | > 80% |
+| 指标 | 单位 | 面板颜色 | 告警规则 |
+| --- | --- | --- | --- |
+| `disk_used_gb` | GB | — | — |
+| `disk_total_gb` | GB | — | — |
+| **Usage %** | % | 绿 < 80，琥珀 80–90，红 ≥ 90 | **High Disk Usage**——> 90 %，持续 10 分钟（critical） |
 
-**如何解读：**
+**使用说明：**
 
-- **使用率 %** = `(disk_used_gb / disk_total_gb) × 100`
-- **可用空间** = `disk_total_gb - disk_used_gb`
-- **IOPS** = 每秒操作数 (如果有额外的指标)。
+- **Usage %** = `(disk_used_gb / disk_total_gb) × 100`
+- **剩余空间** = `disk_total_gb - disk_used_gb`
 
 ### 温度指标
 
-| 指标     | 单位 | 健康   | 警告    | 严重   |
-| -------- | ---- | ------ | ------- | ------ |
-| `temp_c` | °C   | < 65°C | 65-80°C | > 80°C |
+| 指标 | 单位 | 面板颜色 | 告警规则 |
+| --- | --- | --- | --- |
+| `temp_c` | °C | 绿 20–24，超出范围 1 °C 以内为琥珀，红 < 19 或 ≥ 25 | **High Temperature**——最大值 > 80 °C，持续 5 分钟（critical） |
 
-**如何解读：**
+**使用说明：**
 
-- **平均温度** — 平均温度。
-- **最高温度** — 最高温度 (峰值温度)。
-- **温度趋势** — 温度正在升高或降低。
-
----
-
-## 警报响应程序
-
-### 警报严重级别
-
-| 级别                | 颜色                                                                                             | 响应时间         | 示例                                    |
-| ------------------- | ------------------------------------------------------------------------------------------------ | ---------------- | --------------------------------------- |
-| **严重 (Critical)** | 红色                                                                                             | 立即 (< 15 分钟) | InterfaceDown, ServiceDown, CriticalCPU |
-| **警告 (Warning)**  | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 黄色 | 尽快 (< 1 小时)  | HighCPU, HighMemory, DiskSpaceLow       |
-| **信息 (Info)**     | 蓝色                                                                                             | 正常 (< 4 小时)  | TelemetryGap, PredictiveDiskFull        |
-
-### 事故响应剧本
-
-#### 场景 1: InterfaceDown (严重)
-
-```text
-症状:
-- 警报: server-01 上的 InterfaceDown
-- 网络面板显示 "No Data" (无数据)
-- 其他机器仍在报告
-
-调查步骤:
-1. SSH 到 server-01 → 检查网线
-2. 检查交换机端口状态
-3. 运行: ip link show eth0
-4. 检查接口是否为 UP
-
-解决方案:
-- 重新插拔网线
-- 检查交换机配置
-- 重启网络服务: systemctl restart networking
-- 验证: ping 网关
-
-升级:
-- 如果物理网线正常 → 联系网络团队
-- 如果交换机端口下线 → 联系数据中心团队
-```
-
-#### 场景 2: HighCPUUsage (警告)
-
-```text
-症状:
-- 警报: server-01 上的 HighCPUUsage
-- CPU 面板显示 > 80%
-- 系统可能会变慢
-
-调查步骤:
-1. SSH 到 server-01
-2. 运行: top -bn1 | head -20
-3. 找出消耗 CPU 最多的进程
-4. 检查是否有计划任务正在运行
-
-解决方案:
-- 如果是合法工作负载 → 监控，无需采取行动
-- 如果是异常进程 → 终止 (kill) 或更改优先级 (renice)
-- 如果是内存溢出 (OOM) → 添加交换空间或增加内存
-
-升级:
-- 如果持续时间超过 1 小时 → 与应用团队确认
-- 如果影响到其他服务 → 考虑扩展
-```
-
-#### 场景 3: DiskSpaceLow (警告)
-
-```text
-症状:
-- 警报: server-01 上的 DiskSpaceLow
-- 磁盘面板显示 > 80%
-
-调查步骤:
-1. SSH 到 server-01
-2. 运行: df -h
-3. 运行: du -sh /* | sort -rh | head -10
-4. 找出大文件/目录
-
-解决方案:
-- 清理日志: journalctl --vacuum-size=500M
-- 删除旧备份: find /backup -mtime +30 -delete
-- 压缩大文件: gzip largefile.log
-- 归档到冷存储
-
-升级:
-- 如果磁盘使用率继续上升 → 规划存储扩展
-- 如果情况严重 (> 95%) → 必须立即清理
-```
-
-#### 场景 4: ServiceDown (严重)
-
-```text
-症状:
-- 警报: server-01 上的 ServiceDown
-- Blackbox 探针失败
-- 应用可能无法访问
-
-调查步骤:
-1. 检查服务状态: systemctl status <service>
-2. 检查服务日志: journalctl -u <service> -n 50
-3. 检查端口绑定: netstat -tlnp | grep <port>
-4. 检查防火墙: iptables -L -n
-
-解决方案:
-- 重启服务: systemctl restart <service>
-- 检查配置: <service> -t (测试配置)
-- 验证防火墙规则
-- 检查依赖服务
-
-升级:
-- 如果服务无法启动 → 检查应用日志
-- 如果端口冲突 → 找出冲突的进程
-- 如果是系统级问题 → 联系系统管理员
-```
-
-#### <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 场景 5: PipelineDataStalled (警告)
-
-```text
-症状:
-- 警报: server-01 上的 PipelineDataStalled (在旧文档中称为 TelemetryGap)
-- 3分钟以上无数据
-- 其他机器仍在报告
-
-调查步骤:
-1. 检查 Node-RED 日志: docker compose logs --tail=50 node-red
-2. 检查 SNMP 模拟器: docker compose ps snmpsim
-3. 检查网络连接
-4. 检查 machine_id 是否匹配
-
-解决方案:
-- 如果 snmpsim 下线 → docker compose restart snmpsim
-- 如果 Node-RED 报错 → 检查流程 JSON 语法
-- 如果机器不在注册表中 → 添加到数据库
-
-升级:
-- 如果持续存在 → 检查 SNMP 团体字符串
-- 如果是新机器 → 验证 MIB 兼容性
-```
+- **平均温度**——读数的平均值。
+- **最高温度**——记录到的峰值。
+- **Z-Score 异常**——AIOps 行会标记偏离近期基线超过 3σ 的读数（**Temperature Z-Score Anomaly**，warning）。
 
 ---
 
-## 常见操作
+## 告警响应流程
+
+### 告警严重级别
+
+告警规则分布在两处：Grafana 管理的设备与 LDI 条件规则（`monitoring/grafana/provisioning/alerting/`），以及针对平台自身的 Prometheus 规则（`monitoring/prometheus/rules/ims-alerts.yml`）。
+
+| 级别 | 颜色 | 目标响应时间 | 示例 |
+| --- | --- | --- | --- |
+| **Critical** | 红 | 立即（< 15 分钟） | Interface Down、High Disk Usage、High Temperature、LDI Machine Offline (Stale)、`ServiceDown`、`PipelineDataStalled` |
+| **Warning** | 琥珀 | 尽快（< 1 小时） | High CPU Usage、High RAM Usage、Z-Score 异常、`PipelineHighErrorRate`、`CircuitBreakerOpen` |
+
+### 事件响应手册
+
+下列命令框中的步骤保留英文，以便与告警名称及实际输入的命令保持一致。
+
+#### 场景 1：Interface Down（Critical）
+
+```text
+Symptoms:
+- Alert: Interface Down on server-01
+- Network panels show "No Data"
+- Other machines still reporting
+
+Investigation Steps:
+1. SSH to server-01 → check network cable
+2. Check switch port status
+3. Run: ip link show eth0
+4. Check if interface is UP
+
+Resolution:
+- Reseat network cable
+- Check switch configuration
+- Restart network service: systemctl restart networking
+- Verify: ping gateway
+
+Escalation:
+- If physical cable is fine → contact network team
+- If switch port is down → contact data center team
+```
+
+#### 场景 2：High CPU Usage（Warning）
+
+```text
+Symptoms:
+- Alert: High CPU Usage on server-01
+- CPU panels showing > 85%
+- System may be slow
+
+Investigation Steps:
+1. SSH to server-01
+2. Run: top -bn1 | head -20
+3. Identify top CPU-consuming processes
+4. Check if scheduled job is running
+
+Resolution:
+- If legitimate workload → monitor, no action needed
+- If rogue process → kill or renice
+- If OOM → add swap or increase RAM
+
+Escalation:
+- If persistent > 1 hour → check with application team
+- If affecting other services → consider scaling
+```
+
+#### 场景 3：High Disk Usage（Critical）
+
+```text
+Symptoms:
+- Alert: High Disk Usage on server-01
+- Disk panels showing > 90%
+
+Investigation Steps:
+1. SSH to server-01
+2. Run: df -h
+3. Run: du -sh /* | sort -rh | head -10
+4. Identify large files/directories
+
+Resolution:
+- Clean logs: journalctl --vacuum-size=500M
+- Remove old backups: find /backup -mtime +30 -delete
+- Compress large files: gzip largefile.log
+- Archive to cold storage
+
+Escalation:
+- If disk usage continues → plan storage expansion
+- If critical (> 95%) → immediate cleanup required
+```
+
+#### 场景 4：ServiceDown（Critical）
+
+```text
+Symptoms:
+- Alert: ServiceDown on server-01
+- Blackbox probe failing
+- Application may be unreachable
+
+Investigation Steps:
+1. Check service status: systemctl status <service>
+2. Check service logs: journalctl -u <service> -n 50
+3. Check port binding: ss -tlnp | grep <port>
+4. Check firewall: iptables -L -n
+
+Resolution:
+- Restart service: systemctl restart <service>
+- Check configuration: <service> -t (test config)
+- Verify firewall rules
+- Check dependent services
+
+Escalation:
+- If service won't start → check application logs
+- If port conflict → identify conflicting process
+- If system-level issue → contact system admin
+```
+
+#### 场景 5：PipelineDataStalled（Critical）
+
+```text
+Symptoms:
+- Alert: PipelineDataStalled (named TelemetryGap in older documents)
+- No successful database inserts for 3+ minutes
+- Dashboards stop updating for every machine
+
+Investigation Steps:
+1. Check Node-RED logs: docker compose logs --tail=50 node-red
+2. Check PgBouncer and TimescaleDB: docker compose ps pgbouncer timescaledb
+3. Check the SNMP simulator (demo stacks): docker compose ps snmpsim
+4. Check that the device is registered in public.devices
+
+Resolution:
+- If snmpsim down → docker compose restart snmpsim
+- If Node-RED error → check flow JSON syntax
+- If machine not in registry → add it to public.devices
+
+Escalation:
+- If persistent → check SNMP community string
+- If new machine → verify MIB compatibility
+```
+
+---
+
+## 常用操作
 
 ### 检查系统状态
 
@@ -413,27 +428,27 @@ CPU Load: 72% (Warning)
 # 查看所有容器
 docker compose ps
 
-# 检查 Node-RED 日志
+# 查看 Node-RED 日志
 docker compose logs --tail=20 node-red
 
-# 检查 Prometheus 目标
+# 查看 Prometheus 抓取目标
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/targets"
 
-# 检查活动警报
+# 查看活动告警
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts"
 ```
 
 ### 直接查询数据库
 
 ```bash
-# 最近的遥测数据 (过去 5 分钟)
+# 最近遥测（最近 5 分钟）
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, time, cpu_load_percent, temp_c
  FROM public.sys_metrics
  WHERE time > NOW() - INTERVAL '5 minutes'
  ORDER BY time DESC LIMIT 10;"
 
-# 检查接口指标
+# 查看接口指标
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, iface_name, rx_mbps, tx_mbps
  FROM public.net_metrics
@@ -443,14 +458,14 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 ### 重启服务
 
 ```bash
-# 重启 Node-RED (流程更改后)
+# 重启 Node-RED（修改 flow 之后）
 docker compose restart node-red
 
-# 重启 Prometheus (规则更改后)
-docker compose restart prometheus
+# 不重启即可重载 Prometheus 规则（请先阅读管理员手册）
+curl -X POST http://localhost:9090/-/reload
 
-# 完全重启 (不丢失数据)
-docker compose restart node-red grafana alertmanager prometheus
+# 重启核心服务（不丢失数据）
+make restart
 ```
 
 ---
@@ -459,89 +474,88 @@ docker compose restart node-red grafana alertmanager prometheus
 
 ### 常见问题
 
-| 症状                          | 可能原因                | 解决方案                                |
-| ----------------------------- | ----------------------- | --------------------------------------- |
-| **所有面板显示 "No Data"**    | Node-RED 未运行         | `docker compose restart node-red`       |
-| **特定机器显示 "No Data"**    | 机器不在注册表中        | 添加到 `machines` 表中                  |
-| **Alertmanager 不断重启**     | 配置 YAML 语法错误      | 检查 `docker compose logs alertmanager` |
-| **所有 blackbox 目标均 DOWN** | 配置中服务名称错误      | 使用 `blackbox-exporter:9115`           |
-| **Grafana 显示过时数据**      | 仪表盘未刷新            | 强制刷新：Ctrl+Shift+R                  |
-| **内存使用率高**              | Node-RED 中存在内存泄漏 | 检查 `docker stats ims-node-red`        |
-| **数据库连接被拒绝**          | PgBouncer 下线          | `docker compose restart pgbouncer`      |
+| 现象 | 可能原因 | 解决方法 |
+| --- | --- | --- |
+| **所有面板显示 "No Data"** | Node-RED 或 PgBouncer 未运行 | `docker compose restart node-red pgbouncer` |
+| **某台设备显示 "No Data"** | 设备未登记在注册表中 | 添加到 `public.devices`（见管理员手册） |
+| **Alertmanager 反复重启** | 配置 YAML 语法错误 | 查看 `docker compose logs alertmanager` |
+| **所有 blackbox 目标 DOWN** | 配置中的服务名错误 | 使用 `blackbox-exporter:9115` |
+| **Grafana 显示旧数据** | 仪表板未刷新 | 强制刷新：Ctrl+Shift+R |
+| **内存占用高** | Node-RED 内存持续增长 | 查看 `docker stats ims-node-red` |
+| **数据库拒绝连接** | PgBouncer 宕机 | `docker compose restart pgbouncer` |
 
 ### 日志位置
 
-| 服务             | 命令                               | 要查找的内容                                    |
-| ---------------- | ---------------------------------- | ----------------------------------------------- |
-| **Node-RED**     | `docker compose logs node-red`     | `Started flows`, `TypeError`, `ETIMEOUT`        |
-| **TimescaleDB**  | `docker compose logs timescaledb`  | `connection refused`, `authentication failed`   |
-| **Prometheus**   | `docker compose logs prometheus`   | `failed to check config`, `target down`         |
-| **Alertmanager** | `docker compose logs alertmanager` | `Loading configuration file failed`             |
-| **Grafana**      | `docker compose logs grafana`      | `Failed to look up user`, `dashboard not found` |
+| 服务 | 命令 | 关注内容 |
+| --- | --- | --- |
+| **Node-RED** | `docker compose logs node-red` | `Started flows`、`TypeError`、`ETIMEOUT` |
+| **TimescaleDB** | `docker compose logs timescaledb` | `connection refused`、`authentication failed` |
+| **Prometheus** | `docker compose logs prometheus` | `failed to check config`、`target down` |
+| **Alertmanager** | `docker compose logs alertmanager` | `Loading configuration file failed` |
+| **Grafana** | `docker compose logs grafana` | `Failed to look up user`、`dashboard not found` |
+| **nginx 统一入口** | `docker compose logs proxy` | `502`、`upstream`、`auth_request` |
 
 ### 快速诊断脚本
 
 ```bash
-# 一次性运行所有健康检查
-echo "=== 容器 ==="
+# 一次运行全部健康检查
+echo "=== Containers ==="
 docker compose ps --format "table {{.Name}}\t{{.Status}}"
 
-echo "=== 数据流 ==="
+echo "=== Data Flow ==="
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
  FROM public.sys_metrics
  WHERE time > NOW() - INTERVAL '5 minutes'
  GROUP BY device_id;"
 
-echo "=== 警报 ==="
+echo "=== Alerts ==="
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2>&1 | \
- python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"data\"][\"alerts\"])} 个活动警报')"
+ python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"data\"][\"alerts\"])} active alerts')"
 ```
 
 ---
 
 ## 快速参考
 
-### 键盘快捷键 (Grafana)
+### 键盘快捷键（Grafana）
 
-| 快捷键         | 动作           |
-| -------------- | -------------- |
-| `Ctrl+S`       | 保存仪表盘     |
-| `Ctrl+Z`       | 撤销           |
-| `Ctrl+Shift+Z` | 重做           |
-| `F`            | 切换全屏       |
-| `R`            | 刷新仪表盘     |
-| `T`            | 打开时间选择器 |
-| `D`            | 打开仪表盘搜索 |
-| `Ctrl+Shift+P` | 打开命令面板   |
+在 Grafana 中按 `?` 可查看当前版本的完整列表。
 
-### 颜色编码参考
+| 快捷键 | 操作 |
+| --- | --- |
+| `?` | 显示所有键盘快捷键 |
+| `Ctrl+K` / `Cmd+K` | 搜索与命令面板 |
+| `Ctrl+S` | 保存仪表板（仅编辑者） |
+| `d r` | 刷新所有面板 |
+| `d k` | 切换 kiosk 模式 |
+| `t z` | 缩小时间范围（zoom out） |
+| `Esc` | 退出面板视图或关闭抽屉 |
 
-| 指标             | 健康                                                                                             | 警告                                                                                                       | 严重           |
-| ---------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | -------------- |
-| **CPU**          | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 黄色 → 橙色    | 红色           |
-| **内存**         | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 紫色 → 深橙色  | 红色           |
-| **磁盘**         | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 青色 → 蓝色    | 红色           |
-| **网络 RX**      | 深蓝色 (#1F60C4)                                                                                 | —                                                                                                          | 红色           |
-| **网络 TX**      | 浅蓝色 (#5794F2)                                                                                 | —                                                                                                          | 红色           |
-| **温度**         | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 黄色           | 红色           |
-| **错误**         | —                                                                                                | —                                                                                                          | 红色 (#C4162A) |
-| **丢包 (Drops)** | —                                                                                                | <img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 橙色 (#FF9830) | 红色           |
+### 颜色含义
 
-### 警报联系人
+| 状态 | 颜色 | Token |
+| --- | --- | --- |
+| 正常 | 绿 | `#22C55E` |
+| 警告 | 琥珀 | `#F59E0B` |
+| 严重 | 红 | `#EF4444` |
 
-| 角色           | 联系人          | 渠道               |
-| -------------- | --------------- | ------------------ |
-| **NOC 团队**   | LINE 群组       | LINE Messaging API |
-| **系统管理员** | MS Teams        | Webhook            |
-| **管理层**     | 电子邮件 (未来) | SMTP               |
+面板会在颜色旁显示数值，因此无需单靠颜色也能读出状态。
+
+### 告警通道
+
+| 对象 | 通道 | 投递方式 |
+| --- | --- | --- |
+| **NOC 团队** | LINE 群组 | LINE Messaging API（需配置 `LINE_CHANNEL_ACCESS_TOKEN` 与 `LINE_USER_ID`） |
+| **系统管理员** | Microsoft Teams | Incoming webhook（需配置 `TEAMS_WEBHOOK_URL`） |
+| **管理层** | 电子邮件 | 未配置 |
 
 ---
 
 <div align="center">
 
-**IMS 用户手册 — 1.1 版本**
+**IMS 用户手册 — 版本 1.2（2026-09-26 对照 `main` 核实）**
 
-_供 IT 支持与 NOC 团队使用_
+_面向 IT 支持与 NOC 团队_
 
 </div>
