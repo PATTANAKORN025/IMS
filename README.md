@@ -166,7 +166,7 @@ sleep 40 && make verify
 ```
 
 > [!WARNING]
-> `.env.example` values are public. Before any start outside a throw-away laptop, generate new values for every password, token and key in `.env` (`POSTGRES_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `GRAFANA_DB_PASSWORD`, `ALARM_API_DB_PASSWORD`, `INGEST_API_KEY`, `ALERT_WEBHOOK_TOKEN`, `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH`, `PGADMIN_DEFAULT_PASSWORD`, `GRAFANA_RENDERER_TOKEN`). `postgres/init/003-grafana-password.sh` also carries a fallback password that is only safe when `GRAFANA_DB_PASSWORD` is set. See [SECURITY.md](SECURITY.md).
+> `.env.example` values are public. Before any start outside a throw-away laptop, generate new values for every password, token and key in `.env` (`POSTGRES_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `GRAFANA_DB_PASSWORD`, `ALARM_API_DB_PASSWORD`, `INGEST_API_KEY`, `ALERT_WEBHOOK_TOKEN`, `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH`, `PGADMIN_DEFAULT_PASSWORD`, `GRAFANA_RENDERER_TOKEN`). See [SECURITY.md](SECURITY.md).
 
 > **What to expect:** A gentle simulation (~10-15 rows/min) allowing you to click through the LDI Manufacturing Command Center, view the Operator Andon Board, and see real-time Cpk capability charts.
 > **Verified:** `docker compose ps` on 2026-08-13, archived in [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt).

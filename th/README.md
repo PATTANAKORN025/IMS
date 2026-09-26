@@ -166,7 +166,7 @@ sleep 40 && make verify
 ```
 
 > [!WARNING]
-> ค่าใน `.env.example` เป็นข้อมูลสาธารณะ ก่อนเริ่มระบบบนเครื่องใดก็ตามที่ไม่ใช่เครื่องทดลองชั่วคราว ให้สร้างค่าใหม่สำหรับรหัสผ่าน token และ key ทุกตัวใน `.env` (`POSTGRES_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `GRAFANA_DB_PASSWORD`, `ALARM_API_DB_PASSWORD`, `INGEST_API_KEY`, `ALERT_WEBHOOK_TOKEN`, `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH`, `PGADMIN_DEFAULT_PASSWORD`, `GRAFANA_RENDERER_TOKEN`) นอกจากนี้ `postgres/init/003-grafana-password.sh` มีรหัสผ่านสำรอง (fallback) ที่ปลอดภัยก็ต่อเมื่อกำหนด `GRAFANA_DB_PASSWORD` แล้วเท่านั้น ดูรายละเอียดที่ [SECURITY.md](SECURITY.md)
+> ค่าใน `.env.example` เป็นข้อมูลสาธารณะ ก่อนเริ่มระบบบนเครื่องใดก็ตามที่ไม่ใช่เครื่องทดลองชั่วคราว ให้สร้างค่าใหม่สำหรับรหัสผ่าน token และ key ทุกตัวใน `.env` (`POSTGRES_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `GRAFANA_DB_PASSWORD`, `ALARM_API_DB_PASSWORD`, `INGEST_API_KEY`, `ALERT_WEBHOOK_TOKEN`, `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH`, `PGADMIN_DEFAULT_PASSWORD`, `GRAFANA_RENDERER_TOKEN`) ดูรายละเอียดที่ [SECURITY.md](SECURITY.md)
 
 > **สิ่งที่จะได้เห็น:** ข้อมูลจำลองไหลเข้าอย่างเบา ๆ (~10–15 แถว/นาที) พอให้คลิกดู LDI Manufacturing Command Center, Operator Andon Board และกราฟ Cpk แบบเรียลไทม์ได้
 > **หลักฐาน:** `docker compose ps` เมื่อ 2026-08-13 เก็บไว้ที่ [`docs/evidence/runtime/compose-ps-20260813.txt`](../docs/evidence/runtime/compose-ps-20260813.txt)

@@ -8,15 +8,15 @@
 # คู่มือการดูแลระบบและ SRE
 
 > **คู่มือการดูแลระบบสำหรับทีม IT (MIS-G) ในการบำรุงรักษา IMS**
-> ครอบคลุมการจัดการ Docker, การลงทะเบียนอุปกรณ์, การจัดการการแจ้งเตือน, และการแก้ปัญหา.
+> ครอบคลุมการจัดการ Docker การลงทะเบียนอุปกรณ์ การจัดการการแจ้งเตือน และการแก้ไขปัญหา
 
 ---
 
 <div align="center">
 
-<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Admin:** คู่มือ SRE
-<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.1
-<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Audience:** ทีม IT
+<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **ผู้ดูแลระบบ:** คู่มือ SRE
+<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **เวอร์ชัน:** 1.2
+<img src="../../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **ผู้อ่าน:** ทีม IT
 
 </div>
 
@@ -27,51 +27,54 @@
 1. [การจัดการระบบ](#การจัดการระบบ)
 2. [การเพิ่มอุปกรณ์ใหม่](#การเพิ่มอุปกรณ์ใหม่)
 3. [การจัดการการแจ้งเตือน](#การจัดการการแจ้งเตือน)
-4. [การแก้ปัญหา](#การแก้ปัญหา)
-5. [การสำรองข้อมูลและการกู้คืน](#การสำรองข้อมูลและการกู้คืน)
-6. [การตรวจสอบประสิทธิภาพ](#การตรวจสอบประสิทธิภาพ)
+4. [การแก้ไขปัญหา](#การแก้ไขปัญหา)
+5. [การสำรองและกู้คืนข้อมูล](#การสำรองและกู้คืนข้อมูล)
+6. [การติดตามประสิทธิภาพ](#การติดตามประสิทธิภาพ)
 
 ---
 
 ## การจัดการระบบ
 
-### ภาพรวม Container
+### ภาพรวมคอนเทนเนอร์
 
-ระบบทำงานบน Docker Compose ทั้งหมด ประกอบด้วยเซอร์วิสรวม 14 ตัว (13 เซอร์วิสที่ทำงานต่อเนื่อง และ 1 เซอร์วิสสำหรับรัน migration แบบครั้งเดียว (one-shot) ซึ่งจะจบการทำงานเมื่อเสร็จสิ้น):
+ระบบทำงานบน Docker Compose ทั้งหมด: `docker-compose.yaml` กำหนด 15 service (service ที่ทำงานต่อเนื่อง 14 ตัว และตัวรัน migration แบบครั้งเดียว 1 ตัวซึ่งจะจบการทำงานเมื่อเสร็จ) ไม่มีการแบ่งด้วย `profiles:` ดังนั้น `make up` และ `make up-prod` จะเริ่มทุก service รวมถึงตัวจำลอง SNMP และ pgAdmin:
 
-| คอนเทนเนอร์              | บริการ                  | พอร์ต                        | วัตถุประสงค์                                                                                                                                           |
-| ---------------------- | ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ims-timescaledb`      | TimescaleDB            | 5432 (loopback only)        | ฐานข้อมูล Time-series                                                                                                                              |
-| `ims-pgbouncer`        | PgBouncer              | 5432 (ภายใน)                 | Connection pooler                                                                                                                                 |
-| `ims-db-migrate`       | ตัวรัน Migration       | — (one-shot)                | นำ `database/migrations/*.sql` ไปใช้ เป็นตัวเปิดทางให้ `node-red` และ `alarm-api` เริ่มทำงาน                                                                     |
-| `ims-node-red`         | Node-RED               | 1880 (loopback only)        | ท่อส่งข้อมูล (Data pipeline)                                                                                                                      |
-| `ims-proxy`            | nginx reverse proxy    | **3000**                    | เป็นช่องทางเข้าถึงจากโฮสต์เพียงช่องทางเดียวสู่ Grafana และ `alarm-api`. กั้น `/alarm-api/` ไว้หลังการตรวจสอบ `auth_request` เทียบกับ session ของ Grafana เอง. |
-| `ims-grafana`          | Grafana                | ภายในเท่านั้น, ไม่มีพอร์ตโฮสต์      | แดชบอร์ด — เข้าถึงได้ผ่าน `ims-proxy` เท่านั้น ไม่สามารถเข้าถึงได้โดยตรงอีกต่อไป                                                                                  |
-| `ims-alarm-api`        | alarm-api              | ภายในเท่านั้น, ไม่มีพอร์ตโฮสต์      | เส้นทางการเขียนสำหรับ `public.ldi_alarm_lifecycle` (ตอบรับ/แก้ไข จาก `IMS LDI - Alarm Console`). เข้าถึงได้ผ่าน `ims-proxy` เท่านั้น.             |
-| `ims-grafana-renderer` | Grafana Image Renderer | 8081 (ภายใน)                 | เรนเดอร์ PNG สำหรับนำออกภาพหรือแนบในการแจ้งเตือน                                                                                                             |
-| `ims-prometheus`       | Prometheus             | 9090 (loopback only)        | ตัวชี้วัด & การแจ้งเตือน                                                                                                                                |
-| `ims-alertmanager`     | Alertmanager           | 9093 (loopback only)        | กำหนดเส้นทางการแจ้งเตือน                                                                                                                                     |
-| `ims-blackbox`         | Blackbox Exporter      | 9115 (loopback only)        | การตรวจสอบ SLA (SLA probes)                                                                                                                                        |
-| `ims-snmpsim`          | SNMP Simulator         | 161/udp                     | สำหรับการทดสอบ (Dev testing)                                                                                                                                       |
+| คอนเทนเนอร์ | Service | พอร์ต | หน้าที่ |
+| --- | --- | --- | --- |
+| `ims-timescaledb` | TimescaleDB | 5432 (loopback เท่านั้น) | ฐานข้อมูลอนุกรมเวลา |
+| `ims-pgbouncer` | PgBouncer | 5432 (ภายใน) | ตัวจัดการ connection pool |
+| `ims-db-migrate` | ตัวรัน migration | — (ครั้งเดียว) | apply `database/migrations/*.sql` และกั้นไม่ให้ `node-red` กับ `alarm-api` เริ่มก่อน migration เสร็จ |
+| `ims-node-red` | Node-RED | 1880 (loopback เท่านั้น) | ไปป์ไลน์ข้อมูล |
+| `ims-proxy` | nginx reverse proxy | **3000** | ทางเข้า UI เพียงทางเดียว: ส่ง `/` ไป Grafana, `/alarm-api/`, `/factory-twin-3d/` และส่ง `/ldi-telemetry` + `/inject` ไป Node-RED โดย `/alarm-api/` ต้องผ่านการตรวจ `auth_request` กับ session ของ Grafana ก่อน |
+| `ims-grafana` | Grafana | ภายในเท่านั้น ไม่มีพอร์ตบน host | แดชบอร์ด — เข้าถึงได้ผ่าน `ims-proxy` เท่านั้น |
+| `ims-alarm-api` | alarm-api | ภายในเท่านั้น ไม่มีพอร์ตบน host | เส้นทางเขียนข้อมูลลง `public.ldi_alarm_lifecycle` (Acknowledge/Resolve จาก `IMS LDI - Alarm Console`) เข้าถึงได้ผ่าน `ims-proxy` เท่านั้น |
+| `ims-grafana-renderer` | Grafana Image Renderer | 8081 (ภายใน) | เรนเดอร์ภาพ PNG สำหรับ export panel และการแจ้งเตือน |
+| `ims-prometheus` | Prometheus | 9090 (loopback เท่านั้น) | ตัวชี้วัดและการแจ้งเตือน |
+| `ims-alertmanager` | Alertmanager | 9093 (loopback เท่านั้น) | กำหนดเส้นทางการแจ้งเตือน |
+| `ims-blackbox` | Blackbox Exporter | 9115 (loopback เท่านั้น) | probe วัด SLA |
+| `ims-snmpsim` | SNMP Simulator | 161/udp (ภายใน) | อุปกรณ์ SNMP จำลองสำหรับการพัฒนาและสาธิต |
+| `ims-factory-twin-3d` | Factory Twin 3D | 4100 (ภายใน) | ดิจิทัลทวินชั้น 1 ให้บริการผ่าน `ims-proxy` ที่ `/factory-twin-3d/` |
+| `ims-observability-archiver` | ตัวเก็บถาวร log/ตัวชี้วัด | — (ไม่มีพอร์ต) | เก็บ snapshot ด้าน observability ของคอนเทนเนอร์และฐานข้อมูลลง `./ops-logs` เป็นระยะ มีการ mount `/var/run/docker.sock` แบบอ่านอย่างเดียว — ให้ถือว่าเป็นคอนเทนเนอร์สิทธิ์สูง |
+| `ims-pgadmin4` | pgAdmin 4 | **5050 ทุก interface** | หน้าจอจัดการฐานข้อมูล เป็น service เดียวนอกจาก `ims-proxy` ที่เปิดพอร์ตบนทุก interface — นอกห้องทดลองต้องกั้นด้วยไฟร์วอลล์หรือ bind ไว้ที่ `127.0.0.1` |
 
-> `ims-db-migrate` จะจบการทำงานด้วยสถานะ 0 หลังจากอัปเดต migration ค้างสำเร็จ -- การเห็นสถานะ `Exited (0)` ใน `docker compose ps` เป็นสิ่งที่คาดหวัง ไม่ใช่ข้อผิดพลาด. `node-red` และ `alarm-api` จะไม่เริ่มทำงานจนกว่าการ migration จะเสร็จสมบูรณ์.
+> `ims-db-migrate` จะจบการทำงานด้วยสถานะ 0 หลัง apply migration ที่ค้างอยู่ การเห็นสถานะ `Exited (0)` ใน `docker compose ps` จึงเป็นเรื่องปกติ ไม่ใช่ความผิดพลาด `node-red` และ `alarm-api` จะไม่เริ่มจนกว่า migration จะสำเร็จ
 
-### การดำเนินการทั่วไป
+### งานประจำที่ใช้บ่อย
 
 ```bash
-# ตรวจสอบสถานะของคอนเทนเนอร์ทั้งหมด
+# ตรวจสถานะคอนเทนเนอร์ทั้งหมด
 docker compose ps
 
-# เริ่มระบบทั้งหมด
+# เริ่มทั้งระบบ
 docker compose up -d
 
-# ปิดระบบทั้งหมด
+# ปิดทั้งระบบ
 docker compose down
 
-# รีสตาร์ทแบบสะอาด (ทำลายข้อมูลทั้งหมดและเริ่มใหม่แต่ต้น)
+# รีสตาร์ตแบบล้างทั้งหมด -- ลบข้อมูลทุก volume ใช้กับสภาพแวดล้อมทดลองเท่านั้น
 docker compose down -v && docker compose up -d
 
-# รีสตาร์ทเฉพาะบริการที่มีปัญหา
+# รีสตาร์ตเฉพาะ service ที่มีปัญหา
 docker compose restart node-red
 docker compose restart pgbouncer
 docker compose restart grafana
@@ -79,19 +82,19 @@ docker compose restart proxy
 docker compose restart alarm-api
 docker compose restart prometheus alertmanager
 
-# ดูบันทึกแบบเรียลไทม์ (50 บรรทัดล่าสุด)
+# ดู log แบบเรียลไทม์ (50 บรรทัดล่าสุด)
 docker compose logs -f --tail 50 node-red
 docker compose logs -f --tail 50 pgbouncer
 
-# ตรวจสอบการใช้ทรัพยากร
+# ดูการใช้ทรัพยากร
 docker stats --no-stream
 ```
 
 > [!NOTE]
 >
-> > หลังจากการใช้คำสั่ง `docker compose down -v`, จะต้องรอ 40 วินาที เพื่อให้ระบบทั้งหมดเริ่มทำงานเสร็จสมบูรณ์ก่อนจะทำการตรวจสอบ.
+> > หลัง `docker compose down -v` ต้องรอประมาณ 40 วินาทีให้ทุก service เริ่มทำงานครบก่อนตรวจสอบ
 
-### การตรวจสอบสถานะบริการ (Health Checks)
+### การตรวจสุขภาพของ Service
 
 ```bash
 # ฐานข้อมูล
@@ -110,83 +113,96 @@ curl -s http://localhost:9090/-/healthy
 curl -s http://localhost:9093/-/healthy
 ```
 
-### การทำ Database Migrations
+### Database Migrations
 
-`database/migrations/` ในปัจจุบันมีไฟล์ที่มีลำดับ 57 ไฟล์ (`013` ถึง `082`, โดยมีการข้ามตัวเลขหรือเก็บถาวรบางตัวเลข — ตัวเลขก่อนหน้า `001-012` ถูกรวมเข้าใน `postgres/init/001-init-timescaledb.sql` ซึ่งเป็นเส้นทางการเริ่มต้นใช้งานใหม่). นำไปใช้โดยอัตโนมัติผ่านบริการ one-shot `ims-db-migrate` ทุกครั้งที่มีการรัน `docker compose up`; `node-red` และ `alarm-api` จะไม่เริ่มทำงานจนกว่าเซอร์วิสนี้จะจบการทำงานสำเร็จ.
+ปัจจุบัน `database/migrations/` มีไฟล์ 57 ไฟล์ตามลำดับ (`013` ถึง `082` โดยมีบางหมายเลขที่ข้ามหรือย้ายไปเก็บถาวร — หมายเลข `001-012` ถูกรวมเข้าไปใน `postgres/init/001-init-timescaledb.sql` ซึ่งเป็นเส้นทาง bootstrap สำหรับการติดตั้งใหม่) service `ims-db-migrate` แบบครั้งเดียวจะ apply ให้อัตโนมัติทุกครั้งที่รัน `docker compose up` และ `node-red` กับ `alarm-api` จะไม่เริ่มจนกว่าจะจบการทำงานสำเร็จ
 
 ```bash
-# เรียกใช้ migrations ด้วยตนเองโดยไม่เริ่มระบบย่อยส่วนอื่นๆ
+# รัน migration ซ้ำด้วยตนเองโดยไม่ต้องเปิดส่วนอื่นของ stack
 bash scripts/migrate.sh
 
-# เมื่อฐานข้อมูลปกติและเป็นปัจจุบัน จะแสดงข้อความนี้:
+# บนฐานข้อมูลที่ปกติและเป็นปัจจุบัน ต้องเห็นบรรทัดนี้ตรงทุกตัวอักษร:
 # Pending: 0 Applied: 0 Failed: 0
-# "Pending: N" หมายความว่ามีไฟล์ migration จำนวน N ไฟล์ที่ตาราง schema_migrations
-# ยังไม่มีการบันทึกแถวข้อมูล — scripts/migrate.sh จะนำไปใช้ตามลำดับ
+# "Pending: N" หมายถึงมีไฟล์ migration N ไฟล์ที่ยังไม่มีแถวใน schema_migrations
+# -- scripts/migrate.sh จะ apply ให้ตามลำดับ
 
-# ตรวจสอบว่ามีอะไรถูกประยุกต์ใช้ไปแล้วบ้าง
+# ดูว่า apply อะไรไปแล้วจริง
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
 ```
 
-Migrations ทั้งหมดถูกเขียนขึ้นในลักษณะ idempotent (`CREATE ... IF NOT EXISTS`, ป้องกันด้วยบล็อก `DO $$ ... $$`) ดังนั้นการรัน `scripts/migrate.sh` ซ้ำบนฐานข้อมูลที่เป็นปัจจุบันอยู่แล้ว ย่อมปลอดภัยไม่มีผลข้างเคียง ดูหัวข้อ "Migration Governance" ใน `docs/architecture/ARCHITECTURE.md` สำหรับเหตุผลที่มีตัวรัน migration เพียงตัวเดียว ไม่ใช่สามตัว
+migration ทุกไฟล์เขียนให้รันซ้ำได้อย่างปลอดภัย (`CREATE ... IF NOT EXISTS` และบล็อก `DO $$ ... $$` ที่มีเงื่อนไขป้องกัน) การรัน `scripts/migrate.sh` ซ้ำกับฐานข้อมูลที่เป็นปัจจุบันแล้วจึงไม่เปลี่ยนแปลงอะไรเสมอ ดูหัวข้อ "Migration Governance" ใน `docs/architecture/ARCHITECTURE.md` เพื่อดูเหตุผลที่ตั้งใจให้มีตัวรัน migration เพียงตัวเดียว ไม่ใช่สามตัว
 
 ---
 
-## รายการตรวจสอบความปลอดภัยก่อนนำไปใช้งานจริง (Pre-Production)
+## รายการตรวจความปลอดภัยก่อนใช้งานจริง
 
 > [!CAUTION]
-> ก่อนนำไปใช้งานจริง ข้อมูลรับรองที่เป็นค่าเริ่มต้นทั้งหมดต้องถูกเปลี่ยน มิฉะนั้นระบบจะเปิดรับการเข้าถึงโดยไม่ได้รับอนุญาต.
+> ก่อนนำขึ้นใช้งานจริง ต้องเปลี่ยน credential ค่าเริ่มต้นทั้งหมด มิฉะนั้นระบบจะเปิดช่องให้ผู้ไม่มีสิทธิ์เข้าถึงได้
 
-| ข้อมูลประจำตัว             | ค่าเริ่มต้น           | ตำแหน่ง                                             | สิ่งที่ต้องทำ                                                                                                                                                                                |
-| ------------------------ | ------------------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `INGEST_API_KEY`         | `ims-secret-key`   | `.env` + `docker-compose.yaml` (`ims-node-red` env) | **ต้องเปลี่ยน** — ผู้ใช้ที่ไม่ได้รับอนุญาตสามารถแทรกข้อมูลที่ถูกปลอมแปลงผ่าน `POST /inject` ได้                                                                                                                |
-| `POSTGRES_PASSWORD`      | `change-me-please` | `.env`                                              | **ต้องเปลี่ยน** — สิทธิการเข้าถึงของผู้ใช้สูงสุดในฐานข้อมูล                                                                                                                                                         |
-| `GRAFANA_ADMIN_PASSWORD` | `change-me-please` | `.env`                                              | **ต้องเปลี่ยน** — สิทธิการแก้ไขแดชบอร์ด + การเข้าถึงแหล่งข้อมูล                                                                                                                                                |
-| `ALARM_API_DB_PASSWORD`  | `change-me-please` | `.env`                                              | **ต้องเปลี่ยน** — ข้อมูลประจำตัวสำหรับ role `alarm_api_writer` (migration `078-alarm-api-writer-role.sql`); จำกัดขอบเขตแค่ `SELECT`+`UPDATE` บน `ldi_alarm_lifecycle` เท่านั้น แต่ก็เป็น credential DB ของจริง |
+| Credential | ค่าเริ่มต้น | ตำแหน่ง | สิ่งที่ต้องทำ |
+| --- | --- | --- | --- |
+| `INGEST_API_KEY` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → env ของ `ims-node-red` | **เปลี่ยน** — ใครก็ตามที่เข้าถึง `/ldi-telemetry` หรือ `/inject` ได้ (พอร์ต 3000 ของ host ผ่าน nginx หรือ 1880 บน loopback) สามารถส่ง telemetry ปลอมเข้ามาได้ |
+| `POSTGRES_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` | **เปลี่ยน** — superuser ของฐานข้อมูล (`POSTGRES_USER`) |
+| `GRAFANA_DB_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → role `grafana_reader` และ userlist ของ PgBouncer | **เปลี่ยน** — มีสิทธิ์อ่านทุกตารางที่ Grafana query ได้ |
+| `ALARM_API_DB_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → role `alarm_api_writer` (migration `078-alarm-api-writer-role.sql`) | **เปลี่ยน** — จำกัดสิทธิ์แค่ `SELECT`+`UPDATE` บน `ldi_alarm_lifecycle` แต่ยังเป็น credential ของฐานข้อมูลจริง |
+| `GRAFANA_ADMIN_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → ผู้ดูแล Grafana | **เปลี่ยน** — แก้ไขแดชบอร์ดและ datasource ได้ |
+| `ALERT_WEBHOOK_TOKEN`, `GRAFANA_RENDERER_TOKEN` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` | **เปลี่ยน** — shared secret ของ webhook และ renderer |
+| `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH` | ค่าตัวอย่างที่เป็นสาธารณะ / ค่าว่าง | `.env` → Node-RED | **เปลี่ยน** ก่อนเก็บ credential ใด ๆ ใน flow หาก hash ว่าง editor จะไม่มีการยืนยันตัวตนผู้ดูแล |
+| `PGADMIN_DEFAULT_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → pgAdmin | **เปลี่ยน** — pgAdmin เปิดพอร์ตบนทุก interface |
 
-### วิธีหมุนเวียน (Rotate)
+ค่าทุกค่าใน `.env.example` เป็นข้อมูลสาธารณะ (repository เป็นแบบสาธารณะ) ให้ถือว่าทุกค่าถูกเปิดเผยแล้ว และห้ามนำไปใช้งานจริง
+
+### วิธีเปลี่ยน (Rotate) Credential
 
 ```bash
-# 1. สร้างความลับ (secrets) ชุดใหม่
-NEW_API_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
-NEW_DB_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
-NEW_GRAFANA_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
-NEW_ALARM_API_DB_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
+# 1. สร้างค่าลับใหม่ (อย่าพิมพ์ค่าออกมาใน terminal log ที่ใช้ร่วมกัน)
+gen() { python -c "import secrets; print(secrets.token_urlsafe($1))"; }
+NEW_API_KEY=$(gen 32); NEW_PG_PASS=$(gen 24); NEW_GRAFANA_DB_PASS=$(gen 24)
+NEW_ALARM_API_DB_PASS=$(gen 24); NEW_GRAFANA_ADMIN_PASS=$(gen 24)
 
-# 2. อัปเดต .env
+# 2. เปลี่ยนรหัสผ่านของ role ในฐานข้อมูล "ก่อน" ขณะที่ credential เดิมยังใช้ได้
+#    การแก้ .env ไม่ได้เปลี่ยนรหัสผ่าน superuser ใน data volume ที่มีอยู่แล้ว
+docker compose exec -T timescaledb sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<SQL
+ALTER ROLE CURRENT_USER WITH PASSWORD '$NEW_PG_PASS';
+ALTER ROLE grafana_reader WITH PASSWORD '$NEW_GRAFANA_DB_PASS';
+ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';
+SQL
+
+# 3. แก้ .env ให้ตรงกัน
 sed -i "s/^INGEST_API_KEY=.*/INGEST_API_KEY=$NEW_API_KEY/" .env
-sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_DB_PASS/" .env
-sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_PASS/" .env
+sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_PG_PASS/" .env
+sed -i "s/^GRAFANA_DB_PASSWORD=.*/GRAFANA_DB_PASSWORD=$NEW_GRAFANA_DB_PASS/" .env
 sed -i "s/^ALARM_API_DB_PASSWORD=.*/ALARM_API_DB_PASSWORD=$NEW_ALARM_API_DB_PASS/" .env
+sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_ADMIN_PASS/" .env
 
-# 3. อัปเดตรหัสผ่าน DB ของ grafana_reader และ alarm_api_writer
-docker compose exec -T timescaledb psql -U ims_admin -d ims \
- -c "ALTER ROLE grafana_reader WITH PASSWORD '$NEW_DB_PASS';"
-docker compose exec -T timescaledb psql -U ims_admin -d ims \
- -c "ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';"
+# 4. สร้างคอนเทนเนอร์ใหม่เพื่อให้รับ environment ใหม่
+#    (pgbouncer สร้าง userlist.txt ใหม่จาก .env ตอนเริ่ม)
+docker compose up -d --force-recreate pgbouncer node-red grafana alarm-api factory-twin-3d observability-archiver
 
-# 4. รีสตาร์ทบริการทั้งหมด (pgbouncer จะโหลด userlist.txt ใหม่จาก .env ในตอนเริ่มทำงาน)
-docker compose up -d
+# 5. GF_SECURITY_ADMIN_PASSWORD มีผลเฉพาะกับฐานข้อมูล Grafana ที่สร้างใหม่เท่านั้น
+#    กับฐานข้อมูลที่มีอยู่แล้ว ต้องรีเซ็ตรหัสผ่านผู้ดูแลโดยตรง:
+docker compose exec grafana grafana cli admin reset-admin-password "$NEW_GRAFANA_ADMIN_PASS"
 
-# 5. ตรวจสอบ
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health
+# 6. ตรวจสอบ
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/health
 curl -s -X POST http://localhost:1880/inject \
  -H "Content-Type: application/json" \
  -H "x-api-key: $NEW_API_KEY" \
  -d '{"machine_id":"TEST"}'
 ```
 
-### คำสั่งสำหรับตรวจสอบ (Verification Commands)
+### คำสั่งตรวจสอบ
 
 ```bash
-# ยืนยันว่ามีการบังคับใช้ INGEST_API_KEY (ควรส่งคืน 401 เมื่อไม่มี key)
+# ยืนยันว่า INGEST_API_KEY ถูกบังคับใช้ (ต้องได้ 401 เมื่อไม่ส่ง key)
 curl -s -w "\nHTTP: %{http_code}" -X POST http://localhost:1880/inject \
  -H "Content-Type: application/json" -d '{"machine_id":"TEST"}'
-# ควรได้รับ: HTTP 401
+# ผลที่คาดหวัง: HTTP 401
 
-# ยืนยันว่า Grafana ต้องการให้ล็อกอิน
+# ยืนยันว่า Grafana ต้องล็อกอิน
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
-# ควรได้รับ: 401 (ไม่ใช่ 200)
+# ผลที่คาดหวัง: 401 (ไม่ใช่ 200)
 ```
 
 ---
@@ -195,22 +211,22 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
 
 ### ขั้นตอนที่ 1: ลงทะเบียนในฐานข้อมูล
 
-ตาราง `public.devices` จัดประเภท `device_type` อย่างเคร่งครัดระหว่าง `'server'` (โครงสร้างพื้นฐานที่มีการตรวจสอบผ่าน SNMP, ซึ่งเป็นค่าเริ่มต้น) และ `'ldi'` (เครื่องผลิต LDI). ตรวจสอบให้แน่ใจว่าได้ระบุประเภทที่เหมาะสม มิฉะนั้นจะเปลี่ยนเป็น `'server'` โดยค่าเริ่มต้น และจะไม่ปรากฏในแดชบอร์ด LDI ใดๆ:
+ตาราง `public.devices` แบ่ง `device_type` เป็น `'server'` (โครงสร้างพื้นฐานที่ตรวจด้วย SNMP ซึ่งเป็นค่าเริ่มต้น) และ `'ldi'` (เครื่องผลิต LDI) เท่านั้น ต้องระบุประเภทให้ถูกต้อง มิฉะนั้นจะถูกตั้งเป็น `'server'` และจะไม่แสดงบนแดชบอร์ด LDI ใด ๆ:
 
 ```sql
--- เพิ่มโครงสร้างพื้นฐานเซิร์ฟเวอร์ใหม่ (สืบค้นผ่าน SNMP)
+-- เพิ่มเซิร์ฟเวอร์โครงสร้างพื้นฐานใหม่ (poll ด้วย SNMP)
 INSERT INTO public.devices (device_id, hostname, ip_address, device_type, snmp_community, snmp_port, enabled)
 VALUES ('NEW-MACHINE-01', '192.168.1.100', '192.168.1.100', 'server', 'public', 161, true);
 
--- เพิ่มเครื่อง LDI ใหม่ (ข้าม SNMP — ป้อนข้อมูลผ่าน ldi_ingestion.json / เครื่องจำลอง)
+-- เพิ่มเครื่อง LDI ใหม่ (ไม่ใช้ SNMP — ข้อมูลเข้าผ่าน ldi_ingestion.json / ตัวจำลอง)
 INSERT INTO public.devices (device_id, hostname, ip_address, device_type, enabled)
 VALUES ('LDI-11', 'LDI-11', '', 'ldi', true);
 
--- การยืนยัน
+-- ตรวจสอบ
 SELECT device_id, hostname, device_type, snmp_community, enabled FROM public.devices WHERE device_id IN ('NEW-MACHINE-01', 'LDI-11');
 ```
 
-### ขั้นตอนที่ 2: ตรวจสอบการเชื่อมต่อ SNMP
+### ขั้นตอนที่ 2: ตรวจการเชื่อมต่อ SNMP
 
 ```bash
 # ทดสอบ SNMP จากคอนเทนเนอร์ Node-RED
@@ -225,13 +241,13 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 "
 ```
 
-### ขั้นตอนที่ 3: ตรวจสอบเส้นทางข้อมูล
+### ขั้นตอนที่ 3: ตรวจเส้นทางข้อมูล
 
 ```bash
-# รอ 30 วินาทีเพื่อให้รอบการทำงานของการรวบรวมข้อมูลเสร็จสิ้น
+# รอ 30 วินาทีให้รอบการ poll ทำงาน
 sleep 30
 
-# ตรวจสอบการรับข้อมูล
+# ตรวจว่ามีข้อมูลเข้ามา
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
  FROM public.sys_metrics s
@@ -239,117 +255,113 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
  GROUP BY device_id;"
 ```
 
-### ขั้นตอนที่ 4: เพิ่มหน้าแดชบอร์ด (ไม่จำเป็น)
+### ขั้นตอนที่ 4: เพิ่ม Panel ในแดชบอร์ด (ไม่บังคับ)
 
-หากเครื่องใหม่ต้องใช้หน้าแดชบอร์ดโดยเฉพาะ:
+หากต้องการแดชบอร์ดเฉพาะสำหรับเครื่องใหม่:
 
 1. เปิด Grafana → Dashboard → Edit
-2. เพิ่มพาเนล (Panel) ใหม่
-3. ใช้แบบสอบถาม: `SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (\${machine_id:sqlstring}) ORDER BY time DESC`
+2. เพิ่ม panel ใหม่
+3. ใช้ query: `SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (\${machine_id:sqlstring}) ORDER BY time DESC`
 4. บันทึกแดชบอร์ด
 
 ---
 
 ## การจัดการการแจ้งเตือน
 
-### ที่ตั้งของกฎการแจ้งเตือน
+### ตำแหน่งของกฎการแจ้งเตือน
 
 ไฟล์: `monitoring/prometheus/rules/ims-alerts.yml`
 
 ### การแก้ไขกฎการแจ้งเตือน
 
-**ตัวอย่าง: การปรับเปลี่ยนเกณฑ์ High CPU Load:**
+กฎของ Prometheus ครอบคลุมตัวแพลตฟอร์มเอง (Prometheus/Alertmanager/targets, `ServiceDown`/latency/SLA/TLS จาก blackbox, `Watchdog` และตัวชี้วัดไปป์ไลน์ Node-RED `ims_pipeline_*` กับ `ims_circuit_breaker_state`) ส่วนเงื่อนไขระดับเครื่อง (CPU, อุณหภูมิ, พารามิเตอร์ LDI) ประเมินด้วยกฎแจ้งเตือน SQL ของ Grafana และแดชบอร์ดบน TimescaleDB ไม่ใช่ Prometheus
+
+**ตัวอย่าง: ปรับกฎที่มีอยู่ให้เข้มขึ้น** (`PipelineHighErrorRate` ปัจจุบันคือ `> 0.1` ครั้ง/วินาที ต่อเนื่อง 5 นาที):
 
 ```yaml
-- alert: HighCpuLoad
- # เปลี่ยนจาก 80% เป็น 85%
- expr: avg_over_time(cpu_load_percent[5m]) > 85
- for: 5m
- labels:
- severity: warning
- annotations:
- summary: "High CPU load on {{ $labels.machine_id }}"
- description: "CPU load {{ $value }}% exceeds threshold 85%"
+      - alert: PipelineHighErrorRate
+        expr: rate(ims_pipeline_inserts_failed_total[5m]) > 0.05   # was 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: node-red
+        annotations:
+          summary: "High INSERT failure rate on Node-RED pipeline"
+          description: "{{ $value | humanize }} failures/sec over 5 minutes."
 ```
 
-**ตัวอย่าง: การเพิ่มการแจ้งเตือนใหม่สำหรับการสั่นสะเทือน (Vibration) ของ LDI:**
+กฎใหม่ทุกกฎต้องมี label `severity` และ `service` (การ route และ inhibition ของ Alertmanager อ้างอิง label เหล่านี้) และต้องผ่าน `promtool check rules` ก่อน reload
 
-```yaml
-- alert: LDI_Vibration_Critical
- expr: ldi_vibration > 10.0
- for: 5m
- labels:
- severity: critical
- annotations:
- summary: "LDI vibration critical on {{ $labels.machine_id }}"
- description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
-```
-
-### โหลดค่าปรับแต่งใหม่ (Reload Configuration)
+### Reload การตั้งค่า
 
 ```bash
-# หลังจากแก้ไขกฎการแจ้งเตือน จะต้องโหลดข้อมูลใหม่เสมอ
-curl -X POST http://localhost:9090/-/reload
-
-# ตรวจสอบไวยากรณ์ (Syntax)
+# 1. ตรวจ syntax ก่อน (ไดเรกทอรี rules ถูก mount แบบอ่านอย่างเดียวที่ /etc/prometheus/rules)
 docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-alerts.yml
+
+# 2. Reload (Prometheus รันด้วย --web.enable-lifecycle และพอร์ต bind ไว้ที่ 127.0.0.1)
+curl -X POST http://localhost:9090/-/reload
 ```
 
-### กฎการระงับ (Inhibition Rules)
+> [!WARNING]
+> การ reload จะประเมินทุกกฎใหม่ทันที หากตั้งค่า credential ของ LINE/Teams ไว้แล้ว กฎที่กำลัง firing อยู่จะส่งการแจ้งเตือนจริงออกไป
 
-ระบบใช้กฎการระงับ (Inhibition Rules) แบบอัตโนมัติ:
+### กฎการระงับการแจ้งเตือน (Inhibition Rules)
 
-| การแจ้งเตือนต้นทาง           | การแจ้งเตือนที่ถูกระงับ | ขอบเขต                   |
-| -------------------------- | ----------------- | ------------------------ |
-| `InterfaceDown` (critical) | คำเตือนทั้งหมด        | ในเครื่องเดียวกัน             |
-| `ServiceDown` (critical)   | คำเตือนทั้งหมด        | ในเครื่องเดียวกัน             |
-| `NodeREDDown`              | `TelemetryGap`    | แบบวงกว้างทั้งหมด          |
-| `Critical`                 | `Warning`, `Info` | alertname และ เครื่องเดียวกัน |
+`monitoring/alertmanager/alertmanager.yml` กำหนดกฎ inhibition ไว้ 3 ข้อ:
+
+| การแจ้งเตือนต้นทาง | การแจ้งเตือนที่ถูกระงับ | ต้องตรงกันที่ |
+| --- | --- | --- |
+| `ServiceDown` | `ServiceHighLatency`, `SLABreachWarning` | `instance` |
+| `severity="critical"` ใด ๆ | `severity="warning"` ใด ๆ | `device_id` |
+| `InterfaceDown` | `BandwidthSaturation` | `device_id` |
 
 ---
 
-## การแก้ปัญหา
+## การแก้ไขปัญหา
 
-### ปัญหาที่พบบ่อยและวิธีการแก้ไข
+### ปัญหาที่พบบ่อยและวิธีแก้
 
-| ปัญหา                                 | สาเหตุ                                     | วิธีแก้ไข                                                               |
-| ----------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------- |
-| Grafana แสดง "No Data"              | PgBouncer การเชื่อมต่อเต็มหรือฐานข้อมูลล่ม            | พิมพ์คำสั่ง `docker restart ims-pgbouncer` และเช็คพื้นที่ว่างของดิสก์              |
-| ไม่มีการแจ้งเตือนส่งไปยัง LINE/Teams      | Alertmanager Webhook หายไป                 | ตรวจสอบ log ของ Node-RED ที่โหนด `POST/alert-webhook`                   |
-| กราฟแบนด์วิธพุ่งสูงถึง Tbps              | 32-bit Counter Wrap                        | ถูกจัดการแล้วโดย parser, หากเจอปัญหา ให้เช็คว่าอุปกรณ์รองรับ HC (64-bit) หรือไม่ |
-| Node-RED เริ่มทำงานไม่ได้               | มีไวยากรณ์ผิดพลาดใน Flow JSON                  | ตรวจสอบ log: `docker compose logs --tail=50 node-red`                   |
-| Continuous Aggregate ขาดหายข้อมูล       | จำเป็นต้องรีเฟรชข้อมูลด้วยตนเอง                      | พิมพ์คำสั่ง `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);`  |
-| คอนเทนเนอร์ค้างอยู่ที่สถานะ "Restarting" | การกำหนดค่าขัดแย้งหรือมีพอร์ตทับซ้อน                | เช็ค log สำหรับคอนเทนเนอร์ตัวนั้น                                             |
+| ปัญหา | สาเหตุ | วิธีแก้ |
+| --- | --- | --- |
+| Grafana แสดง "No Data" | connection ของ PgBouncer เต็ม หรือฐานข้อมูลล่ม | รัน `docker restart ims-pgbouncer` และตรวจพื้นที่ดิสก์ |
+| การแจ้งเตือนไม่ถูกส่งไป LINE/Teams | credential ใน `.env` ว่าง หรือ webhook token ไม่ตรงกัน | ตรวจ `LINE_CHANNEL_ACCESS_TOKEN` / `TEAMS_WEBHOOK_URL` / `ALERT_WEBHOOK_TOKEN` แล้วดู log ของ Node-RED ที่ node `POST /alert-webhook` |
+| กราฟ bandwidth พุ่งถึงระดับ Tbps | counter แบบ 32 บิตวนกลับ (wrap) | parser จัดการให้แล้ว แต่หากยังเกิด ให้ตรวจว่าอุปกรณ์รองรับ counter แบบ 64 บิต (HC) |
+| Node-RED เริ่มไม่ขึ้น | JSON ของ flow มี syntax ผิด | ดู log: `docker compose logs --tail=50 node-red` |
+| Continuous Aggregate ไม่มีข้อมูล | ต้อง refresh ด้วยตนเอง | รัน `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
+| คอนเทนเนอร์ค้างอยู่ที่ "Restarting" | ตั้งค่าไม่ตรงกันหรือพอร์ตชนกัน | ดู log ของคอนเทนเนอร์นั้น |
 
-### โปรโตคอลการตรวจสอบ SRE
+### ขั้นตอนตรวจสอบแบบ SRE
+
+> [!CAUTION]
+> `docker compose down -v` ลบ named volume ทุกตัว รวมถึงข้อมูลของ TimescaleDB ใช้กับสภาพแวดล้อมทดลองที่ทิ้งได้เท่านั้น ห้ามใช้กับ stack ที่มีข้อมูลจริง
 
 ```bash
-# 1. รีสตาร์ทแบบสะอาด
-docker compose down -v && docker compose up -d
+# 1. เริ่ม (หรือปรับให้ตรง) stack
+docker compose up -d
 
 # 2. รอ 40 วินาที
 sleep 40
 
-# 3. ตรวจสอบคอนเทนเนอร์ (13 ตัวรันต่อเนื่อง + ims-db-migrate ที่ควรขึ้นว่า Exited (0))
+# 3. ตรวจคอนเทนเนอร์ (ทำงานต่อเนื่อง 14 ตัว + ims-db-migrate ซึ่งต้องเป็น Exited (0))
 docker compose ps
 
-# 4. ตรวจสอบข้อมูลเข้า
+# 4. ตรวจการไหลของข้อมูล
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
 FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id
 WHERE s.time > NOW() - INTERVAL '5 minutes'
 GROUP BY device_id;"
 
-# 5. ตรวจสอบ Continuous Aggregates
+# 5. ตรวจ Continuous Aggregates
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT bucket, avg_cpu, max_temp
 FROM public.sys_hourly
 ORDER BY bucket DESC LIMIT 4;"
 
-# 6. ตรวจสอบ Grafana
+# 6. ตรวจ Grafana
 curl -sf http://localhost:3000/api/health
 
-# 7. ตรวจสอบ Prometheus Targets
+# 7. ตรวจ target ของ Prometheus
 curl -sf http://localhost:9090/api/v1/targets | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
@@ -361,35 +373,39 @@ print(f'Prometheus: {ups}/{total} targets UP')
 
 ---
 
-## การสำรองข้อมูลและการกู้คืน
+## การสำรองและกู้คืนข้อมูล
 
-### การสำรองฐานข้อมูล (Database Backup)
+### การสำรองฐานข้อมูล
+
+ใช้เส้นทางที่มีสคริปต์รองรับ (`make backup` → `scripts/backup-db.sh`, `make restore FILE=<path>` → `scripts/restore-db.sh`) ขั้นตอนและข้อควรระวังที่ทดสอบแล้วอยู่ใน [การสำรองและกู้คืนข้อมูล](../operations/BACKUP_RESTORE.md) หากต้อง dump ด้วยตนเอง:
 
 ```bash
-# ทำการสำรองฐานข้อมูลเต็มรูปแบบ
-docker compose exec timescaledb pg_dump -U ims_admin ims > backup_$(date +%Y%m%d).sql
+# ต้องมี -T: หากไม่มี docker จะจัดสรร TTY และทำให้ไฟล์ dump ที่ redirect ออกมาเสียหาย
+docker compose exec -T timescaledb sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup_$(date +%Y%m%d).sql
 
-# กู้คืนจากข้อมูลสำรอง
-cat backup_20260627.sql | docker compose exec -T timescaledb psql -U ims_admin -d ims
+# กู้คืนลงฐานข้อมูลที่มีอยู่
+docker compose exec -T timescaledb sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < backup_YYYYMMDD.sql
 
-# สำรองอัตโนมัติ (cron)
-0 2 * * * docker compose exec timescaledb pg_dump -U ims_admin ims > /backup/ims_$(date +\%Y\%m\%d).sql
+# สำรองอัตโนมัติ (cron รันจากไดเรกทอรีของ repository)
+0 2 * * * cd /path/to/IMS && bash scripts/backup-db.sh
 ```
+
+`scripts/backup-db.sh` เขียนไฟล์ dump แบบ gzip ลง `./backups/` (อยู่ใน .gitignore) และลบไฟล์ที่เก่ากว่า 30 วัน ไฟล์ dump มีข้อมูลการผลิตจริง ห้ามย้ายไปไว้ใน path ที่ git ติดตาม และต้องจำกัดสิทธิ์เข้าถึงไดเรกทอรีสำรอง
 
 ### การสำรอง Flow
 
 ```bash
-# nodered_data/flows/*.json คือแหล่งความจริง (source of truth) ที่ได้รับการดูแลโดย git
-# (ซึ่งจะถูกรวมเป็น nodered_data/flows.json โดยสคริปต์ scripts/build-flows.js -- ห้ามแก้ไขไฟล์ flows.json ด้วยตนเอง)
-# สำรองข้อมูลไฟล์ nodered_data/flows.json (ไฟล์ที่ใช้ตอนรัน)
+# nodered_data/flows/*.json เป็นต้นฉบับที่ git ดูแล
+# (scripts/build-flows.js รวมเป็น nodered_data/flows.json -- ห้ามแก้ flows.json ด้วยมือ)
+# สำรอง nodered_data/flows.json (สำเนาที่ runtime ใช้)
 cp nodered_data/flows.json nodered_data/flows.json.bak
 
-# กู้คืนจากข้อมูลสำรอง
+# กู้คืนจากสำเนา
 cp nodered_data/flows.json.bak nodered_data/flows.json
 docker compose restart node-red
 ```
 
-### การสำรองการกำหนดค่า (Configuration Backup)
+### การสำรองการตั้งค่า
 
 ```bash
 # สำรองไฟล์ docker-compose
@@ -397,7 +413,7 @@ cp docker-compose.yaml docker-compose.yaml.bak
 cp docker-compose.prod.yaml docker-compose.prod.yaml.bak
 cp proxy/nginx.conf proxy/nginx.conf.bak
 
-# สำรอง Prometheus config
+# สำรองการตั้งค่า Prometheus
 cp monitoring/prometheus/prometheus.yml monitoring/prometheus/prometheus.yml.bak
 cp monitoring/prometheus/rules/ims-alerts.yml monitoring/prometheus/rules/ims-alerts.yml.bak
 
@@ -407,25 +423,25 @@ cp -r monitoring/grafana/dashboards/ monitoring/grafana/dashboards.bak/
 
 ---
 
-## การตรวจสอบประสิทธิภาพ
+## การติดตามประสิทธิภาพ
 
-### ตัวชี้วัดระบบ
+### ตัวชี้วัดของระบบ
 
 ```bash
-# การใช้ทรัพยากรของ Container
+# การใช้ทรัพยากรของคอนเทนเนอร์
 docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
 
-# การเชื่อมต่อฐานข้อมูล
+# จำนวน connection ของฐานข้อมูล
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT count(*) as active_connections
 FROM pg_stat_activity
 WHERE state = 'active';"
 
-# การใช้ดิสก์
+# ขนาดดิสก์
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT pg_size_pretty(pg_database_size('ims')) as database_size;"
 
-# ขนาดของตาราง
+# ขนาดของแต่ละตาราง
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT relname as table_name,
   pg_size_pretty(pg_total_relation_size(relid)) as total_size
@@ -436,10 +452,10 @@ ORDER BY pg_total_relation_size(relid) DESC;"
 ### ตัวชี้วัดของ Prometheus
 
 ```bash
-# ระยะเวลาการกวาดข้อมูล (Scrape duration)
+# ระยะเวลา scrape
 curl -s http://localhost:9090/api/v1/query?query=prometheus_scrape_duration_seconds
 
-# จำนวนข้อมูลที่ได้รับ
+# จำนวน sample ที่รับเข้า
 curl -s http://localhost:9090/api/v1/query?query=prometheus_tsdb_head_samples_appended_total
 
 # จำนวนการแจ้งเตือน
@@ -450,23 +466,23 @@ print(f'Active alerts: {len(data[\"data\"][\"alerts\"])}')
 "
 ```
 
-### การวิเคราะห์ Log (Log Analysis)
+### การวิเคราะห์ Log
 
 ```bash
-# ข้อผิดพลาด Node-RED
+# ข้อผิดพลาดของ Node-RED
 docker compose logs node-red 2>&1 | grep -i "error" | tail -20
 
-# ข้อผิดพลาด Prometheus
+# ข้อผิดพลาดของ Prometheus
 docker compose logs prometheus 2>&1 | grep -i "error" | tail -20
 
-# ข้อผิดพลาด Alertmanager
+# ข้อผิดพลาดของ Alertmanager
 docker compose logs alertmanager 2>&1 | grep -i "error" | tail -20
 
-# คำสั่งฐานข้อมูลที่ช้า
+# query ที่ช้าในฐานข้อมูล
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
-SELECT query, calls, mean_time, total_time
+SELECT query, calls, mean_exec_time, total_exec_time
 FROM pg_stat_statements
-ORDER BY mean_time DESC
+ORDER BY mean_exec_time DESC
 LIMIT 10;"
 ```
 
@@ -474,8 +490,8 @@ LIMIT 10;"
 
 <div align="center">
 
-**IMS Admin Manual — Version 1.1**
+**IMS Admin Manual — เวอร์ชัน 1.2 (ตรวจทานเทียบกับ `main` เมื่อ 2026-09-26)**
 
-_สำหรับทีม IT & MIS-G_
+_สำหรับทีม IT และ MIS-G_
 
 </div>

@@ -166,7 +166,7 @@ sleep 40 && make verify
 ```
 
 > [!WARNING]
-> `.env.example` 中的值是公开的。除一次性试用的笔记本外，任何环境首次启动前都必须为 `.env` 中的每个密码、令牌与密钥生成新值（`POSTGRES_PASSWORD`、`GRAFANA_ADMIN_PASSWORD`、`GRAFANA_DB_PASSWORD`、`ALARM_API_DB_PASSWORD`、`INGEST_API_KEY`、`ALERT_WEBHOOK_TOKEN`、`NODE_RED_CREDENTIAL_SECRET`、`NODE_RED_ADMIN_PASSWORD_HASH`、`PGADMIN_DEFAULT_PASSWORD`、`GRAFANA_RENDERER_TOKEN`）。`postgres/init/003-grafana-password.sh` 还带有一个后备密码，只有在设置了 `GRAFANA_DB_PASSWORD` 时才安全。详见 [SECURITY.md](SECURITY.md)。
+> `.env.example` 中的值是公开的。除一次性试用的笔记本外，任何环境首次启动前都必须为 `.env` 中的每个密码、令牌与密钥生成新值（`POSTGRES_PASSWORD`、`GRAFANA_ADMIN_PASSWORD`、`GRAFANA_DB_PASSWORD`、`ALARM_API_DB_PASSWORD`、`INGEST_API_KEY`、`ALERT_WEBHOOK_TOKEN`、`NODE_RED_CREDENTIAL_SECRET`、`NODE_RED_ADMIN_PASSWORD_HASH`、`PGADMIN_DEFAULT_PASSWORD`、`GRAFANA_RENDERER_TOKEN`）。详见 [SECURITY.md](SECURITY.md)。
 
 > **预期效果：** 温和的模拟数据流（约 10–15 行/分钟），可浏览 LDI Manufacturing Command Center、Operator Andon Board 以及实时 Cpk 能力图。
 > **证据：** 2026-08-13 的 `docker compose ps`，存档于 [`docs/evidence/runtime/compose-ps-20260813.txt`](../docs/evidence/runtime/compose-ps-20260813.txt)。

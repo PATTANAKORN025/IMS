@@ -15,7 +15,7 @@
 <div align="center">
 
 <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Admin:** SRE Guide
-<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.1
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.2
 <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Audience:** IT Team
 
 </div>
@@ -37,7 +37,7 @@
 
 ### Container Overview
 
-The system operates entirely on Docker Compose, comprising a total of 14 services (13 long-running services and 1 one-shot migration runner that exits upon completion):
+The system operates entirely on Docker Compose: `docker-compose.yaml` defines 15 services (14 long-running services and 1 one-shot migration runner that exits upon completion). There is no `profiles:` gating, so `make up` and `make up-prod` start all of them, the SNMP simulator and pgAdmin included:
 
 | Container              | Service                | Port                        | Purpose                                                                                                                                           |
 | ---------------------- | ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -45,14 +45,17 @@ The system operates entirely on Docker Compose, comprising a total of 14 service
 | `ims-pgbouncer`        | PgBouncer              | 5432 (internal)             | Connection pooler                                                                                                                                 |
 | `ims-db-migrate`       | Migration runner       | — (one-shot)                | Applies `database/migrations/*.sql`, gates `node-red` and `alarm-api` startup                                                                     |
 | `ims-node-red`         | Node-RED               | 1880 (loopback only)        | Data pipeline                                                                                                                                     |
-| `ims-proxy`            | nginx reverse proxy    | **3000**                    | The only host-published entry point to Grafana and `alarm-api`. Gates `/alarm-api/` behind an `auth_request` check against Grafana's own session. |
+| `ims-proxy`            | nginx reverse proxy    | **3000**                    | The single UI entry point: routes `/` to Grafana, `/alarm-api/`, `/factory-twin-3d/`, and `/ldi-telemetry` + `/inject` to Node-RED. Gates `/alarm-api/` behind an `auth_request` check against Grafana's own session. |
 | `ims-grafana`          | Grafana                | internal only, no host port | Dashboard — reachable only through `ims-proxy` now, not directly                                                                                  |
 | `ims-alarm-api`        | alarm-api              | internal only, no host port | Write path for `public.ldi_alarm_lifecycle` (Acknowledge/Resolve from `IMS LDI - Alarm Console`). Reachable only through `ims-proxy`.             |
 | `ims-grafana-renderer` | Grafana Image Renderer | 8081 (internal)             | PNG rendering for panel export/alerts                                                                                                             |
 | `ims-prometheus`       | Prometheus             | 9090 (loopback only)        | Metrics & alerting                                                                                                                                |
 | `ims-alertmanager`     | Alertmanager           | 9093 (loopback only)        | Alert routing                                                                                                                                     |
 | `ims-blackbox`         | Blackbox Exporter      | 9115 (loopback only)        | SLA probes                                                                                                                                        |
-| `ims-snmpsim`          | SNMP Simulator         | 161/udp                     | Dev testing                                                                                                                                       |
+| `ims-snmpsim`          | SNMP Simulator         | 161/udp (internal)          | Simulated SNMP devices for development and demos                                                                                                  |
+| `ims-factory-twin-3d`  | Factory Twin 3D        | 4100 (internal)             | Floor 1 digital twin, served through `ims-proxy` at `/factory-twin-3d/`                                                                           |
+| `ims-observability-archiver` | Log/metrics archiver | — (no port)             | Periodically archives container and DB observability snapshots to `./ops-logs`. Mounts `/var/run/docker.sock` read-only — treat it as privileged. |
+| `ims-pgadmin4`         | pgAdmin 4              | **5050, all interfaces**    | Database administration UI. The only service besides `ims-proxy` published on every interface — firewall it or bind it to `127.0.0.1` outside a lab. |
 
 > `ims-db-migrate` exits with status 0 after applying pending migrations -- seeing it as `Exited (0)` in `docker compose ps` is expected, not a failure. `node-red` and `alarm-api` won't start until it completes successfully.
 
@@ -68,7 +71,7 @@ docker compose up -d
 # Shut down all systems
 docker compose down
 
-# Clean Restart (Destroy all data and restart from scratch)
+# Clean Restart -- DESTROYS ALL DATA (every volume). Disposable environments only.
 docker compose down -v && docker compose up -d
 
 # Restart a specific service experiencing issues
@@ -139,37 +142,50 @@ All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded
 
 | Credential               | Default Value      | Location                                            | Action Required                                                                                                                                                                                |
 | ------------------------ | ------------------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `INGEST_API_KEY`         | `ims-secret-key`   | `.env` + `docker-compose.yaml` (`ims-node-red` env) | **CHANGE** — unauthorized users can inject spoofed telemetry via `POST /inject`                                                                                                                |
-| `POSTGRES_PASSWORD`      | `change-me-please` | `.env`                                              | **CHANGE** — database superuser access                                                                                                                                                         |
-| `GRAFANA_ADMIN_PASSWORD` | `change-me-please` | `.env`                                              | **CHANGE** — dashboard edit + datasource access                                                                                                                                                |
-| `ALARM_API_DB_PASSWORD`  | `change-me-please` | `.env`                                              | **CHANGE** — credential for the `alarm_api_writer` role (migration `078-alarm-api-writer-role.sql`); scoped to `SELECT`+`UPDATE` on `ldi_alarm_lifecycle` only, but still a real DB credential |
+| `INGEST_API_KEY`         | public example value | `.env` → `ims-node-red` env | **CHANGE** — anyone who can reach `/ldi-telemetry` or `/inject` (host port 3000 through nginx, or 1880 on loopback) can inject spoofed telemetry |
+| `POSTGRES_PASSWORD`      | public example value | `.env` | **CHANGE** — database superuser (`POSTGRES_USER`) |
+| `GRAFANA_DB_PASSWORD`    | public example value | `.env` → `grafana_reader` role, PgBouncer userlist | **CHANGE** — read access to every table Grafana can query |
+| `ALARM_API_DB_PASSWORD`  | public example value | `.env` → `alarm_api_writer` role (migration `078-alarm-api-writer-role.sql`) | **CHANGE** — scoped to `SELECT`+`UPDATE` on `ldi_alarm_lifecycle`, but still a real DB credential |
+| `GRAFANA_ADMIN_PASSWORD` | public example value | `.env` → Grafana admin | **CHANGE** — dashboard edit + datasource access |
+| `ALERT_WEBHOOK_TOKEN`, `GRAFANA_RENDERER_TOKEN` | public example value | `.env` | **CHANGE** — webhook and renderer shared secrets |
+| `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH` | public example value / empty | `.env` → Node-RED | **CHANGE** before storing any credential in a flow; an empty hash leaves the editor without admin auth |
+| `PGADMIN_DEFAULT_PASSWORD` | public example value | `.env` → pgAdmin | **CHANGE** — pgAdmin is published on all interfaces |
+
+Every value in `.env.example` is public (the repository is public). Treat each one as compromised and never deploy it.
 
 ### How to Rotate
 
 ```bash
-# 1. Generate new secrets
-NEW_API_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
-NEW_DB_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
-NEW_GRAFANA_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
-NEW_ALARM_API_DB_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
+# 1. Generate new secrets (never echo them into a shared terminal log)
+gen() { python -c "import secrets; print(secrets.token_urlsafe($1))"; }
+NEW_API_KEY=$(gen 32); NEW_PG_PASS=$(gen 24); NEW_GRAFANA_DB_PASS=$(gen 24)
+NEW_ALARM_API_DB_PASS=$(gen 24); NEW_GRAFANA_ADMIN_PASS=$(gen 24)
 
-# 2. Update .env
+# 2. Change the database role passwords FIRST, while the old credentials still work.
+#    The superuser password in an existing data volume is NOT changed by editing .env.
+docker compose exec -T timescaledb sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<SQL
+ALTER ROLE CURRENT_USER WITH PASSWORD '$NEW_PG_PASS';
+ALTER ROLE grafana_reader WITH PASSWORD '$NEW_GRAFANA_DB_PASS';
+ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';
+SQL
+
+# 3. Update .env to match
 sed -i "s/^INGEST_API_KEY=.*/INGEST_API_KEY=$NEW_API_KEY/" .env
-sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_DB_PASS/" .env
-sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_PASS/" .env
+sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_PG_PASS/" .env
+sed -i "s/^GRAFANA_DB_PASSWORD=.*/GRAFANA_DB_PASSWORD=$NEW_GRAFANA_DB_PASS/" .env
 sed -i "s/^ALARM_API_DB_PASSWORD=.*/ALARM_API_DB_PASSWORD=$NEW_ALARM_API_DB_PASS/" .env
+sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_ADMIN_PASS/" .env
 
-# 3. Update grafana_reader and alarm_api_writer DB passwords
-docker compose exec -T timescaledb psql -U ims_admin -d ims \
- -c "ALTER ROLE grafana_reader WITH PASSWORD '$NEW_DB_PASS';"
-docker compose exec -T timescaledb psql -U ims_admin -d ims \
- -c "ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';"
+# 4. Recreate the containers so they pick up the new environment
+#    (pgbouncer re-seeds userlist.txt from .env on start)
+docker compose up -d --force-recreate pgbouncer node-red grafana alarm-api factory-twin-3d observability-archiver
 
-# 4. Restart all services (pgbouncer re-seeds its userlist.txt from .env on start)
-docker compose up -d
+# 5. GF_SECURITY_ADMIN_PASSWORD only applies to a brand-new Grafana database;
+#    on an existing one, reset the admin password explicitly:
+docker compose exec grafana grafana cli admin reset-admin-password "$NEW_GRAFANA_ADMIN_PASS"
 
-# 5. Verify
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health
+# 6. Verify
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/health
 curl -s -X POST http://localhost:1880/inject \
  -H "Content-Type: application/json" \
  -H "x-api-key: $NEW_API_KEY" \
@@ -258,53 +274,46 @@ File: `monitoring/prometheus/rules/ims-alerts.yml`
 
 ### Editing Alert Rules
 
-**Example: Modifying the High CPU Load Threshold:**
+Prometheus rules cover the platform itself (Prometheus/Alertmanager/targets, blackbox `ServiceDown`/latency/SLA/TLS, the `Watchdog`, and the Node-RED pipeline metrics `ims_pipeline_*` and `ims_circuit_breaker_state`). Machine-level conditions (CPU, temperature, LDI parameters) are evaluated by Grafana SQL alert rules and dashboards against TimescaleDB, not by Prometheus.
+
+**Example: tightening an existing rule** (`PipelineHighErrorRate`, currently `> 0.1` failures/s for 5 minutes):
 
 ```yaml
-- alert: HighCpuLoad
- # Change from 80% to 85%
- expr: avg_over_time(cpu_load_percent[5m]) > 85
- for: 5m
- labels:
- severity: warning
- annotations:
- summary: "High CPU load on {{ $labels.machine_id }}"
- description: "CPU load {{ $value }}% exceeds threshold 85%"
+      - alert: PipelineHighErrorRate
+        expr: rate(ims_pipeline_inserts_failed_total[5m]) > 0.05   # was 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: node-red
+        annotations:
+          summary: "High INSERT failure rate on Node-RED pipeline"
+          description: "{{ $value | humanize }} failures/sec over 5 minutes."
 ```
 
-**Example: Adding a New Alert for LDI Vibration:**
-
-```yaml
-- alert: LDI_Vibration_Critical
- expr: ldi_vibration > 10.0
- for: 5m
- labels:
- severity: critical
- annotations:
- summary: "LDI vibration critical on {{ $labels.machine_id }}"
- description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
-```
+Every new rule needs `severity` and `service` labels (Alertmanager routing and inhibition key on them) and must pass `promtool check rules` before it is reloaded.
 
 ### Reload Configuration
 
 ```bash
-# Following modifications to alert rules, a reload is mandatory
-curl -X POST http://localhost:9090/-/reload
-
-# Verify syntax
+# 1. Verify syntax first (the rules directory is mounted read-only at /etc/prometheus/rules)
 docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-alerts.yml
+
+# 2. Reload (Prometheus runs with --web.enable-lifecycle; the port is bound to 127.0.0.1)
+curl -X POST http://localhost:9090/-/reload
 ```
+
+> [!WARNING]
+> A reload re-evaluates every rule immediately. With LINE/Teams credentials configured, a rule that is already firing sends a real notification.
 
 ### Inhibition Rules
 
-The system implements automated Inhibition Rules:
+`monitoring/alertmanager/alertmanager.yml` defines three inhibition rules:
 
-| Source Alert               | Suppressed Alerts | Scope                    |
-| -------------------------- | ----------------- | ------------------------ |
-| `InterfaceDown` (critical) | All Warnings      | Same machine             |
-| `ServiceDown` (critical)   | All Warnings      | Same machine             |
-| `NodeREDDown`              | `TelemetryGap`    | Global                   |
-| `Critical`                 | `Warning`, `Info` | Same alertname + machine |
+| Source alert | Suppressed alerts | Must match on |
+| --- | --- | --- |
+| `ServiceDown` | `ServiceHighLatency`, `SLABreachWarning` | `instance` |
+| any `severity="critical"` | any `severity="warning"` | `device_id` |
+| `InterfaceDown` | `BandwidthSaturation` | `device_id` |
 
 ---
 
@@ -315,7 +324,7 @@ The system implements automated Inhibition Rules:
 | Issue                               | Root Cause                                 | Resolution                                                              |
 | ----------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------- |
 | Grafana displays "No Data"          | PgBouncer connections saturated or DB down | Execute `docker restart ims-pgbouncer` and check disk space             |
-| Alerts not dispatched to LINE/Teams | Alertmanager Webhook missing               | Review Node-RED logs at the `POST/alert-webhook` node                   |
+| Alerts not dispatched to LINE/Teams | Credentials empty in `.env`, or webhook token mismatch | Check `LINE_CHANNEL_ACCESS_TOKEN` / `TEAMS_WEBHOOK_URL` / `ALERT_WEBHOOK_TOKEN`, then the Node-RED logs of the `POST /alert-webhook` node |
 | Bandwidth graphs spike to Tbps      | 32-bit Counter Wrap                        | Handled by parser, but if encountered, ensure device supports 64-bit HC |
 | Node-RED fails to start             | Syntax Error in Flow JSON                  | Review logs: `docker compose logs --tail=50 node-red`                   |
 | Continuous Aggregate lacks data     | Manual refresh required                    | Execute `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);`  |
@@ -323,14 +332,17 @@ The system implements automated Inhibition Rules:
 
 ### SRE Verification Protocol
 
+> [!CAUTION]
+> `docker compose down -v` deletes every named volume, including the TimescaleDB data. Use it only on a disposable environment, never on a stack that holds real data.
+
 ```bash
-# 1. Clean Restart
-docker compose down -v && docker compose up -d
+# 1. Start (or converge) the stack
+docker compose up -d
 
 # 2. Wait 40 seconds
 sleep 40
 
-# 3. Verify containers (13 long-running + ims-db-migrate which should be Exited (0))
+# 3. Verify containers (14 long-running + ims-db-migrate, which should be Exited (0))
 docker compose ps
 
 # 4. Verify data flow
@@ -365,16 +377,20 @@ print(f'Prometheus: {ups}/{total} targets UP')
 
 ### Database Backup
 
+Use the scripted path (`make backup` → `scripts/backup-db.sh`, `make restore FILE=<path>` → `scripts/restore-db.sh`); [Backup & Restore](../operations/BACKUP_RESTORE.md) documents the procedure and its tested caveats. For a manual dump:
+
 ```bash
-# Perform a full database backup
-docker compose exec timescaledb pg_dump -U ims_admin ims > backup_$(date +%Y%m%d).sql
+# -T is required: without it docker allocates a TTY and corrupts the redirected dump
+docker compose exec -T timescaledb sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup_$(date +%Y%m%d).sql
 
-# Restore from backup
-cat backup_20260627.sql | docker compose exec -T timescaledb psql -U ims_admin -d ims
+# Restore into an existing database
+docker compose exec -T timescaledb sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < backup_YYYYMMDD.sql
 
-# Automated backup (cron)
-0 2 * * * docker compose exec timescaledb pg_dump -U ims_admin ims > /backup/ims_$(date +\%Y\%m\%d).sql
+# Automated backup (cron, from the repository directory)
+0 2 * * * cd /path/to/IMS && bash scripts/backup-db.sh
 ```
+
+`scripts/backup-db.sh` writes gzipped dumps to `./backups/` (gitignored) and deletes dumps older than 30 days. Dump files contain production data: never move one to a tracked path, and restrict access to the backup directory.
 
 ### Flow Backup
 
@@ -464,9 +480,9 @@ docker compose logs alertmanager 2>&1 | grep -i "error" | tail -20
 
 # Database slow queries
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
-SELECT query, calls, mean_time, total_time
+SELECT query, calls, mean_exec_time, total_exec_time
 FROM pg_stat_statements
-ORDER BY mean_time DESC
+ORDER BY mean_exec_time DESC
 LIMIT 10;"
 ```
 
@@ -474,7 +490,7 @@ LIMIT 10;"
 
 <div align="center">
 
-**IMS Admin Manual — Version 1.1**
+**IMS Admin Manual — Version 1.2 (verified against `main`, 2026-09-26)**
 
 _For IT Team & MIS-G_
 
