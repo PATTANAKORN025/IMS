@@ -54,6 +54,7 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 | 6 | `observability-archiver` mounts `/var/run/docker.sock` | Medium | Known | The `:ro` flag does not restrict Docker API calls; treat the container as privileged or replace the mount |
 | 7 | CI secret scan is non-blocking and working-tree only (`gitleaks --no-git ... \|\| true`) | Medium | Known | Make it blocking and scan history (`gitleaks detect` without `--no-git`); run a full-history scan locally before pushing |
 | 8 | Grafana image renderer image tag `latest` | Low | Known | Pin the image tag |
+| — | TimescaleDB port exposed on the host | — | **Resolved** | The base `docker-compose.yaml` comments out host port exposure for TimescaleDB; database is internal only |
 | — | PgBouncer port exposed on the host | — | **Resolved** | The base `docker-compose.yaml` never publishes a PgBouncer port |
 | — | Node-RED editor without authentication | — | **Resolved** | `nodered_data/settings.js` refuses to start unless `NODE_RED_ADMIN_PASSWORD_HASH` is set; the editor port is bound to `127.0.0.1` |
 
@@ -63,7 +64,7 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 
 ### Before Granting Network Access
 
-- [x] PgBouncer has no host port binding
+- [x] TimescaleDB and PgBouncer have no host port bindings (internal-only network)
 - [x] Node-RED editor requires an admin password hash and binds to `127.0.0.1`
 - [x] Grafana has no host port; the `proxy` service (nginx) is the single UI entry point on port 3000, fronting Grafana, `alarm-api`, the Factory Twin and the LDI ingest endpoints, and gating `alarm-api` and the twin behind an `auth_request` check against Grafana's own session (see `docs/architecture/SECURITY_MODEL.md`)
 - [ ] Replace every value copied from `.env.example` with a newly generated secret
@@ -94,7 +95,7 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 | Control | Implementation |
 | --- | --- |
 | **Container isolation** | Docker bridge networks (`ims-internal`, `ims-monitoring`); services communicate by DNS name |
-| **Minimal host exposure** | Only the nginx front door (3000) and pgAdmin (5050) listen on all interfaces; Node-RED, Prometheus, Alertmanager and Blackbox bind to `127.0.0.1` |
+| **Minimal host exposure** | Only the nginx front door (3000) and pgAdmin (5050) listen on all interfaces; Node-RED, Prometheus, Alertmanager and Blackbox bind to `127.0.0.1`; TimescaleDB and PgBouncer have no host port exposure |
 | **Authenticated ingest** | `/ldi-telemetry` and `/inject` require the `x-api-key` header to match `INGEST_API_KEY` |
 | **Secrets management** | `.env` (gitignored) injected through Docker Compose `${VAR:?}` required variables; nothing is read from a `secrets/` directory |
 

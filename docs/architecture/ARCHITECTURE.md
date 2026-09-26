@@ -82,7 +82,7 @@ flowchart TB
 | `observability-archiver` | `ims-observability-archiver` | Periodic archive of container/DB observability snapshots to `./ops-logs`; mounts the Docker socket read-only. |
 | `pgadmin`           | `ims-pgadmin4`         | Database administration UI (`dpage/pgadmin4`), not on the runtime data path. |
 
-Internal-only services (PgBouncer, SNMP simulator, Grafana, alarm-api, factory-twin-3d, renderer) are never exposed to the host directly. Host ports: `proxy` on `${GRAFANA_PORT:-3000}` (all interfaces — the single UI entry point, fronting Grafana, alarm-api, the twin and Node-RED's `/ldi-telemetry` + `/inject`), `pgadmin` on `5050` (all interfaces), and Node-RED (1880), Prometheus (9090), Alertmanager (9093) and Blackbox (9115) bound to `127.0.0.1` only.
+Internal-only services (TimescaleDB, PgBouncer, SNMP simulator, Grafana, alarm-api, factory-twin-3d, renderer) are never exposed to the host directly. Host ports: `proxy` on `${GRAFANA_PORT:-3000}` (all interfaces — the single UI entry point, fronting Grafana, alarm-api, the twin and Node-RED's `/ldi-telemetry` + `/inject`), `pgadmin` on `5050` (all interfaces), and Node-RED (1880), Prometheus (9090), Alertmanager (9093) and Blackbox (9115) bound to `127.0.0.1` only.
 
 ---
 

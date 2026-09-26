@@ -54,6 +54,7 @@
 | 6 | `observability-archiver` mount `/var/run/docker.sock` | ปานกลาง | ทราบแล้ว | flag `:ro` ไม่ได้จำกัดการเรียก Docker API ให้ถือว่าคอนเทนเนอร์นี้มีสิทธิ์สูง หรือเลิก mount |
 | 7 | การสแกน secret ใน CI ไม่บล็อกการ build และตรวจเฉพาะ working tree (`gitleaks --no-git ... \|\| true`) | ปานกลาง | ทราบแล้ว | ทำให้บล็อกได้และสแกนประวัติ (`gitleaks detect` โดยไม่ใช้ `--no-git`) และสแกนประวัติเต็มบนเครื่องก่อน push |
 | 8 | image ของ Grafana image renderer ใช้ tag `latest` | ต่ำ | ทราบแล้ว | ระบุ image tag ตายตัว |
+| — | พอร์ต TimescaleDB เปิดบน host | — | **แก้แล้ว** | `docker-compose.yaml` หลักปิดคอมเมนต์การเปิดพอร์ตของ TimescaleDB ไว้; ฐานข้อมูลทำงานเฉพาะภายในเครือข่าย Docker |
 | — | พอร์ต PgBouncer เปิดบน host | — | **แก้แล้ว** | `docker-compose.yaml` หลักไม่เคยเปิดพอร์ตของ PgBouncer |
 | — | Node-RED editor ไม่มีการยืนยันตัวตน | — | **แก้แล้ว** | `nodered_data/settings.js` ไม่ยอมเริ่มหากไม่ได้ตั้ง `NODE_RED_ADMIN_PASSWORD_HASH` และพอร์ต editor bind ไว้ที่ `127.0.0.1` |
 
@@ -63,7 +64,7 @@
 
 ### ก่อนเปิดให้เข้าถึงผ่านเครือข่าย
 
-- [x] PgBouncer ไม่มีการ bind พอร์ตบน host
+- [x] TimescaleDB และ PgBouncer ไม่มีการ bind พอร์ตบน host (ทำงานเฉพาะเครือข่ายภายใน)
 - [x] Node-RED editor ต้องมี hash รหัสผ่านผู้ดูแลและ bind ไว้ที่ `127.0.0.1`
 - [x] Grafana ไม่มีพอร์ตบน host; service `proxy` (nginx) เป็นทางเข้า UI เพียงทางเดียวที่พอร์ต 3000 เป็นด่านหน้าของ Grafana, `alarm-api`, Factory Twin และ endpoint รับข้อมูล LDI โดย `alarm-api` และทวินต้องผ่านการตรวจ `auth_request` กับ session ของ Grafana (ดู `docs/architecture/SECURITY_MODEL.md`)
 - [ ] แทนค่าทุกค่าที่คัดลอกจาก `.env.example` ด้วย secret ที่สร้างใหม่
@@ -94,7 +95,7 @@
 | มาตรการ | การนำไปใช้ |
 | --- | --- |
 | **การแยกคอนเทนเนอร์** | เครือข่าย Docker bridge (`ims-internal`, `ims-monitoring`); service สื่อสารกันด้วยชื่อ DNS |
-| **เปิดสู่ host ให้น้อยที่สุด** | มีเพียงประตูหน้า nginx (3000) และ pgAdmin (5050) ที่รับการเชื่อมต่อบนทุก interface ส่วน Node-RED, Prometheus, Alertmanager และ Blackbox bind ไว้ที่ `127.0.0.1` |
+| **เปิดสู่ host ให้น้อยที่สุด** | มีเพียงประตูหน้า nginx (3000) และ pgAdmin (5050) ที่รับการเชื่อมต่อบนทุก interface ส่วน Node-RED, Prometheus, Alertmanager และ Blackbox bind ไว้ที่ `127.0.0.1` โดย TimescaleDB และ PgBouncer ไม่มีการเปิดพอร์ตสู่ host |
 | **การรับข้อมูลที่ยืนยันตัวตน** | `/ldi-telemetry` และ `/inject` ต้องส่ง header `x-api-key` ที่ตรงกับ `INGEST_API_KEY` |
 | **การจัดการ secret** | `.env` (อยู่ใน .gitignore) ส่งผ่านตัวแปรบังคับ `${VAR:?}` ของ Docker Compose ไม่มีการอ่านจากไดเรกทอรี `secrets/` |
 

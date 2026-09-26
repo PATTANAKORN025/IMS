@@ -82,7 +82,7 @@ flowchart TB
 | `observability-archiver` | `ims-observability-archiver` | 定期将容器/数据库可观测性快照归档到 `./ops-logs`；以只读方式挂载 Docker 套接字。 |
 | `pgadmin` | `ims-pgadmin4` | 数据库管理界面（`dpage/pgadmin4`），不在运行时数据路径上。 |
 
-仅限内部的服务（PgBouncer、SNMP 模拟器、Grafana、alarm-api、factory-twin-3d、renderer）从不直接暴露给主机。主机端口如下：`proxy` 位于 `${GRAFANA_PORT:-3000}`（所有接口——唯一的 UI 入口，前置 Grafana、alarm-api、孪生服务以及 Node-RED 的 `/ldi-telemetry` + `/inject`），`pgadmin` 位于 `5050`（所有接口），Node-RED（1880）、Prometheus（9090）、Alertmanager（9093）与 Blackbox（9115）仅绑定在 `127.0.0.1`。
+仅限内部的服务（TimescaleDB、PgBouncer、SNMP 模拟器、Grafana、alarm-api、factory-twin-3d、renderer）从不直接暴露给主机。主机端口如下：`proxy` 位于 `${GRAFANA_PORT:-3000}`（所有接口——唯一的 UI 入口，前置 Grafana、alarm-api、孪生服务以及 Node-RED 的 `/ldi-telemetry` + `/inject`），`pgadmin` 位于 `5050`（所有接口），Node-RED（1880）、Prometheus（9090）、Alertmanager（9093）与 Blackbox（9115）仅绑定在 `127.0.0.1`。
 
 ---
 

@@ -41,7 +41,7 @@ The system operates entirely on Docker Compose: `docker-compose.yaml` defines 15
 
 | Container              | Service                | Port                        | Purpose                                                                                                                                           |
 | ---------------------- | ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ims-timescaledb`      | TimescaleDB            | 5432 (loopback only)        | Time-series database                                                                                                                              |
+| `ims-timescaledb`      | TimescaleDB            | 5432 (internal only, commented out in compose) | Time-series database                                                                                                                              |
 | `ims-pgbouncer`        | PgBouncer              | 5432 (internal)             | Connection pooler                                                                                                                                 |
 | `ims-db-migrate`       | Migration runner       | — (one-shot)                | Applies `database/migrations/*.sql`, gates `node-red` and `alarm-api` startup                                                                     |
 | `ims-node-red`         | Node-RED               | 1880 (loopback only)        | Data pipeline                                                                                                                                     |

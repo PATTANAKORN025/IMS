@@ -41,7 +41,7 @@
 
 | 容器 | 服务 | 端口 | 用途 |
 | --- | --- | --- | --- |
-| `ims-timescaledb` | TimescaleDB | 5432（仅回环） | 时序数据库 |
+| `ims-timescaledb` | TimescaleDB | 5432（仅内部，在 compose 中注释） | 时序数据库 |
 | `ims-pgbouncer` | PgBouncer | 5432（内部） | 连接池 |
 | `ims-db-migrate` | 迁移执行器 | —（一次性） | 应用 `database/migrations/*.sql`，并在完成前阻止 `node-red` 与 `alarm-api` 启动 |
 | `ims-node-red` | Node-RED | 1880（仅回环） | 数据流水线 |

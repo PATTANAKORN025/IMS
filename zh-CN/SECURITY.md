@@ -54,6 +54,7 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 | 6 | `observability-archiver` 挂载了 `/var/run/docker.sock` | 中 | 已知 | `:ro` 标志并不能限制 Docker API 调用；应视该容器为特权容器，或取消挂载 |
 | 7 | CI 密钥扫描不阻断构建，且只扫描工作区（`gitleaks --no-git ... \|\| true`） | 中 | 已知 | 改为阻断并扫描历史（去掉 `--no-git` 运行 `gitleaks detect`）；推送前在本地进行全历史扫描 |
 | 8 | Grafana image renderer 镜像标签为 `latest` | 低 | 已知 | 固定镜像标签 |
+| — | TimescaleDB 端口暴露在主机上 | — | **已解决** | 基础 `docker-compose.yaml` 已注释 TimescaleDB 主机端口；数据库仅限内部网络 |
 | — | PgBouncer 端口暴露在主机上 | — | **已解决** | 基础 `docker-compose.yaml` 从未发布 PgBouncer 端口 |
 | — | Node-RED 编辑器无认证 | — | **已解决** | 未设置 `NODE_RED_ADMIN_PASSWORD_HASH` 时，`nodered_data/settings.js` 拒绝启动；编辑器端口绑定在 `127.0.0.1` |
 
@@ -63,7 +64,7 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 
 ### 开放网络访问之前
 
-- [x] PgBouncer 没有绑定主机端口
+- [x] TimescaleDB 与 PgBouncer 没有绑定主机端口（仅限内部网络）
 - [x] Node-RED 编辑器需要管理员密码哈希，并绑定在 `127.0.0.1`
 - [x] Grafana 没有主机端口；`proxy` 服务（nginx）是端口 3000 上唯一的 UI 入口，前置 Grafana、`alarm-api`、Factory Twin 以及 LDI 接入端点，并让 `alarm-api` 与孪生服务先通过基于 Grafana 会话的 `auth_request` 检查（见 `docs/architecture/SECURITY_MODEL.md`）
 - [ ] 用新生成的密钥替换从 `.env.example` 复制来的每一个值
@@ -94,7 +95,7 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 | 控制措施 | 实现方式 |
 | --- | --- |
 | **容器隔离** | Docker bridge 网络（`ims-internal`、`ims-monitoring`）；服务之间通过 DNS 名称通信 |
-| **最小化主机暴露** | 只有 nginx 统一入口（3000）与 pgAdmin（5050）监听所有接口；Node-RED、Prometheus、Alertmanager 与 Blackbox 绑定在 `127.0.0.1` |
+| **最小化主机暴露** | 只有 nginx 统一入口（3000）与 pgAdmin（5050）监听所有接口；Node-RED、Prometheus、Alertmanager 与 Blackbox 绑定在 `127.0.0.1`；TimescaleDB 与 PgBouncer 无主机端口暴露 |
 | **接入认证** | `/ldi-telemetry` 与 `/inject` 要求请求头 `x-api-key` 与 `INGEST_API_KEY` 一致 |
 | **密钥管理** | `.env`（已被 gitignore 忽略）通过 Docker Compose 的必填变量 `${VAR:?}` 注入；不会从 `secrets/` 目录读取任何内容 |
 

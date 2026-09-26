@@ -41,7 +41,7 @@
 
 | คอนเทนเนอร์ | Service | พอร์ต | หน้าที่ |
 | --- | --- | --- | --- |
-| `ims-timescaledb` | TimescaleDB | 5432 (loopback เท่านั้น) | ฐานข้อมูลอนุกรมเวลา |
+| `ims-timescaledb` | TimescaleDB | 5432 (ภายในเท่านั้น, ปิดคอมเมนต์ไว้ใน compose) | ฐานข้อมูลอนุกรมเวลา |
 | `ims-pgbouncer` | PgBouncer | 5432 (ภายใน) | ตัวจัดการ connection pool |
 | `ims-db-migrate` | ตัวรัน migration | — (ครั้งเดียว) | apply `database/migrations/*.sql` และกั้นไม่ให้ `node-red` กับ `alarm-api` เริ่มก่อน migration เสร็จ |
 | `ims-node-red` | Node-RED | 1880 (loopback เท่านั้น) | ไปป์ไลน์ข้อมูล |

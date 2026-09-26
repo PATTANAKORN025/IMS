@@ -82,7 +82,7 @@ flowchart TB
 | `observability-archiver` | `ims-observability-archiver` | เก็บ snapshot ด้าน observability ของคอนเทนเนอร์/ฐานข้อมูลลง `./ops-logs` เป็นระยะ และ mount Docker socket แบบอ่านอย่างเดียว |
 | `pgadmin` | `ims-pgadmin4` | หน้าจอจัดการฐานข้อมูล (`dpage/pgadmin4`) ไม่อยู่บนเส้นทางข้อมูลขณะรัน |
 
-service ที่ใช้ภายในเท่านั้น (PgBouncer, ตัวจำลอง SNMP, Grafana, alarm-api, factory-twin-3d, renderer) ไม่เปิดสู่ host โดยตรง พอร์ตบน host มีดังนี้: `proxy` ที่ `${GRAFANA_PORT:-3000}` (ทุก interface — ทางเข้า UI เพียงทางเดียว เป็นด่านหน้าของ Grafana, alarm-api, ทวิน และ `/ldi-telemetry` + `/inject` ของ Node-RED), `pgadmin` ที่ `5050` (ทุก interface) ส่วน Node-RED (1880), Prometheus (9090), Alertmanager (9093) และ Blackbox (9115) bind ไว้ที่ `127.0.0.1` เท่านั้น
+service ที่ใช้ภายในเท่านั้น (TimescaleDB, PgBouncer, ตัวจำลอง SNMP, Grafana, alarm-api, factory-twin-3d, renderer) ไม่เปิดสู่ host โดยตรง พอร์ตบน host มีดังนี้: `proxy` ที่ `${GRAFANA_PORT:-3000}` (ทุก interface — ทางเข้า UI เพียงทางเดียว เป็นด่านหน้าของ Grafana, alarm-api, ทวิน และ `/ldi-telemetry` + `/inject` ของ Node-RED), `pgadmin` ที่ `5050` (ทุก interface) ส่วน Node-RED (1880), Prometheus (9090), Alertmanager (9093) และ Blackbox (9115) bind ไว้ที่ `127.0.0.1` เท่านั้น
 
 ---
 
