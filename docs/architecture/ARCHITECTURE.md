@@ -17,7 +17,7 @@
 
 > **Audience:** System Architects, SREs, and Backend Developers.
 > **Objective:** Single source of truth for system topology, data flow, and operational architecture.
-> **Provenance:** Verified directly against the live system on 2026-08-05. For actual runtime logs and screenshots proving the statements below, see the **[Evidence Index](../evidence/INDEX.md)**.
+> **Provenance:** Verified against the live system on 2026-08-05; container inventory, alerting, dashboards and CI gates re-verified against `main` on 2026-09-26. For actual runtime logs and screenshots proving the statements below, see the **[Evidence Index](../evidence/INDEX.md)**.
 
 ---
 
@@ -58,7 +58,7 @@ flowchart TB
 - **LDI Manufacturing Pipeline (`ldi_data`):** Added later for higher-fidelity telemetry via HTTP POST. Required because manufacturing dashboards need per-sample PE/JE/Cpk precision that the synthetic `ldi_metrics` table could not support.
 
 > [!NOTE]
-> **All 14 Grafana dashboards' LDI content reads from `ldi_data`, not `ldi_metrics`.** While `ldi_metrics` still receives data, LDI-specific columns (`throughput`, `power_watt`, `vibration`) are mathematically constrained to `0` for LDI-class devices. See "System Constraints & Technical Boundaries" below.
+> **Every Grafana dashboard's LDI process content reads from `ldi_data`, not `ldi_metrics`.** While `ldi_metrics` still receives data, LDI-specific columns (`throughput`, `power_watt`, `vibration`) are mathematically constrained to `0` for LDI-class devices. See "System Constraints & Technical Boundaries" below.
 
 ---
 
@@ -78,8 +78,11 @@ flowchart TB
 | `blackbox-exporter` | (blackbox)             | HTTP/TCP/ICMP probes for SLA monitoring                                                                                                                                                                                                  |
 | `snmpsim`           | (snmpsim)              | Simulated SNMP agent for the legacy pipeline's dev/test targets                                                                                                                                                                          |
 | `db-migrate`        | `ims-db-migrate`       | One-shot migration runner (`scripts/migrate-entrypoint.sh`), gates `node-red` and `alarm-api` startup                                                                                                                                    |
+| `factory-twin-3d`   | `ims-factory-twin-3d`  | Floor 1 digital twin (Express, port 4100 internal). No host port; reachable only via `proxy` at `/factory-twin-3d/` behind the same `auth_request` gate. Read-only: writes nothing to the database. |
+| `observability-archiver` | `ims-observability-archiver` | Periodic archive of container/DB observability snapshots to `./ops-logs`; mounts the Docker socket read-only. |
+| `pgadmin`           | `ims-pgadmin4`         | Database administration UI (`dpage/pgadmin4`), not on the runtime data path. |
 
-Internal-only services (PgBouncer, SNMP simulator, blackbox exporter, Grafana, alarm-api) are never exposed to the host directly; only `proxy` (3000, fronting both Grafana and alarm-api), Node-RED (1880), Prometheus (9090), and Alertmanager (127.0.0.1:9093, loopback-only) publish ports.
+Internal-only services (PgBouncer, SNMP simulator, Grafana, alarm-api, factory-twin-3d, renderer) are never exposed to the host directly. Host ports: `proxy` on `${GRAFANA_PORT:-3000}` (all interfaces — the single UI entry point, fronting Grafana, alarm-api, the twin and Node-RED's `/ldi-telemetry` + `/inject`), `pgadmin` on `5050` (all interfaces), and Node-RED (1880), Prometheus (9090), Alertmanager (9093) and Blackbox (9115) bound to `127.0.0.1` only.
 
 ---
 
@@ -105,7 +108,7 @@ Internal-only services (PgBouncer, SNMP simulator, blackbox exporter, Grafana, a
 - `sre_parser` ("SRE AIOps Parser v9 Batch") maintains per-device state in flow context, buffers rows, and batch-inserts into `sys_metrics` / `net_metrics` / `ldi_metrics` independently per table (a partial walker failure doesn't block unrelated data).
 - A k6-style synthetic load simulator (`inject_fleet` -> `generate_fleet_targets` -> `pace_limiter` -> the same fork/parser path) also feeds this same pipeline for load-testing purposes.
 
-This pipeline is what actually powers NOC Overview's infrastructure panels (CPU/RAM/Disk/Temperature of the 2 real servers, `ERP-MASTER-UBUNTU` / `ERP-MASTER-WINDOWS`) and the AIOps & Capacity Forecast dashboard. It is **not** what powers any LDI process/quality panel — see the pipeline split above.
+This pipeline is what actually powers NOC Overview's infrastructure panels (CPU/RAM/Disk/Temperature of the 2 real servers, `<linux-server>` / `<windows-server>`) and the AIOps & Capacity Forecast dashboard. It is **not** what powers any LDI process/quality panel — see the pipeline split above.
 
 ---
 
@@ -144,15 +147,15 @@ Migration 064 converts `v_machine_spc_fleet` and `v_ldi_rca_recent_window` from 
 
 Two independent alert-evaluation engines both funnel into the same Node-RED delivery flow:
 
-1. **Grafana native alerting** (`monitoring/grafana/provisioning/alerting/*.yml`) — LDI-specific rules (machine alarm-in-database, process capability below 1.33, vibration critical, Z-score anomalies) evaluated directly against TimescaleDB via Grafana's own scheduler.
-2. **Prometheus + Alertmanager** — infra-focused rules (CPU/RAM/disk/temperature thresholds, service-down, interface-down) evaluated by Prometheus, routed by Alertmanager (`monitoring/alertmanager/alertmanager.yml`) with severity-based grouping and inhibition rules (critical suppresses warning on the same device).
+1. **Grafana native alerting** (`monitoring/grafana/provisioning/alerting/rules.yml`, `ldi-rules.yml`) — machine-level rules evaluated directly against TimescaleDB by Grafana's own scheduler: infrastructure thresholds (High CPU/RAM/Disk Usage, High Temperature, Interface Down, network errors/drops, bandwidth forecast), Z-score anomalies, and LDI rules (alarm-in-database, PE/JE drift, Cpk below 1.33, temperature above spec, machine offline, vibration critical). The single contact point `ims-node-red-webhook` posts to `http://node-red:1880/alert-webhook`.
+2. **Prometheus + Alertmanager** — platform rules in `monitoring/prometheus/rules/ims-alerts.yml` (Prometheus/Alertmanager/targets up, blackbox `ServiceDown`/latency/SLA/TLS expiry, `Watchdog`, and the Node-RED pipeline metrics `ims_pipeline_*` / `ims_circuit_breaker_state`), routed by Alertmanager (`monitoring/alertmanager/alertmanager.yml`) with severity-based grouping and three inhibition rules (critical suppresses warning on the same device).
 
-**Both paths converge on `nodered_data/flows/alerting.json`** ("IMS Alerting Pipeline" tab), which receives Alertmanager's webhook at `POST /alert-webhook`, formats the alert, and fans out to:
+**Both paths converge on `nodered_data/flows/alerting.json`** ("IMS Alerting Pipeline" tab), which receives both webhooks at `POST /alert-webhook`, formats the alert, and fans out to:
 
 - **LINE Messaging API** (not LINE Notify — that API was discontinued by LINE in 2025 and is not used here) via `LINE_CHANNEL_ACCESS_TOKEN` + `LINE_USER_ID`.
 - **MS Teams** via `TEAMS_WEBHOOK_URL`, as an Adaptive Card.
 
-If either credential is unset, the corresponding delivery function calls `node.error()` (visible in the flow's "Alert Delivery Failure" debug node and via a persistent red status indicator on the node itself) rather than silently dropping the alert — but delivery still doesn't happen until real credentials are configured in `.env`. Grafana's own `ims-slack-critical` route also forwards to this same webhook; a previous direct-to-Slack config pointing at a placeholder URL was removed rather than left failing on every critical alert.
+If either credential is unset, the corresponding delivery function calls `node.error()` (visible in the flow's "Alert Delivery Failure" debug node and via a persistent red status indicator on the node itself) rather than silently dropping the alert — but delivery still doesn't happen until real credentials are configured in `.env`. A previous direct-to-Slack contact point pointing at a placeholder URL was removed rather than left failing on every critical alert.
 
 ---
 
@@ -162,9 +165,13 @@ If either credential is unset, the corresponding delivery function calls `node.e
 
 | UID                             | Title                                  | Scope                                                                                                                                                                                                    |
 | ------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ims-noc-overview`              | IMS NOC Overview                       | Infrastructure only (2 real servers + network) — LDI process content lives elsewhere, see below                                                                                                          |
+| `ims-noc-overview`              | IMS NOC Overview                       | Infrastructure only (servers + network) — LDI process content lives elsewhere, see below                                                                                                                 |
 | `ims-ldi-manufacturing`         | IMS LDI - Manufacturing Command Center | Full 4-layer RCA dashboard: executive KPIs, machine telemetry, production context, alarm stream                                                                                                          |
-| `ims-ldi-operator-andon`        | IMS LDI - Operator Andon Board         | Factory-floor kiosk, 1280x720 no-scroll budget                                                                                                                                                           |
+| `ims-ldi-operator-andon`        | IMS LDI - Operator Andon Board         | Factory-floor kiosk, read-only; zero-scroll at 1920x1080 and 3840x2160 (1280x720 unsupported since PR #22)                                                                                              |
+| `ims-ldi-alarm-console`         | IMS LDI - Alarm Console                | The only interactive dashboard: Acknowledge/Resolve through `alarm-api` into `public.ldi_alarm_lifecycle`                                                                                               |
+| `ims-ldi-alarm-response`        | IMS LDI - Alarm Response (MTTA/MTTR)   | Response-time KPIs computed from the real alarm lifecycle                                                                                                                                                |
+| `ims-ldi-alarm-dictionary`      | IMS LDI - Alarm Dictionary             | Reference lookup of a vendor alarm code plus recent occurrences; reached through drill-down links                                                                                                        |
+| `ims-ldi-factory-digital-twin`  | IMS LDI - Factory Digital Twin         | Canvas floor view of the reporting LDI machines grouped by zone (`public.devices.location`)                                                                                                              |
 | `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC  | Cpk/SPC ranking, RCA Truth Test, PE/JE distributions                                                                                                                                                     |
 | `ims-ldi-machine-snapshot`      | IMS LDI - Machine Snapshot             | Per-event drill-down (click an alarm/log to inspect)                                                                                                                                                     |
 | `ldi-data-readiness`            | LDI Data Readiness & Integration Gaps  | Self-auditing data-quality dashboard (board-key duplication, coverage %, alarm-master match rate)                                                                                                        |
@@ -172,6 +179,7 @@ If either credential is unset, the corresponding delivery function calls `node.e
 | `ims-engineering`               | IMS Engineering Drill-Down             | Infra-focused: CPU/RAM/storage/network per server, LDI throughput/quality (legacy pipeline)                                                                                                              |
 | `ims-capacity`                  | IMS AIOps & Capacity Forecast          | Days-until-full/saturation regression forecasts (infra)                                                                                                                                                  |
 | `ims-meta-monitoring`           | IMS Pipeline Health & Meta-Monitoring  | Ingestion pipeline's own health (rows/sec, batch success rate, retry queue depth)                                                                                                                        |
+| `ims-ingestion-latency`         | IMS Ingestion Latency                  | Read-only source_ts → ingest_ts latency evidence from migration 081's `ingest_ts` columns                                                                                                               |
 
 NOC Overview was split from LDI/manufacturing content this session (it previously duplicated Manufacturing's Yield panel) — infrastructure and manufacturing concerns are deliberately kept on separate dashboards now, not blended on one "overview" page.
 
@@ -196,7 +204,7 @@ Documented here for operational clarity and architectural visibility:
 
 ## Governance / CI Gates
 
-Five automated gates run in CI (`.github/workflows/ci.yml`), each catching a different failure class a human reviewer would otherwise have to check by hand:
+These automated gates run in CI (`.github/workflows/ci.yml`): the lint gates in the `lint` job, the live-database gates in the `integration-chaos` job. Each catches a different failure class a human reviewer would otherwise have to check by hand:
 
 | Gate                       | Script                                       | What it proves                                                                                                                 |
 | -------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
@@ -211,7 +219,7 @@ Five automated gates run in CI (`.github/workflows/ci.yml`), each catching a dif
 
 Color tokens (`GRAFANA_DESIGN_SYSTEM.md`): every threshold step and value-mapping color that conveys machine/alarm status uses one of 5 tokens — OK `#22C55E`, Warning `#F59E0B`, Critical `#EF4444`, No Data `#64748B`, Info `#2563EB`. Decorative colors (graph-series differentiation, backgrounds, borders, brand accents) are intentionally exempt — a dashboard can't be built from 5 saturated colors alone.
 
-Not yet a CI gate: true visual/screenshot regression (baseline-image diffing). `tests/playwright/dashboard-visual-regression.js` captures screenshots of 4 dashboards for documentation purposes but has no baseline comparison or pass/fail assertion — a real regression gate would need committed baseline images, a pixel-diff tool, and Grafana running as a CI service, none of which exist yet.
+Browser-level gates also run in CI: the `factory-twin-regression` job (`tests/playwright/factory-twin-regression.js`, failure-mode and inspector E2E suites) and the `visual-regression` job (`tests/playwright/ldi-responsive-regression.js`, zero-scroll at 1920 and 3840 px). The UI baseline under `tests/playwright/ui-visual-baseline/` is committed; `tests/playwright/dashboard-visual-regression.js` still only captures screenshots for documentation and asserts nothing.
 
 ---
 
@@ -226,4 +234,4 @@ Not yet a CI gate: true visual/screenshot regression (baseline-image diffing). `
 | Alertmanager Documentation | <https://prometheus.io/docs/alerting/latest/configuration/> |
 | LINE Messaging API         | <https://developers.line.biz/en/docs/messaging-api/>        |
 
-Related docs in this repo: `GRAFANA_DESIGN_SYSTEM.md` (color/token conventions), `../operations/TROUBLESHOOTING.md`, `../audits/IMS-SYSTEM-AUDIT-REPORT.md` (the audit that prompted this rewrite).
+Related docs in this repo: `GRAFANA_DESIGN_SYSTEM.md` (color/token conventions), `../operations/TROUBLESHOOTING.md`, `../archive/IMS_FULL_SYSTEM_AUDIT.md` (baseline system audit), `DASHBOARD_INVENTORY.md` and `DATABASE_SCHEMA.md` (generated inventories).

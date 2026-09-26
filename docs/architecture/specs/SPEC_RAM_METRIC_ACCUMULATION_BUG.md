@@ -20,8 +20,8 @@
 ```
      device_id      | ram_used_mb | ram_total_mb
 --------------------+-------------+--------------
- ERP-MASTER-UBUNTU  |     1048576 |      1048576
- ERP-MASTER-WINDOWS |     1048576 |      1048576
+ LINUX-SERVER-01  |     1048576 |      1048576
+ WINDOWS-SERVER-01 |     1048576 |      1048576
  LDI-A01      |     1048576 |      1048576
  LDI-A02     |     1048576 |      1048576
 ```
@@ -53,23 +53,23 @@ Deployed via `docker compose restart node-red` (single-service, same narrow-blas
 
 ## Results
 
-Pre-fix baseline (captured moments before restart): `ERP-MASTER-WINDOWS`, `LDI-A01`, `LDI-A02` all pinned at `ram_used_mb = ram_total_mb = 1048576`. `ERP-MASTER-UBUNTU` was mid-climb at `637440/679936` (93.7%) -- itself corroborating evidence for the accumulation theory, since it hadn't yet re-saturated to the ceiling since the A1 restart reset all devices' `flow` context to zero.
+Pre-fix baseline (captured moments before restart): `WINDOWS-SERVER-01`, `LDI-A01`, `LDI-A02` all pinned at `ram_used_mb = ram_total_mb = 1048576`. `LINUX-SERVER-01` was mid-climb at `637440/679936` (93.7%) -- itself corroborating evidence for the accumulation theory, since it hadn't yet re-saturated to the ceiling since the A1 restart reset all devices' `flow` context to zero.
 
 Post-fix, measured over 3 consecutive polling cycles (04:15:03 → 04:16:03Z, 30s apart):
 
 | Device             | RAM used/total | %      | Stable across 3 cycles?      |
 | ------------------ | -------------- | ------ | ---------------------------- |
-| ERP-MASTER-UBUNTU  | 7680/8192 MB   | 93.75% | Yes, identical all 3 samples |
-| ERP-MASTER-WINDOWS | 15360/32768 MB | 46.9%  | Yes                          |
+| LINUX-SERVER-01  | 7680/8192 MB   | 93.75% | Yes, identical all 3 samples |
+| WINDOWS-SERVER-01 | 15360/32768 MB | 46.9%  | Yes                          |
 | LDI-A01     | 15360/16384 MB | 93.75% | Yes                          |
 | LDI-A02    | 15360/16384 MB | 93.75% | Yes                          |
 
 No device shows `1048576` anymore. No device is climbing. Values differ meaningfully across devices (46.9%-93.75%), not collapsed to one shared number -- confirms this is now a real per-device snapshot, not an accumulated artifact.
 
-**CPU/disk/temp unaffected, confirmed by direct comparison against the same rows**: `cpu_load_percent` (50 / 88.25 / 83.75 / 83.75) and `temp_c` (65 / 95 / 92 / 92) match this session's earlier pre-fix baseline exactly. `disk_total_gb`/`disk_used_gb` also unchanged -- `ERP-MASTER-UBUNTU` still shows the separate, already-diagnosed `12500/12500` (100%) disk bug (`READ_ONLY_AUDIT_2026-08-15.md` §3c, fixed separately as P0.2) -- proving this RAM fix touched only what it was supposed to touch.
+**CPU/disk/temp unaffected, confirmed by direct comparison against the same rows**: `cpu_load_percent` (50 / 88.25 / 83.75 / 83.75) and `temp_c` (65 / 95 / 92 / 92) match this session's earlier pre-fix baseline exactly. `disk_total_gb`/`disk_used_gb` also unchanged -- `LINUX-SERVER-01` still shows the separate, already-diagnosed `12500/12500` (100%) disk bug (`READ_ONLY_AUDIT_2026-08-15.md` §3c, fixed separately as P0.2) -- proving this RAM fix touched only what it was supposed to touch.
 
 Unit tests re-run post-edit, pre-deploy: `tests/unit/parser.test.js` (22/22) and `tests/unit/v2-parser.test.js` (27/27) both pass, including the existing "RAM total capped at 1TB" and "RAM used never exceeds RAM total" boundary tests -- confirms the defensive clamp (kept, not removed -- see point 2 above) still behaves correctly and this fix didn't regress it.
 
 ## Scope note (resolved)
 
-`disk_used_gb == disk_total_gb` for `ERP-MASTER-UBUNTU`, flagged here as a "not investigated" scope note -- root-caused separately in `READ_ONLY_AUDIT_2026-08-15.md` §3c (a `.snmprec` config bug, not related to this RAM accumulation issue) and fixed as P0.2.
+`disk_used_gb == disk_total_gb` for `LINUX-SERVER-01`, flagged here as a "not investigated" scope note -- root-caused separately in `READ_ONLY_AUDIT_2026-08-15.md` §3c (a `.snmprec` config bug, not related to this RAM accumulation issue) and fixed as P0.2.
