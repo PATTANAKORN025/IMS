@@ -1,0 +1,22 @@
+# No service in this repo currently builds from the repo root as its
+# Docker context (docker-compose.yaml's 4 build stanzas all scope to a
+# subdirectory: ./pgbouncer, ./services/alarm-api,
+# ./services/factory-twin-3d, ./nodered_data -- each of those needs its
+# OWN .dockerignore in that subdirectory to actually take effect; see
+# services/factory-twin-3d/.dockerignore for the one that matters today).
+# This file is forward-looking defense-in-depth for any future
+# root-context build, so confidential facility data is excluded from a
+# Docker build context by default rather than by remembering to add it
+# later.
+Apex3Layout/
+private/
+**/private/
+**/*Apex3*
+**/*APEX3*
+*.dwg
+*.dxf
+*.ifc
+*.step
+*.stp
+*.cad
+node_modules/

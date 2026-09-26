@@ -229,7 +229,8 @@ test('device IDs with spaces (real machine names like "LDI-A01") never reach flo
 
 console.log('\nsafeKey');
 test('strips whitespace and punctuation Node-RED property-expressions reject', () => {
-    assert.strictEqual(safeKey('LDI-A01'), 'EXPOSURE_LDI-2');
+    assert.strictEqual(safeKey('LDI-A01'), 'LDI-A01');
+    assert.strictEqual(safeKey('EXPOSURE LDI-2'), 'EXPOSURE_LDI-2');
     assert.strictEqual(safeKey('a.b[c]'), 'a_b_c_');
 });
 test('handles null/undefined', () => {

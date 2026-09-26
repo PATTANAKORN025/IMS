@@ -1764,7 +1764,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('1 minute', \"time\") AS time,\n  device_id AS metric,\n  ROUND(AVG(throughput)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(\"time\") AND device_id IN (${ldi_machine_id:singlequote}) AND throughput > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('1 minute', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_scan_speed)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${ldi_machine_id:singlequote}) AND avg_scan_speed IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {

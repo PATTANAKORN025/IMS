@@ -128,3 +128,48 @@ p*_scratch/
 
 # Allow tracking agent skills
 !.agents/skills/
+
+# Additional AI/Audit Clutter
+.cursor/
+.clinerules/
+.windsurf/
+.superpowers/
+.audit/
+.playwright-mcp/
+
+# Real factory floor plans (private reference for the 3D digital twin
+# design, e.g. Apex3Layout/) -- confidential facility info, private
+# reference only, never committed. See
+# docs/superpowers/specs/2026-08-27-sanitized-4floor-twin-layout-design.md
+# for the sanitized architecture derived from these without copying any
+# real coordinates/dimensions/machine identities into the repo.
+Apex3Layout/
+
+# Real facility CAD/floor-plan formats and any file named like one, plus a
+# local scratch dir for testing against real data -- this repo is public
+# (github.com/PATTANAKORN025/IMS); real device_id/telemetry are already
+# public here by design (not facility-identifying), but real geometry/CAD
+# never should be.
+*.dwg
+*.dxf
+*.ifc
+*.step
+*.stp
+*.cad
+*real-floor-plan*
+*real-machine-map*
+*factory-layout*
+private/
+
+
+# Grafana plugins -- installed at container start (GF_INSTALL_PLUGINS,
+# docker-compose.yaml's grafana service) for the 5 community panels, and
+# core-bundled inside the grafana/grafana:13.1.2 image itself for the rest
+# (elasticsearch, zipkin datasources; the Explore apps -- traces/logs/
+# metrics-drilldown/pyroscope -- preinstalled since Grafana 11). Committing
+# 677 files / 137MB of installed plugin bundles, source maps and binaries
+# was pure duplication of what Docker already reproduces on its own; the
+# bind mount (./monitoring/grafana/plugins:/var/lib/grafana/plugins) still
+# persists them on the host across restarts, it just does not need Git to.
+monitoring/grafana/plugins/
+*.map

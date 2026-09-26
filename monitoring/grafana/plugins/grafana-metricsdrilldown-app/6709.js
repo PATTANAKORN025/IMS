@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkgrafana_metricsdrilldown_app=self.webpackChunkgrafana_metricsdrilldown_app||[]).push([["6709"],{180(a,n,i){i.d(n,{initPluginTranslations:()=>r.wR});var r=i(8952)}}]);
