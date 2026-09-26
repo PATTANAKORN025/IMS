@@ -26,14 +26,14 @@
 
 ## 目录
 
-1. [执行摘要](#executive-summary)
-2. [项目目标与成就](#project-objectives--achievement)
-3. [学习成果](#learning-outcomes)
-4. [获得的技能](#technical-skills-acquired)
-5. [交付的商业价值](#business-value-delivered)
-6. [挑战与解决方案](#challenges--solutions)
-7. [未来建议](#future-recommendations)
-8. [结论](#conclusion)
+1. [执行摘要](#执行摘要)
+2. [项目目标与成就](#项目目标与成就)
+3. [学习成果](#学习成果)
+4. [获得的技能](#获得的技能)
+5. [交付的商业价值](#交付的商业价值)
+6. [挑战与解决方案](#挑战与解决方案)
+7. [未来建议](#未来建议)
+8. [结论](#结论)
 
 ---
 

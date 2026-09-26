@@ -24,12 +24,12 @@
 
 ## สารบัญ (Table of Contents)
 
-1. [สถาปัตยกรรมปัจจุบัน (Current Architecture)](#current-architecture)
-2. [การวิเคราะห์ความจุ (Capacity Analysis)](#capacity-analysis)
-3. [ตัวเลือกในการขยายระบบ (Scaling Options)](#scaling-options)
-4. [การปรับแต่งประสิทธิภาพ (Performance Tuning)](#performance-tuning)
-5. [นโยบายการเก็บรักษาข้อมูล (Retention Policy)](#retention-policy)
-6. [การประเมินค่าใช้จ่าย (Cost Estimation)](#cost-estimation)
+1. [สถาปัตยกรรมปัจจุบัน (Current Architecture)](#สถาปัตยกรรมปัจจุบัน-current-architecture)
+2. [การวิเคราะห์ความจุ (Capacity Analysis)](#การวิเคราะห์ความจุ-capacity-analysis)
+3. [ตัวเลือกในการขยายระบบ (Scaling Options)](#ตัวเลือกในการขยายระบบ-scaling-options)
+4. [การปรับแต่งประสิทธิภาพ (Performance Tuning)](#การปรับแต่งประสิทธิภาพ-performance-tuning)
+5. [นโยบายการเก็บรักษาข้อมูล (Retention Policy)](#นโยบายการเก็บรักษาข้อมูล-retention-policy)
+6. [การประเมินค่าใช้จ่าย (Cost Estimation)](#การประเมินค่าใช้จ่าย-cost-estimation)
 7. [ความถูกต้องของข้อมูลและการจัดการการขยายระบบ (รายละเอียดทางสถาปัตยกรรม) (Data Fidelity & Scale Management (Architectural Details))](../architecture/DATA_FIDELITY_AND_SCALING.md)
 
 ---

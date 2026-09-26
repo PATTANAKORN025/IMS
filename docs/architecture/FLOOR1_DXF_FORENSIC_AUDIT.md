@@ -7,7 +7,7 @@
 
 This document records what the CAD file *actually contains*. It deliberately
 does not reproduce the drawing. Room names, absolute CAD coordinates and the
-full layer list are **WITHHELD** — see [Disclosure](#disclosure).
+full layer list are **WITHHELD** — see [Disclosure](#8-disclosure).
 
 ---
 

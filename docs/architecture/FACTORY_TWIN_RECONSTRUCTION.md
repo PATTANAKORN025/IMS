@@ -13,7 +13,7 @@ it is not.
 > [!IMPORTANT]
 > This document contains **no facility geometry**. Dimensions, coordinates,
 > areas and process names live only in the private, gitignored data files
-> described under [Private/public boundary](#privatepublic-boundary). What is
+> described under [Private/public boundary](#5-privatepublic-boundary). What is
 > documented here is method, contract and limitation.
 
 ---

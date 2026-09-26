@@ -10,9 +10,9 @@
 > **基准参考 (Baseline reference)。** 这是 `ldi_alarm_ms_code` 警报知识文本的标准规范——使用英语，面向操作员/工程师，侧重功能性（而不是原样复制供应商的原始 AlarmMsg）。未来在任何模拟器、迁移或仪表板中的重写，都应遵循此模式并在此处添加，而不是随意编造。
 >
 > **v1.0** (2026-08-11)：15 个代码，仅有单句 `alarm_detail`。
-> **v1.1** (2026-08-11)：21 个模拟目录 (mock-catalog) 代码现在都有英文 `alarm_detail`（另外 10 个由泰语翻译而来）；为迄今涉及的所有 25 个代码（21 个模拟代码不减，加上模拟目录中没有的 4 个仅真实存在的 Critical 代码）添加了结构化的 `cause` / `impact` / `recovery_action` 字段；添加了一个 `sop_reference` 字段（模式已就绪，故意留空 — 见 [§7](#7-sop--work-instruction-references--not-yet-populated)）。
+> **v1.1** (2026-08-11)：21 个模拟目录 (mock-catalog) 代码现在都有英文 `alarm_detail`（另外 10 个由泰语翻译而来）；为迄今涉及的所有 25 个代码（21 个模拟代码不减，加上模拟目录中没有的 4 个仅真实存在的 Critical 代码）添加了结构化的 `cause` / `impact` / `recovery_action` 字段；添加了一个 `sop_reference` 字段（模式已就绪，故意留空 — 见 [§7](#7-sop--工作指导参考--尚未填充-sop--work-instruction-references--not-yet-populated)）。
 >
-> 请参阅 [§8 Freeze & scope](#8-freeze--scope) 了解作用域边界，参阅 [§9 Vendor specification requests for pending codes](#9-vendor-specification-request-for-pending-codes) 了解待处理的外部输入信息。
+> 请参阅 [§8 Freeze & scope](#8-冻结与作用域-freeze--scope) 了解作用域边界，参阅 [§9 Vendor specification requests for pending codes](#9-向供应商请求待处理代码的规格说明-vendor-specification-request-for-pending-codes) 了解待处理的外部输入信息。
 
 ---
 

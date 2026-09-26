@@ -6,9 +6,9 @@
 
 <div align="center">
 
-<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **K6:** Load Testing
-<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** 1K VUs Passed
-<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Failure:** 0%
+<img src="../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **K6:** Load Testing
+<img src="../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** 1K VUs Passed
+<img src="../../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Failure:** 0%
 
 </div>
 

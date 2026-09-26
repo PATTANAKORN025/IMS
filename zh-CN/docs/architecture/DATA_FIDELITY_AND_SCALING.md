@@ -20,7 +20,7 @@
 - 如果在服务器端 (Node-RED 或 PostgreSQL) 使用时间戳 (Timestamping)，在网络中延迟或卡在队列中的数据将获得错误的时间戳。
 - 当发生网络抖动 (Network Jitter) 时，毫秒级数据 (Millisecond Resolution) 将失去精度，并导致事件排序 (Event Sequencing) 混乱。
 
-### <img src="../../../docs/assets/icons/check.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
+### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
 
 1. **边缘级时间戳 (Edge-Level Timestamping):**
    强制终端设备 (Edge Devices/Sensors) 始终为其负载 (Payload) 附加时间戳 (遵循 ISO8601 精度标准)。IMS 系统将主要信任来自边缘端的 `time`。
@@ -39,7 +39,7 @@
 
 - 传统的 SNMP Simulator 生成完美的正弦波数据，这使得无法准确测试缓存系统 (Caching)、TimescaleDB 中的数据压缩 (Compression) 以及由数据突增 (Data Spike) 引发的警报系统。
 
-### <img src="../../../docs/assets/icons/check.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
+### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
 
 1. **模拟器中的混沌工程 (Chaos Engineering in Simulator):**
    将 `Jitter` (抖动)、`Random Drops` (随机丢包) 和 `Spikes` (突增) 引入模拟器（通过模拟器的 `docker-compose.yml` 配置），以生成类似于真实网络环境的噪声 (Noise)。
@@ -56,7 +56,7 @@ IMS 系统的目标是仅在发生“影响业务的”异常时才发出警报�
 
 - 毫秒级的高保真数据经常在阈值线上下波动 (Flapping)，导致假阳性 (False Positives)，并在每分钟向 LINE/MS Teams 发送数千条警报。
 
-### <img src="../../../docs/assets/icons/check.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
+### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
 
 1. **Prometheus `FOR` 子句 (Clauses):**
    所有警报规则必须包含时间条件，例如 `CPU > 90% FOR 5m`，这意味着异常值必须持续 5 分钟才会被视为实际问题（减少短暂突发带来的噪音）。
@@ -75,7 +75,7 @@ TimescaleDB 使用连续聚合 (Continuous Aggregates, CAGGs) 预先汇总 (Roll
 
 - 某些边缘设备可能会断开连接并向系统发送迟到数据 (Late-Arriving Data)。如果该数据在 CAGG 完成汇总后到达，每小时或每天级别的数据将偏离实际情况（数据漂移，Data Drift）。
 
-### <img src="../../../docs/assets/icons/check.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
+### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
 
 1. **水位线策略与刷新窗口 (Watermark Policies & Refresh Windows):**
    配置 `refresh_continuous_aggregate` 以覆盖可能发生迟到数据的时间窗口（例如，在午夜再次刷新昨天的数据）。

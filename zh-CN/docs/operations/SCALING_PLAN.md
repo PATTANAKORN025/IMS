@@ -24,12 +24,12 @@
 
 ## 目录
 
-1. [当前架构](#current-architecture)
-2. [容量分析](#capacity-analysis)
-3. [扩展选项](#scaling-options)
-4. [性能调优](#performance-tuning)
-5. [保留策略](#retention-policy)
-6. [成本估算](#cost-estimation)
+1. [当前架构](#当前架构)
+2. [容量分析](#容量分析)
+3. [扩展选项](#扩展选项)
+4. [性能调优](#性能调优)
+5. [保留策略](#保留策略)
+6. [成本估算](#成本估算)
 7. [数据保真度与扩展管理（架构详情）](../architecture/DATA_FIDELITY_AND_SCALING.md)
 
 ---

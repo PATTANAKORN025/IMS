@@ -9,7 +9,7 @@
 
 欢迎来到 **业务 (Business)** 目录。本部分包含与 IMS 业务流程相关的文档。
 
-## <img src="../../../docs/assets/icons/map.svg" width="18" align="center" /> 目录结构
+## <img src="../../../docs/assets/icons/map.svg" width="18" align="center" /> 目录结构图
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%

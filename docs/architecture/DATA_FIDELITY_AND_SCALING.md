@@ -20,7 +20,7 @@ As the system expands to handle massive fleets, **Network Latency** and **Event 
 - If timestamping occurs at the server side (Node-RED or PostgreSQL), any data delayed in network transit or queued up will receive an inaccurate timestamp.
 - Network jitter degrades millisecond-level resolution, causing incorrect event sequencing.
 
-### <img src="../assets/icons/check.svg" width="18" height="18" align="center" /> Architectural Solution
+### <img src="../assets/icons/check-circle.svg" width="18" height="18" align="center" /> Architectural Solution
 
 1. **Edge-Level Timestamping:**
    End devices/sensors are strictly required to attach timestamps to their own payloads (using ISO8601 precision). IMS natively trusts the `time` reported by the edge.
@@ -39,7 +39,7 @@ Testing a system with simulated data often yields artificially perfect results t
 
 - The legacy SNMP simulator generated perfect sine waves, making it impossible to rigorously test TimescaleDB caching, compression thresholds, or alert triggers dependent on data spikes.
 
-### <img src="../assets/icons/check.svg" width="18" height="18" align="center" /> Architectural Solution
+### <img src="../assets/icons/check-circle.svg" width="18" height="18" align="center" /> Architectural Solution
 
 1. **Chaos Engineering in the Simulator:**
    `Jitter`, `Random Drops`, and `Spikes` were engineered into the simulator (configurable via the simulator's `docker-compose.yml`) to inject network noise mirroring real-world conditions.
@@ -56,7 +56,7 @@ The objective of IMS is to trigger alerts strictly for anomalies "that carry bus
 
 - High-resolution data (millisecond precision) frequently oscillates across threshold boundaries (flapping), generating false positives and flooding LINE/MS Teams with thousands of messages per minute.
 
-### <img src="../assets/icons/check.svg" width="18" height="18" align="center" /> Architectural Solution
+### <img src="../assets/icons/check-circle.svg" width="18" height="18" align="center" /> Architectural Solution
 
 1. **Prometheus `FOR` Clauses:**
    All alert rules enforce duration conditions. For instance, `CPU > 90% FOR 5m` requires the anomaly to persist continuously for 5 minutes before it is escalated as a real issue (filtering out transient spikes).
@@ -75,7 +75,7 @@ TimescaleDB relies on Continuous Aggregates (CAGGs) to preemptively rollup data 
 
 - Edge devices may experience offline periods and eventually transmit backlogged data (Late-Arriving Data). If this data arrives after the CAGG has executed its rollup, the hourly/daily summaries become permanently drifted from the raw truth.
 
-### <img src="../assets/icons/check.svg" width="18" height="18" align="center" /> Architectural Solution
+### <img src="../assets/icons/check-circle.svg" width="18" height="18" align="center" /> Architectural Solution
 
 1. **Watermark Policies & Refresh Windows:**
    The `refresh_continuous_aggregate` policy is configured to generously overlap with late-arriving data windows (e.g., automatically re-refreshing yesterday's data at midnight).

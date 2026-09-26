@@ -20,7 +20,7 @@
 - หากใช้การประทับเวลา (Timestamping) ที่ฝั่งเซิร์ฟเวอร์ (Node-RED หรือ PostgreSQL) ข้อมูลที่ถูกหน่วงในเครือข่ายหรือค้างอยู่ในคิวจะได้รับ Timestamp ที่ผิดพลาด
 - เมื่อเกิด Network Jitter ข้อมูลระดับมิลลิวินาที (Millisecond Resolution) จะสูญเสียความแม่นยำ และทำให้ลำดับของเหตุการณ์ (Event Sequencing) ผิดเพี้ยนไป
 
-### <img src="../../../docs/assets/icons/check.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
+### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
 
 1. **Edge-Level Timestamping:**
    บังคับให้อุปกรณ์ปลายทาง (Edge Devices/Sensors) เป็นผู้ประทับเวลา Payload เสมอ (ตามมาตรฐาน ISO8601 precision) ระบบ IMS จะเชื่อถือ `time` จาก Edge เป็นหลัก
@@ -39,7 +39,7 @@
 
 - SNMP Simulator รุ่นดั้งเดิมสร้างข้อมูลที่เป็น Sine Wave ที่สมบูรณ์แบบ ทำให้ไม่สามารถทดสอบระบบ Caching, การทำ Compression ใน TimescaleDB หรือระบบ Alert ที่เกิดจาก Data Spike ได้อย่างแม่นยำ
 
-### <img src="../../../docs/assets/icons/check.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
+### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
 
 1. **Chaos Engineering ใน Simulator:**
    มีการเพิ่ม `Jitter`, `Random Drops` และ `Spikes` เข้าไปในตัว Simulator (ผ่านการคอนฟิกใน `docker-compose.yml` ของตัวจำลอง) เพื่อสร้าง Noise ให้เหมือนสภาพแวดล้อมเครือข่ายจริง
@@ -56,7 +56,7 @@
 
 - ข้อมูลที่มีความละเอียดสูงระดับมิลลิวินาที มักจะแกว่งผ่านเส้น Threshold ไปมา (Flapping) ทำให้เกิด False Positives และยิง Alert เข้า LINE/MS Teams นับพันข้อความต่อนาที
 
-### <img src="../../../docs/assets/icons/check.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
+### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
 
 1. **Prometheus `FOR` Clauses:**
    กฎการแจ้งเตือนทั้งหมดจะต้องมีเงื่อนไขเรื่องเวลา เช่น `CPU > 90% FOR 5m` หมายความว่าค่าความผิดปกติต้องคงอยู่อย่างต่อเนื่องเป็นเวลา 5 นาที จึงจะถือว่าเป็นปัญหาจริง (ลด Noise จาก Spikes สั้นๆ)
@@ -75,7 +75,7 @@ TimescaleDB ใช้ Continuous Aggregates (CAGGs) เพื่อสรุป�
 
 - อุปกรณ์ Edge บางตัวอาจขาดการเชื่อมต่อและส่งข้อมูลย้อนหลัง (Late-Arriving Data) เข้ามาในระบบ หากข้อมูลนี้เข้ามาหลังจากที่ CAGG ทำการสรุปผลไปแล้ว ข้อมูลในระดับรายชั่วโมงหรือรายวันจะผิดเพี้ยนไปจากความจริง (Data Drift)
 
-### <img src="../../../docs/assets/icons/check.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
+### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
 
 1. **Watermark Policies & Refresh Windows:**
    ตั้งค่า `refresh_continuous_aggregate` ให้ครอบคลุมช่วงเวลาที่มีโอกาสเกิด Late-Arriving Data (เช่น สั่ง Refresh ข้อมูลของเมื่อวานซ้ำอีกครั้งในเวลาเที่ยงคืน)

@@ -9,35 +9,27 @@
 
 欢迎来到 **Operations** 目录。本节包含与 IMS 运维流程相关的文档。
 
-## <img src="../../../docs/assets/icons/map.svg" width="18" align="center" />️ 目录映射 (Directory Map)
+## <img src="../../../docs/assets/icons/map.svg" width="18" align="center" /> 目录结构图
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart LR
   ROOT["docs/operations"]
-  ROOT --> F0["ALARM_PLAYBOOK-th"]
-  ROOT --> F1["ALARM_PLAYBOOK-zh-CN"]
-  ROOT --> F2["ALARM_PLAYBOOK"]
-  ROOT --> F3["BACKUP_RESTORE"]
-  ROOT --> F4["DEPLOYMENT_READINESS"]
-  ROOT --> F5["DR_TEST_PLAN"]
-  ROOT --> F6["INCIDENT_RESPONSE"]
-  ROOT --> F7["LDI_VALIDATION_PROTOCOL"]
-  ROOT --> F8["RELEASE_CHECKLIST"]
-  ROOT --> F9["SCALING_PLAN"]
-  ROOT --> F10["SOP_COMPLETION_REVIEW"]
-  ROOT --> F11["SOP_OPERATOR-th"]
-  ROOT --> F12["SOP_OPERATOR-zh-CN"]
-  ROOT --> F13["SOP_OPERATOR"]
-  ROOT --> F14["TROUBLESHOOTING-th"]
-  ROOT --> F15["TROUBLESHOOTING-zh-CN"]
-  ROOT --> F16["TROUBLESHOOTING"]
+  ROOT --> F0["ALARM_PLAYBOOK"]
+  ROOT --> F1["BACKUP_RESTORE"]
+  ROOT --> F2["DEPLOYMENT_READINESS"]
+  ROOT --> F3["DR_TEST_PLAN"]
+  ROOT --> F4["INCIDENT_RESPONSE"]
+  ROOT --> F5["LDI_VALIDATION_PROTOCOL"]
+  ROOT --> F6["RELEASE_CHECKLIST"]
+  ROOT --> F7["SCALING_PLAN"]
+  ROOT --> F8["SOP_COMPLETION_REVIEW"]
+  ROOT --> F9["SOP_OPERATOR"]
+  ROOT --> F10["TROUBLESHOOTING"]
 ```
 
-## <img src="../../../docs/assets/icons/file-text.svg" width="18" align="center" /> 文件索引 (File Index)
+## <img src="../../../docs/assets/icons/file-text.svg" width="18" align="center" /> 文件索引
 
-- [ALARM_PLAYBOOK-th.md](../../../th/docs/operations/ALARM_PLAYBOOK.md)
-- [ALARM_PLAYBOOK-zh-CN.md](ALARM_PLAYBOOK.md)
 - [ALARM_PLAYBOOK.md](ALARM_PLAYBOOK.md)
 - [BACKUP_RESTORE.md](BACKUP_RESTORE.md)
 - [DEPLOYMENT_READINESS.md](DEPLOYMENT_READINESS.md)
@@ -47,9 +39,5 @@ flowchart LR
 - [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
 - [SCALING_PLAN.md](SCALING_PLAN.md)
 - [SOP_COMPLETION_REVIEW.md](SOP_COMPLETION_REVIEW.md)
-- [SOP_OPERATOR-th.md](../../../th/docs/operations/SOP_OPERATOR.md)
-- [SOP_OPERATOR-zh-CN.md](SOP_OPERATOR.md)
 - [SOP_OPERATOR.md](SOP_OPERATOR.md)
-- [TROUBLESHOOTING-th.md](../../../th/docs/operations/TROUBLESHOOTING.md)
-- [TROUBLESHOOTING-zh-CN.md](TROUBLESHOOTING.md)
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
