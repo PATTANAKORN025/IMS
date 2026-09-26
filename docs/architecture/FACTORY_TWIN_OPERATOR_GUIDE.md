@@ -31,7 +31,7 @@ These are not pedantry. Each one, collapsed, produces a specific wrong decision.
 | Distinction | What collapsing it would cause |
 |---|---|
 | **Observed ≠ Confirmed** | A detected column or slot is evidence-backed but carries **no identity**. Treating an observed slot as a known machine attributes live state to equipment nobody has identified. |
-| **Simulated ≠ Real** | Machine *state* is real telemetry. Machine *position* is a synthetic grid. Walking the floor to the place a machine appears on screen leads to the wrong place. |
+| **Simulated ≠ Real** | Machine *state* is real telemetry. Equipment *positions* come from the CAD, but no monitored device is placed on or mapped to any of them. Walking to a position on screen expecting a particular machine leads to the wrong place. |
 | **Derived ≠ Measured** | Floor-to-floor height is computed from printed levels. Clear height under the slab is not known at all. Using the derived figure as a clearance is a physical-safety error. |
 | **Unknown ≠ Missing** | A blank height, an unmapped slot or an absent wall means *no source exists*, not that someone forgot. Nothing is pending; something is absent. |
 
@@ -149,12 +149,11 @@ Every asset on the floor comes from a CAD block reference, and each one carries
 | | Claim | Drawn as |
 |---|---|---|
 | **Position and rotation** | `MEASURED_CAD` — stated by the drawing's own `INSERT` record. Nothing is traced, snapped, averaged or fitted. | Where and how it sits |
-| **Extent** | `OBSERVED_CAD` for 63 assets, `UNRESOLVED` for 161 | A solid, lighter pad — or a small uniform marker |
+| **Extent** | `MEASURED_CAD` for 270 of the 344 assets (the block's own geometry, transformed and measured); `UNRESOLVED` for 74 | A solid, lighter pad (213 of them drawn as the CAD's own outline) — or a small uniform marker |
 
 **A uniform marker means the CAD did not establish that machine's size.** The
-block bounding box overlapped a neighbour, or centred off the floor, which
-means it measures a service envelope or a leader rather than the machine body.
-No default box is substituted. Every unresolved marker is the same size on
+block is below machine scale, or it draws a region rather than one asset, so
+its geometry cannot be read as a machine body. No default box is substituted. Every unresolved marker is the same size on
 purpose: it must not be mistakable for a measurement.
 
 **Height is unknown for every asset.** A plan view carries no equipment
@@ -274,9 +273,10 @@ What you will see, and what it means:
 | Field reads | Means |
 |---|---|
 | `UNMAPPED` | No authoritative record ties this position to a device. This is the state of **every** asset today. |
-| Footprint `UNRESOLVED — not established by the CAD` | The block bounding box measures more than the machine. No extent is claimed and none is drawn. |
+| Footprint `UNRESOLVED — no size is claimed` | The CAD did not establish this asset's size. No extent is claimed and only the uniform marker is drawn. |
 | Position evidence `MEASURED_CAD` | Read straight out of a CAD `INSERT`: insertion point and rotation are the drawing's own. |
-| Footprint evidence `OBSERVED_CAD` | The block's bounding box, which measures everything the block draws. Weaker than the position beside it. |
+| Footprint evidence `MEASURED_CAD — the block's own geometry, transformed and measured` | The extent was measured on the block's own geometry through the full `INSERT` chain. |
+| Footprint evidence `UNRESOLVED — not established by the CAD` | No extent evidence exists for this asset. |
 | height `unknown — not in evidence` | A plan view carries no equipment elevation. Nothing was estimated. |
 
 The inspector states the position and the extent as **two separate rows with
@@ -310,7 +310,7 @@ viewport. See **[Visual QA](FACTORY_TWIN_VISUAL_QA.md)**.
 Do not go looking for these; they are absent because no source exists.
 
 - Which physical machine any asset is (**0 confirmed mappings**).
-- The size of 161 of the 224 assets (**extent UNRESOLVED**).
+- The size of 74 of the 344 assets (**extent UNRESOLVED**).
 - Lift pits.
 - Clear ceiling height, or the height of any piece of equipment.
 - A complete equipment census.
