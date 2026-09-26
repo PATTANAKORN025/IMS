@@ -59,6 +59,7 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 ---
 
+<a id="project-objectives--achievement"></a><a id="project-objectives-achievement"></a>
 ## Project Objectives & Achievement
 
 ### Objective 1: Real-time Monitoring
@@ -313,6 +314,7 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 ---
 
+<a id="challenges--solutions"></a><a id="challenges-solutions"></a>
 ## Challenges & Solutions
 
 ### Challenge 1: SNMP Walker Unreliability

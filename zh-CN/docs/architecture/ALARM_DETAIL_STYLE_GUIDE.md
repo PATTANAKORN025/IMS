@@ -151,12 +151,14 @@
 | `92013`    | The network path to a required service (job server, database, or peer device) was slow or unreachable within the timeout window.                                                   | The operation depending on that network connection did not complete and needs to be retried once connectivity is restored.                           | Check the machine's network status and cabling, then retry the operation.                                                                             |
 | `97005`    | The database server is unreachable, overloaded, or the station's connection pool encountered an unexpected error.                                                                  | The station cannot read or write production data until the connection is restored, which can stall data logging or job lookups.                      | Check the database server status and this station's network path to it; the connection typically recovers automatically once the server is reachable. |
 
+<a id="7-sop--工作指导参考--尚未填充-sop--work-instruction-references--not-yet-populated"></a><a id="7-sop-工作指导参考-尚未填充-sop-work-instruction-references-not-yet-populated"></a>
 ## 7. SOP / 工作指导参考 — 尚未填充 (SOP / work-instruction references — not yet populated)
 
 `sop_reference` 被添加到模式（迁移 073）中，作为警报字典 (Alarm Dictionary) 在存在时显示的可选字段。目前 **每个代码都为 NULL** — 本仓库没有可以链接到的真实的“标准操作程序”或“工作指导”文档，凭空捏造 URL 或文档 ID 将违背本指南所基于的溯源测试（§4）。这是故意作为结构就绪状态发布的，而不是一种暂时性的完整性声明：一旦真实的 SOP/WI 文档（或文档管理系统）存在，填充此字段将是一项数据录入任务，而不是工程任务 — 不需要修改模式或仪表板。
 
 ---
 
+<a id="8-冻结与作用域-freeze--scope"></a><a id="8-冻结与作用域-freeze-scope"></a>
 ## 8. 冻结与作用域 (Freeze & scope)
 
 **这涵盖了什么 (v1.1)：** ~2,190 个真实供应商警报代码中有 25 个具有 `alarm_detail` + `cause` + `impact` + `recovery_action` — 这是模拟器当前可访问的所有代码（所有 21 个模拟目录代码）加上在 v1.0 中添加以供参考的 4 个纯真实的 Critical 代码。这不是“前 50 名” — 请参阅下方说明了解原因。
@@ -173,6 +175,7 @@
 
 **明确声明不包含的内容：** 这不是 ISA-18.2 合规性要求（请参阅早期审计中的 Known Gaps），它不是全目录覆盖，并且 `sop_reference` 没有填充真实内容（§7）。这是 25 个真实的、源头可验证的、样式一致的、结构完整的条目，作为以后扩展覆盖范围的参考模式。
 
+<a id="9-向供应商请求待处理代码的规格说明-vendor-specification-request-for-pending-codes"></a>
 ## 9. 向供应商请求待处理代码的规格说明 (Vendor specification request for pending codes)
 
 这是向管理供应商关系的人员提出的请求，并不是可以从本代码库内部解决的问题。以下 11 个代码在生产机器上真实触发过（390 个真实的日志行，`data/real/ldi_alarm_log_clean.sql`），但没有出现在本地可用的任何供应商目录文件中。填补这一空白需要以下其中之一：

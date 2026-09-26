@@ -151,12 +151,14 @@ Beyond the single-statement `alarm_detail`, each of the 25 codes covered so far 
 | `92013`    | The network path to a required service (job server, database, or peer device) was slow or unreachable within the timeout window.                                                   | The operation depending on that network connection did not complete and needs to be retried once connectivity is restored.                           | Check the machine's network status and cabling, then retry the operation.                                                                             |
 | `97005`    | The database server is unreachable, overloaded, or the station's connection pool encountered an unexpected error.                                                                  | The station cannot read or write production data until the connection is restored, which can stall data logging or job lookups.                      | Check the database server status and this station's network path to it; the connection typically recovers automatically once the server is reachable. |
 
+<a id="7-sop--work-instruction-references--not-yet-populated"></a><a id="7-sop-work-instruction-references-not-yet-populated"></a>
 ## 7. SOP / work-instruction references — not yet populated
 
 `sop_reference` is added to the schema (migration 073) as an optional field the Alarm Dictionary displays when present. It is **NULL for every code right now** — this repo has no real Standard Operating Procedure or Work Instruction documents to link to, and inventing a URL or document ID would fail the exact same provenance test this whole guide is built on (§4). This is deliberately shipped as structural readiness, not a placeholder claim of completeness: once real SOP/WI documents (or a document management system) exist, populating this field is a data-entry task, not an engineering one — no schema or dashboard change needed.
 
 ---
 
+<a id="8-freeze--scope"></a><a id="8-freeze-scope"></a>
 ## 8. Freeze & scope
 
 **What this covers (v1.1):** 25 of the ~2,190 real vendor alarm codes have `alarm_detail` + `cause` + `impact` + `recovery_action` — this is every code currently reachable by the mock simulator (all 21 mock-catalog codes) plus the 4 real-only Critical codes added for reference in v1.0. Not "top 50" — see below for why.
@@ -173,6 +175,7 @@ Beyond the single-statement `alarm_detail`, each of the 25 codes covered so far 
 
 **Explicitly not claimed:** this is not ISA-18.2 compliance (see the earlier audit's Known Gaps), it is not full-catalog coverage, and `sop_reference` is not populated with real content (§7). It's 25 real, verifiably-grounded, consistently-styled, structurally-complete entries as the reference pattern for extending coverage later.
 
+<a id="9-vendor-specification-request-for-pending-codes"></a><a id="9-vendor-specification-requests-for-pending-codes"></a>
 ## 9. Vendor specification request for pending codes
 
 This is a request to whoever manages the vendor relationship, not something resolvable from inside this codebase. The 11 codes below fired for real on the production machines (390 real log rows, `data/real/ldi_alarm_log_clean.sql`) but appear in neither vendor catalog file available locally. Closing this gap needs one of:

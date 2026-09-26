@@ -151,12 +151,14 @@
 | `92013`    | The network path to a required service (job server, database, or peer device) was slow or unreachable within the timeout window.                                                   | The operation depending on that network connection did not complete and needs to be retried once connectivity is restored.                           | Check the machine's network status and cabling, then retry the operation.                                                                             |
 | `97005`    | The database server is unreachable, overloaded, or the station's connection pool encountered an unexpected error.                                                                  | The station cannot read or write production data until the connection is restored, which can stall data logging or job lookups.                      | Check the database server status and this station's network path to it; the connection typically recovers automatically once the server is reachable. |
 
+<a id="7-ข้อมูลอ้างอิง-sop--ขั้นตอนการทำงาน--ยังไม่ได้กรอกข้อมูล-sop--work-instruction-references--not-yet-populated"></a><a id="7-ข้อมูลอ้างอิง-sop-ขั้นตอนการทำงาน-ยังไม่ได้กรอกข้อมูล-sop-work-instruction-references-not-yet-populated"></a>
 ## 7. ข้อมูลอ้างอิง SOP / ขั้นตอนการทำงาน — ยังไม่ได้กรอกข้อมูล (SOP / work-instruction references — not yet populated)
 
 `sop_reference` ถูกเพิ่มลงในสคีมา (การย้ายข้อมูล 073) เป็นฟิลด์เสริมที่จะแสดงบนพจนานุกรมการแจ้งเตือน (Alarm Dictionary) เมื่อมีข้อมูล ปัจจุบัน **จะเป็นค่าว่าง (NULL) สำหรับทุกรหัส** — คลังข้อมูลนี้ยังไม่มีเอกสารคู่มือปฏิบัติงานมาตรฐาน (SOP) หรือคำแนะนำการปฏิบัติงาน (Work Instruction) จริงเพื่อเชื่อมโยงไปถึง การสร้าง URL หรือหมายเลขเอกสารจำลองขึ้นมาจะขัดต่อกฎการอ้างอิงแหล่งที่มาข้อเดิมที่คู่มือทั้งหมดนี้ยึดถือ (§4) สิ่งนี้จงใจนำเสนอในฐานะความพร้อมของโครงสร้าง ไม่ใช่การอ้างสิทธิ์ความสมบูรณ์แบบชั่วคราว: เมื่อมีเอกสาร SOP/WI จริง (หรือระบบจัดการเอกสาร) การกรอกฟิลด์นี้คืองานบันทึกข้อมูล ไม่ใช่งานด้านวิศวกรรม — ไม่จำเป็นต้องเปลี่ยนสคีมาหรือแดชบอร์ด
 
 ---
 
+<a id="8-การแช่แข็งและขอบเขต-freeze--scope"></a><a id="8-การแช่แข็งและขอบเขต-freeze-scope"></a>
 ## 8. การแช่แข็งและขอบเขต (Freeze & scope)
 
 **สิ่งที่คู่มือนี้ครอบคลุม (v1.1):** 25 รหัสจากรหัสการแจ้งเตือนดั้งเดิมของผู้ผลิตทั้งหมดประมาณ 2,190 รหัสที่มี `alarm_detail` + `cause` + `impact` + `recovery_action` — นี่คือรหัสทั้งหมดที่โปรแกรมจำลองสามารถเข้าถึงได้ในปัจจุบัน (ทั้ง 21 รหัสในแคตตาล็อกจำลอง) รวมกับ 4 รหัสระดับ Critical ที่มีอยู่จริงซึ่งถูกเพิ่มเข้ามาเพื่อเป็นข้อมูลอ้างอิงใน v1.0 นี่ไม่ใช่ "50 อันดับแรก" — ดูเหตุผลได้ด้านล่าง
@@ -173,6 +175,7 @@
 
 **สิ่งที่ไม่ขออ้างสิทธิ์โดยชัดเจน:** นี่ไม่ใช่การปฏิบัติตามมาตรฐาน ISA-18.2 (ดู Known Gaps ของการตรวจสอบครั้งก่อน), นี่ไม่ใช่การครอบคลุมแคตตาล็อกทั้งหมด, และ `sop_reference` ไม่ได้ถูกเติมด้วยเนื้อหาจริง (§7) นี่คือข้อมูลที่มีอยู่จริง อ้างอิงแหล่งที่มาได้ มีรูปแบบสอดคล้องกัน และมีความสมบูรณ์เชิงโครงสร้าง จำนวน 25 รายการ เพื่อเป็นรูปแบบอ้างอิงสำหรับการขยายความครอบคลุมในภายหลัง
 
+<a id="9-คำร้องขอข้อมูลจำเพาะจากผู้ผลิตสำหรับรหัสที่รอดำเนินการ-vendor-specification-request-for-pending-codes"></a>
 ## 9. คำร้องขอข้อมูลจำเพาะจากผู้ผลิตสำหรับรหัสที่รอดำเนินการ (Vendor specification request for pending codes)
 
 นี่คือคำร้องขอถึงใครก็ตามที่ดูแลความสัมพันธ์กับผู้ผลิต ไม่ใช่สิ่งที่สามารถแก้ไขได้จากภายในฐานโค้ดนี้ รหัสทั้ง 11 รหัสข้างล่างนี้เกิดขึ้นจริงบนเครื่องจักรในการผลิต (บันทึกข้อมูลจริง 390 แถว, `data/real/ldi_alarm_log_clean.sql`) แต่กลับไม่ปรากฏในไฟล์แคตตาล็อกของผู้ผลิตที่มีอยู่ในปัจจุบันเลย การจะอุดช่องว่างนี้จำเป็นต้องมีสิ่งใดสิ่งหนึ่งดังนี้:
