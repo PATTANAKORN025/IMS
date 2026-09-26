@@ -28,7 +28,7 @@
  <p>
   <a href="README.md"><img src="docs/assets/icons/gb-us.svg" width="18" align="center"/> <b>English</b></a> |
   <a href="th/README.md"><img src="docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
-  <a href="zh-CN/README.md"><img src="docs/assets/icons/tw.svg" width="18" align="center"/> <b>中文</b></a>
+  <a href="zh-CN/README.md"><img src="docs/assets/icons/cn.svg" width="18" align="center"/> <b>简体中文</b></a>
  </p>
 </div>
 
@@ -40,7 +40,7 @@
 
 > **Audience:** Open-Source Community, System Evaluators, Deployment Engineers.
 > **Objective:** The primary entry point to the IMS codebase, outlining capabilities, architecture, and deployment steps.
-> **Provenance:** Architecture and capabilities updated and verified against the live system on 2026-08-10.
+> **Provenance:** Architecture, versions and commands re-verified against the repository (`main`, after PR #22/#23) on 2026-09-26. Runtime evidence links carry their own capture dates.
 
 <div align="center">
   <img src="assets/apex-ldi-noc-banner.gif" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
@@ -53,11 +53,11 @@
   <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
-  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
-  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
-  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_13.1-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
+  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_4.1-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
+  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.29_%7C_PG16-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
   <br>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
+  <a href="#verification--evidence"><img src="https://img.shields.io/badge/Tests-Unit_%2B_Lint_(pre--commit)-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
   <a href="data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
@@ -77,7 +77,7 @@
 
 **The Factory Floor Reality (OT):** In advanced PCB manufacturing, Laser Direct Imaging (LDI) machines require zero-latency decision making. A shift in laser temperature or vacuum pressure can instantly cause registration errors, producing expensive scrap. Operators need immediate, color-coded Andon boards to stop the line when Statistical Process Control (SPC) limits (like Cpk) drop below acceptable thresholds.
 
-**The Convergence (IT/OT):** IMS provides this visibility by blending traditional IT rigor with OT realities. It monitors the health of 1,000+ infrastructure nodes (servers, network switches, ingestion latency) side-by-side with LDI machine telemetry. When an LDI alignment fails, engineers can instantly correlate it against network drops or server CPU spikes using the same single pane of glass.
+**The Convergence (IT/OT):** IMS provides this visibility by blending traditional IT rigor with OT realities. It monitors infrastructure health (servers, network switches, ingestion latency) side-by-side with LDI machine telemetry, and its ingestion path is load-tested with K6 against a simulated fleet (100 servers by default, configurable). When an LDI alignment fails, engineers can instantly correlate it against network drops or server CPU spikes using the same single pane of glass.
 
 **The Architecture (IT):** Under the hood, performance is driven by a stateful Node-RED pipeline managing async data ingestion and PgBouncer handling connection pooling. TimescaleDB performs the heavy lifting—computing rolling 3&sigma; baselines (Z-Scores) and continuous aggregates on the fly, ensuring Grafana renders sub-second dashboards even when querying millions of historical telemetry rows.
 
@@ -159,11 +159,14 @@ _Designed for Managers, UI/UX Reviewers, and System Evaluators wanting to see th
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
-cp .env.example .env
-make up      # docker compose up -d (starts stack with simulator)
+cp .env.example .env   # then replace EVERY secret value before first start (see below)
+make up                # build-flows + docker compose up -d (all 15 services, simulator included)
 sleep 40 && make verify
-open http://localhost:3000
+# browse to http://localhost:3000 (nginx front door; Grafana has no published port)
 ```
+
+> [!WARNING]
+> `.env.example` values are public. Before any start outside a throw-away laptop, generate new values for every password, token and key in `.env` (`POSTGRES_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `GRAFANA_DB_PASSWORD`, `ALARM_API_DB_PASSWORD`, `INGEST_API_KEY`, `ALERT_WEBHOOK_TOKEN`, `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH`, `PGADMIN_DEFAULT_PASSWORD`, `GRAFANA_RENDERER_TOKEN`). `postgres/init/003-grafana-password.sh` also carries a fallback password that is only safe when `GRAFANA_DB_PASSWORD` is set. See [SECURITY.md](SECURITY.md).
 
 > **What to expect:** A gentle simulation (~10-15 rows/min) allowing you to click through the LDI Manufacturing Command Center, view the Operator Andon Board, and see real-time Cpk capability charts.
 > **Verified:** `docker compose ps` on 2026-08-13, archived in [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt).
@@ -175,38 +178,47 @@ _Designed for SREs, DBAs, and Architects who want to verify the system's actual 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
-cp .env.example .env
-make up-prod   # Launches the stack with production-grade resource allocations
-make test-load # Fires the K6 stress test framework
+cp .env.example .env   # replace every secret value first
+make up-prod           # base compose file + docker-compose.prod.yaml resource limits
+make test-load         # k6 run tests/k6/pipeline-stress.js (needs k6 on PATH)
 ```
 
-> **What to expect:** The K6 framework will simulate a 1,000-node infrastructure environment, slamming the Node-RED ingestion endpoints and testing TimescaleDB's continuous aggregation limits. You can monitor ingestion latency and PgBouncer queue depths live on the `IMS Meta-Monitoring` dashboard.
+> **What to expect:** K6 ramps simulated servers (default `TARGET_SERVERS=100`; set the environment variable to scale up) against the Node-RED ingestion endpoints, with thresholds `pipeline_success` rate > 95 % and `e2e_duration` p95 < 10 s. You can monitor ingestion latency and PgBouncer queue depths live on the `IMS Meta-Monitoring` dashboard.
 
 <details>
 <summary><b>Known Limitations & Manual Configuration</b></summary>
 
-- Nginx reverse-proxy is configured for `localhost` and requires manual certificate deployment for production environments.
-- Grafana Alertmanager integrations (LINE/Teams) will fail silently until explicit tokens are provided in the `.env` file.
+- The nginx front door listens on plain HTTP (`${GRAFANA_PORT:-3000}` on the host, port 80 in the container); add TLS termination for production.
+- Alertmanager delivery to LINE/Teams stays silent until `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` and `TEAMS_WEBHOOK_URL` are set in `.env`.
+- `pgadmin` publishes port `5050` on **all** interfaces, unlike every other published port; restrict it with a host firewall or bind it to `127.0.0.1` outside a lab.
+- The Makefile is mixed-shell: `backup`, `restore`, `test-load`, `snapshot-flows` and `deploy-flows` need a POSIX shell (Git Bash on Windows); `doctor` uses cmd-style redirection.
 
 </details>
 
 ### Verification & Evidence
 
-Every architectural claim is backed by continuous integration or explicit test scripts. For load test results, visual regression evidence, and disaster recovery validations, refer to the **[Evidence Index](docs/evidence/INDEX.md)**.
+Architectural claims are backed by test scripts and dated evidence files. `.github/workflows/ci.yml` runs the same checks as `node scripts/pre-commit.js` plus gitleaks, compose validation and Prometheus linting whenever GitHub Actions is available for the repository. For load test results, visual regression evidence, and disaster recovery validations, refer to the **[Evidence Index](docs/evidence/INDEX.md)**.
 
 <details>
 <summary><b>Available Commands</b></summary>
 
 | Command                    | Description                                                 |
 | -------------------------- | ----------------------------------------------------------- |
-| `make up`                  | Start all services (dev mode with SNMP simulator)           |
-| `make down`                | Stop all services                                           |
+| `make doctor`              | Check prerequisites (docker, compose, node)                 |
+| `make up`                  | Build flows, then start all 15 services (simulator included) |
+| `make up-prod`             | Same, with the `docker-compose.prod.yaml` resource overlay  |
+| `make down` / `make restart` | Stop the stack / restart node-red, grafana, alertmanager, prometheus |
+| `make logs`                | Tail Node-RED logs                                          |
 | `make verify`              | Full system health check (containers, DB, pipeline, alerts) |
-| `make test-unit`           | Run unit tests (18 parser + counter tests)                  |
-| `make test-load`           | Run K6 pipeline stress test (50→200 VUs)                    |
-| `make test-visual`         | Capture dashboard screenshots via Playwright                |
-| `make validate-dashboards` | Lint dashboard JSON for grid overlap + hex corruption       |
-| `make backup`              | Database backup                                             |
+| `make build-flows` / `make validate-flows` | Merge `nodered_data/flows/*.json` into `flows.json` / assert it is valid |
+| `make snapshot-flows` / `make deploy-flows` | Back up `flows.json` / POST the split flows to Node-RED |
+| `make test-unit`           | The 4 core parser/boundary unit test files                  |
+| `make test-load`           | K6 pipeline stress test (`TARGET_SERVERS`, default 100)     |
+| `make test-visual` / `make test-visual-ldi` | Playwright dashboard screenshot regression   |
+| `make validate-dashboards` | Grep dashboard JSON for corrupted hex codes                 |
+| `make backup` / `make restore FILE=<path>` | Database dump / restore                     |
+
+The full pre-commit suite (all unit tests, the `tests/lint/` linters, dashboard and flow JSON validation) runs with `node scripts/pre-commit.js`.
 
 </details>
 
@@ -217,8 +229,9 @@ Every architectural claim is backed by continuous integration or explicit test s
 ```mermaid
 flowchart LR
   subgraph Collection ["Collection"]
-    J["Juniper EX4000\n78 interfaces"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
-    S["Linux Servers\n1000+ nodes"] -->|SNMP v2c| W
+    J["Network switches"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
+    S["Servers"] -->|SNMP v2c| W
+    L["LDI machines"] -->|"HTTP POST /ldi-telemetry (via nginx)"| W
   end
 
   subgraph Processing ["V10 Streaming Pipeline"]
@@ -239,10 +252,9 @@ flowchart LR
   end
 
   subgraph Visualization ["Visualization"]
-    T --> G1["NOC Overview\n15 panels"]
-    T --> G2["Engineering\n25 panels"]
-    T --> G3["Capacity\n16 panels"]
-    T --> G4["Meta-Monitor\n15 panels"]
+    T --> G1["Grafana 13\n5 infrastructure dashboards"]
+    T --> G2["Grafana 13\n10 manufacturing dashboards"]
+    T --> FT["Factory Twin 3D\n+ Alarm API"]
   end
 
   subgraph Alerting ["Alerting"]
@@ -261,11 +273,11 @@ flowchart LR
 <details>
 <summary><b>Data Flow — Step by Step</b></summary>
 
-1. **Collection** — Node-RED forks 4 walkers for network switches (CPU, Storage, Network, Temp) and 5 for servers (+LDI) every 10 seconds. Device registry loaded from `public.devices` every 5 minutes.
+1. **Collection** — Every 30 seconds (`Poll Fleet (30s)`), Node-RED forks 4 walkers for network switches (CPU, Storage, Network, Temp) and 5 for servers (+LDI). The device registry is reloaded from `public.devices` every 5 minutes. LDI machines also push JSON to `POST /ldi-telemetry` through nginx, authenticated with `INGEST_API_KEY`.
 2. **Walking** — Sequential async bulk walks (`session.subtree` with `maxRepetitions: 50`). Single UDP socket eliminates switch-level packet drops. Circuit breaker trips after 2 failures with automatic HALF_OPEN probe.
 3. **Parsing** — `sre_parser` maintains per-device state in flow context (`dev_state_<deviceId>`), buffers rows in `batch_buf_<deviceId>`. Offline heartbeat (`_walker: "offline"`) immediately zeros all metrics on device failure.
 4. **Storage** — Timer-gated independent flushing: each table type (sys/net/ldi) inserts only if its buffer has rows. Partial walker failures don't block unrelated data writes.
-5. **Continuous Aggregation** — Hourly CAGGs refresh every 30min. Daily/Weekly CAGGs aggregate from hourly. Live retention (verified against the running database, not migration history -- see `docs/architecture/DATA_RETENTION.md` for a documented drift between the two): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30d, `ldi_data` 180d, hourly rollups 2yr.
+5. **Continuous Aggregation** — TimescaleDB refresh policies run from every minute (`ldi_data_1m`, `ldi_oee_1m`) to every 6 hours (weekly rollups); daily and weekly infrastructure CAGGs aggregate from the hourly ones (see [Data Flow](docs/architecture/DATA_FLOW.md)). Live retention (verified against the running database, not migration history -- see `docs/architecture/DATA_RETENTION.md` for a documented drift between the two): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30d, `ldi_data` 180d, hourly rollups 2yr.
 6. **Visualization** — 15 dashboards across 2 domains: 5 infrastructure (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring, Ingestion Latency) + 10 manufacturing (Easy Overview, LDI Manufacturing, Operator Andon, Alarm Console, Alarm Dictionary, Alarm Response (MTTA/MTTR), Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin).
 7. **Alerting** — Prometheus scrapes `/metrics`, Alertmanager routes to LINE Messaging API + MS Teams with runbook links (real delivery requires operator-configured credentials, absent by design). Z-Score anomalies via Grafana SQL over TimescaleDB.
 
@@ -284,17 +296,15 @@ flowchart LR
 
 ## NOC Wall-Display
 
-```bash
-export GRAFANA_API_KEY="your-admin-api-key"
-./scripts/create-playlist.sh http://localhost:3000 "$GRAFANA_API_KEY" 30
-open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
-```
+Create a playlist in **Dashboards → Playlists** and start it from the playlist page; Grafana 13 plays every dashboard in kiosk mode. `scripts/create-playlist.sh` automates this but still calls Grafana's legacy id-based playlist API, so re-check it after each Grafana upgrade.
 
-| Mode         | URL                       | Use Case                                              |
-| ------------ | ------------------------- | ----------------------------------------------------- |
-| **TV Kiosk** | `?kiosk=tv&autofitpanels` | NOC wall-display — hides all chrome, auto-fits panels |
-| **Clean**    | `?kiosk`                  | Presentation mode — hides sidebar + topnav            |
-| **Embedded** | `?kiosk=1`                | iframe embedding — hides everything                   |
+| Mode | URL parameters | Use case |
+| --- | --- | --- |
+| **Kiosk** | `?kiosk` | Wall display — hides the navigation chrome |
+| **Kiosk + fit** | `?kiosk&autofitpanels` | Wall display — also scales panels to the screen height |
+| **Operator Andon** | `/d/ims-ldi-operator-andon?kiosk` | Read-only floor board; interactive work belongs on the Alarm Console |
+
+Use `kiosk`: the older `kiosk=tv` TV mode is not one of Grafana 13's kiosk options (some dashboard links in this repo still carry it).
 
 ---
 
@@ -303,12 +313,14 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 
 | Layer             | Technology                | Purpose                                                                       |
 | ----------------- | ------------------------- | ----------------------------------------------------------------------------- |
-| **Orchestration** | Docker Compose            | 7-service container stack with dev/prod overlays                              |
+| **Orchestration** | Docker Compose            | 15-service stack (`docker-compose.yaml`) + production resource overlay       |
 | **Collection**    | Node-RED + net-snmp       | Sequential async bulk SNMP walks, 5-thread parallel walker                    |
-| **Database**      | TimescaleDB (PostgreSQL)  | Hypertables with CAGGs, 90% compression after 7d                              |
-| **Visualization** | Grafana 13.1.1            | 15 dashboards (5 infrastructure + 10 manufacturing), state-timeline anomalies |
+| **Database**      | TimescaleDB 2.29 (PostgreSQL 16) + PgBouncer 1.25 | Hypertables, CAGG rollups, native compression, retention policies |
+| **Visualization** | Grafana 13.1.2 + image renderer | 15 dashboards (5 infrastructure + 10 manufacturing)                    |
 | **Alerting**      | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks     |
-| **Load Testing**  | K6                        | Pipeline stress (50→200 VUs), threshold p95<500ms                             |
+| **Load Testing**  | K6                        | Pipeline stress, thresholds success > 95 %, e2e p95 < 10 s                    |
+| **Services**      | Node.js 22 (Express)      | `alarm-api` (acknowledge/resolve write path), `factory-twin-3d` (Floor 1 twin) |
+| **Front door**    | nginx 1.27                | Single published UI port; same-origin routing to Grafana, alarm-api, twin, Node-RED ingest |
 | **SLA Probing**   | Blackbox Exporter         | HTTP/TCP/ICMP endpoint monitoring                                             |
 
 </details>
@@ -332,32 +344,29 @@ Exact column counts, the full view/CAGG list, and applied-migration count: **[Da
 
 ```text
 IMS/
-├── monitoring/grafana/        # Grafana dashboards + provisioning
-│  ├── dashboards/          #  10 JSON dashboard files (source of truth)
-│  └── library-panels/        #  Shared library panels (Fleet Health Score)
-├── nodered_data/           # Node-RED pipeline engine
-│  ├── flows/             #  ingestion.json + alerting.json (source)
-│  ├── lib/              #  circuit-breaker.js, parser, units.js
-│  └── settings.js          #  functionGlobalContext, auth config
-├── postgres/             # Database initialization
-│  └── init/             #  001-init-timescaledb.sql (schema + views)
-├── database/migrations/        #  57 sequenced migration files (013-082, some numbers skipped/archived), applied by db-migrate
-├── tests/               # Test suites
-│  ├── k6/              #  K6 pipeline stress test
-│  ├── unit/             #  Parser & counter unit tests
-│  └── playwright/          #  Visual regression + screenshot capture
-├── scripts/              # Operational scripts
-│  ├── create-playlist.sh       #  NOC wall-display playlist creator
-│  ├── generate-showcase.sh      #  Dashboard screenshot generator
-│  ├── snmp-discover.js        #  Enterprise SNMP OID discovery
-│  └── build-flows.js         #  Merge nodered_data/flows/*.json → flows.json (also used by CI)
-├── assets/              # Dashboard screenshots (auto-generated)
-├── docs/               # Architecture, Design System, Troubleshooting
-│  ├── architecture/         #  ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
-│  ├── operations/          #  TROUBLESHOOTING.md, SCALING_PLAN.md
-│  ├── audits/            #  Audit reports and technical debriefs
-│  └── product/            #  PRODUCT.md, ONBOARDING_SCRIPT.md
-└── .mimocode/skills/         # 24 custom skills for DevOps automation
+├── docker-compose.yaml         # 15 services; docker-compose.prod.yaml adds resource limits
+├── proxy/nginx.conf            # the single front door (Grafana, alarm-api, twin, LDI ingest)
+├── monitoring/
+│  ├── grafana/
+│  │  ├── dashboards/{infrastructure,manufacturing}/  # 5 + 10 provisioned dashboards (source of truth)
+│  │  ├── library-panels/        # shared library panel (Fleet Health Score)
+│  │  └── provisioning/, grafana.ini
+│  ├── prometheus/, alertmanager/, blackbox/, snmpsim/
+├── nodered_data/
+│  ├── flows/                  # 5 split flow files (source); flows.json is a build artifact
+│  ├── lib/                    # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
+│  └── settings.js
+├── postgres/init/              # first-boot bootstrap SQL + grafana password script
+├── database/migrations/        # numbered forward-only migrations (max 082), applied by db-migrate
+├── services/
+│  ├── alarm-api/              # acknowledge/resolve write path (Express + pg)
+│  └── factory-twin-3d/        # Floor 1 digital twin (Express, lib/*.js + typed domain/)
+├── tests/                      # unit/ + lint/ (no infrastructure), e2e/, smoke/, playwright/, k6/, ...
+├── scripts/                    # build-flows.js, migrate-entrypoint.sh, verify-deployment.*, backup/restore, generators
+├── assets/                     # README screenshots and banner
+├── docs/                       # English docs: architecture/, operations/, user/, admin/, audit/, evidence/, ...
+├── th/, zh-CN/                 # Thai and Simplified Chinese mirrors of the docs
+└── .agents/skills/             # agent skills used by AI tooling
 ```
 
 </details>
@@ -415,6 +424,9 @@ IMS/
 |       [**Data Retention**](docs/architecture/DATA_RETENTION.md)       | Live retention/compression policy                               |
 |     [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md)     | What to verify before tagging a release                         |
 |       [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md)       | Common issues, debugging commands, recovery procedures          |
+|        [**Operations Runbook**](docs/operations-runbook.md)           | Day-to-day stack operations and recovery commands               |
+| [**Factory Twin Operator Guide**](docs/architecture/FACTORY_TWIN_OPERATOR_GUIDE.md) | How to read the Floor 1 twin and its evidence states |
+|      [**Production Readiness**](PRODUCTION-READINESS.md)              | Release gate status and open risks                              |
 
 ### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> Community & Reference
 
@@ -424,6 +436,7 @@ IMS/
 |               [**Contributing**](CONTRIBUTING.md)                | Development workflow, branch naming, commit conventions   |
 |            [**Code of Conduct**](CODE_OF_CONDUCT.md)             | Community standards and enforcement                       |
 |                [**Security Policy**](SECURITY.md)                | Vulnerability reporting                                   |
+|               [**Changelog**](CHANGELOG.md)                     | Release and merge history                                 |
 |      [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md)      | Report a bug or regression                                |
 | [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | Suggest a new feature                                     |
 
