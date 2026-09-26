@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../README.md"><img src="assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="README.md"><img src="assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS Operations Runbook
 
 **Scope:** day-to-day operation, troubleshooting, and safe-recovery reference for the production Docker Compose stack. Every command below is tagged by risk tier — read it before running anything.
@@ -49,13 +56,14 @@ docker inspect <container> --format "{{.State.Health.Status}}"
 Or use the repo's own scripted checks:
 
 ```bash
-./scripts/verify-deployment.sh      # Linux — full deployment sanity check
-./scripts/verify-deployment.ps1     # Windows — same
-./scripts/verify-db-health.sh       # TimescaleDB-specific
-./scripts/verify-db-health.ps1
+make verify                                                      # picks the right script for the OS
+./scripts/verify-deployment.sh                                   # Linux / Git Bash — full deployment sanity check
+powershell -ExecutionPolicy Bypass -File scripts\verify-deployment.ps1   # Windows — same
+./scripts/verify-db-health.sh                                    # TimescaleDB-specific
+powershell -ExecutionPolicy Bypass -File scripts\verify-db-health.ps1
 ```
 
-For a full, evidence-based readiness read (not just "is it up"), see `scripts/production-assurance.js` — see section 12 below.
+For a full, evidence-based readiness read (not just "is it up"), see `scripts/production-assurance.js` — see section 15 below.
 
 ## 4. Grafana troubleshooting
 
@@ -65,7 +73,7 @@ For a full, evidence-based readiness read (not just "is it up"), see `scripts/pr
 
 Common symptom: Grafana returns `502` through nginx after another container (commonly `ims-timescaledb`) was recreated. nginx caches the upstream's resolved IP and doesn't automatically re-resolve.
 
-🟡 **SAFE ACTION** — fix: `docker compose -p ims restart ims-proxy` (nginx only, stateless, no data impact).
+🟡 **SAFE ACTION** — fix: `docker compose -p ims restart proxy` (nginx only, stateless, no data impact; `-p ims` matches `COMPOSE_PROJECT_NAME` in `.env.example`). `docker exec ims-proxy nginx -s reload` has the same effect without restarting the process.
 
 ## 5. Node-RED troubleshooting
 
@@ -86,7 +94,7 @@ docker compose -p ims up -d --no-deps node-red
 🟢 Extension version (after any TimescaleDB image bump): `SELECT extversion FROM pg_extension WHERE extname='timescaledb';`.
 🟢 Migration state: `SELECT count(*) FROM public.schema_migrations;`.
 
-🔴 **PRODUCTION-IMPACTING** — recreating `ims-timescaledb` interrupts every dependent service's connection (pgbouncer, Node-RED, Grafana, alarm-api) until they reconnect — in practice this has been observed to resolve itself within seconds to ~30s without manual intervention, but always re-verify telemetry resumed (section 11) afterward. **After any TimescaleDB image version change, `ALTER EXTENSION timescaledb UPDATE;` must be run manually** — a bare image swap does not update the installed extension's catalog version.
+🔴 **PRODUCTION-IMPACTING** — recreating `ims-timescaledb` interrupts every dependent service's connection (pgbouncer, Node-RED, Grafana, alarm-api) until they reconnect — in practice this has been observed to resolve itself within seconds to ~30s without manual intervention, but always re-verify telemetry resumed (section 10) afterward. **After any TimescaleDB image version change, `ALTER EXTENSION timescaledb UPDATE;` must be run manually** — a bare image swap does not update the installed extension's catalog version.
 
 🔴 Applying a new migration: `./scripts/migrate.sh` — review the migration file first; this is schema-changing and not trivially reversible without a matching down-migration.
 
@@ -108,7 +116,7 @@ Bound to `127.0.0.1` only per `docker-compose.yaml` — not reachable from outsi
 ## 9. nginx / proxy troubleshooting
 
 🟢 Check config loaded without error: `docker logs ims-proxy --tail 50`.
-🟡 Reload after a config file change: `docker compose -p ims restart ims-proxy` (stateless).
+🟡 Reload after a config file change: validate first with `docker exec ims-proxy nginx -t`, then `docker exec ims-proxy nginx -s reload` (stateless; `proxy/nginx.conf` is bind-mounted).
 
 See section 4 for the stale-upstream-IP symptom, the most common nginx issue in this stack.
 
@@ -210,11 +218,11 @@ Before shipping a twin change, all of these must hold. None may be waived by low
 
 | Gate | Where |
 |---|---|
-| Six contract suites green (mapping, MES boundary, geometry mutation, diagnostics, evidence, wire) | pre-commit hook and CI unit job |
-| Geometry validator 0 errors / 0 warnings, or a clean skip where no private data exists | CI lint job |
-| Private-data leak scan 0 matches | CI lint job, first step |
-| Browser regression green at five viewports, with any SKIP reported and read | CI factory-twin job |
-| Failure-mode regression green | CI factory-twin job |
+| Factory-twin contract suites green (mapping, telemetry overlay, alarm/RCA, analytics, MES boundary, geometry mutation, diagnostics, evidence, wire, schematic, floor registry, operational status) | pre-commit hook and CI `unit-tests` job |
+| Geometry validator 0 errors / 0 warnings, or a clean skip where no private data exists | CI `lint` job |
+| Private-data leak scan 0 matches (it matches file paths only; also review diffs by eye for CAD-derived numbers, machine IDs and lot numbers) | CI `lint` job, first step |
+| Browser regression green at five viewports, with any SKIP reported and read | CI `factory-twin-regression` job |
+| Failure-mode regression green | CI `factory-twin-regression` job |
 | Unauthenticated boundary 401 on every twin route | browser regression, proxy mode |
 | Confirmed physical mappings still 0, unless an authoritative record arrived | evidence semantics section of the regression |
 
@@ -230,4 +238,4 @@ A SKIP is not a PASS. If the run reports skipped checks, read why before releasi
 
 🔴 Do **not** roll back by editing files under `private/`. Those are evidence, not configuration; a geometry change is a data change and belongs to whoever owns the source, not to a deployment.
 
-🔴 Never treat a twin display value as an operational fact about physical equipment. Machine **state** is live telemetry; machine **position** is synthetic, and no slot is confirmed to be any particular machine. See the operator guide before acting on anything seen in this view: `docs/architecture/FACTORY_TWIN_OPERATOR_GUIDE.md`.
+🔴 Never treat a twin display value as an operational fact about physical equipment. Machine **state** is live telemetry; equipment **positions** come from the CAD drawing, but no monitored device is mapped to any of them (0 confirmed mappings), so nothing on the floor tells you where a particular machine is. See the operator guide before acting on anything seen in this view: `docs/architecture/FACTORY_TWIN_OPERATOR_GUIDE.md`.

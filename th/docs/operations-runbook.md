@@ -1,124 +1,128 @@
-> [!NOTE]
-> **การแปลอัตโนมัติ / ข้อมูลเชิงลึกทางเทคนิค**
-> เอกสารฉบับนี้เป็นรายงานหลักฐาน/การตรวจสอบทางเทคนิคเชิงลึก (Audit/Evidence) ซึ่งปัจจุบันอ้างอิงเนื้อหาต้นฉบับภาษาอังกฤษเป็นหลัก (English-first) เพื่อรักษาความถูกต้องของคำศัพท์เฉพาะทาง 
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+</div>
+<br/>
 
-# IMS Operations Runbook
+# Runbook งานปฏิบัติการ IMS
 
-**Scope:** day-to-day operation, troubleshooting, and safe-recovery reference for the production Docker Compose stack. Every command below is tagged by risk tier — read it before running anything.
+**ขอบเขต:** คู่มืออ้างอิงสำหรับงานประจำวัน การแก้ไขปัญหา และการกู้คืนอย่างปลอดภัยของ stack Docker Compose ที่ใช้งานจริง ทุกคำสั่งด้านล่างติดป้ายระดับความเสี่ยงไว้ — อ่านป้ายก่อนรันทุกครั้ง
 
-**Command risk tiers:**
-- 🟢 **READ-ONLY** — inspects state, changes nothing. Safe to run anytime.
-- 🟡 **SAFE ACTION** — reversible, scoped, no data loss (e.g. recreating one stateless container).
-- 🔴 **PRODUCTION-IMPACTING** — causes a service interruption, touches persistent data, or is not trivially reversible. Requires deliberate judgment, not routine use.
+**ระดับความเสี่ยงของคำสั่ง:**
+- 🟢 **อ่านอย่างเดียว (READ-ONLY)** — ตรวจดูสถานะ ไม่เปลี่ยนแปลงอะไร รันได้ทุกเมื่อ
+- 🟡 **การกระทำที่ปลอดภัย (SAFE ACTION)** — ย้อนกลับได้ จำกัดขอบเขต ไม่มีข้อมูลสูญหาย (เช่น สร้างคอนเทนเนอร์ที่ไม่มีสถานะขึ้นใหม่หนึ่งตัว)
+- 🔴 **กระทบระบบจริง (PRODUCTION-IMPACTING)** — ทำให้บริการหยุดชะงัก แตะต้องข้อมูลถาวร หรือย้อนกลับได้ไม่ง่าย ต้องใช้วิจารณญาณอย่างรอบคอบ ไม่ใช่งานประจำ
 
-This document never includes actual credential values. See "Credential/secret handling" below for where real secrets live and how to reason about them without printing them.
+เอกสารนี้ไม่มีค่า credential จริงใด ๆ ดูหัวข้อ "การจัดการ credential/secret" ด้านล่างว่าค่าลับจริงเก็บไว้ที่ใดและจะวิเคราะห์ปัญหาโดยไม่ต้องพิมพ์ค่าออกมาได้อย่างไร
 
 ---
 
-## 1. System architecture overview
+## 1. ภาพรวมสถาปัตยกรรมระบบ
 
-Data flow: `SNMP/HTTP → Node-RED → PgBouncer (transaction pooling) → TimescaleDB (hypertables/CAGGs) → Grafana`. Metrics also flow `Prometheus (scrapes targets) → Alertmanager`. `nginx` (`ims-proxy`) fronts Grafana and Node-RED's `/ldi-telemetry` HTTP endpoint.
+การไหลของข้อมูล: `SNMP/HTTP → Node-RED → PgBouncer (transaction pooling) → TimescaleDB (hypertables/CAGGs) → Grafana` ตัวชี้วัดยังไหลตามเส้นทาง `Prometheus (scrape targets) → Alertmanager` และ `nginx` (`ims-proxy`) เป็นด่านหน้าให้ Grafana และ HTTP endpoint `/ldi-telemetry` ของ Node-RED
 
-Full architecture detail: `docs/architecture/` (see `IMS_PLATFORM_BOOK.md` for the master reference, `SECURITY_MODEL.md` for the trust boundary, `DATA_FLOW.md` for the ingestion pipeline).
+รายละเอียดสถาปัตยกรรมทั้งหมด: `docs/architecture/` (ดู `IMS_PLATFORM_BOOK.md` เป็นเอกสารอ้างอิงหลัก, `SECURITY_MODEL.md` สำหรับขอบเขตความเชื่อถือ, `DATA_FLOW.md` สำหรับไปป์ไลน์รับข้อมูล)
 
-## 2. Container / service inventory
+## 2. รายการคอนเทนเนอร์ / Service
 
-| Container | Role | Has healthcheck |
+| คอนเทนเนอร์ | บทบาท | มี healthcheck |
 |---|---|---|
-| `ims-timescaledb` | Primary database (PostgreSQL 16 + TimescaleDB) | Yes |
-| `ims-pgbouncer` | Connection pooler in front of TimescaleDB | Yes |
-| `ims-node-red` | Ingestion pipeline (SNMP polling, HTTP `/ldi-telemetry`, batching, insert) | Yes |
-| `ims-proxy` | nginx — fronts Grafana + Node-RED HTTP endpoints | Yes |
-| `ims-grafana` | Dashboards | Yes |
-| `ims-grafana-renderer` | Headless render service for Grafana image export/alerts | Yes |
-| `ims-prometheus` | Metrics scraping + storage | No (checked via `/-/healthy`) |
-| `ims-alertmanager` | Alert routing | No (checked via API) |
-| `ims-blackbox` | Prometheus blackbox exporter (HTTP/TCP/ICMP probes) | No |
-| `ims-snmpsim` | SNMP simulator (non-production device targets) | No |
-| `ims-alarm-api` | Custom Node.js service — alarm-related API | Yes |
-| `ims-factory-twin-3d` | Custom Node.js service — 3D factory twin | Yes |
-| `ims-observability-archiver` | Background archival job | No |
-| `ims-db-migrate` | One-shot migration runner (exits after applying migrations, does not stay up) | N/A |
-| `ims-pgadmin4` | pgAdmin — database admin UI (not part of the runtime data path) | Not typically needed for production ops |
+| `ims-timescaledb` | ฐานข้อมูลหลัก (PostgreSQL 16 + TimescaleDB) | มี |
+| `ims-pgbouncer` | connection pooler หน้า TimescaleDB | มี |
+| `ims-node-red` | ไปป์ไลน์รับข้อมูล (poll SNMP, HTTP `/ldi-telemetry`, batching, insert) | มี |
+| `ims-proxy` | nginx — ด่านหน้าของ Grafana และ HTTP endpoint ของ Node-RED | มี |
+| `ims-grafana` | แดชบอร์ด | มี |
+| `ims-grafana-renderer` | service เรนเดอร์แบบ headless สำหรับ export ภาพและการแจ้งเตือนของ Grafana | มี |
+| `ims-prometheus` | scrape และจัดเก็บตัวชี้วัด | ไม่มี (ตรวจผ่าน `/-/healthy`) |
+| `ims-alertmanager` | กำหนดเส้นทางการแจ้งเตือน | ไม่มี (ตรวจผ่าน API) |
+| `ims-blackbox` | Prometheus blackbox exporter (probe แบบ HTTP/TCP/ICMP) | ไม่มี |
+| `ims-snmpsim` | ตัวจำลอง SNMP (อุปกรณ์เป้าหมายที่ไม่ใช่ของจริง) | ไม่มี |
+| `ims-alarm-api` | service Node.js ที่พัฒนาเอง — API ด้าน alarm | มี |
+| `ims-factory-twin-3d` | service Node.js ที่พัฒนาเอง — ดิจิทัลทวิน 3 มิติ | มี |
+| `ims-observability-archiver` | งานเก็บถาวรเบื้องหลัง | ไม่มี |
+| `ims-db-migrate` | ตัวรัน migration แบบครั้งเดียว (จบการทำงานหลัง apply migration ไม่ได้รันค้างไว้) | ไม่เกี่ยวข้อง |
+| `ims-pgadmin4` | pgAdmin — หน้าจอจัดการฐานข้อมูล (ไม่อยู่บนเส้นทางข้อมูลขณะรัน) | โดยปกติไม่จำเป็นสำหรับงานปฏิบัติการ |
 
-## 3. Health checks
+## 3. การตรวจสุขภาพ
 
-🟢 **READ-ONLY**
+🟢 **อ่านอย่างเดียว**
 
 ```bash
 docker ps --format "{{.Names}}\t{{.Status}}"          # all containers, at a glance
 docker inspect <container> --format "{{.State.Health.Status}}"
 ```
 
-Or use the repo's own scripted checks:
+หรือใช้สคริปต์ตรวจสอบของ repository:
 
 ```bash
-./scripts/verify-deployment.sh      # Linux — full deployment sanity check
-./scripts/verify-deployment.ps1     # Windows — same
-./scripts/verify-db-health.sh       # TimescaleDB-specific
-./scripts/verify-db-health.ps1
+make verify                                                      # picks the right script for the OS
+./scripts/verify-deployment.sh                                   # Linux / Git Bash — full deployment sanity check
+powershell -ExecutionPolicy Bypass -File scripts\verify-deployment.ps1   # Windows — same
+./scripts/verify-db-health.sh                                    # TimescaleDB-specific
+powershell -ExecutionPolicy Bypass -File scripts\verify-db-health.ps1
 ```
 
-For a full, evidence-based readiness read (not just "is it up"), see `scripts/production-assurance.js` — see section 12 below.
+หากต้องการผลประเมินความพร้อมแบบมีหลักฐานครบถ้วน (ไม่ใช่แค่ "ระบบขึ้นหรือยัง") ให้ใช้ `scripts/production-assurance.js` — ดูหัวข้อ 15 ด้านล่าง
 
-## 4. Grafana troubleshooting
+## 4. การแก้ปัญหา Grafana
 
-🟢 Check: `curl -o /dev/null -w "%{http_code}" http://127.0.0.1:${GRAFANA_PORT:-3000}/login` (expect `200`).
-🟢 Check logs: `docker logs ims-grafana --tail 100`.
-🟢 Check datasource connectivity: Grafana UI → Connections → Data sources → Test.
+🟢 ตรวจ: `curl -o /dev/null -w "%{http_code}" http://127.0.0.1:${GRAFANA_PORT:-3000}/login` (ต้องได้ `200`)
+🟢 ดู log: `docker logs ims-grafana --tail 100`
+🟢 ตรวจการเชื่อมต่อ datasource: หน้า Grafana → Connections → Data sources → Test
 
-Common symptom: Grafana returns `502` through nginx after another container (commonly `ims-timescaledb`) was recreated. nginx caches the upstream's resolved IP and doesn't automatically re-resolve.
+อาการที่พบบ่อย: Grafana ตอบ `502` ผ่าน nginx หลังจากมีการสร้างคอนเทนเนอร์อื่นใหม่ (มักเป็น `ims-timescaledb`) เพราะ nginx จำ IP ของ upstream ที่ resolve ไว้ และไม่ resolve ใหม่เอง
 
-🟡 **SAFE ACTION** — fix: `docker compose -p ims restart ims-proxy` (nginx only, stateless, no data impact).
+🟡 **การกระทำที่ปลอดภัย** — วิธีแก้: `docker compose -p ims restart proxy` (เฉพาะ nginx ไม่มีสถานะ ไม่กระทบข้อมูล; `-p ims` ตรงกับ `COMPOSE_PROJECT_NAME` ใน `.env.example`) คำสั่ง `docker exec ims-proxy nginx -s reload` ให้ผลเหมือนกันโดยไม่ต้องรีสตาร์ต process
 
-## 5. Node-RED troubleshooting
+## 5. การแก้ปัญหา Node-RED
 
-🟢 Check startup/flow logs: `docker logs ims-node-red --tail 100` — look for `Started flows` and any `[error]` lines.
-🟢 Check flow integrity (no duplicate node IDs): the repo's `tests/fleet/runner.js` disposable-stack regression exercises this end-to-end (see section 11).
-🟢 Check auth: a `401 Unauthorized` on `/ldi-telemetry` with a correct key indicates `INGEST_API_KEY` mismatch between `.env` and the caller — never diagnose this by printing the key value.
+🟢 ดู log การเริ่มระบบ/flow: `docker logs ims-node-red --tail 100` — มองหา `Started flows` และบรรทัด `[error]`
+🟢 ตรวจความสมบูรณ์ของ flow (ไม่มี node ID ซ้ำ): regression แบบ stack ทิ้งได้ `tests/fleet/runner.js` ทดสอบเรื่องนี้ตั้งแต่ต้นจนจบ (ดูหัวข้อ 11)
+🟢 ตรวจการยืนยันตัวตน: หาก `/ldi-telemetry` ตอบ `401 Unauthorized` ทั้งที่ส่ง key ถูก แสดงว่า `INGEST_API_KEY` ใน `.env` กับฝั่งผู้เรียกไม่ตรงกัน — ห้ามวินิจฉัยด้วยการพิมพ์ค่า key ออกมา
 
-🔴 **PRODUCTION-IMPACTING** — recreating `ims-node-red` causes an ingestion gap while the flow engine cold-starts (observed ~2 minutes in practice). Only do this for an actual fix (e.g. a flow or image change), not routine troubleshooting:
+🔴 **กระทบระบบจริง** — การสร้าง `ims-node-red` ใหม่ทำให้ข้อมูลขาดช่วงระหว่างที่ flow engine เริ่มต้นใหม่ (ในทางปฏิบัติสังเกตได้ประมาณ 2 นาที) ทำเฉพาะเมื่อต้องแก้จริง (เช่น เปลี่ยน flow หรือ image) ไม่ใช่เพื่อแก้ปัญหาทั่วไป:
 
 ```bash
 docker compose -p ims up -d --no-deps node-red
 ```
 
-## 6. PostgreSQL / TimescaleDB troubleshooting
+## 6. การแก้ปัญหา PostgreSQL / TimescaleDB
 
-🟢 Connectivity: `docker exec ims-timescaledb pg_isready -U $POSTGRES_USER -d $POSTGRES_DB`.
-🟢 Active connections: `docker exec ims-timescaledb psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT count(*) FROM pg_stat_activity;"`.
-🟢 Extension version (after any TimescaleDB image bump): `SELECT extversion FROM pg_extension WHERE extname='timescaledb';`.
-🟢 Migration state: `SELECT count(*) FROM public.schema_migrations;`.
+🟢 การเชื่อมต่อ: `docker exec ims-timescaledb pg_isready -U $POSTGRES_USER -d $POSTGRES_DB`
+🟢 connection ที่ active: `docker exec ims-timescaledb psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT count(*) FROM pg_stat_activity;"`
+🟢 เวอร์ชัน extension (หลังเปลี่ยน image ของ TimescaleDB ทุกครั้ง): `SELECT extversion FROM pg_extension WHERE extname='timescaledb';`
+🟢 สถานะ migration: `SELECT count(*) FROM public.schema_migrations;`
 
-🔴 **PRODUCTION-IMPACTING** — recreating `ims-timescaledb` interrupts every dependent service's connection (pgbouncer, Node-RED, Grafana, alarm-api) until they reconnect — in practice this has been observed to resolve itself within seconds to ~30s without manual intervention, but always re-verify telemetry resumed (section 11) afterward. **After any TimescaleDB image version change, `ALTER EXTENSION timescaledb UPDATE;` must be run manually** — a bare image swap does not update the installed extension's catalog version.
+🔴 **กระทบระบบจริง** — การสร้าง `ims-timescaledb` ใหม่จะตัด connection ของทุก service ที่พึ่งพา (pgbouncer, Node-RED, Grafana, alarm-api) จนกว่าจะเชื่อมต่อใหม่ ในทางปฏิบัติมักกลับมาเองภายในไม่กี่วินาทีถึงประมาณ 30 วินาที แต่ต้องตรวจทุกครั้งว่า telemetry กลับมาไหลแล้ว (หัวข้อ 10) **หลังเปลี่ยนเวอร์ชัน image ของ TimescaleDB ต้องรัน `ALTER EXTENSION timescaledb UPDATE;` ด้วยตนเองทุกครั้ง** — การสลับ image อย่างเดียวไม่ได้อัปเดตเวอร์ชันใน catalog ของ extension ที่ติดตั้งอยู่
 
-🔴 Applying a new migration: `./scripts/migrate.sh` — review the migration file first; this is schema-changing and not trivially reversible without a matching down-migration.
+🔴 การ apply migration ใหม่: `./scripts/migrate.sh` — ทบทวนไฟล์ migration ก่อน เพราะเป็นการเปลี่ยน schema และย้อนกลับไม่ได้ง่าย ๆ หากไม่มี down-migration คู่กัน
 
-## 7. Prometheus troubleshooting
+## 7. การแก้ปัญหา Prometheus
 
-🟢 Health: `curl http://127.0.0.1:${PROMETHEUS_PORT:-9090}/-/healthy`.
-🟢 Target status: `curl http://127.0.0.1:${PROMETHEUS_PORT:-9090}/api/v1/targets` — look for `"health":"down"` entries.
-🟢 Alertmanager link: `curl http://127.0.0.1:${PROMETHEUS_PORT:-9090}/api/v1/alertmanagers`.
+🟢 สุขภาพ: `curl http://127.0.0.1:${PROMETHEUS_PORT:-9090}/-/healthy`
+🟢 สถานะ target: `curl http://127.0.0.1:${PROMETHEUS_PORT:-9090}/api/v1/targets` — มองหารายการ `"health":"down"`
+🟢 การเชื่อมกับ Alertmanager: `curl http://127.0.0.1:${PROMETHEUS_PORT:-9090}/api/v1/alertmanagers`
 
-🟡 Recreate (stateless swap, e.g. after a config change): `docker compose -p ims up -d --no-deps prometheus`. Scrape state resets and targets take one scrape interval to re-report healthy — this is expected, not a fault.
+🟡 สร้างใหม่ (สลับแบบไม่มีสถานะ เช่น หลังแก้การตั้งค่า): `docker compose -p ims up -d --no-deps prometheus` สถานะการ scrape จะเริ่มใหม่ และ target ใช้เวลาหนึ่งรอบ scrape กว่าจะรายงานว่าปกติ — เป็นเรื่องที่คาดไว้ ไม่ใช่ความผิดพลาด
 
-## 8. Alertmanager troubleshooting
+## 8. การแก้ปัญหา Alertmanager
 
-🟢 Health: `curl http://127.0.0.1:${ALERTMANAGER_PORT:-9093}/-/healthy`.
-🟢 Active alerts: `curl http://127.0.0.1:${ALERTMANAGER_PORT:-9093}/api/v2/alerts`.
+🟢 สุขภาพ: `curl http://127.0.0.1:${ALERTMANAGER_PORT:-9093}/-/healthy`
+🟢 การแจ้งเตือนที่ active: `curl http://127.0.0.1:${ALERTMANAGER_PORT:-9093}/api/v2/alerts`
 
-Bound to `127.0.0.1` only per `docker-compose.yaml` — not reachable from outside the host by design.
+bind ไว้ที่ `127.0.0.1` เท่านั้นตาม `docker-compose.yaml` — ตั้งใจไม่ให้เข้าถึงจากนอกเครื่อง host
 
-## 9. nginx / proxy troubleshooting
+## 9. การแก้ปัญหา nginx / proxy
 
-🟢 Check config loaded without error: `docker logs ims-proxy --tail 50`.
-🟡 Reload after a config file change: `docker compose -p ims restart ims-proxy` (stateless).
+🟢 ตรวจว่าโหลดการตั้งค่าได้โดยไม่มีข้อผิดพลาด: `docker logs ims-proxy --tail 50`
+🟡 reload หลังแก้ไฟล์ตั้งค่า: ตรวจก่อนด้วย `docker exec ims-proxy nginx -t` แล้วจึง `docker exec ims-proxy nginx -s reload` (ไม่มีสถานะ; `proxy/nginx.conf` ถูก bind-mount ไว้)
 
-See section 4 for the stale-upstream-IP symptom, the most common nginx issue in this stack.
+ดูหัวข้อ 4 สำหรับอาการ IP ของ upstream ค้าง ซึ่งเป็นปัญหา nginx ที่พบบ่อยที่สุดใน stack นี้
 
-## 10. Telemetry ingestion troubleshooting
+## 10. การแก้ปัญหาการรับ Telemetry
 
-🟢 Recent row counts (sanity, not a strict check):
+🟢 จำนวนแถวล่าสุด (ใช้ตรวจความสมเหตุสมผล ไม่ใช่เกณฑ์เข้มงวด):
 
 ```sql
 SELECT 'ldi_data', count(*) FROM public.ldi_data WHERE ingest_ts > now() - interval '5 minutes'
@@ -126,63 +130,112 @@ UNION ALL SELECT 'sys_metrics', count(*) FROM public.sys_metrics WHERE time > no
 UNION ALL SELECT 'net_metrics', count(*) FROM public.net_metrics WHERE time > now() - interval '5 minutes';
 ```
 
-🟢 Duplicate detection: `SELECT log_id, count(*) FROM public.ldi_data WHERE ingest_ts > now() - interval '30 minutes' GROUP BY log_id HAVING count(*) > 1;` — expect zero rows.
-🟢 The **IMS Pipeline Health & Meta-Monitoring** Grafana dashboard (`ims-meta-monitoring`) surfaces insert rate, batch success rate, retry-queue depth, and circuit-breaker state visually — check this first before querying manually.
+🟢 ตรวจข้อมูลซ้ำ: `SELECT log_id, count(*) FROM public.ldi_data WHERE ingest_ts > now() - interval '30 minutes' GROUP BY log_id HAVING count(*) > 1;` — ต้องได้ศูนย์แถว
+🟢 แดชบอร์ด **IMS Pipeline Health & Meta-Monitoring** (`ims-meta-monitoring`) แสดงอัตรา insert อัตรา batch สำเร็จ ความลึกของคิว retry และสถานะ circuit breaker เป็นภาพ — ดูที่นี่ก่อน query ด้วยตนเอง
 
-## Common failure symptoms → likely cause
+## อาการที่พบบ่อย → สาเหตุที่น่าจะเป็น
 
-| Symptom | Likely cause | Where to look |
+| อาการ | สาเหตุที่น่าจะเป็น | จุดที่ต้องดู |
 |---|---|---|
-| Grafana `502` via nginx | Stale nginx upstream IP after a dependent container was recreated | Section 4 |
-| `/ldi-telemetry` returns `401` | `INGEST_API_KEY` mismatch | Section 5 |
-| `/ldi-telemetry` returns `502` on a real batch | FK violation — device not registered in `public.devices` | Check `docker logs ims-node-red` for the exact constraint name |
-| `/ldi-telemetry` returns `503` | Staging insert failed — TimescaleDB/pgbouncer unreachable | Section 6, then section 9 |
-| Telemetry rows stop growing | Ingestion pipeline stalled, or TimescaleDB/pgbouncer down | Section 10, then sections 5-6 |
-| Duplicate `log_id` rows appear | Real regression — should never happen; the disposable-stack fleet regression (section 11) explicitly guards this | Escalate — see section 16 |
+| Grafana ตอบ `502` ผ่าน nginx | IP ของ upstream ใน nginx ค้างหลังคอนเทนเนอร์ที่พึ่งพาถูกสร้างใหม่ | หัวข้อ 4 |
+| `/ldi-telemetry` ตอบ `401` | `INGEST_API_KEY` ไม่ตรงกัน | หัวข้อ 5 |
+| `/ldi-telemetry` ตอบ `502` กับ batch จริง | ละเมิด FK — อุปกรณ์ยังไม่ได้ลงทะเบียนใน `public.devices` | ดู `docker logs ims-node-red` เพื่อหาชื่อ constraint ที่แน่นอน |
+| `/ldi-telemetry` ตอบ `503` | insert ลง staging ล้มเหลว — เข้าถึง TimescaleDB/pgbouncer ไม่ได้ | หัวข้อ 6 แล้วตามด้วยหัวข้อ 9 |
+| จำนวนแถว telemetry ไม่เพิ่ม | ไปป์ไลน์รับข้อมูลหยุดนิ่ง หรือ TimescaleDB/pgbouncer ล่ม | หัวข้อ 10 แล้วตามด้วยหัวข้อ 5–6 |
+| มีแถว `log_id` ซ้ำ | regression จริง — ไม่ควรเกิดขึ้นเลย และ fleet regression แบบ stack ทิ้งได้ (หัวข้อ 11) ป้องกันเรื่องนี้ไว้โดยตรง | ยกระดับเหตุการณ์ — ดูหัวข้อ 16 |
 
-## 11. Safe restart order
+## 11. ลำดับการรีสตาร์ตที่ปลอดภัย
 
-When multiple services need attention, restart in dependency order to avoid cascading reconnection storms:
+เมื่อหลาย service ต้องได้รับการดูแล ให้รีสตาร์ตตามลำดับการพึ่งพา เพื่อหลีกเลี่ยงการเชื่อมต่อใหม่พร้อมกันแบบลูกโซ่:
 
-1. `ims-timescaledb` (if needed at all — see section 6, PRODUCTION-IMPACTING)
+1. `ims-timescaledb` (หากจำเป็นจริง — ดูหัวข้อ 6 ซึ่งกระทบระบบจริง)
 2. `ims-pgbouncer`
 3. `ims-node-red`
-4. `ims-proxy` (last, so it picks up fresh upstream IPs for everything above)
+4. `ims-proxy` (ท้ายสุด เพื่อให้ได้ IP ของ upstream ใหม่ของทุกตัวข้างต้น)
 
-**Never restart multiple unrelated services in one operation** — recreate one container at a time (`--no-deps` flag) and verify health before moving to the next.
+**ห้ามรีสตาร์ตหลาย service ที่ไม่เกี่ยวข้องกันในคำสั่งเดียว** — สร้างคอนเทนเนอร์ใหม่ทีละตัว (ใช้ flag `--no-deps`) และตรวจสุขภาพก่อนไปตัวถัดไป
 
-After any production change, re-run the real regression:
+หลังการเปลี่ยนแปลงใด ๆ บนระบบจริง ให้รัน regression จริงซ้ำ:
 
 ```bash
 node tests/fleet/runner.js
 ```
 
-This builds a fully isolated, disposable stack (distinct project name, ports, containers — never touches production data) and requires 9/9 checks to pass: device acceptance, integrity, duplicates, sequence continuity, corruption, error rate, auth enforcement, key rotation, and failure-path HTTP status codes.
+คำสั่งนี้สร้าง stack ที่แยกขาดและทิ้งได้ทั้งหมด (ชื่อ project พอร์ต และคอนเทนเนอร์แยกต่างหาก — ไม่แตะข้อมูลจริงเลย) และต้องผ่านครบ 9/9 รายการ: การรับอุปกรณ์ ความสมบูรณ์ของข้อมูล ข้อมูลซ้ำ ความต่อเนื่องของลำดับ ข้อมูลเสียหาย อัตราข้อผิดพลาด การบังคับยืนยันตัวตน การหมุนเวียน key และ HTTP status code ในเส้นทางที่ล้มเหลว
 
-## 12. Rollback guidance
+## 12. แนวทางการย้อนกลับ (Rollback)
 
-For an image-tag change (Node-RED, TimescaleDB, Prometheus, etc.): revert the tag in `docker-compose.yaml` to the previous known-good value, then recreate only that container (`--no-deps`). For TimescaleDB specifically, do not attempt to downgrade the extension version via `ALTER EXTENSION` — an extension version downgrade is not a supported, reliably-reversible operation; if a TimescaleDB image change causes a real problem, restore from backup instead (section 13) rather than trying to roll the extension back in place.
+สำหรับการเปลี่ยน tag ของ image (Node-RED, TimescaleDB, Prometheus ฯลฯ): เปลี่ยน tag ใน `docker-compose.yaml` กลับเป็นค่าที่ใช้งานได้ดีก่อนหน้า แล้วสร้างใหม่เฉพาะคอนเทนเนอร์นั้น (`--no-deps`) สำหรับ TimescaleDB โดยเฉพาะ ห้ามพยายามลดเวอร์ชัน extension ด้วย `ALTER EXTENSION` — การลดเวอร์ชัน extension ไม่ใช่การทำงานที่รองรับหรือย้อนกลับได้อย่างน่าเชื่อถือ หากการเปลี่ยน image ของ TimescaleDB ก่อปัญหาจริง ให้กู้คืนจาก backup แทน (หัวข้อ 13) แทนที่จะพยายามย้อนเวอร์ชัน extension ในที่เดิม
 
-For a migration: only revert via a proper down-migration if one exists for that migration; do not manually edit already-applied schema state.
+สำหรับ migration: ย้อนกลับได้ผ่าน down-migration ที่ถูกต้องเท่านั้นหากมีสำหรับ migration นั้น ห้ามแก้สถานะ schema ที่ apply ไปแล้วด้วยมือ
 
-## 13. Backup / recovery references
+## 13. เอกสารอ้างอิงการสำรอง / กู้คืน
 
-Full procedure: `docs/operations/BACKUP_RESTORE.md`. Scripts: `scripts/backup-db.sh`, `scripts/restore-db.sh`, `scripts/dr-test.sh`, `scripts/dr-verify-restore.sh`.
+ขั้นตอนฉบับเต็ม: `docs/operations/BACKUP_RESTORE.md` สคริปต์: `scripts/backup-db.sh`, `scripts/restore-db.sh`, `scripts/dr-test.sh`, `scripts/dr-verify-restore.sh`
 
-🔴 Restore is inherently **PRODUCTION-IMPACTING** and can overwrite current data — always read `BACKUP_RESTORE.md`'s verification section (row-count bracketing) before running `restore-db.sh` against a live environment.
+🔴 การกู้คืน **กระทบระบบจริง** โดยธรรมชาติและอาจเขียนทับข้อมูลปัจจุบัน — อ่านหัวข้อการตรวจสอบของ `BACKUP_RESTORE.md` (การเทียบจำนวนแถวก่อน/หลัง) ทุกครั้งก่อนรัน `restore-db.sh` กับสภาพแวดล้อมที่ใช้งานอยู่
 
-## 14. Credential / secret handling
+## 14. การจัดการ Credential / Secret
 
-All real secrets live in `.env` (gitignored, never committed) and are injected via Docker Compose environment variables. **Never print, log, or commit an actual credential value** — when diagnosing an auth issue, check whether a value is *set* (`grep -c "^KEY_NAME="  .env`) rather than *printing* the value itself.
+ค่าลับจริงทั้งหมดอยู่ใน `.env` (อยู่ใน .gitignore และไม่เคย commit) และส่งเข้าคอนเทนเนอร์ผ่านตัวแปรสภาพแวดล้อมของ Docker Compose **ห้ามพิมพ์ บันทึกลง log หรือ commit ค่า credential จริง** — เมื่อวินิจฉัยปัญหาการยืนยันตัวตน ให้ตรวจว่ามีการ *ตั้งค่า* ไว้หรือไม่ (`grep -c "^KEY_NAME="  .env`) แทนการ *พิมพ์* ค่าออกมา
 
-PostgreSQL, Grafana admin, Node-RED credential secret, and pgAdmin credentials were all rotated in P10 (R7/R8) — see `docs/evidence/CREDENTIAL_ROTATION_P10R.md` and `docs/evidence/CREDENTIAL_ROTATION_P10R8.md` for the rotation record (metadata only, no values).
+credential ของ PostgreSQL, ผู้ดูแล Grafana, credential secret ของ Node-RED และ pgAdmin ถูกเปลี่ยนแล้วทั้งหมดใน P10 (R7/R8) — ดู `docs/evidence/CREDENTIAL_ROTATION_P10R.md` และ `docs/evidence/CREDENTIAL_ROTATION_P10R8.md` สำหรับบันทึกการเปลี่ยน (มีแต่ metadata ไม่มีค่าจริง)
 
-`nodered_data/flows.json`'s `pg_config` node must always show `userFieldType: "env"` / `passwordFieldType: "env"` — a `"str"` value there would mean a plaintext credential has crept back in; treat that as a security incident, not routine drift.
+node `pg_config` ใน `nodered_data/flows.json` ต้องแสดง `userFieldType: "env"` / `passwordFieldType: "env"` เสมอ — หากเป็น `"str"` แปลว่ามี credential แบบ plaintext หลุดกลับเข้ามา ให้ถือเป็นเหตุการณ์ด้านความปลอดภัย ไม่ใช่การคลาดเคลื่อนทั่วไป
 
-## 15. Security gate interpretation
+## 15. การตีความผล Security Gate
 
-Run: `node scripts/production-assurance.js --profile=security`. Read the result against `docs/evidence/FINAL_SECURITY_GATE_P12.md`, which documents this project's actual, evidence-based interpretation policy: **a raw NO-GO from this profile is not automatically a live incident** — Trivy's severity-only gate doesn't account for reachability. Cross-check any new CRITICAL/HIGH finding against the disposition table in that report before treating it as urgent. A finding is only actionable if it's reachable via a real runtime/network/authentication path in this deployment's actual configuration — see that report's methodology before escalating.
+รัน: `node scripts/production-assurance.js --profile=security` แล้วอ่านผลเทียบกับ `docs/evidence/FINAL_SECURITY_GATE_P12.md` ซึ่งบันทึกนโยบายการตีความที่อิงหลักฐานจริงของโปรเจกต์นี้: **ผล NO-GO ดิบจาก profile นี้ไม่ได้แปลว่าเป็นเหตุการณ์จริงเสมอไป** — เกณฑ์ของ Trivy ดูแค่ระดับความรุนแรง ไม่ได้พิจารณาว่าเข้าถึงช่องโหว่ได้จริงหรือไม่ ให้เทียบทุกผลใหม่ระดับ CRITICAL/HIGH กับตาราง disposition ในรายงานนั้นก่อนถือว่าเร่งด่วน ผลตรวจจะต้องดำเนินการก็ต่อเมื่อเข้าถึงได้จริงผ่านเส้นทาง runtime/เครือข่าย/การยืนยันตัวตนในการตั้งค่าจริงของระบบนี้ — อ่านระเบียบวิธีของรายงานนั้นก่อนยกระดับ
 
-## 16. Escalation criteria
+## 16. เกณฑ์การยกระดับเหตุการณ์
 
-Full severity framework and worked examples: `docs/operations/INCIDENT_RESPONSE.md`. In summary: escalate immediately for anything matching that document's P0/P1 definitions — active data loss, extended production outage, or a confirmed (not merely Trivy-flagged) security exposure. Routine restarts, stale-cache symptoms (section 4), and confirmed-unreachable CVE findings (section 15) do not warrant escalation on their own.
+กรอบระดับความรุนแรงฉบับเต็มและตัวอย่าง: `docs/operations/INCIDENT_RESPONSE.md` โดยสรุป: ยกระดับทันทีสำหรับทุกกรณีที่ตรงกับนิยาม P0/P1 ในเอกสารนั้น — ข้อมูลสูญหายอยู่ ระบบจริงหยุดทำงานเป็นเวลานาน หรือช่องโหว่ด้านความปลอดภัยที่ยืนยันแล้ว (ไม่ใช่แค่ Trivy แจ้ง) การรีสตาร์ตตามปกติ อาการ cache ค้าง (หัวข้อ 4) และผล CVE ที่ยืนยันแล้วว่าเข้าถึงไม่ได้ (หัวข้อ 15) ไม่ต้องยกระดับด้วยตัวเอง
+
+## 17. การแก้ปัญหา Factory Twin (3D)
+
+ที่มาของการออกแบบ: `docs/architecture/FACTORY_TWIN_ARCHITECTURE.md` ขอบเขตความปลอดภัย: `docs/architecture/FACTORY_TWIN_SECURITY_MODEL.md`
+
+🟢 สุขภาพภาพรวมที่แชร์ได้อย่างปลอดภัย: `docker exec ims-factory-twin-3d wget -qO- http://localhost:4100/api/diagnostics` ให้ผลเป็นจำนวน ค่า boolean และ enum ที่กำหนดตายตัวเท่านั้น — ไม่มีพิกัด ตัวระบุ path ชื่อกระบวนการ หรือชื่อผู้ผลิต จึงวางลงใน ticket ได้ ให้ดู `requestsFailed`, `geometryParseFailures` และ `geometryLoadMs`
+🟢 liveness รวมการเชื่อมต่อฐานข้อมูลไป-กลับ: `docker exec ims-factory-twin-3d wget -qO- http://localhost:4100/healthz`
+
+> **คอนเทนเนอร์นี้ไม่มีพอร์ตบน host โดยตั้งใจ** เข้าถึงผ่าน `docker exec` ตามข้างต้น หรือผ่าน proxy ที่ `/factory-twin-3d/` พร้อม session ของ Grafana ที่ถูกต้อง ห้ามเปิดพอร์ตบน host เพื่อให้สืบสวนง่ายขึ้น — เพราะจะข้ามด่าน `auth_request` ที่โมเดลการเปิดเผยข้อมูลของทวินพึ่งพา
+
+| อาการ | สาเหตุที่น่าจะเป็น |
+|---|---|
+| 401 ที่ `/factory-twin-3d/` | เป็นเรื่องปกติหากไม่มี session ของ Grafana ที่ถูกต้อง แปลว่าด่านทำงาน ให้ล็อกอินก่อน อย่าแก้ middleware |
+| 502 ที่ `/factory-twin-3d/` หลัง rebuild | nginx จำ IP ของ upstream เก่า ให้รัน `docker exec ims-proxy nginx -s reload` หนึ่งครั้ง (ดูหัวข้อ 4) |
+| ฉากเรนเดอร์ได้แต่ไม่มีโครงสร้างอาคาร | ไม่มี geometry ส่วนที่เป็นข้อมูลลับ เป็นเรื่องปกติกับการ clone ใหม่ API จะส่งรูปทรงว่างที่ถูกต้องแทนการตอบ error ให้ยืนยันว่า bind mount `private/` บนเครื่องนี้มีข้อมูล |
+| ปุ่มมุมมอง Building / Overview ถูกปิดใช้งาน | สาเหตุเดียวกัน: ยังไม่ได้โหลดขอบเขตอาคารที่วัดได้ |
+| `geometryParseFailures` เพิ่มขึ้น | ไฟล์ส่วนที่เป็นข้อมูลลับมีรูปแบบผิด ระบบถือเป็นไม่มีไฟล์โดยออกแบบไว้ service จึงยังทำงานต่อ ต้องแก้ข้อมูลที่ต้นทาง |
+| แก้ `public/` แล้วไม่เห็นการเปลี่ยนแปลง | โค้ดแอปพลิเคชันถูก bake อยู่ใน image มีเพียง `private/` ที่ mount แบบสด ให้ rebuild และสร้าง service ใหม่ แล้ว reload nginx |
+| จำนวนในโซนเปลี่ยน | จะเรนเดอร์เฉพาะระดับที่ผ่านการยืนยันแล้ว การเปลี่ยนแปลงตรงนี้แปลว่ามีหลักฐานใหม่หรือเกิด regression — ทั้งสองกรณีต้องตรวจสอบ และไม่มีกรณีใดแก้ได้ด้วยการปรับ geometry |
+
+🟢 ความหน่วงในรูป histogram แทน log เวลา: `runtime.latency_buckets` ใน response ของ diagnostics นับ request ที่ต่ำกว่า 10 ms / 50 ms / 100 ms / 500 ms และตั้งแต่ 500 ms ขึ้นไป ชื่อ bucket กำหนดตายตัวในโค้ด สิ่งที่ผู้เรียกส่งมาจึงเพิ่มฟิลด์ไม่ได้ ระดับการเปิดเผยของทุกฟิลด์ใน diagnostics อยู่ในตารางของ `docs/architecture/FACTORY_TWIN_SECURITY_MODEL.md` — ต้องจัดประเภทฟิลด์ใหม่ในนั้นก่อนเพิ่มทุกครั้ง
+
+### เกณฑ์การออก Release
+
+ก่อนนำการเปลี่ยนแปลงของทวินขึ้นระบบ ทุกข้อต่อไปนี้ต้องเป็นจริง และห้ามยกเว้นข้อใดด้วยการลดเกณฑ์ของ assertion
+
+| Gate | ตรวจที่ |
+|---|---|
+| ชุดทดสอบสัญญาของ factory twin ผ่านทั้งหมด (mapping, telemetry overlay, alarm/RCA, analytics, MES boundary, geometry mutation, diagnostics, evidence, wire, schematic, floor registry, operational status) | pre-commit hook และ job `unit-tests` ของ CI |
+| geometry validator ได้ 0 errors / 0 warnings หรือข้ามอย่างเรียบร้อยเมื่อไม่มีข้อมูลลับ | job `lint` ของ CI |
+| การสแกนข้อมูลลับรั่วไหลพบ 0 รายการ (ตัวสแกนจับเฉพาะ path ของไฟล์ จึงต้องทบทวน diff ด้วยตาเพื่อหาตัวเลขที่มาจาก CAD รหัสเครื่องจักร และเลข lot ด้วย) | job `lint` ของ CI ขั้นตอนแรก |
+| browser regression ผ่านทั้ง 5 viewport โดยรายงานและอ่านทุก SKIP | job `factory-twin-regression` ของ CI |
+| regression ของโหมดล้มเหลวผ่าน | job `factory-twin-regression` ของ CI |
+| ขอบเขตที่ไม่ยืนยันตัวตนตอบ 401 ทุก route ของทวิน | browser regression โหมด proxy |
+| การจับคู่ทางกายภาพที่ยืนยันแล้วยังเป็น 0 เว้นแต่มีบันทึกที่เชื่อถือได้เข้ามา | หัวข้อ evidence semantics ของ regression |
+
+SKIP ไม่ใช่ PASS หากการรันรายงานว่ามีการข้าม ต้องอ่านเหตุผลก่อนออก release เหตุผลที่พบบ่อยคือสภาพแวดล้อมไม่มี geometry ที่เป็นข้อมูลลับหรือไม่มีอุปกรณ์ที่ถูกเฝ้าระวัง ซึ่งเป็นเหตุผลที่ถูกต้องทั้งคู่ — และทั้งคู่แปลว่าการรันครั้งนั้นไม่ได้ยืนยันคุณสมบัติเหล่านั้น
+
+### การย้อนกลับ
+
+🟡 ทวินไม่มีสถานะและอ่านอย่างเดียว: ไม่เขียนอะไรลงฐานข้อมูลหรือดิสก์ การย้อนกลับจึงเป็นแค่การทำงานกับ image ของคอนเทนเนอร์โดยไม่มีผลต่อข้อมูล
+
+1. deploy image ก่อนหน้าอีกครั้ง และสร้างใหม่เฉพาะ service นี้
+2. reload proxy หนึ่งครั้ง — nginx จำที่อยู่ของ upstream ตอนเริ่ม คอนเทนเนอร์ที่สร้างใหม่จึงจะตอบ 502 หากไม่ reload
+3. ยืนยัน `/healthz` แล้วตามด้วยตัวเลขใน diagnostics
+
+🔴 **ห้าม** ย้อนกลับด้วยการแก้ไฟล์ใน `private/` ไฟล์เหล่านั้นเป็นหลักฐาน ไม่ใช่การตั้งค่า การเปลี่ยน geometry คือการเปลี่ยนข้อมูล และเป็นความรับผิดชอบของเจ้าของต้นฉบับ ไม่ใช่ของการ deploy
+
+🔴 ห้ามถือค่าที่ทวินแสดงเป็นข้อเท็จจริงเชิงปฏิบัติการของเครื่องจักรจริง **สถานะ** ของเครื่องคือ telemetry สด ส่วน **ตำแหน่ง** ของอุปกรณ์มาจากแบบ CAD แต่ยังไม่มีอุปกรณ์ที่ถูกเฝ้าระวังตัวใดจับคู่กับตำแหน่งใดเลย (การจับคู่ที่ยืนยันแล้ว 0 รายการ) บนผังจึงไม่มีสิ่งใดบอกว่าเครื่องหนึ่ง ๆ อยู่ตรงไหน อ่านคู่มือผู้ปฏิบัติงานก่อนตัดสินใจจากสิ่งที่เห็นในมุมมองนี้: `docs/architecture/FACTORY_TWIN_OPERATOR_GUIDE.md`
