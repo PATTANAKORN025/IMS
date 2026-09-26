@@ -27,7 +27,7 @@
 1. **Check the Meta-Monitoring dashboard** — pipeline health, ingestion rate, error rate.
 2. **Check `docker ps`** — is every container `Up` and `healthy`?
 3. **Check `SELECT max(time) FROM public.ldi_data;`** (and the equivalent for `sys_metrics`) — how stale is the data, actually?
-4. **Check Alertmanager/Grafana for firing alerts** — see `docs/architecture/ALARM_PLAYBOOK.md` for what each one means. Remember `Watchdog` always fires and isn't a real incident.
+4. **Check Alertmanager/Grafana for firing alerts** — see `docs/operations/ALARM_PLAYBOOK.md` for what each one means. Remember `Watchdog` always fires and isn't a real incident.
 
 ---
 

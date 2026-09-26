@@ -27,7 +27,7 @@
 1. **检查 Meta-Monitoring 仪表盘** — 查看管道健康状况、摄取速率、错误率。
 2. **运行 `docker ps`** — 每个容器是否都处于 `Up` 且 `healthy` 的状态？
 3. **执行 `SELECT max(time) FROM public.ldi_data;`** （以及针对 `sys_metrics` 的对应查询）— 实际数据的滞后程度如何？
-4. **检查 Alertmanager/Grafana 中正在触发的警报** — 查阅 `docs/architecture/ALARM_PLAYBOOK.md` 了解每个警报的具体含义。请记住 `Watchdog` 总是处于触发状态，并非真实故障。
+4. **检查 Alertmanager/Grafana 中正在触发的警报** — 查阅 `docs/operations/ALARM_PLAYBOOK.md` 了解每个警报的具体含义。请记住 `Watchdog` 总是处于触发状态，并非真实故障。
 
 ---
 

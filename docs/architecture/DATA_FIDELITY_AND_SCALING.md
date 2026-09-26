@@ -42,7 +42,7 @@ Testing a system with simulated data often yields artificially perfect results t
 ### <img src="../assets/icons/check-circle.svg" width="18" height="18" align="center" /> Architectural Solution
 
 1. **Chaos Engineering in the Simulator:**
-   `Jitter`, `Random Drops`, and `Spikes` were engineered into the simulator (configurable via the simulator's `docker-compose.yml`) to inject network noise mirroring real-world conditions.
+   `Jitter`, `Random Drops`, and `Spikes` were engineered into the simulator (configurable via the simulator's `docker-compose.yaml`) to inject network noise mirroring real-world conditions.
 2. **Real-World Data Replay:**
    The system natively supports ingesting raw data dumps from actual factory floors via Pcap or JSON loaders. This validates pipeline processing capability and ensures Grafana dashboards render correctly under highly volatile conditions.
 

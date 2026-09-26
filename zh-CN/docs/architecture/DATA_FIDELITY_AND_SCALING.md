@@ -42,7 +42,7 @@
 ### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> 架构解决方案 (Architectural Solution)
 
 1. **模拟器中的混沌工程 (Chaos Engineering in Simulator):**
-   将 `Jitter` (抖动)、`Random Drops` (随机丢包) 和 `Spikes` (突增) 引入模拟器（通过模拟器的 `docker-compose.yml` 配置），以生成类似于真实网络环境的噪声 (Noise)。
+   将 `Jitter` (抖动)、`Random Drops` (随机丢包) 和 `Spikes` (突增) 引入模拟器（通过模拟器的 `docker-compose.yaml` 配置），以生成类似于真实网络环境的噪声 (Noise)。
 2. **真实数据重放 (Real-World Data Replay):**
    系统可以从实际工厂获取原始转储数据 (Raw Dump)，并通过 Pcap 或 JSON Loader 进行重放，以测试 Pipeline 的处理能力，并验证即使在数据波动的情况下 Dashboard (Grafana) 也能正确显示。
 

@@ -17,7 +17,7 @@
 
 1. **การบันทึกหน้าจอ (วิดีโอ):** OBS Studio (1080p, 60fps) เพื่อให้ได้แอนิเมชัน Grafana ที่ลื่นไหล
 2. **การบันทึก GIF:** [Kap](https://getkap.co/) (macOS) หรือ ScreenToGif (Windows) ส่งออกที่ 24fps เพื่อให้การเปลี่ยนหน้าจอ UI เป็นไปอย่างราบรื่น
-3. **สถานะเบราว์เซอร์:** รัน Chrome ในโหมด Kiosk `http://localhost:3000/d/ims-noc-overview?kiosk=tv` เพื่อซ่อนแถบ URL และแถบเมนูของระบบปฏิบัติการ (OS chrome)
+3. **สถานะเบราว์เซอร์:** รัน Chrome ในโหมด Kiosk `http://localhost:3000/d/ims-noc-overview?kiosk` เพื่อซ่อนแถบ URL และแถบเมนูของระบบปฏิบัติการ (OS chrome)
 
 ---
 

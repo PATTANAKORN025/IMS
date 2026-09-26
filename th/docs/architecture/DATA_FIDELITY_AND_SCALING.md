@@ -42,7 +42,7 @@
 ### <img src="../../../docs/assets/icons/check-circle.svg" width="18" height="18" align="center" /> สถาปัตยกรรมที่ใช้แก้ปัญหา (Architectural Solution)
 
 1. **Chaos Engineering ใน Simulator:**
-   มีการเพิ่ม `Jitter`, `Random Drops` และ `Spikes` เข้าไปในตัว Simulator (ผ่านการคอนฟิกใน `docker-compose.yml` ของตัวจำลอง) เพื่อสร้าง Noise ให้เหมือนสภาพแวดล้อมเครือข่ายจริง
+   มีการเพิ่ม `Jitter`, `Random Drops` และ `Spikes` เข้าไปในตัว Simulator (ผ่านการคอนฟิกใน `docker-compose.yaml` ของตัวจำลอง) เพื่อสร้าง Noise ให้เหมือนสภาพแวดล้อมเครือข่ายจริง
 2. **Real-World Data Replay:**
    ระบบสามารถดึงข้อมูล Raw Dump จากโรงงานจริงมา Replay ผ่าน Pcap หรือ JSON Loader เพื่อทดสอบความสามารถในการประมวลผลของ Pipeline และยืนยันว่า Dashboard (Grafana) ยังคงแสดงผลได้อย่างถูกต้องแม้ข้อมูลจะเกิดความผันผวน
 

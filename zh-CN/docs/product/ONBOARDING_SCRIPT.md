@@ -17,7 +17,7 @@
 
 1. **屏幕录制（视频）：** OBS Studio（1080p，60fps），以确保 Grafana 动画流畅。
 2. **GIF 录制：** [Kap](https://getkap.co/) (macOS) 或 ScreenToGif (Windows)。以 24fps 导出，保证 UI 过渡平滑。
-3. **浏览器状态：** 以 Kiosk 模式运行 Chrome `http://localhost:3000/d/ims-noc-overview?kiosk=tv`，隐藏 URL 栏和操作系统边框（OS chrome）。
+3. **浏览器状态：** 以 Kiosk 模式运行 Chrome `http://localhost:3000/d/ims-noc-overview?kiosk`，隐藏 URL 栏和操作系统边框（OS chrome）。
 
 ---
 

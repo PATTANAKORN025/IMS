@@ -17,7 +17,7 @@ To record the onboarding assets, use the following tools:
 
 1. **Screen Recording (Video):** OBS Studio (1080p, 60fps) for smooth Grafana animations.
 2. **GIF Capture:** [Kap](https://getkap.co/) (macOS) or ScreenToGif (Windows). Export at 24fps for smooth UI transitions.
-3. **Browser State:** Run Chrome in Kiosk mode `http://localhost:3000/d/ims-noc-overview?kiosk=tv` to hide the URL bar and OS chrome.
+3. **Browser State:** Run Chrome in Kiosk mode `http://localhost:3000/d/ims-noc-overview?kiosk` to hide the URL bar and OS chrome.
 
 ---
 
