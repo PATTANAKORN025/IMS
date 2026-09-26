@@ -190,7 +190,7 @@ make test-load         # k6 run tests/k6/pipeline-stress.js (ต้องติ�
 
 - ประตูหน้า nginx ใช้ HTTP ธรรมดา (`${GRAFANA_PORT:-3000}` บนเครื่อง host และพอร์ต 80 ในคอนเทนเนอร์) ต้องเพิ่ม TLS termination ก่อนใช้งานจริง
 - Alertmanager จะไม่ส่งข้อความไป LINE/Teams จนกว่าจะกำหนด `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` และ `TEAMS_WEBHOOK_URL` ใน `.env`
-- `pgadmin` เปิดพอร์ต `5050` บน **ทุก** network interface ต่างจากพอร์ตอื่นทั้งหมด นอกห้องทดลองให้จำกัดด้วยไฟร์วอลล์ของ host หรือ bind ไว้ที่ `127.0.0.1`
+- นอกจากประตูหน้า nginx แล้ว `pgadmin` เป็น service เดียวที่เปิดพอร์ต (`5050`) บน **ทุก** network interface นอกห้องทดลองให้จำกัดด้วยไฟร์วอลล์ของ host หรือ bind ไว้ที่ `127.0.0.1`
 - Makefile ใช้ shell ผสมกัน: `backup`, `restore`, `test-load`, `snapshot-flows` และ `deploy-flows` ต้องใช้ POSIX shell (บน Windows ใช้ Git Bash) ส่วน `doctor` ใช้การ redirect แบบ cmd
 
 </details>
@@ -360,7 +360,7 @@ IMS/
 ├── database/migrations/        # migration แบบเดินหน้าอย่างเดียวตามลำดับเลข (สูงสุด 082) apply โดย db-migrate
 ├── services/
 │  ├── alarm-api/              # เส้นทางเขียน acknowledge/resolve (Express + pg)
-│  └── factory-twin-3d/        # ดิจิทัลทวินชั้น 1 (Express, lib/*.js + domain/ แบบมี type)
+│  └── factory-twin-3d/        # ดิจิทัลทวินชั้น 1 (Express, lib/*.js + ตัวแสดงผลใน public/)
 ├── tests/                      # unit/ + lint/ (ไม่ต้องใช้ infrastructure), e2e/, smoke/, playwright/, k6/, ...
 ├── scripts/                    # build-flows.js, migrate-entrypoint.sh, verify-deployment.*, backup/restore, generators
 ├── assets/                     # ภาพหน้าจอและแบนเนอร์ของ README

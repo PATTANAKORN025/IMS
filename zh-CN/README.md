@@ -190,7 +190,7 @@ make test-load         # k6 run tests/k6/pipeline-stress.js（需要 PATH 中有
 
 - nginx 统一入口使用明文 HTTP（主机端口 `${GRAFANA_PORT:-3000}`，容器端口 80）；生产环境需另行配置 TLS 终止。
 - 在 `.env` 中设置 `LINE_CHANNEL_ACCESS_TOKEN`、`LINE_USER_ID` 与 `TEAMS_WEBHOOK_URL` 之前，Alertmanager 不会向 LINE/Teams 发送任何消息。
-- 与其他已发布端口不同，`pgadmin` 在**所有**网络接口上发布 `5050` 端口；在实验环境之外，请用主机防火墙加以限制，或绑定到 `127.0.0.1`。
+- 除 nginx 统一入口外，`pgadmin` 是唯一在**所有**网络接口上发布端口（`5050`）的服务；在实验环境之外，请用主机防火墙加以限制，或绑定到 `127.0.0.1`。
 - Makefile 混用多种 shell：`backup`、`restore`、`test-load`、`snapshot-flows` 与 `deploy-flows` 需要 POSIX shell（Windows 上使用 Git Bash）；`doctor` 使用 cmd 风格的重定向。
 
 </details>
@@ -360,7 +360,7 @@ IMS/
 ├── database/migrations/        # 按编号、仅向前的迁移（最大 082），由 db-migrate 应用
 ├── services/
 │  ├── alarm-api/              # 确认/解决写入路径（Express + pg）
-│  └── factory-twin-3d/        # 一楼数字孪生（Express、lib/*.js + 带类型的 domain/）
+│  └── factory-twin-3d/        # 一楼数字孪生（Express、lib/*.js + public/ 前端查看器）
 ├── tests/                      # unit/ + lint/（无需基础设施）、e2e/、smoke/、playwright/、k6/ 等
 ├── scripts/                    # build-flows.js、migrate-entrypoint.sh、verify-deployment.*、备份/恢复、生成器
 ├── assets/                     # README 截图与横幅

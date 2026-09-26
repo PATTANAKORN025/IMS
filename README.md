@@ -190,7 +190,7 @@ make test-load         # k6 run tests/k6/pipeline-stress.js (needs k6 on PATH)
 
 - The nginx front door listens on plain HTTP (`${GRAFANA_PORT:-3000}` on the host, port 80 in the container); add TLS termination for production.
 - Alertmanager delivery to LINE/Teams stays silent until `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` and `TEAMS_WEBHOOK_URL` are set in `.env`.
-- `pgadmin` publishes port `5050` on **all** interfaces, unlike every other published port; restrict it with a host firewall or bind it to `127.0.0.1` outside a lab.
+- Apart from the nginx front door, `pgadmin` is the only service that publishes a port (`5050`) on **all** interfaces; restrict it with a host firewall or bind it to `127.0.0.1` outside a lab.
 - The Makefile is mixed-shell: `backup`, `restore`, `test-load`, `snapshot-flows` and `deploy-flows` need a POSIX shell (Git Bash on Windows); `doctor` uses cmd-style redirection.
 
 </details>
@@ -360,7 +360,7 @@ IMS/
 ├── database/migrations/        # numbered forward-only migrations (max 082), applied by db-migrate
 ├── services/
 │  ├── alarm-api/              # acknowledge/resolve write path (Express + pg)
-│  └── factory-twin-3d/        # Floor 1 digital twin (Express, lib/*.js + typed domain/)
+│  └── factory-twin-3d/        # Floor 1 digital twin (Express, lib/*.js + public/ viewer)
 ├── tests/                      # unit/ + lint/ (no infrastructure), e2e/, smoke/, playwright/, k6/, ...
 ├── scripts/                    # build-flows.js, migrate-entrypoint.sh, verify-deployment.*, backup/restore, generators
 ├── assets/                     # README screenshots and banner
