@@ -217,7 +217,7 @@ gate อัตโนมัติต่อไปนี้รันใน CI (`.gi
 | วัตถุที่ไม่มีผู้ใช้ | `tests/lint/orphan-object-linter.js` | ทุกตาราง/view ในฐานข้อมูลจริงถูกอ้างอิงโดยแดชบอร์ด กฎแจ้งเตือน flow หรือ migration อย่างน้อยหนึ่งแห่ง — ไม่ถูกทิ้งไว้เงียบ ๆ |
 | Golden-dataset SPC | `tests/e2e/golden-dataset-spc.js` | การคำนวณ Cpk/Cp ที่แยกกันทั้ง 5 แห่งให้ผลตรงกับสูตรตามตำราบนชุดข้อมูลสังเคราะห์ที่ทราบค่า |
 
-token สี (`GRAFANA_DESIGN_SYSTEM.md`): ทุก threshold step และสีของ value mapping ที่สื่อสถานะเครื่อง/alarm ใช้หนึ่งใน 5 token — OK `#22C55E`, Warning `#F59E0B`, Critical `#EF4444`, No Data `#64748B`, Info `#2563EB` สีเพื่อการตกแต่ง (แยกเส้นกราฟ พื้นหลัง ขอบ สีเน้นของแบรนด์) ได้รับการยกเว้นโดยตั้งใจ — แดชบอร์ดสร้างจากสีสด 5 สีอย่างเดียวไม่ได้
+token สี (`GRAFANA_DESIGN_SYSTEM.md`): ทุก threshold step และสีของ value mapping ที่สื่อสถานะเครื่อง/alarm ต้องใช้ token ที่อนุมัติแล้ว (`APPROVED_TOKENS` ใน `tests/lint/dashboard-linter.js`, Check 15) — ok `#22C55E`, warning `#F59E0B`, critical `#EF4444`, info `#00F2FE`, accent `#3B82F6`, no_data `#64748B`, forecast `#4A5568`, severity-minor `#EAB308` และ ok-bg `#15803D` สำหรับข้อยกเว้นพื้นหลังของ Andon เพียงจุดเดียว สีเพื่อการตกแต่ง (แยกเส้นกราฟ พื้นหลัง ขอบ สีเน้นของแบรนด์) ได้รับการยกเว้นโดยตั้งใจ — แดชบอร์ดสร้างจากสีสดเพียงไม่กี่สีไม่ได้
 
 gate ระดับ browser ก็รันใน CI เช่นกัน: job `factory-twin-regression` (`tests/playwright/factory-twin-regression.js` พร้อมชุด E2E ของโหมดล้มเหลวและตัวตรวจสอบ) และ job `visual-regression` (`tests/playwright/ldi-responsive-regression.js` ไม่ต้องเลื่อนที่ 1920 และ 3840 px) baseline UI ใน `tests/playwright/ui-visual-baseline/` ถูก commit ไว้แล้ว ส่วน `tests/playwright/dashboard-visual-regression.js` ยังจับภาพหน้าจอเพื่อทำเอกสารเท่านั้นและไม่ได้ยืนยันผลใด ๆ
 

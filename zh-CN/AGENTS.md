@@ -6,7 +6,7 @@
 
 **IMS (工业监控系统)** 是一个遥测监控系统。
 
-- **数据源:** 轮询的 SNMP 设备（Linux 服务器、Juniper 交换机）和 HTTP（LDI PCB 制造机）。
+- **数据源:** 轮询的 SNMP 设备（服务器、网络交换机）和 HTTP（LDI PCB 制造机）。
 - **数据管道:** Node-RED (数据接入) → PgBouncer → TimescaleDB (存储) → Grafana (仪表板)。
 - **告警:** Prometheus + Alertmanager → LINE / MS Teams。
 
@@ -31,7 +31,7 @@
 ## 4. Grafana 与仪表板规则 (Grafana & Dashboard Rules)
 
 - **24 网格纪律 (Grid-24 Discipline):** 每一行的列数总和必须精确为 24。下一个 Y = 前一个 Y + 前一个 H。
-- **设计系统 (Design System):** 仅使用规范颜色标记 (Canonical Color Tokens)（例如，`#00F2FE` 青色，`#00FF87` 绿色，`#FF003C` 红色）。绝不使用默认的 Grafana 颜色。
+- **设计系统 (Design System):** 仅使用 `docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1 中批准的 token（`tests/lint/dashboard-linter.js` 中的 `APPROVED_TOKENS`）：ok `#22C55E`、warning `#F59E0B`、critical `#EF4444`、info `#00F2FE`、accent `#3B82F6`、no_data `#64748B`、forecast `#4A5568`、severity-minor `#EAB308`。绝不使用默认的 Grafana 颜色。
 - **TimescaleDB 查询:** 尽可能在原始表之上使用连续聚合 (continuous aggregates)。
 - **列命名 (Column Naming):** 原始表使用 `time`。CAGG 使用 `bucket`。Grafana 在查询中将别名设为 `bucket AS time`。
 - **防止 SQL 注入:**
@@ -43,7 +43,7 @@
 
 ## 5. 开发工作流与命令 (Development Workflow & Commands)
 
-- `make up` — 启动开发栈 (SNMP 模拟器配置文件)
+- `make up` — 构建 flows 并启动全部 15 个服务（无 compose profile；包含模拟器与 pgAdmin）
 - `make up-prod` — 启动生产覆盖层 (production overlay)
 - `make restart` — 重启 Node-RED、Grafana、Alertmanager、Prometheus
 - `make verify` — 全面健康检查 (容器、DB、管道、告警)
@@ -58,5 +58,5 @@
 
 ## 7. 可用技能 (Available Skills)
 
-通过 MCP 和 `.agents/skills/` 可使用 90 多项技能。使用 `/skill-name` 来调用。
+可通过 MCP 与 `.agents/skills/` 使用 skill（本仓库跟踪了 10 个）。使用 `/skill-name` 来调用。
 关键的本地技能包括：`verify-database-state`、`update-aiops-parser`、`modify-grafana-dashboard`、`batch-dashboard-edit`。

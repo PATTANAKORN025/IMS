@@ -217,7 +217,7 @@ NOC Overview 在当时已与 LDI/制造内容拆分（此前它重复展示了 M
 | 孤立对象 | `tests/lint/orphan-object-linter.js` | 实际数据库中的每张表/视图至少被一个仪表板、告警规则、flow 或迁移引用——不存在悄然闲置的对象 |
 | Golden-dataset SPC | `tests/e2e/golden-dataset-spc.js` | 5 处独立的 Cpk/Cp 实现在已知合成数据集上与教科书公式结果一致 |
 
-颜色 token（`GRAFANA_DESIGN_SYSTEM.md`）：凡是表达设备/告警状态的阈值步长与值映射颜色，都使用 5 个 token 之一——OK `#22C55E`、Warning `#F59E0B`、Critical `#EF4444`、No Data `#64748B`、Info `#2563EB`。装饰性颜色（区分图表序列、背景、边框、品牌强调色）有意豁免——仅靠 5 种饱和色无法构建仪表板。
+颜色 token（`GRAFANA_DESIGN_SYSTEM.md`）：凡是表达设备/告警状态的阈值步长与值映射颜色，都必须使用已批准的 token（`tests/lint/dashboard-linter.js` 中的 `APPROVED_TOKENS`，Check 15）——ok `#22C55E`、warning `#F59E0B`、critical `#EF4444`、info `#00F2FE`、accent `#3B82F6`、no_data `#64748B`、forecast `#4A5568`、severity-minor `#EAB308`，以及仅用于 Andon 唯一背景例外的 ok-bg `#15803D`。装饰性颜色（区分图表序列、背景、边框、品牌强调色）有意豁免——仅靠少数几种饱和色无法构建仪表板。
 
 浏览器级闸门同样在 CI 中运行：`factory-twin-regression` 作业（`tests/playwright/factory-twin-regression.js`，以及故障模式与检查器 E2E 套件）和 `visual-regression` 作业（`tests/playwright/ldi-responsive-regression.js`，1920 与 3840 px 下免滚动）。`tests/playwright/ui-visual-baseline/` 下的 UI 基线已提交；`tests/playwright/dashboard-visual-regression.js` 仍只为文档截图，不做任何断言。
 

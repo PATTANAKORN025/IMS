@@ -6,7 +6,7 @@
 
 **IMS (Industrial Monitoring System)** คือระบบตรวจสอบข้อมูลโทรมาตร
 
-- **แหล่งที่มา:** อุปกรณ์ที่ถูกดึงข้อมูลผ่าน SNMP (เซิร์ฟเวอร์ Linux, สวิตช์ Juniper) และ HTTP (เครื่องผลิต PCB ของ LDI)
+- **แหล่งที่มา:** อุปกรณ์ที่ถูกดึงข้อมูลผ่าน SNMP (เซิร์ฟเวอร์, สวิตช์เครือข่าย) และ HTTP (เครื่องผลิต PCB ของ LDI)
 - **ไปป์ไลน์:** Node-RED (นำเข้าข้อมูล) → PgBouncer → TimescaleDB (การจัดเก็บ) → Grafana (แดชบอร์ด)
 - **การแจ้งเตือน:** Prometheus + Alertmanager → LINE / MS Teams
 
@@ -31,7 +31,7 @@
 ## 4. กฎสำหรับ Grafana และ แดชบอร์ด (Grafana & Dashboard Rules)
 
 - **กฎ Grid-24 (Grid-24 Discipline):** ทุกแถวต้องมีผลรวมคอลัมน์เท่ากับ 24 พอดี. Next Y = Prev Y + Prev H.
-- **ระบบการออกแบบ (Design System):** ใช้ Canonical Color Tokens เท่านั้น (เช่น `#00F2FE` สีฟ้า, `#00FF87` สีเขียว, `#FF003C` สีแดง) ห้ามใช้สีเริ่มต้นของ Grafana เด็ดขาด
+- **ระบบการออกแบบ (Design System):** ใช้เฉพาะ token ที่อนุมัติใน `docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1 (`APPROVED_TOKENS` ใน `tests/lint/dashboard-linter.js`): ok `#22C55E`, warning `#F59E0B`, critical `#EF4444`, info `#00F2FE`, accent `#3B82F6`, no_data `#64748B`, forecast `#4A5568`, severity-minor `#EAB308` ห้ามใช้สีเริ่มต้นของ Grafana เด็ดขาด
 - **TimescaleDB Queries:** ใช้ continuous aggregates ทับตารางข้อมูลดิบเท่าที่เป็นไปได้
 - **การตั้งชื่อคอลัมน์:** ตารางข้อมูลดิบใช้ `time`. CAGGs ใช้ `bucket`. Grafana ใช้นามแฝง (aliases) เป็น `bucket AS time` ในการคิวรี
 - **การป้องกัน SQL Injection:**
@@ -43,7 +43,7 @@
 
 ## 5. เวิร์กโฟลว์การพัฒนาและคำสั่ง (Development Workflow & Commands)
 
-- `make up` — เริ่ม stack สำหรับการพัฒนา (โปรไฟล์ SNMP simulator)
+- `make up` — build flows แล้วเริ่มครบ 15 service (ไม่มี compose profile; รวมตัวจำลองและ pgAdmin)
 - `make up-prod` — เริ่ม overlay สำหรับการผลิต
 - `make restart` — รีสตาร์ท Node-RED, Grafana, Alertmanager, Prometheus
 - `make verify` — ตรวจสอบสถานะการทำงานอย่างเต็มรูปแบบ (containers, DB, pipeline, alerts)
@@ -58,5 +58,5 @@
 
 ## 7. ทักษะที่มีอยู่ (Available Skills)
 
-มีทักษะมากกว่า 90 รายการให้ใช้งานผ่าน MCP และ `.agents/skills/` ใช้ `/skill-name` เพื่อเรียกใช้
+ใช้ skill ได้ผ่าน MCP และ `.agents/skills/` (repository นี้ติดตามไว้ 10 รายการ) ใช้ `/skill-name` เพื่อเรียกใช้
 ทักษะสำคัญที่ทำงานภายในเครื่อง ได้แก่: `verify-database-state`, `update-aiops-parser`, `modify-grafana-dashboard`, `batch-dashboard-edit`

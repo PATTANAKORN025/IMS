@@ -6,7 +6,7 @@
 
 **IMS (Industrial Monitoring System)** is a telemetry monitoring system.
 
-- **Sources:** SNMP-polled devices (Linux servers, Juniper switches) and HTTP (LDI PCB manufacturing machines).
+- **Sources:** SNMP-polled devices (servers, network switches) and HTTP (LDI PCB manufacturing machines).
 - **Pipeline:** Node-RED (Ingestion) → PgBouncer → TimescaleDB (Storage) → Grafana (Dashboards).
 - **Alerting:** Prometheus + Alertmanager → LINE / MS Teams.
 
@@ -31,7 +31,7 @@
 ## 4. Grafana & Dashboard Rules
 
 - **Grid-24 Discipline:** Every row sums to exactly 24 columns. Next Y = Prev Y + Prev H.
-- **Design System:** Use Canonical Color Tokens only (e.g., `#00F2FE` Cyan, `#00FF87` Green, `#FF003C` Red). Never use default Grafana colors.
+- **Design System:** Use only the approved tokens in `docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1 (`APPROVED_TOKENS` in `tests/lint/dashboard-linter.js`): ok `#22C55E`, warning `#F59E0B`, critical `#EF4444`, info `#00F2FE`, accent `#3B82F6`, no_data `#64748B`, forecast `#4A5568`, severity-minor `#EAB308`. Never use default Grafana colors.
 - **TimescaleDB Queries:** Use continuous aggregates over raw tables where possible.
 - **Column Naming:** Raw tables use `time`. CAGGs use `bucket`. Grafana aliases `bucket AS time` in queries.
 - **SQL Injection Prevention:**
@@ -43,7 +43,7 @@
 
 ## 5. Development Workflow & Commands
 
-- `make up` — Start dev stack (SNMP simulator profiles)
+- `make up` — Build flows and start all 15 services (no compose profiles; simulator and pgAdmin included)
 - `make up-prod` — Start production overlay
 - `make restart` — Restart Node-RED, Grafana, Alertmanager, Prometheus
 - `make verify` — Full health check (containers, DB, pipeline, alerts)
@@ -58,5 +58,5 @@
 
 ## 7. Available Skills
 
-Over 90 skills are available via MCP and `.agents/skills/`. Use `/skill-name` to invoke.
+Skills are available via MCP and `.agents/skills/` (10 tracked in this repository). Use `/skill-name` to invoke.
 Key local skills include: `code-review-and-quality`, `performance-optimization`, `security-and-hardening`, `grafana-dashboard-mastery`, `timescaledb-query-optimization`, `node-red-pipeline-engineering`, `ui-ux-pro-max`, `grill-me`, `brainstorming`, `skill-creator`.
