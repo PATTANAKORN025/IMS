@@ -39,7 +39,7 @@
 - **สถาปัตยกรรม V2 (V2 Normalized Architecture)**: ย้ายระบบนำเข้าข้อมูล Node-RED สู่โครงสร้าง JSON แบบบรรทัดฐาน และผูก Schema SQL Insert
 - **ระบบตรวจสอบก่อน Commit (Pre-commit Suite)**: เพิ่ม Husky Hooks ที่บังคับผ่าน Unit tests, E2E tests, Dashboard Linters, Security Exceptions และการอัปเดตเอกสาร
 - **รองรับทุกระบบปฏิบัติการ (Cross-Platform)**: แก้ไขบั๊ก CRLF ระหว่าง Windows/Linux ที่ทำให้ Node-RED แครช และปรับมาตรฐาน Path
-- **เอกสาร 3 ภาษา (Multilingual Excellence)**: แปลและปรับปรุงเอกสารทั้งหมด รวมถึง README ให้ตรงกันเป๊ะทั้ง อังกฤษ, ไทย และจีนตัวย่อ
+- **เอกสาร 3 ภาษา (Multilingual Excellence)**: แปลและปรับปรุงเอกสารทั้งหมด รวมถึง README ให้ตรงกันทุกประการทั้ง อังกฤษ, ไทย และจีนตัวย่อ
 - **กราฟิกระดับ NOC (Cyberpunk NOC UI)**: เปลี่ยนรูปภาพสแตติกเป็นภาพ GIF แอนิเมชันสแกนเนอร์ 60 FPS สุดล้ำสำหรับหน้าจอบริหาร
 
 ### ความปลอดภัย (Security)

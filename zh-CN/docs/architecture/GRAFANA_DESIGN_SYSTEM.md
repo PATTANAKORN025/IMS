@@ -324,7 +324,7 @@ Grafana 仍会为其分配网格空间）——已在每个受影响仪表板顶
 - [ ] 若面板在别处有重复使用的情况 → 请在合并前将之转换为库面板（Library Panel）。
 - [ ] 查询语句须顺应分层法则（raw ≤ latest value, minute CAGG ≤ 6h, hourly CAGG > 2d）。
 - [ ] 执行了 `make test-visual` 的测试且反馈的截图效果契合预期要求。
-- [ ] 跑完 `node tests/lint/dashboard-linter.js` 需无任何错误通过检测 —— 此 linter 会主动揪出那些游离于 §2.1 表格外的 hex 色彩代码。这也正是核心机制（"central token"）的真正体现，而绝不仅是这份纸上空谈的文档。
+- [ ] 运行 `node tests/lint/dashboard-linter.js` 且没有任何错误——该 linter 会标记 §2.1 表格之外的所有 hex 颜色代码。这才是真正的核心 token（"central token"）机制，而不仅仅是这份文档。
 
 ---
 
