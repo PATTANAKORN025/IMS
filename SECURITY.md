@@ -33,7 +33,7 @@ Only the `main` branch receives security fixes.
 Everything committed here — including the full git history and every pushed branch — is public and may already be cached or forked. A later deletion does not make it private again. Never commit:
 
 - `.env` or any real credential, token, key or password (rotate immediately if one ever reaches a commit);
-- production data: database dumps, CSV exports, dashboard exports containing real values;
+- production data: database dumps, CSV exports, dashboard exports containing real values (gitignored: `*.csv`, `*.parquet`, `*.dump`, `/vcp/`);
 - Floor 1 CAD files or anything derived from them: dimensions, coordinates, areas, layer names, label text;
 - real machine or line identifiers, lot or job numbers, internal hostnames, internal IP addresses;
 - personal data (names, e-mail addresses, phone numbers).

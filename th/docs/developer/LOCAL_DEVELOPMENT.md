@@ -25,7 +25,7 @@
 
 ## 3. ขั้นตอนการพัฒนา (Development Workflow)
 - **Node-RED**: เข้าถึง `http://localhost:1880` การแก้ไขใน UI เป็นแบบชั่วคราว! คุณต้อง Export flow ไปยัง `nodered_data/flows/*.json` เสมอ
-- **Grafana**: เข้าถึง `http://localhost:3000` (admin / change-me-please) หลังจากแก้ไข Dashboard ให้เซฟเป็นไฟล์ JSON กลับมาที่ `monitoring/grafana/dashboards/`
+- **Grafana**: เข้าถึง `http://localhost:3000` (admin / ตามที่ระบุใน `.env`) หลังจากแก้ไข Dashboard ให้เซฟเป็นไฟล์ JSON กลับมาที่ `monitoring/grafana/dashboards/`
 - **การตรวจสอบ (Validation)**: รัน `make verify` ก่อนทำการ commit
 
 ## 4. ธรรมเนียมปฏิบัติของ Git (Git Conventions)

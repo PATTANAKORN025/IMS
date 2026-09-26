@@ -25,7 +25,7 @@
 
 ## 3. 开发工作流 (Development Workflow)
 - **Node-RED**: 访问 `http://localhost:1880`。UI 中的编辑是暂时的！您必须将流程导出到 `nodered_data/flows/*.json`。
-- **Grafana**: 访问 `http://localhost:3000` (admin / change-me-please)。编辑仪表板后，将 JSON 模型保存回 `monitoring/grafana/dashboards/`。
+- **Grafana**: 访问 `http://localhost:3000`（admin / 在 `.env` 中配置）。编辑仪表板后，将 JSON 模型保存回 `monitoring/grafana/dashboards/`。
 - **验证 (Validation)**: 提交前运行 `make verify`。
 
 ## 4. Git 约定 (Git Conventions)

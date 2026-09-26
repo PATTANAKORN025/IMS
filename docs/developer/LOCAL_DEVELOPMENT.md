@@ -25,7 +25,7 @@ Welcome to the IMS Core Team. This guide will get you running the full telemetry
 
 ## 3. Development Workflow
 - **Node-RED**: Access `http://localhost:1880`. Edits in the UI are ephemeral! You MUST export flows to `nodered_data/flows/*.json`.
-- **Grafana**: Access `http://localhost:3000` (admin / change-me-please). Edit dashboards, then save the JSON model back to `monitoring/grafana/dashboards/`.
+- **Grafana**: Access `http://localhost:3000` (admin / configured in `.env`). Edit dashboards, then save the JSON model back to `monitoring/grafana/dashboards/`.
 - **Validation**: Run `make verify` before committing.
 
 ## 4. Git Conventions
