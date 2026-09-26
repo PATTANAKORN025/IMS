@@ -26,6 +26,9 @@
 ### Documentation
 - Living documents re-verified against `main` in English, Thai and Simplified Chinese: README, `CLAUDE.md`, docs index, admin and user manuals, operations runbook, architecture, security policy, contributing guide.
 - Floor 1 facility dimensions withheld from public documents; real server hostnames and mirrored personal files removed.
+- Standardized trilingual global navigation (`GLOBAL_NAV`) with localized labels and relative paths across all 600+ markdown files.
+- Hardened `.gitignore` rules against telemetry raw data leaks (`*.csv`, `*.parquet`, `*.dump`, `/vcp/`).
+- Added full Thai and Simplified Chinese translations for `CLAUDE.md` guidance.
 - Dated evidence and audit records use English-first pointer pages in `th/` and `zh-CN/`; every relative link and anchor resolves.
 
 ### Corrections to 1.0.1
