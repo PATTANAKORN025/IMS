@@ -12,7 +12,7 @@ assignees: ""
 <!-- TH: อธิบายปัญหาที่พบอย่างชัดเจน (ปัญหา UI, ข้อมูลไม่เข้า, หรือการแจ้งเตือนผิดพลาด) -->
 <!-- ZH-CN: 清楚简明地描述错误是什么。请说明这是 UI 错误、数据摄取错误还是警报错误。 -->
 
-## ️ Steps to Reproduce / ขั้นตอนการจำลองปัญหา / 重现步骤
+## Steps to Reproduce / ขั้นตอนการจำลองปัญหา / 重现步骤
 
 <!-- EN: Steps to reproduce the behavior: -->
 <!-- TH: ขั้นตอนเพื่อทำให้เกิดปัญหานี้: -->
@@ -53,7 +53,7 @@ assignees: ""
 
 </details>
 
-## ️ Environment Setup / สภาพแวดล้อม / 环境设置
+## Environment Setup / สภาพแวดล้อม / 环境设置
 
 - **IMS Version / Commit:**
 - **Component:** [e.g., Node-RED Parser, Grafana Dashboard, Alertmanager, TimescaleDB CAGG]

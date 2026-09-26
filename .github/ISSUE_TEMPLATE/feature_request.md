@@ -30,7 +30,7 @@ assignees: ""
 <!-- TH: คุณได้ลองวิธีแก้ปัญหาอื่นๆ แล้วหรือไม่? อธิบายสั้นๆ -->
 <!-- ZH-CN: 清楚简明地描述您考虑过的任何替代解决方案。 -->
 
-## ️ Architectural Impact / ส่วนที่ได้รับผลกระทบ / 架构影响
+## Architectural Impact / ส่วนที่ได้รับผลกระทบ / 架构影响
 
 <!-- Which components will this affect? -->
 

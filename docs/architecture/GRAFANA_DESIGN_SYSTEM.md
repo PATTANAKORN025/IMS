@@ -75,13 +75,13 @@ every §2.1 token against a solid fill:
 
 | Token            | Hex       | White-text ratio | AA large (≥3:1) | AA normal (≥4.5:1) |
 | ---------------- | --------- | ---------------- | --------------- | ------------------ |
-| `ok`             | `#22C55E` | 2.28             |                 |                    |
-| `warning`        | `#F59E0B` | 2.15             |                 |                    |
-| `critical`       | `#EF4444` | 3.76             |                 |                    |
-| `info`           | `#00F2FE` | 1.39             |                 |                    |
-| `accent`         | `#3B82F6` | 3.68             |                 |                    |
-| `no_data`        | `#64748B` | 4.76             |                 |                    |
-| `severity-minor` | `#EAB308` | 1.92             |                 |                    |
+| `ok`             | `#22C55E` | 2.28             | FAIL            | FAIL               |
+| `warning`        | `#F59E0B` | 2.15             | FAIL            | FAIL               |
+| `critical`       | `#EF4444` | 3.76             | PASS            | FAIL               |
+| `info`           | `#00F2FE` | 1.39             | FAIL            | FAIL               |
+| `accent`         | `#3B82F6` | 3.68             | PASS            | FAIL               |
+| `no_data`        | `#64748B` | 4.76             | PASS            | PASS               |
+| `severity-minor` | `#EAB308` | 1.92             | FAIL            | FAIL               |
 
 **Fix applied, not just documented:** every stat/gauge/bargauge panel using
 `colorMode: "background"` (31 panels) was switched to `colorMode: "value"` —
@@ -286,7 +286,7 @@ Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
 
 ## 7.2 Panel-container styling (CSS-injection text panel) — undocumented until 2026-08-25
 
-11 of 15 dashboards carry a small, `transparent: true` `text` panel (usually
+12 of 15 dashboards (counted 2026-09-26) carry a small, `transparent: true` `text` panel (usually
 `gridPos: {x:0, y:0, w:24, h:1}`, sometimes split across 2 panels) whose
 `options.content` is a bare `<style>` block targeting Grafana's own
 `[class*="-panel-container"]`/`[class*="-panel-title"]` selectors: rounded

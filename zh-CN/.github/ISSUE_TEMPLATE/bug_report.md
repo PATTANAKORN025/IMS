@@ -10,7 +10,7 @@ assignees: ""
 
 <!-- 清楚简明地描述错误是什么。请说明这是 UI 错误、数据摄取错误还是警报错误。 -->
 
-## ️ 重现步骤
+## 重现步骤
 
 <!-- 重现该行为的步骤： -->
 
@@ -43,7 +43,7 @@ assignees: ""
 
 </details>
 
-## ️ 环境设置
+## 环境设置
 
 - **IMS 版本 / Commit:**
 - **组件:** [例如 Node-RED Parser, Grafana Dashboard, Alertmanager, TimescaleDB CAGG]

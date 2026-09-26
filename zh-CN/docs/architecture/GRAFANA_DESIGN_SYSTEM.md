@@ -74,13 +74,13 @@ LDI 仪表板的视觉标识（深色的 `#030407` 背景、Roboto Mono 字体�
 
 | Token            | Hex       | White-text ratio | AA large (≥3:1) | AA normal (≥4.5:1) |
 | ---------------- | --------- | ---------------- | --------------- | ------------------ |
-| `ok`             | `#22C55E` | 2.28             |                 |                    |
-| `warning`        | `#F59E0B` | 2.15             |                 |                    |
-| `critical`       | `#EF4444` | 3.76             |                 |                    |
-| `info`           | `#00F2FE` | 1.39             |                 |                    |
-| `accent`         | `#3B82F6` | 3.68             |                 |                    |
-| `no_data`        | `#64748B` | 4.76             |                 |                    |
-| `severity-minor` | `#EAB308` | 1.92             |                 |                    |
+| `ok`             | `#22C55E` | 2.28             | FAIL            | FAIL               |
+| `warning`        | `#F59E0B` | 2.15             | FAIL            | FAIL               |
+| `critical`       | `#EF4444` | 3.76             | PASS            | FAIL               |
+| `info`           | `#00F2FE` | 1.39             | FAIL            | FAIL               |
+| `accent`         | `#3B82F6` | 3.68             | PASS            | FAIL               |
+| `no_data`        | `#64748B` | 4.76             | PASS            | PASS               |
+| `severity-minor` | `#EAB308` | 1.92             | FAIL            | FAIL               |
 
 **Fix applied, not just documented:** 每一个使用
 `colorMode: "background"` 的 stat/gauge/bargauge 面板（共 31 个面板）都改为了 `colorMode: "value"` ——
@@ -100,6 +100,23 @@ LDI 仪表板的视觉标识（深色的 `#030407` 背景、Roboto Mono 字体�
 这也正好匹配了真实的工业安灯的运作方式。WCAG 的文本对比度指标并未模拟
 这种判断“方块是红色还是绿色”的任务，因此，如果在这里机械套用该指标，就会用
 那些不契合该应用场景的指标，来牺牲掉实际的无障碍需求（一目了然性）。
+
+**更新（P18，基于实际渲染的测量）：** Grafana 的 `colorMode: "background"` 并不会填充纯色——
+它会根据单一的映射颜色自动生成 `linear-gradient(120deg, stop1, stop2)` 并渲染，这一点已通过检查 DOM 中
+实际渲染的 `background-image` 确认（而非假设）。这意味着*真实的*最差对比度由渐变中较暗的色标决定，
+而不是源 hex 值。以白色文字（`rgb(247,248,250)`）实测：
+
+| Value  | Source token (pre-P18) | Live gradient stops (rgb)      | Worst-case ratio | AA-large (≥3:1) |
+| ------ | ----------------------- | ------------------------------- | ----------------- | ---------------- |
+| OK     | `#22C55E`               | `(23,132,77)` → `(30,175,64)`   | 2.72              | FAIL             |
+| ALARM  | `#EF4444`               | `(212,44,18)` → `(237,44,70)`   | 3.91              | PASS             |
+
+OK 值连该面板例外状态所接受的大号文字标准都未达到。修复方式是只在**此面板**中把 OK 映射颜色加深为
+`#15803D`（在 `APPROVED_TOKENS` 中批准为 `ok-bg`）——重新实测渐变色标为 `(10,62,37)` → `(17,106,39)`，
+最差对比度 **6.34:1**，现已同时通过 AA-large 与完整的 AA-normal。这并没有放宽上述例外的理由：卡片仍然是
+用于感知的纯色块（仍然明确是"绿色"），修复只是选择了一个其自动生成的渐变也恰好满足 WCAG 的色调，
+且不牺牲一眼可辨性。规范的 `ok` token（`#22C55E`）在全系统其他 `colorMode: "value"` 用法中保持不变，
+在那些场景下文档最初的反向比率计算本就已经通过。
 
 **Enforcement:** `tests/lint/dashboard-linter.js`（检查 17）会针对任何
 在各个文件的排除列表之外使用了 `colorMode: "background"` 的
@@ -244,6 +261,29 @@ stat/gauge/bargauge 面板发出警告，以防在添加新面板时暗中出现
 
 参考实现范例：可参阅 `ims-ldi-engineering-analytics.json` 中的面板 17
 (Thickness Control Chart) 和面板 12 (PE/JE Box Plot)。
+
+---
+
+## 7.2 面板容器样式（注入 CSS 的 text 面板）— 2026-08-25 之前未有文档
+
+15 个仪表板中有 12 个（2026-09-26 统计）带有一个小型、`transparent: true` 的 `text` 面板（通常位于
+`gridPos: {x:0, y:0, w:24, h:1}`，有时拆成 2 个面板），其 `options.content` 是一个纯 `<style>` 块，
+作用于 Grafana 自身的 `[class*="-panel-container"]`/`[class*="-panel-title"]` 选择器：圆角、淡青色边框、
+悬停发光效果，以及大写小号字的面板标题。
+
+**为何存在、而不用原生方案：** Grafana 13.1 的面板选项 schema（以及其 `grafana.ini`/自定义主题机制）
+提供了颜色与排版 token，但不会向文件预置的仪表板开放单个面板或全局的 `border-radius`、`box-shadow`
+或悬停状态 CSS——这些属于 DOM/CSS 层面的问题，该版本没有对应的 Grafana 选项。在不发布带有修改过前端构建的
+自定义 Grafana Docker 镜像（风险明显更高、更难维护，远不如一个 20 行的面板）的前提下，注入 `<style>` 标签的
+`text` 面板是唯一可通过文件预置的实现方式。这是**有意保留的变通方案**，而非疏忽。
+
+**已知且已接受的副作用：** 注入面板会渲染成一个空白、无标题的矩形（即使其唯一作用是输出 `<style>` 标签，
+Grafana 仍会为其分配网格空间）——已在每个受影响仪表板顶部的渲染截图中确认可见。它会占用首屏上方 1–2 行网格
+的垂直空间。这是公开的、已接受的权衡：另外两种方案（不做视觉修饰）或（修改过的 Grafana 镜像）都被判定为比这点
+已知且固定的代价更糟。
+
+**新仪表板规则：** 原样复用现有的注入内容（从任一现有仪表板复制，例如 `ims-ldi-manufacturing.json` 中合并为
+一套规则的版本），而不要手写新的 CSS 变体，从而让整套仪表板始终只有一份样式定义，而不是多份近似副本。
 
 ---
 

@@ -3,7 +3,7 @@
 <!-- Describe your changes in detail. What is the problem being solved? -->
 <!-- If it fixes an open issue, please link to the issue here (e.g. Fixes #123). -->
 
-## ️ Implementation Details
+## Implementation Details
 
 <!-- How did you implement the solution? Did you introduce any new dependencies? -->
 <!-- Did you modify any Node-RED flows or Database Schema? -->
