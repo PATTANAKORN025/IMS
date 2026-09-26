@@ -127,12 +127,12 @@ drawing itself, not from the file it replaced:
 
 | Check | Result |
 |---|---|
-| Printed X dimension chain, 20 spans | 174,500 mm — equals the sheet's printed total, delta 0 |
-| Printed Z dimension chain, 13 spans | 120,300 mm — equals the sheet's printed total, delta 0 |
-| Structural grid | 21 × 14, unchanged |
+| Printed X dimension chain, 20 spans | [withheld] — equals the sheet's printed total, delta 0 |
+| Printed Z dimension chain, 13 spans | [withheld] — equals the sheet's printed total, delta 0 |
+| Structural grid | [withheld], unchanged |
 | Pixel calibration, each axis fitted independently | 40.019 and 40.024 mm/px — 0.01 % apart |
-| Traced footprint bounding box | 174.48 × 120.27 m against those printed totals |
-| Traced footprint area | **14,401 m²** against the sheet's own printed **14,430 m²** (−0.20 %) |
+| Traced footprint bounding box | within 0.03 % of those printed totals (absolute size withheld) |
+| Traced footprint area | **−0.20 %** against the sheet's own printed floor area (absolute area withheld) |
 | Geometry validator | 0 errors, 0 warnings |
 
 Gridline positions come from the printed cumulative chain rather than from the
@@ -162,13 +162,13 @@ worth stating plainly because the opposite was the expected outcome:
 
 | Raster finding | CAD verdict |
 |---|---|
-| Envelope 174500 x 120300 mm | Exact. The drawing's two largest DIMENSION entities are literally these numbers. |
-| Interior bay chain 8500 x8, 17050, 8850 x8 | Exact, to the millimetre. |
-| Two Z spans read as 9975 / 10025 | Corrected to 10000 / 10000. The chain still closes on 120300. |
-| An extra gridline splitting a bay 2000 / 8000 | Confirmed real, not a tracing artefact. |
+| Envelope width × depth | Exact. The drawing's two largest DIMENSION entities are literally these two numbers. |
+| Interior bay chain | Exact, to the millimetre. |
+| Two Z spans misread by ±25 mm | Corrected to the nominal bay. The chain still closes on the printed total. |
+| An extra gridline splitting one bay unevenly | Confirmed real, not a tracing artefact. |
 | 120 columns | All 120 matched CAD geometry within 1 m, median residual 34 mm, **zero false positives**. |
 | 147 columns (the earlier count) | Refuted. |
-| Floor level +0.30 | Confirmed: the CAD's own area labels carry it. |
+| Printed floor level | Confirmed: the CAD's own area labels carry it. |
 
 What the CAD added that no raster pass could: **82 further columns** (202
 total), **895 interior wall centrelines with measured thickness**, **52
@@ -185,8 +185,8 @@ floor plate.
 So neither was used. The extractor measures the column-cap envelope at run
 time, checks it against the width and depth the model already declares, and
 **aborts if they disagree by more than a millimetre**. Millimetres are
-established by geometry — bay spacings of 8500/8850/10000 and an overall
-174500 x 120300 admit no other reading — not by the header.
+established by geometry — the bay spacings and the overall envelope admit
+no other reading — not by the header.
 
 ### What the CAD still does not carry
 
@@ -231,7 +231,7 @@ browser regression against what the renderer actually drew.
 
 ### Rooms come from the drawing's own boundaries, not from wall topology
 
-The `00.Area Line` layer carries **32 closed boundaries**, and they are the
+The drawing's area-boundary layer carries **32 closed boundaries**, and they are the
 authoritative room polygons for this floor. Nothing about a room is inferred
 from the wall model — the two are independent, and §0.4 explains why that
 matters.
@@ -243,7 +243,7 @@ repeat the first vertex as the last, closing the ring explicitly while
 reporting themselves as open. Reading only the flag discarded those thirteen —
 and not thirteen arbitrary ones. Every boundary with more than four vertices
 closes the second way, so exactly the L-shaped and stepped areas vanished,
-including the **4,289 m² drilling hall**, the largest room on the floor. Two of
+including the largest process hall on the floor. Two of
 the thirteen additionally close to within 4×10⁻⁴ mm and 5×10⁻¹⁰ mm rather than
 exactly, which is decimal noise in the file's own text, so the closure test
 carries a 0.001 mm tolerance: three orders of magnitude above that noise and
@@ -260,18 +260,18 @@ comparison is an independent check rather than a tautology.
 
 | Outcome | Count |
 |---|---:|
-| Closed CAD boundaries on `00.Area Line` | **32** |
+| Closed CAD boundaries on the area-boundary layer | **32** |
 | Served as rooms | **32** (one per boundary, no boundary used twice) |
 | Named, with the printed area agreeing to within 10 % | **26** |
-| Named, agreeing to within 35 % | **1** (traced 1,758.8 m² against a printed 1,580 m²) |
+| Named, agreeing to within 35 % | **1** (traced area about 11 % above the printed value) |
 | Closed by the drawing but carrying no label | **5** |
 | Labels kept with no polygon | **6** |
 
 The last row is the honest half of the result. Five labels sit inside a larger
-area and have no boundary of their own: a 16 m² room whose only containing ring
-is the 4,289 m² hall is not a 4,289 m² room, so the printed area *refutes* the
+area and have no boundary of their own: a small room whose only containing ring
+is the largest hall is not a hall-sized room, so the printed area *refutes* the
 match rather than merely disagreeing with it, and the polygon is retracted. The
-name is kept, the geometry is not. One further label — `OFFICE MB INNER` — has
+name is kept, the geometry is not. One further label — an office — has
 no containing boundary at all.
 
 The five unlabelled boundaries are served with a null name. A room whose
@@ -287,10 +287,10 @@ floor area the drawing explicitly draws.
 Every difficulty in this section comes from one fact: **the wall layers do not
 contain only walls**, and nothing in the file says which line is which.
 
-`00.Wall FCD` is the structural layer, and it carries four different kinds of
+The structural wall layer carries four different kinds of
 thing at once — the building's exterior wall as open line-work, all 216 column
 squares, the pile caps, and 96 steel sections. The sections are the problem. A
-310 × 675 or 251 × 575 rectangle is a **closed loop** whose two long sides are
+steel-section rectangle is a **closed loop** whose two long sides are
 parallel, fully overlapping, and 251–500 mm apart, which is indistinguishable
 from a wall to any rule that measures geometry alone. Every one of those 96 sits
 within 2.5 m of a CAD column.
@@ -299,7 +299,7 @@ The property that separates them is not size, position or proximity: **a wall is
 drawn as two independent faces; a section is one closed loop.** On the
 structural layer a closed loop is structure, and is excluded. On the interior
 and partition layers a closed loop is a wall footprint and is kept — the
-75 × 2600 and 75 × 5250 loops on the interior layer are real walls, and every
+thin rectangular loops on the interior layer are real walls, and every
 one of them is far from any column.
 
 The drawing also contains **copy-pasted geometry**: entity pairs tracing the
@@ -391,11 +391,11 @@ model invented.
 Connectivity is 65.8 % and 538 faces are unpaired. Reconstructed as a graph —
 587 centrelines plus the 512 kept faces, split at every crossing and snapped at
 100 mm — the wall model produces 1,563 nodes, 1,441 edges and **815 dangling
-endpoints**. It closes 52 regions, of which the largest is 17 m² and only 4
-reach the size of the smallest labelled area on the floor (9 m²).
+endpoints**. It closes 52 regions, of which only 4 reach the size of the
+smallest labelled area on the floor.
 
 The building envelope is deliberately left out of that graph. Adding it would
-close one 14,000 m² region and make the wall model look far better connected
+close one floor-sized region and make the wall model look far better connected
 than it is.
 
 **Rooms do not depend on any of this.** They come from the drawing's own closed
@@ -459,7 +459,7 @@ An affine transform maps a convex hull to the hull of the image, so each block
 is hulled **once** in its own coordinates and the hull is transformed per
 instance. The oriented extent measured off the transformed hull equals the one
 measured off every transformed stroke, which is what makes a single pass over a
-412 MB file both sufficient and exact.
+full-size DXF both sufficient and exact.
 
 Annotation is excluded by entity **type**, drafting aids by layer **name**, and
 `HATCH` entirely — a hatch carries seed and pattern points under the same group

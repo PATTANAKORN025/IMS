@@ -29,7 +29,7 @@ identity.
 
 ## A. Executive summary
 
-The drawing was read on its own terms: 412 MB of ASCII DXF, streamed, with
+The drawing was read on its own terms: several hundred MB of ASCII DXF, streamed, with
 every block definition hulled in its own coordinates and every top-level
 `INSERT` placed by **its own drawn geometry** rather than by its insertion
 point.
@@ -308,7 +308,7 @@ A top-level INSERT is a **machine node** when all of these hold:
 
 1. it is a **top-level** reference in model space — never a nested child;
 2. the centre of its **drawn geometry** lies inside the floor envelope
-   (174.5 × 120.3 m) — the insertion point is not used, see §A.2;
+   (the floor envelope; size withheld) — the insertion point is not used, see §A.2;
 3. its block resolves to real drawn geometry;
 4. its layer is one of the drawing's **equipment layers** — the process-
    equipment layer, or a layer named for a machine type (hot press, cold press,

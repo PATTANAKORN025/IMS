@@ -13,7 +13,7 @@ full layer list are **WITHHELD** — see [Disclosure](#disclosure).
 
 ## 1. Why a streaming reader
 
-The export is **412,455,152 bytes** of ASCII DXF. A DOM-style reader
+The export is **several hundred megabytes** of ASCII DXF. A DOM-style reader
 (`ezdxf`) materialises every entity as a Python object; on a file this size
 that is several times the 15.2 GB of RAM on this machine, and a partial load
 that silently drops entities would be worse than no audit at all.
@@ -45,16 +45,16 @@ extents below.
 | `$MEASUREMENT` | `0` | imperial-flavoured setting, contradicted by the geometry |
 | `$LUNITS` / `$LUPREC` | `2` / `4` | decimal, 4 dp |
 | `$DIMSCALE` | `80.0` | plotting scale factor, not a unit |
-| `$EXTMIN` / `$EXTMAX` | span ≈ 758,545 × 155,612 | **wrong by ~4.3× in X** |
+| `$EXTMIN` / `$EXTMAX` | [withheld] | **wrong by ~4.3× in X** |
 
 Two independent reasons the header cannot define the coordinate system:
 
 1. **`$INSUNITS = 0`.** The drawing asserts no unit. Any millimetre
    interpretation has to be *earned from geometry*, not read off the header.
 2. **`$EXTMIN`/`$EXTMAX` do not bound the floor.** They are stale and, in Z,
-   span 787,560 units — meaningless for a floor plate.
+   span several times the floor depth — meaningless for a floor plate.
 
-The union of all entity bounding boxes is **worse**: 9,589,081 × 2,674,256.
+The union of all entity bounding boxes is **worse** still (values withheld).
 That is because modelspace holds far more than the floor plan (§4).
 
 **Neither the header extents nor the global computed extents were used.**
@@ -63,31 +63,28 @@ That is because modelspace holds far more than the floor plan (§4).
 
 ## 3. Canonical coordinate system — derived from CAD evidence
 
-The floor envelope is established by the `CAP` layer, whose bounding box is:
-
-```
-174500.000 x 120300.000   (exact, to the millimetre)
-```
+The floor envelope is established by the column-cap layer's bounding box.
+The width and depth are **withheld**; they are exact to the millimetre.
 
 Three independent sources agree on those two numbers:
 
 | Source | Width | Depth |
 |---|---:|---:|
-| `CAP` layer bounding box (CAD) | 174500.000 | 120300.000 |
-| The drawing's own overall `DIMENSION` entities | **174500.0** | **120300.0** |
-| Raster dimension chains (previous session, independent) | 174500 | 120300 |
+| Column-cap layer bounding box (CAD) | [withheld] | [withheld] |
+| The drawing's own overall `DIMENSION` entities | [withheld] | [withheld] |
+| Raster dimension chains (previous session, independent) | [withheld] | [withheld] |
 
 The two largest of the 75 `DIMENSION` measurements in the entire file are
-literally `174500.0` and `120300.0`. Every other dimension is a structural bay
-or a detail size (8500 ×8, 8850 ×8, 10000 ×7, 2000 ×6).
+literally the envelope width and depth. Every other dimension is a structural
+bay or a detail size.
 
 **Unit resolution: 1 drawing unit = 1 millimetre.** This is derived from
-geometry — bay spacings of 8500/8850/10000 and an overall 174500 × 120300 are
-millimetres for an industrial building and are impossible in any other unit —
+geometry — the bay spacings and the overall envelope are millimetres for an
+industrial building and are impossible in any other unit —
 **not** from `$INSUNITS`, which says unitless.
 
-**Canonical frame.** Floor-local millimetres, origin at the `CAP` envelope's
-lower-left corner, so the floor occupies `0..174500 × 0..120300`. The CAD
+**Canonical frame.** Floor-local millimetres, origin at the column-cap envelope's
+lower-left corner, so the floor occupies `0..width × 0..depth`. The CAD
 origin offset is **WITHHELD** (it locates the facility in the owner's
 coordinate system).
 
@@ -96,10 +93,10 @@ against the existing model under both Y orientations:
 
 | Orientation | Columns matched within 2 m |
 |---|---:|
-| `z = y/1000 − 60.15` | **57 / 100** |
-| `z = 60.15 − y/1000` (flipped) | 2 / 100 |
+| `z = y/1000 − c` | **57 / 100** |
+| `z = c − y/1000` (flipped) | 2 / 100 |
 
-Unflipped, decisively.
+Unflipped, decisively (`c`, the half-depth offset, is withheld).
 
 ---
 
@@ -131,7 +128,7 @@ still hold 77% of that and are dominated by detail geometry, not plan geometry.
 
 | Layer role | Entities in window | Content |
 |---|---:|---|
-| Column caps | 299 | 100 LWPOLYLINE, **every one exactly 3750 × 3750** |
+| Column caps | 299 | 100 LWPOLYLINE, **all the same exact square size** |
 | Areas | 262 | 93 TEXT labels + 52 label boxes |
 | Interior walls | 249 | 123 LWPOLYLINE, 117 LINE, 14 MLINE |
 | Area boundaries | 33 | 33 LWPOLYLINE |
@@ -161,14 +158,14 @@ extends it** — it does not overturn it.
 
 | | Raster-derived | CAD column centres |
 |---|---|---|
-| X interior pattern | 8500 ×8, 7450+9600 = **17050**, 8850 ×8 | 8500 ×8, **17050**, 8850 ×8 |
-| X interior total | 155,850 | **155,850** |
-| Full width | 9450 + 155850 + 9200 = **174,500** | envelope **174,500** |
-| Y bays | 10000 nominal, two spans read 9975 / 10025 | **10000 exact** ×9 |
-| Y anomaly | an extra line splitting a bay 2000 / 8000 | **confirmed real** |
+| X interior pattern | identical bay sequence | **identical, to the millimetre** |
+| X interior total | equal | **equal** |
+| Full width | edge bays + interior total | **equals the envelope** |
+| Y bays | nominal, two spans read ±25 mm off | **nominal exact** ×9 |
+| Y anomaly | an extra line splitting one bay unevenly | **confirmed real** |
 
 The CAD corrects two ±25 mm raster rounding slips and **confirms** the odd
-2000/8000 bay split the raster reported.
+bay split the raster reported.
 
 ### Columns — the raster was right, and incomplete
 
@@ -185,10 +182,10 @@ correct *subset*; the canonical count becomes **202**.
 
 Two column families exist and must not be conflated:
 
-- **900 / 850 / 1000 mm squares** (216 squares → 202 distinct locations, 14
+- **Column-section squares** (216 squares → 202 distinct locations, 14
   drawn as nested pairs) — the structural columns. These match the raster.
-- **3750 mm squares** (100) — column/pile **caps** at a subset of nodes. A
-  3.75 m cap is a foundation, not a column section. Only 57 of the 100 caps sit
+- **Cap squares** (100) — column/pile **caps** at a subset of nodes. A cap
+  of that size is a foundation, not a column section. Only 57 of the 100 caps sit
   within 2 m of a raster column, which is expected, and is *not* evidence
   against either set.
 
@@ -197,11 +194,11 @@ Two column families exist and must not be conflated:
 The structural layer carries four different kinds of thing at once, and nothing
 in the file distinguishes them:
 
-| On `00.Wall FCD` | Count | What it is |
+| On the structural wall layer | Count | What it is |
 |---|---:|---|
-| Column squares (900 / 850 / 1000 mm) | 216 | structure, already extracted as columns |
-| Pile caps (3750 mm) | 8 in-window | foundations |
-| Steel sections (310 × 675, 251 × 575, and similar) | 96 | **every one within 2.5 m of a CAD column** |
+| Column squares | 216 | structure, already extracted as columns |
+| Pile caps | 8 in-window | foundations |
+| Steel sections | 96 | **every one within 2.5 m of a CAD column** |
 | Open line-work | 2,448 segments | the exterior wall, and wall faces |
 
 The first three are **closed loops**. A closed loop's two long sides are
@@ -210,8 +207,8 @@ looks like to a rule that measures geometry alone — pairing them blind produce
 82 "walls" made of structure. The property that separates them is that a wall is
 drawn as two independent faces while a section is one closed loop.
 
-That rule is layer-specific, not universal: on `00.Wall IN` a closed loop **is**
-a wall footprint (75 × 2600 and 75 × 5250, all far from any column).
+That rule is layer-specific, not universal: on the interior wall layer a closed
+loop **is** a wall footprint (thin rectangles, all far from any column).
 
 Wall-layer line-work is also **duplicated in places** — entity pairs tracing the
 same line at the same coordinates, 43 of them on this floor. And 1,775 of 8,227
@@ -220,7 +217,7 @@ holds roughly 70 m of genuinely canted wall, the longest a 23.7 m run at 70.2°.
 
 ### Area boundaries — two closure encodings in one layer
 
-`00.Area Line` holds 33 polylines: **32 closed rings and one stray two-point
+The area-boundary layer holds 33 polylines: **32 closed rings and one stray two-point
 line**. The rings are the authoritative room polygons for this floor, and they
 declare closure two different ways:
 
@@ -231,14 +228,13 @@ declare closure two different ways:
 
 The split is not arbitrary: **every ring with more than four vertices is in the
 second group**, so a reader that tests only the flag loses precisely the
-L-shaped and stepped rooms, the 4,289 m² drilling hall included. Two of the
+L-shaped and stepped rooms, the largest process hall included. Two of the
 thirteen close to within 4×10⁻⁴ mm and 5×10⁻¹⁰ mm rather than exactly — decimal
 noise in the file's text, not a drawn gap.
 
-`00.Area` is annotation, not boundary: 53 closed rectangles of roughly
-7.3 × 2.4 m are label banners, and its TEXT/MTEXT splits into 34 names, 34
-printed areas (30 formatted MTEXT plus 4 plain `"49m2"`-style TEXT), 29 level
-tags and 29 count tags.
+The area-annotation layer is annotation, not boundary: 53 closed rectangles are
+label banners, and its TEXT/MTEXT splits into 34 names, 34 printed areas (30
+formatted MTEXT plus 4 plain TEXT), 29 level tags and 29 count tags.
 
 `HATCH` (322 in the file, 113 in the window) and `REGION` (18) carry **no**
 room boundary. REGION geometry is ACIS binary and is not readable as
@@ -246,7 +242,7 @@ coordinates at all; neither was needed, because the polylines are explicit.
 
 ### Floor level
 
-Area labels carry a printed level of **+0.30**, independently confirming the
+Area labels carry a printed floor level (withheld), independently confirming the
 floor level derived from the raster last session.
 
 ---
@@ -275,6 +271,9 @@ Withheld from this public document, held only in gitignored private artifacts:
 - **Room and process-area names** (33 labelled areas with printed areas)
 - **Absolute CAD origin** in the owner's coordinate system
 - **Full 418-layer list**, several of which name processes and vendors
+- **Building dimensions**: envelope width and depth, structural bay spacings,
+  column and cap sizes, room and floor areas, printed floor level (withdrawn
+  from this public copy on 2026-09-26; counts, rules and verdicts are unchanged)
 - The DXF and DWG themselves
 
 Enforced by `.gitignore`: `*.dxf`, `*.dwg`, `Apex3Layout/`, `private/`.

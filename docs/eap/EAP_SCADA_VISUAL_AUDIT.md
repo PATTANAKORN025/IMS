@@ -2,7 +2,7 @@
 
 Reference image: `Apex3Layout/01 LayoutApex3-F1.jpg` (1545×1034px JPEG,
 real file, read directly this session — not a textual summary).
-CAD sources: `Apex3Layout/Floor1.dwg` (58.9MB) / `Floor1.dxf` (412MB), the
+CAD sources: the private Floor 1 DWG / DXF pair, the
 same drawing this codebase's own `services/factory-twin-3d/private/floor1-geometry.json`
 was already extracted from. Current render: real screenshots of
 `/factory-twin-3d/eap.html`, authenticated production, 1920×1080, both

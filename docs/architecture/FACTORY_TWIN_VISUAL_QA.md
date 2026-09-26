@@ -315,8 +315,8 @@ what the same method measures on the same drawing, reported as measured and not
 tuned towards the previous 147 and 242. See
 [Reconstruction](FACTORY_TWIN_RECONSTRUCTION.md) for the independent checks the
 re-derivation passes: both printed dimension chains sum to their printed totals
-with zero delta, and the traced footprint encloses 14,401 m² against the
-sheet's own printed 14,430 m².
+with zero delta, and the traced footprint area is within −0.20 % of the
+sheet's own printed floor area (absolute area withheld).
 
 The regression suite derives counts from the API and reconciles them against
 the scene rather than hardcoding them, so adding evidence does not require

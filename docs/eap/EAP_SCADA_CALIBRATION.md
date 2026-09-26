@@ -25,7 +25,7 @@ ones by about 1.46").
 "Current" position is not a screenshot reading — it is the exact `min/max`
 of each zone's cells' `eap_footprint.x/z` in the private node model,
 converted to the same fraction using `EAP_LAYOUT_FRAME`'s own declared
-`extent_m` (174.5m x 89.274m). This is exact, not measured with any error
+`extent_m` (value withheld). This is exact, not measured with any error
 bar, because it is the literal data the renderer draws from.
 
 **Noise floor.** XRY was measured as a control zone (not one of the 4

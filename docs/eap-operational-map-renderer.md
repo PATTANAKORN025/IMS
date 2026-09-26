@@ -53,7 +53,7 @@ it is not:
 | Metric | **no** |
 | Axes | x right, z down, origin at the centre of the drawn factory boundary |
 | Scale | the drawn factory boundary, scaled so its width equals the floor width the CAD envelope states |
-| Extent | 174.5 × 89.3 |
+| Extent | [withheld] |
 | Warning | the reference compresses vertical distances against horizontal ones by about 1.46 |
 
 That anisotropy is why the frame is not metric and why the payload carries the warning
