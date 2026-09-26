@@ -50,7 +50,7 @@
 </div>
 
 <div align="center">
-  <a href="#เริ่มต้นใช้งานด่วน-สองเส้นทาง"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
+  <a href="#เริ่มต้นใช้งานด่วน-สองเส้นทาง"><img src="https://img.shields.io/badge/-Release_v1.0.1-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
   <a href="../LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
   <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_13.1-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
