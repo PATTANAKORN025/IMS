@@ -1,136 +1,153 @@
-# 安全策略 (Security Policy)
+# 安全策略
 
-> **IMS (基础设施监控系统) 安全策略**
-> 在部署到生产环境之前，请了解系统限制并制定修复计划
+> **IMS（工业监控系统）安全策略**
+> 部署到生产环境之前，请先阅读已知限制及其修复计划。
 
 ---
 
 <div align="center">
 
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Security:** Policy
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Staging
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Updated:** 2026-08-04
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **文档：** 安全策略
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **状态：** 投产前（Pre-production）
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **更新日期：** 2026-09-26（已对照 `main` 核实）
 
 </div>
 
 ---
 
-## 已知限制 (Known Limitations)
+## 报告漏洞
 
-| #   | 问题 (Issue)                                                | 严重程度 (Severity) | 状态 (Status)    | 修复计划 (Fix Plan)                                                          |
-| --- | ----------------------------------------------------------- | ------------------- | ---------------- | ---------------------------------------------------------------------------- |
-| 1   | PgBouncer 端口在主机上暴露                                  | ️ 中 (Medium)        | 已知 (Known)     | 仅绑定 localhost 或使用反向代理                                              |
-| 2   | Node-RED 管理界面没有身份验证                               | 高 (High)           | 已知 (Known)     | 在投入生产环境前，在 settings.js 中添加 `adminAuth`                          |
-| 3   | SNMP 团体字符串 (community string) 采用明文                 | ️ 中 (Medium)        | 已知 (Known)     | 移动到环境变量中                                                             |
-| 4   | PgBouncer 使用 AUTH_TYPE: plain                             | ️ 中 (Medium)        | 已知 (trade-off) | 考虑在源头进行密码哈希处理                                                   |
-| 5   | GitHub PAT 硬编码在 `.mimocode/mimocode.json` (AI 工具配置) | 高 (High)           | 已知 (Known)     | 在 GitHub 上撤销令牌；替换为环境变量占位符 `${GITHUB_PERSONAL_ACCESS_TOKEN}` |
+如果发现安全漏洞：
+
+1. **不要**在 GitHub 上公开提交 issue、pull request 或 discussion。
+2. 通过仓库的 **Security** 选项卡私下报告（GitHub private vulnerability reporting），或直接联系维护者。
+3. 请提供描述、复现步骤、受影响组件及潜在影响。报告中切勿包含真实凭据或生产数据。
+4. 首次答复预计在 48 小时内。
+
+只有 `main` 分支会获得安全修复。
 
 ---
 
-## 生产环境加固清单 (Production Hardening Checklist)
+## 本仓库为公开仓库
 
-### 在授予网络访问权限之前
+提交到这里的一切——包括完整的 git 历史以及所有已推送的分支——都是公开的，并且可能已被缓存或复刻。事后删除并不能使其重新变为私有。切勿提交：
 
-- [x] PgBouncer 没有主机端口绑定 — 从未在基础 `docker-compose.yaml` 中公开，这不是 prod-overlay 的更改
-- [ ] 启用 Node-RED adminAuth (生成 bcrypt 哈希)
-- [x] Grafana 无法从主机直接访问 — `docker-compose.yaml` 没有为其分配任何主机端口；`proxy` 服务 (nginx) 是唯一公开的入口点 (3000)，它位于 Grafana 和 `alarm-api` 的前端，并通过针对 Grafana 自身会话的 `auth_request` 检查来限制对后者的访问 (参见 `docs/architecture/SECURITY_MODEL.md`)
-- [ ] 审查 `secrets/` 目录中的所有 Docker secrets
-- [ ] 为生产设备启用 SNMPv3 (替换 v2c)
+- `.env` 或任何真实的凭据、令牌、密钥或密码（一旦进入提交，必须立即轮换）；
+- 生产数据：数据库转储、CSV 导出、含真实数值的仪表板导出；
+- 一楼 CAD 文件或由其衍生的任何内容：尺寸、坐标、面积、图层名称、标注文字；
+- 真实的设备或产线编号、批号或作业号、内部主机名、内部 IP 地址；
+- 个人数据（姓名、电子邮件地址、电话号码）。
 
-### 在连接到真实机器之前
+CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**仅匹配文件路径**，因此推送前请逐一审阅 diff，排查上述内容。
 
-- [ ] 验证 SNMPv3 的身份验证和加密
-- [ ] 测试 community string 轮换流程
-- [ ] 审计所有 OID 的访问权限
+---
+
+## 已知限制
+
+| # | 问题 | 严重级别 | 状态 | 修复计划 |
+| --- | --- | --- | --- | --- |
+| 1 | `.env.example` 中的每个值都是公开的 | 高 | 已知 | 任何真实部署之前，为每个密钥生成新值（见[管理员手册](docs/admin/ADMIN_MANUAL.md#投产前安全检查清单)） |
+| 2 | pgAdmin 在所有接口上发布 `5050` 端口，镜像标签为 `latest` | 中 | 已知 | 绑定到 `127.0.0.1` 或用防火墙限制；固定镜像标签 |
+| 3 | nginx 统一入口使用明文 HTTP | 中 | 已知 | 在 `ims-proxy` 前方或内部终止 TLS |
+| 4 | SNMP v2c community string 以明文按设备存放在 `public.devices` 中 | 中 | 已知 | 将生产设备迁移到 SNMPv3（authPriv） |
+| 5 | PgBouncer 使用 `auth_type = plain` | 中 | 已知（权衡） | 仅限内部网络；考虑端到端使用 SCRAM |
+| 6 | `observability-archiver` 挂载了 `/var/run/docker.sock` | 中 | 已知 | `:ro` 标志并不能限制 Docker API 调用；应视该容器为特权容器，或取消挂载 |
+| 7 | CI 密钥扫描不阻断构建，且只扫描工作区（`gitleaks --no-git ... \|\| true`） | 中 | 已知 | 改为阻断并扫描历史（去掉 `--no-git` 运行 `gitleaks detect`）；推送前在本地进行全历史扫描 |
+| 8 | Grafana image renderer 镜像标签为 `latest` | 低 | 已知 | 固定镜像标签 |
+| — | PgBouncer 端口暴露在主机上 | — | **已解决** | 基础 `docker-compose.yaml` 从未发布 PgBouncer 端口 |
+| — | Node-RED 编辑器无认证 | — | **已解决** | 未设置 `NODE_RED_ADMIN_PASSWORD_HASH` 时，`nodered_data/settings.js` 拒绝启动；编辑器端口绑定在 `127.0.0.1` |
+
+---
+
+## 生产加固检查清单
+
+### 开放网络访问之前
+
+- [x] PgBouncer 没有绑定主机端口
+- [x] Node-RED 编辑器需要管理员密码哈希，并绑定在 `127.0.0.1`
+- [x] Grafana 没有主机端口；`proxy` 服务（nginx）是端口 3000 上唯一的 UI 入口，前置 Grafana、`alarm-api`、Factory Twin 以及 LDI 接入端点，并让 `alarm-api` 与孪生服务先通过基于 Grafana 会话的 `auth_request` 检查（见 `docs/architecture/SECURITY_MODEL.md`）
+- [ ] 用新生成的密钥替换从 `.env.example` 复制来的每一个值
+- [ ] 将 pgAdmin（`5050`）限制在主机本地或管理网络
+- [ ] 在 nginx 统一入口前增加 TLS
+- [ ] 为生产设备启用 SNMPv3（替代 v2c）
+
+### 连接真实设备之前
+
+- [ ] 验证 SNMPv3 认证与加密
+- [ ] 测试 community string / 凭据轮换流程
+- [ ] 审计所有 OID 访问权限
 - [ ] 在目标设备上启用审计日志
 
-### 持续的安全实践
+### 持续安全实践
 
-- [ ] 每季度轮换 Docker secrets
-- [ ] 监控基础镜像 (base images) 中的 CVE 更新
-- [ ] 每周审查 Gitleaks 扫描结果
-- [ ] 审计 Prometheus/Alertmanager 的访问日志
+- [ ] 至少每季度轮换一次密钥，并在怀疑泄露时立即轮换
+- [ ] 监控基础镜像的 CVE（`node scripts/production-assurance.js --profile=security`）
+- [ ] 审阅每个 pull request 的密钥扫描结果
+- [ ] 审计 Prometheus/Alertmanager 访问日志
 
 ---
 
-## ️ 安全控制 (Security Controls)
+## 安全控制措施
 
 ### 网络安全
 
-| 控制措施 (Control)                 | 实施 (Implementation)                                 |
-| ---------------------------------- | ----------------------------------------------------- |
-| **容器隔离 (Container Isolation)** | Docker 桥接网络 — 服务通过 DNS 进行通信               |
-| **无主机端口暴露**                 | 内部服务只能在 Docker 网络内访问                      |
-| **SNMP Community**                 | 基于文件的 community string (不硬编码在 flows 中)     |
-| **机密管理 (Secrets Management)**  | `secrets/` 目录中的 Docker secrets (已加入 gitignore) |
+| 控制措施 | 实现方式 |
+| --- | --- |
+| **容器隔离** | Docker bridge 网络（`ims-internal`、`ims-monitoring`）；服务之间通过 DNS 名称通信 |
+| **最小化主机暴露** | 只有 nginx 统一入口（3000）与 pgAdmin（5050）监听所有接口；Node-RED、Prometheus、Alertmanager 与 Blackbox 绑定在 `127.0.0.1` |
+| **接入认证** | `/ldi-telemetry` 与 `/inject` 要求请求头 `x-api-key` 与 `INGEST_API_KEY` 一致 |
+| **密钥管理** | `.env`（已被 gitignore 忽略）通过 Docker Compose 的必填变量 `${VAR:?}` 注入；不会从 `secrets/` 目录读取任何内容 |
 
-### 应用程序安全
+### 应用安全
 
-| 控制措施 (Control)           | 实施 (Implementation)                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------- |
-| **防范 SQL 注入**            | 对所有用户输入进行 `safeStr()` 转义处理                                               |
-| **凭证轮换**                 | 对过期的 `flows_cred.json` 需要手动轮换                                               |
-| **CI/CD 安全**               | Gitleaks 扫描，使用 stub secrets 进行验证                                             |
-| **插件策略 (Plugin Policy)** | 仅使用开源的 plugins/MCP/skills (MIT/ISC/BSD/Apache-2.0) — 针对以下当前清单进行了验证 |
+| 控制措施 | 实现方式 |
+| --- | --- |
+| **防止 SQL 注入** | 服务中使用参数化查询；Node-RED function 节点中使用 `safeStr()` 转义 |
+| **最小权限数据库角色** | Grafana 使用 `grafana_reader`（只读），`alarm-api` 使用 `alarm_api_writer`（仅对 `ldi_alarm_lifecycle` 有 `SELECT`+`UPDATE`） |
+| **Node-RED 凭据** | `pg_config` 的用户名/密码字段使用环境变量类型；flow 凭据以 `NODE_RED_CREDENTIAL_SECRET` 加密 |
+| **CI/CD 安全** | 私有数据路径扫描器、仓库卫生 linter、gitleaks（见限制 7）、用于 compose 校验的占位密钥 |
+| **插件策略** | 只使用开源的插件、MCP 服务器与 skill（MIT/ISC/BSD/Apache-2.0） |
 
 ### 数据安全
 
-| 控制措施 (Control)          | 实施 (Implementation)                  |
-| --------------------------- | -------------------------------------- |
-| **数据库访问**              | 带有身份验证的 PgBouncer 连接池        |
-| **备份加密**                | 数据库转储在存储前应进行加密           |
-| **日志清理 (Sanitization)** | 不在 Docker 容器日志中记录任何机密信息 |
+| 控制措施 | 实现方式 |
+| --- | --- |
+| **数据库访问** | 经 PgBouncer 连接池并需认证；主机上未发布任何数据库端口 |
+| **备份** | `scripts/backup-db.sh` 写入已被 gitignore 忽略的 `./backups/`；转储离开主机前必须加密 |
+| **日志脱敏** | 容器日志中不含密钥；诊断认证问题时检查变量是否已设置，切勿打印其值 |
 
 ---
 
-## AI 工具安全 (MCP / Skills / Plugins)
+## AI 工具安全（MCP / Skills / Plugins）
 
-### 智能体供应链清单
+### AI 工具配置的存放位置
 
-所有的 AI 工具均为开源 (MIT / Apache-2.0)，符合插件策略。安装位置：`.agents/skills/` (通用), `.mimocode/` (MiMo Code), `.claude/skills/` + `.github/skills/` (Claude Code / Copilot 符号链接)。
+| 位置 | 是否被 git 跟踪 | 规则 |
+| --- | --- | --- |
+| `.agents/skills/`、`.clinerules/`、`.cursor/`、`.windsurf/`、`.superpowers/`、`skills-lock.json`、`AGENTS.md`、`CLAUDE.md` | 是——公开 | 只能放说明性内容。切勿放入令牌、主机名、凭据、工厂数据或个人数据。 |
+| `.mimocode/`、`.opencode/`、`.mcp.json`、`.claude/`、`.vscode/settings.json`、`ABOUT-ME.md`、`START.md`、`CONTEXT.md` | 否——已被 gitignore 忽略 | 本地令牌可以放在这里，但仍须视为密钥；切勿强制添加这些文件，并轮换任何曾被分享的令牌。 |
 
-| 项目 (Item)          | 清单 (Inventory)                                                                                                                                                                                                                  | 来源 (Sources)                                                                                           |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **MCP servers (12)** | context7, playwright, puppeteer, github, filesystem, everything, sequential-thinking, memory, fetch, postgres, git, time — mirrored in `.mimocode/mimocode.json`, `.mcp.json`, `.opencode/opencode.json`, `.vscode/settings.json` | modelcontextprotocol/servers, PyPI (`mcp-server-fetch/time/git`), npm (`@modelcontextprotocol/server-*`) |
-| **Skills (90)**      | 26 个本地 (IMS 专用) + 41 个 mattpocock/skills + 9 个 vercel-labs/agent-skills + 14 个 obra/superpowers                                                                                                                           | github.com/mattpocock/skills, vercel-labs/agent-skills, obra/superpowers (均为 MIT)                      |
-| **Plugins (8)**      | `.mimocode/mimocode.json` 中的 `superpowers@git+…` 条目 (obra, mattpocock, vercel-labs, garrytan/gstack, addyosmani, wshobson/agents, affaan-m/ECC, pcvelz)                                                                       | 均为 MIT, 开源                                                                                           |
+Python 编写的 MCP 服务器应以固定版本的 SDK（`mcp==X.Y.Z`）启动，避免供应链变化在不知情的情况下改变工具链。
 
-### AI 工具配置中的机密信息
+### 仿冒 / Canary 软件包——切勿安装
 
-- `.mimocode/mimocode.json` 和 `.vscode/settings.json` **已加入 gitignore** — 本地令牌可能保存在这里，但仍需将其视为机密，如若共享则需要进行轮换。
-- `.mcp.json` 和 `.opencode/opencode.json` **由 git 追踪** — 必须使用 `${VAR}` 占位符 (例如 `${GITHUB_PERSONAL_ACCESS_TOKEN}`, `${POSTGRES_PASSWORD}`)，切勿使用字面量凭据。
-- MCP Python 服务器需要在启动参数中 **锁定 `mcp==X.Y.Z` SDK 版本** (参见 `knowledge.md`) — 锁定版本可防止供应链偏移破坏或劫持工具链。
-
-### ️ Typosquat (域名抢注/误植) / Canary (金丝雀) 软件包 — 切勿安装
-
-npm 软件包 `mcp-server-fetch` 和 `mcp-server-git` 是伪装成真实 MCP 服务器的 **安全研究金丝雀 (security-research canaries)** (`node-canaries` / `npx-canary`)。在任何情况下都 **不要** 安装它们 — 请改用官方的 PyPI (`uvx mcp-server-*`) 或 `@modelcontextprotocol/server-*` npm 软件包。在将任何软件包添加到 AI 配置之前，始终要验证其维护者和代码库。
+npm 软件包 `mcp-server-fetch` 与 `mcp-server-git` 是冒充真实 MCP 服务器的**安全研究 canary**（`node-canaries` / `npx-canary`）。任何情况下都不要安装——请改用 PyPI 官方包（`uvx mcp-server-*`）或 npm 的 `@modelcontextprotocol/server-*` 软件包。在任何 AI 配置中添加软件包之前，务必核实其维护者与代码仓库。
 
 ---
 
-## 报告漏洞 (Reporting Vulnerabilities)
+## 参考资料
 
-如果您发现了安全漏洞：
-
-1. **切勿** 开启公开的 GitHub Issue
-2. 请直接向安全团队发送电子邮件，或使用 GitHub 的私密漏洞报告功能
-3. 报告需包含：漏洞描述、重现步骤以及潜在影响
-4. 请预留 48 小时以便我们进行初步回复
-
----
-
-## 参考资料 (References)
-
-- [Docker 安全最佳实践](https://docs.docker.com/engine/security/)
-- [PostgreSQL 安全](https://www.postgresql.org/docs/current/auth.html)
-- [SNMPv3 安全](https://datatracker.ietf.org/doc/html/rfc3411)
-- [Grafana 安全](https://grafana.com/docs/grafana/latest/setup-grafana/security/)
+- [Docker Security Best Practices](https://docs.docker.com/engine/security/)
+- [PostgreSQL Client Authentication](https://www.postgresql.org/docs/current/auth.html)
+- [SNMPv3 Architecture (RFC 3411)](https://datatracker.ietf.org/doc/html/rfc3411)
+- [Grafana Security](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/)
 
 ---
 
 <div align="center">
 
-**IMS 安全策略 — 版本 1.0**
+**IMS 安全策略 — 版本 1.1**
 
-_每次部署到生产环境之前请进行审查_
+_每次生产部署前请复核_
 
 </div>

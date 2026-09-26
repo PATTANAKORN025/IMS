@@ -1,136 +1,153 @@
-# นโยบายความปลอดภัย (Security Policy)
+# นโยบายความปลอดภัย
 
-> **นโยบายความปลอดภัยของ IMS (Infrastructure Monitoring System)**
-> ทราบข้อจำกัดและแผนแก้ไขก่อน deploy ไปยัง Production
+> **นโยบายความปลอดภัยของ IMS (Industrial Monitoring System)**
+> อ่านข้อจำกัดที่ทราบและแผนแก้ไขก่อน deploy ขึ้นระบบจริง
 
 ---
 
 <div align="center">
 
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Security:** Policy
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Staging
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Updated:** 2026-08-04
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **เอกสาร:** นโยบายความปลอดภัย
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **สถานะ:** ก่อนใช้งานจริง (Pre-production)
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **ปรับปรุงล่าสุด:** 2026-09-26 (ตรวจทานเทียบกับ `main`)
 
 </div>
 
 ---
 
-## ข้อจำกัดที่ทราบ (Known Limitations)
+## การรายงานช่องโหว่
 
-| #   | ปัญหา (Issue)                                                         | ความรุนแรง (Severity) | สถานะ (Status)       | แผนการแก้ไข (Fix Plan)                                                                              |
-| --- | --------------------------------------------------------------------- | --------------------- | -------------------- | --------------------------------------------------------------------------------------------------- |
-| 1   | พอร์ต PgBouncer ถูกเปิดเผยบนโฮสต์                                     | ️ ปานกลาง (Medium)     | ทราบแล้ว (Known)     | ผูกเฉพาะ localhost หรือใช้ reverse proxy                                                            |
-| 2   | Node-RED Admin UI ไม่มีระบบยืนยันตัวตน                                | สูง (High)            | ทราบแล้ว (Known)     | เพิ่ม `adminAuth` ใน settings.js ก่อนขึ้น production                                                |
-| 3   | SNMP community string อยู่ในรูปแบบข้อความธรรมดา (plain text)          | ️ ปานกลาง (Medium)     | ทราบแล้ว (Known)     | ย้ายไปไว้ในตัวแปรสภาพแวดล้อม (environment variable)                                                 |
-| 4   | PgBouncer ใช้ AUTH_TYPE: plain                                        | ️ ปานกลาง (Medium)     | ทราบแล้ว (trade-off) | พิจารณาการทำแฮชรหัสผ่านที่ต้นทาง                                                                    |
-| 5   | มีการฝัง GitHub PAT ใน `.mimocode/mimocode.json` (การตั้งค่า AI tool) | สูง (High)            | ทราบแล้ว (Known)     | ยกเลิก token ที่ GitHub; แทนที่ด้วย placeholder ตัวแปรสภาพแวดล้อม `${GITHUB_PERSONAL_ACCESS_TOKEN}` |
+หากพบช่องโหว่ด้านความปลอดภัย:
+
+1. **ห้าม** เปิด issue, pull request หรือ discussion สาธารณะบน GitHub
+2. รายงานแบบส่วนตัวผ่านแท็บ **Security** ของ repository (GitHub private vulnerability reporting) หรือติดต่อผู้ดูแลโดยตรง
+3. ระบุคำอธิบาย ขั้นตอนทำซ้ำ ส่วนประกอบที่ได้รับผลกระทบ และผลกระทบที่อาจเกิด ห้ามแนบ credential จริงหรือข้อมูลการผลิตในรายงาน
+4. จะได้รับการตอบกลับครั้งแรกภายใน 48 ชั่วโมง
+
+เฉพาะ branch `main` เท่านั้นที่ได้รับการแก้ไขด้านความปลอดภัย
 
 ---
 
-## รายการตรวจสอบการเสริมความปลอดภัยสำหรับ Production
+## Repository นี้เป็นแบบสาธารณะ
 
-### ก่อนให้สิทธิ์การเข้าถึงเครือข่าย
+ทุกสิ่งที่ commit ไว้ที่นี่ — รวมถึงประวัติ git ทั้งหมดและทุก branch ที่ push — เป็นข้อมูลสาธารณะ และอาจถูก cache หรือ fork ไปแล้ว การลบในภายหลังไม่ได้ทำให้กลับเป็นข้อมูลส่วนตัว ห้าม commit สิ่งต่อไปนี้:
 
-- [x] PgBouncer ไม่มีการผูกพอร์ตกับโฮสต์ — ไม่เคยมีการเปิดเผยใน `docker-compose.yaml` หลัก ไม่ใช่การเปลี่ยนแปลงใน prod-overlay
-- [ ] เปิดใช้งาน Node-RED adminAuth (สร้าง bcrypt hash)
-- [x] Grafana ไม่สามารถเข้าถึงได้โดยตรงจากโฮสต์ — `docker-compose.yaml` ไม่ได้กำหนดพอร์ตโฮสต์ให้กับมันเลย; บริการ `proxy` (nginx) เป็นเพียงจุดเข้าถึงเดียวที่เปิดเผย (พอร์ต 3000) ซึ่งจะอยู่หน้าทั้ง Grafana และ `alarm-api` และควบคุมการเข้าถึงส่วนหลังผ่านการตรวจสอบ `auth_request` กับ session ของ Grafana เอง (ดูที่ `docs/architecture/SECURITY_MODEL.md`)
-- [ ] ทบทวน Docker secrets ทั้งหมดในไดเรกทอรี `secrets/`
-- [ ] เปิดใช้งาน SNMPv3 สำหรับอุปกรณ์ production (แทนที่ v2c)
+- `.env` หรือ credential, token, key หรือรหัสผ่านจริงใด ๆ (หากหลุดเข้า commit แม้ครั้งเดียว ต้องเปลี่ยนทันที)
+- ข้อมูลการผลิต: dump ฐานข้อมูล, ไฟล์ CSV ที่ export, ไฟล์ export ของแดชบอร์ดที่มีค่าจริง
+- ไฟล์ CAD ของชั้น 1 หรือสิ่งใดที่ได้มาจากไฟล์เหล่านั้น: ขนาด พิกัด พื้นที่ ชื่อ layer ข้อความบนป้าย
+- รหัสเครื่องจักรหรือรหัสไลน์จริง เลข lot หรือเลข job ชื่อ host ภายใน และ IP address ภายใน
+- ข้อมูลส่วนบุคคล (ชื่อ อีเมล หมายเลขโทรศัพท์)
+
+ตัวสแกนข้อมูลลับใน CI (`tests/lint/private-data-leak-scanner.js`) ตรวจจับจาก **path ของไฟล์เท่านั้น** จึงต้องทบทวนทุก diff เพื่อหาเนื้อหาข้างต้นก่อน push
+
+---
+
+## ข้อจำกัดที่ทราบ
+
+| # | ปัญหา | ความรุนแรง | สถานะ | แผนแก้ไข |
+| --- | --- | --- | --- | --- |
+| 1 | ค่าทุกค่าใน `.env.example` เป็นข้อมูลสาธารณะ | สูง | ทราบแล้ว | สร้างค่าใหม่ให้ทุก secret ก่อนการติดตั้งจริงทุกครั้ง (ดู [คู่มือผู้ดูแลระบบ](docs/admin/ADMIN_MANUAL.md#รายการตรวจความปลอดภัยก่อนใช้งานจริง)) |
+| 2 | pgAdmin เปิดพอร์ต `5050` บนทุก interface และใช้ image tag `latest` | ปานกลาง | ทราบแล้ว | bind ไว้ที่ `127.0.0.1` หรือกั้นด้วยไฟร์วอลล์ และระบุ image tag ตายตัว |
+| 3 | ประตูหน้า nginx ให้บริการเป็น HTTP ธรรมดา | ปานกลาง | ทราบแล้ว | ทำ TLS termination หน้าหรือภายใน `ims-proxy` |
+| 4 | SNMP v2c community string เก็บรายอุปกรณ์ใน `public.devices` เป็นข้อความธรรมดา | ปานกลาง | ทราบแล้ว | ย้ายอุปกรณ์ที่ใช้งานจริงไปใช้ SNMPv3 (authPriv) |
+| 5 | PgBouncer ใช้ `auth_type = plain` | ปานกลาง | ทราบแล้ว (ข้อแลกเปลี่ยน) | ใช้เฉพาะเครือข่ายภายใน และพิจารณาใช้ SCRAM ตลอดเส้นทาง |
+| 6 | `observability-archiver` mount `/var/run/docker.sock` | ปานกลาง | ทราบแล้ว | flag `:ro` ไม่ได้จำกัดการเรียก Docker API ให้ถือว่าคอนเทนเนอร์นี้มีสิทธิ์สูง หรือเลิก mount |
+| 7 | การสแกน secret ใน CI ไม่บล็อกการ build และตรวจเฉพาะ working tree (`gitleaks --no-git ... \|\| true`) | ปานกลาง | ทราบแล้ว | ทำให้บล็อกได้และสแกนประวัติ (`gitleaks detect` โดยไม่ใช้ `--no-git`) และสแกนประวัติเต็มบนเครื่องก่อน push |
+| 8 | image ของ Grafana image renderer ใช้ tag `latest` | ต่ำ | ทราบแล้ว | ระบุ image tag ตายตัว |
+| — | พอร์ต PgBouncer เปิดบน host | — | **แก้แล้ว** | `docker-compose.yaml` หลักไม่เคยเปิดพอร์ตของ PgBouncer |
+| — | Node-RED editor ไม่มีการยืนยันตัวตน | — | **แก้แล้ว** | `nodered_data/settings.js` ไม่ยอมเริ่มหากไม่ได้ตั้ง `NODE_RED_ADMIN_PASSWORD_HASH` และพอร์ต editor bind ไว้ที่ `127.0.0.1` |
+
+---
+
+## รายการตรวจการเสริมความปลอดภัยก่อนใช้งานจริง
+
+### ก่อนเปิดให้เข้าถึงผ่านเครือข่าย
+
+- [x] PgBouncer ไม่มีการ bind พอร์ตบน host
+- [x] Node-RED editor ต้องมี hash รหัสผ่านผู้ดูแลและ bind ไว้ที่ `127.0.0.1`
+- [x] Grafana ไม่มีพอร์ตบน host; service `proxy` (nginx) เป็นทางเข้า UI เพียงทางเดียวที่พอร์ต 3000 เป็นด่านหน้าของ Grafana, `alarm-api`, Factory Twin และ endpoint รับข้อมูล LDI โดย `alarm-api` และทวินต้องผ่านการตรวจ `auth_request` กับ session ของ Grafana (ดู `docs/architecture/SECURITY_MODEL.md`)
+- [ ] แทนค่าทุกค่าที่คัดลอกจาก `.env.example` ด้วย secret ที่สร้างใหม่
+- [ ] จำกัด pgAdmin (`5050`) ไว้เฉพาะ host หรือเครือข่ายผู้ดูแลระบบ
+- [ ] เพิ่ม TLS หน้าประตูหน้า nginx
+- [ ] เปิดใช้ SNMPv3 กับอุปกรณ์ที่ใช้งานจริง (แทน v2c)
 
 ### ก่อนเชื่อมต่อกับเครื่องจักรจริง
 
-- [ ] ตรวจสอบการยืนยันตัวตนและการเข้ารหัสของ SNMPv3
-- [ ] ทดสอบขั้นตอนการหมุนเวียน community string
-- [ ] ตรวจสอบสิทธิ์การเข้าถึง OID ทั้งหมด
-- [ ] เปิดใช้งาน audit logging บนอุปกรณ์เป้าหมาย
+- [ ] ตรวจการยืนยันตัวตนและการเข้ารหัสของ SNMPv3
+- [ ] ทดสอบขั้นตอนเปลี่ยน community string / credential
+- [ ] ตรวจสิทธิ์การเข้าถึง OID ทั้งหมด
+- [ ] เปิด audit log บนอุปกรณ์ปลายทาง
 
-### แนวทางปฏิบัติด้านความปลอดภัยอย่างต่อเนื่อง
+### แนวปฏิบัติด้านความปลอดภัยต่อเนื่อง
 
-- [ ] หมุนเวียน Docker secrets ทุกไตรมาส
-- [ ] ติดตามการอัปเดต CVE ใน base images
-- [ ] ทบทวนผลการสแกน Gitleaks ทุกสัปดาห์
-- [ ] ตรวจสอบบันทึกการเข้าถึง (access logs) ของ Prometheus/Alertmanager
-
----
-
-## ️ การควบคุมความปลอดภัย
-
-### ความปลอดภัยเครือข่าย
-
-| การควบคุม (Control)              | การดำเนินการ (Implementation)                                  |
-| -------------------------------- | -------------------------------------------------------------- |
-| **การแยก Container (Isolation)** | Docker bridge network — บริการต่างๆ สื่อสารกันผ่าน DNS         |
-| **ไม่เปิดเผยพอร์ตโฮสต์**         | บริการภายในสามารถเข้าถึงได้เฉพาะภายในเครือข่าย Docker เท่านั้น |
-| **SNMP Community**               | ใช้ community string แบบอิงไฟล์ (ไม่ได้ฝังโค้ดไว้ใน flows)     |
-| **การจัดการความลับ (Secrets)**   | ใช้ Docker secrets ในไดเรกทอรี `secrets/` (อยู่ใน gitignore)   |
-
-### ความปลอดภัยแอปพลิเคชัน
-
-| การควบคุม (Control)            | การดำเนินการ (Implementation)                                                                                        |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| **การป้องกัน SQL Injection**   | ใช้ `safeStr()` escape การป้อนข้อมูลจากผู้ใช้ทั้งหมด                                                                 |
-| **การหมุนเวียนข้อมูลประจำตัว** | ต้องหมุนเวียนด้วยตนเองสำหรับ `flows_cred.json` ที่หมดอายุ                                                            |
-| **ความปลอดภัย CI/CD**          | การสแกนด้วย Gitleaks, ใช้ stub secrets สำหรับการตรวจสอบ                                                              |
-| **นโยบายปลั๊กอิน**             | ใช้เฉพาะ plugins/MCP/skills ที่เป็น open-source เท่านั้น (MIT/ISC/BSD/Apache-2.0) — ตรวจสอบกับรายการปัจจุบันด้านล่าง |
-
-### ความปลอดภัยข้อมูล
-
-| การควบคุม (Control)           | การดำเนินการ (Implementation)                       |
-| ----------------------------- | --------------------------------------------------- |
-| **การเข้าถึงฐานข้อมูล**       | PgBouncer connection pooling พร้อมการยืนยันตัวตน    |
-| **การเข้ารหัสการสำรองข้อมูล** | ฐานข้อมูลที่ถูกดัมพ์ควรได้รับการเข้ารหัสก่อนจัดเก็บ |
-| **การทำความสะอาด Log**        | ไม่มีการบันทึกข้อมูลความลับใน Docker container logs |
+- [ ] เปลี่ยน secret อย่างน้อยทุกไตรมาส และทันทีเมื่อสงสัยว่าถูกเปิดเผย
+- [ ] เฝ้าระวัง CVE ของ base image (`node scripts/production-assurance.js --profile=security`)
+- [ ] ทบทวนผลการสแกน secret ในทุก pull request
+- [ ] ตรวจ access log ของ Prometheus/Alertmanager
 
 ---
 
-## ความปลอดภัยเครื่องมือ AI (MCP / Skills / Plugins)
+## มาตรการควบคุมความปลอดภัย
 
-### รายการห่วงโซ่อุปทานของ Agent
+### ความปลอดภัยของเครือข่าย
 
-เครื่องมือ AI ทั้งหมดเป็น open-source (MIT / Apache-2.0) ตามนโยบายปลั๊กอิน (Plugin Policy) ตำแหน่งการติดตั้ง: `.agents/skills/` (universal), `.mimocode/` (MiMo Code), `.claude/skills/` + `.github/skills/` (Claude Code / Copilot symlinks)
+| มาตรการ | การนำไปใช้ |
+| --- | --- |
+| **การแยกคอนเทนเนอร์** | เครือข่าย Docker bridge (`ims-internal`, `ims-monitoring`); service สื่อสารกันด้วยชื่อ DNS |
+| **เปิดสู่ host ให้น้อยที่สุด** | มีเพียงประตูหน้า nginx (3000) และ pgAdmin (5050) ที่รับการเชื่อมต่อบนทุก interface ส่วน Node-RED, Prometheus, Alertmanager และ Blackbox bind ไว้ที่ `127.0.0.1` |
+| **การรับข้อมูลที่ยืนยันตัวตน** | `/ldi-telemetry` และ `/inject` ต้องส่ง header `x-api-key` ที่ตรงกับ `INGEST_API_KEY` |
+| **การจัดการ secret** | `.env` (อยู่ใน .gitignore) ส่งผ่านตัวแปรบังคับ `${VAR:?}` ของ Docker Compose ไม่มีการอ่านจากไดเรกทอรี `secrets/` |
 
-| รายการ (Item)        | รายละเอียด (Inventory)                                                                                                                                                                                                            | แหล่งที่มา (Sources)                                                                                     |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **MCP servers (12)** | context7, playwright, puppeteer, github, filesystem, everything, sequential-thinking, memory, fetch, postgres, git, time — mirrored in `.mimocode/mimocode.json`, `.mcp.json`, `.opencode/opencode.json`, `.vscode/settings.json` | modelcontextprotocol/servers, PyPI (`mcp-server-fetch/time/git`), npm (`@modelcontextprotocol/server-*`) |
-| **Skills (90)**      | 26 ภายใน (เฉพาะ IMS) + 41 mattpocock/skills + 9 vercel-labs/agent-skills + 14 obra/superpowers                                                                                                                                    | github.com/mattpocock/skills, vercel-labs/agent-skills, obra/superpowers (ทั้งหมดเป็น MIT)               |
-| **Plugins (8)**      | `superpowers@git+…` entries ใน `.mimocode/mimocode.json` (obra, mattpocock, vercel-labs, garrytan/gstack, addyosmani, wshobson/agents, affaan-m/ECC, pcvelz)                                                                      | ทั้งหมดเป็น MIT, open-source                                                                             |
+### ความปลอดภัยของแอปพลิเคชัน
 
-### ข้อมูลความลับในการตั้งค่าเครื่องมือ AI
+| มาตรการ | การนำไปใช้ |
+| --- | --- |
+| **ป้องกัน SQL injection** | ใช้ parameterised query ใน service; ใช้ `safeStr()` escape ใน function node ของ Node-RED |
+| **role ฐานข้อมูลสิทธิ์น้อยที่สุด** | `grafana_reader` (อ่านอย่างเดียว) สำหรับ Grafana, `alarm_api_writer` (`SELECT`+`UPDATE` บน `ldi_alarm_lifecycle` เท่านั้น) สำหรับ `alarm-api` |
+| **credential ของ Node-RED** | `pg_config` ใช้ฟิลด์ผู้ใช้/รหัสผ่านแบบ environment; credential ของ flow เข้ารหัสด้วย `NODE_RED_CREDENTIAL_SECRET` |
+| **ความปลอดภัยของ CI/CD** | ตัวสแกน path ข้อมูลลับ, linter ความสะอาดของ repository, gitleaks (ดูข้อจำกัดข้อ 7), secret ตัวอย่างสำหรับตรวจ compose |
+| **นโยบาย plugin** | ใช้เฉพาะ plugin, MCP server และ skill แบบโอเพนซอร์ส (MIT/ISC/BSD/Apache-2.0) |
 
-- `.mimocode/mimocode.json` และ `.vscode/settings.json` **อยู่ใน gitignore** — local tokens อาจอยู่ที่นี่ แต่ยังคงต้องปฏิบัติต่อสิ่งเหล่านี้เหมือนเป็นข้อมูลความลับและหมุนเวียนหากมีการแชร์
-- `.mcp.json` และ `.opencode/opencode.json` **ถูกติดตามโดย git** — ต้องใช้ placeholders ตัวแปรสภาพแวดล้อม `${VAR}` (เช่น `${GITHUB_PERSONAL_ACCESS_TOKEN}`, `${POSTGRES_PASSWORD}`) ห้ามใส่ข้อมูลประจำตัว (credentials) โดยตรง
-- MCP Python servers จำเป็นต้อง **กำหนดเวอร์ชัน SDK เป็น `mcp==X.Y.Z`** อย่างชัดเจนใน launch args (ดู `knowledge.md`) — การกำหนดเวอร์ชันอย่างชัดเจนช่วยป้องกันไม่ให้ความคลาดเคลื่อนของห่วงโซ่อุปทานมาทำลายหรือแย่งการควบคุม toolchain
+### ความปลอดภัยของข้อมูล
 
-### ️ แพ็กเกจ Typosquat / Canary — ห้ามติดตั้งเด็ดขาด
-
-แพ็กเกจ npm ชื่อ `mcp-server-fetch` และ `mcp-server-git` เป็น **canaries สำหรับงานวิจัยด้านความปลอดภัย** (`node-canaries` / `npx-canary`) ที่ปลอมตัวเป็น MCP servers ของจริง ห้ามติดตั้งแพ็กเกจเหล่านี้ไม่ว่าในกรณีใดๆ — ให้ใช้แพ็กเกจอย่างเป็นทางการของ PyPI (`uvx mcp-server-*`) หรือแพ็กเกจ npm `@modelcontextprotocol/server-*` แทน ตรวจสอบผู้ดูแลแพ็กเกจ (maintainer) + พื้นที่เก็บข้อมูล (repository) เสมอก่อนเพิ่มลงในการตั้งค่า AI ใดๆ
-
----
-
-## การรายงานช่องโหว่ (Reporting Vulnerabilities)
-
-หากคุณค้นพบช่องโหว่ด้านความปลอดภัย:
-
-1. **ห้าม** เปิด Issue บน GitHub แบบสาธารณะ
-2. ส่งอีเมลถึงทีมรักษาความปลอดภัยโดยตรง หรือใช้การรายงานช่องโหว่แบบส่วนตัวของ GitHub
-3. รวมข้อมูลดังนี้: คำอธิบาย ขั้นตอนในการจำลองปัญหา (steps to reproduce) และผลกระทบที่อาจเกิดขึ้น
-4. โปรดให้เวลา 48 ชั่วโมงสำหรับการตอบกลับในเบื้องต้น
+| มาตรการ | การนำไปใช้ |
+| --- | --- |
+| **การเข้าถึงฐานข้อมูล** | connection pooling ผ่าน PgBouncer พร้อมการยืนยันตัวตน ไม่มีพอร์ตฐานข้อมูลเปิดบน host |
+| **การสำรองข้อมูล** | `scripts/backup-db.sh` เขียนลง `./backups/` (อยู่ใน .gitignore) ต้องเข้ารหัส dump ก่อนนำออกจาก host |
+| **การกรองข้อมูลใน log** | ไม่มี secret ใน log ของคอนเทนเนอร์ วินิจฉัยปัญหาการยืนยันตัวตนด้วยการตรวจว่าตั้งค่าตัวแปรไว้หรือไม่ ห้ามพิมพ์ค่าออกมา |
 
 ---
 
-## เอกสารอ้างอิง (References)
+## ความปลอดภัยของเครื่องมือ AI (MCP / Skills / Plugins)
 
-- [แนวทางปฏิบัติด้านความปลอดภัยของ Docker](https://docs.docker.com/engine/security/)
-- [ความปลอดภัยของ PostgreSQL](https://www.postgresql.org/docs/current/auth.html)
-- [ความปลอดภัยของ SNMPv3](https://datatracker.ietf.org/doc/html/rfc3411)
-- [ความปลอดภัยของ Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/security/)
+### ตำแหน่งการตั้งค่าเครื่องมือ AI
+
+| ตำแหน่ง | git ติดตามหรือไม่ | กฎ |
+| --- | --- | --- |
+| `.agents/skills/`, `.clinerules/`, `.cursor/`, `.windsurf/`, `.superpowers/`, `skills-lock.json`, `AGENTS.md`, `CLAUDE.md` | ติดตาม — เป็นสาธารณะ | ใส่ได้เฉพาะคำสั่ง ห้ามใส่ token ชื่อ host credential ข้อมูลโรงงาน หรือข้อมูลส่วนบุคคล |
+| `.mimocode/`, `.opencode/`, `.mcp.json`, `.claude/`, `.vscode/settings.json`, `ABOUT-ME.md`, `START.md`, `CONTEXT.md` | ไม่ติดตาม — อยู่ใน .gitignore | token บนเครื่องอาจอยู่ที่นี่ได้ แต่ต้องถือเป็น secret ห้าม force-add ไฟล์เหล่านี้ และต้องเปลี่ยน token ที่เคยแชร์ |
+
+MCP server ที่เขียนด้วย Python ควรเริ่มด้วย SDK ที่ระบุเวอร์ชันตายตัว `mcp==X.Y.Z` เพื่อไม่ให้การเปลี่ยนแปลงใน supply chain เปลี่ยนเครื่องมือโดยไม่รู้ตัว
+
+### แพ็กเกจ Typosquat / Canary — ห้ามติดตั้งเด็ดขาด
+
+แพ็กเกจ npm `mcp-server-fetch` และ `mcp-server-git` เป็น **canary สำหรับงานวิจัยด้านความปลอดภัย** (`node-canaries` / `npx-canary`) ที่ปลอมเป็น MCP server จริง ห้ามติดตั้งไม่ว่ากรณีใด — ให้ใช้แพ็กเกจทางการจาก PyPI (`uvx mcp-server-*`) หรือ npm `@modelcontextprotocol/server-*` แทน และตรวจผู้ดูแลกับ repository ของแพ็กเกจทุกครั้งก่อนเพิ่มลงในการตั้งค่า AI ใด ๆ
+
+---
+
+## ข้อมูลอ้างอิง
+
+- [Docker Security Best Practices](https://docs.docker.com/engine/security/)
+- [PostgreSQL Client Authentication](https://www.postgresql.org/docs/current/auth.html)
+- [SNMPv3 Architecture (RFC 3411)](https://datatracker.ietf.org/doc/html/rfc3411)
+- [Grafana Security](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/)
 
 ---
 
 <div align="center">
 
-**นโยบายความปลอดภัยของ IMS — เวอร์ชัน 1.0**
+**IMS Security Policy — เวอร์ชัน 1.1**
 
-_กรุณาทบทวนก่อนการ deploy ขึ้น production ทุกครั้ง_
+_ทบทวนก่อน deploy ขึ้นระบบจริงทุกครั้ง_
 
 </div>

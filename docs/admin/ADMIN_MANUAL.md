@@ -148,7 +148,7 @@ All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded
 | `ALARM_API_DB_PASSWORD`  | public example value | `.env` → `alarm_api_writer` role (migration `078-alarm-api-writer-role.sql`) | **CHANGE** — scoped to `SELECT`+`UPDATE` on `ldi_alarm_lifecycle`, but still a real DB credential |
 | `GRAFANA_ADMIN_PASSWORD` | public example value | `.env` → Grafana admin | **CHANGE** — dashboard edit + datasource access |
 | `ALERT_WEBHOOK_TOKEN`, `GRAFANA_RENDERER_TOKEN` | public example value | `.env` | **CHANGE** — webhook and renderer shared secrets |
-| `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH` | public example value / empty | `.env` → Node-RED | **CHANGE** before storing any credential in a flow; an empty hash leaves the editor without admin auth |
+| `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH` | public example value / empty | `.env` → Node-RED | **CHANGE** before storing any credential in a flow; `nodered_data/settings.js` refuses to start Node-RED when the hash is empty |
 | `PGADMIN_DEFAULT_PASSWORD` | public example value | `.env` → pgAdmin | **CHANGE** — pgAdmin is published on all interfaces |
 
 Every value in `.env.example` is public (the repository is public). Treat each one as compromised and never deploy it.

@@ -148,7 +148,7 @@ migration ทุกไฟล์เขียนให้รันซ้ำได�
 | `ALARM_API_DB_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → role `alarm_api_writer` (migration `078-alarm-api-writer-role.sql`) | **เปลี่ยน** — จำกัดสิทธิ์แค่ `SELECT`+`UPDATE` บน `ldi_alarm_lifecycle` แต่ยังเป็น credential ของฐานข้อมูลจริง |
 | `GRAFANA_ADMIN_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → ผู้ดูแล Grafana | **เปลี่ยน** — แก้ไขแดชบอร์ดและ datasource ได้ |
 | `ALERT_WEBHOOK_TOKEN`, `GRAFANA_RENDERER_TOKEN` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` | **เปลี่ยน** — shared secret ของ webhook และ renderer |
-| `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH` | ค่าตัวอย่างที่เป็นสาธารณะ / ค่าว่าง | `.env` → Node-RED | **เปลี่ยน** ก่อนเก็บ credential ใด ๆ ใน flow หาก hash ว่าง editor จะไม่มีการยืนยันตัวตนผู้ดูแล |
+| `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH` | ค่าตัวอย่างที่เป็นสาธารณะ / ค่าว่าง | `.env` → Node-RED | **เปลี่ยน** ก่อนเก็บ credential ใด ๆ ใน flow หาก hash ว่าง `nodered_data/settings.js` จะไม่ยอมเริ่ม Node-RED |
 | `PGADMIN_DEFAULT_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → pgAdmin | **เปลี่ยน** — pgAdmin เปิดพอร์ตบนทุก interface |
 
 ค่าทุกค่าใน `.env.example` เป็นข้อมูลสาธารณะ (repository เป็นแบบสาธารณะ) ให้ถือว่าทุกค่าถูกเปิดเผยแล้ว และห้ามนำไปใช้งานจริง

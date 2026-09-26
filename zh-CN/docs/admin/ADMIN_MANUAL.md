@@ -148,7 +148,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 | `ALARM_API_DB_PASSWORD` | 公开的示例值 | `.env` → `alarm_api_writer` 角色（迁移 `078-alarm-api-writer-role.sql`） | **必须更改**——权限仅限 `ldi_alarm_lifecycle` 上的 `SELECT`+`UPDATE`，但仍是真实的数据库凭据 |
 | `GRAFANA_ADMIN_PASSWORD` | 公开的示例值 | `.env` → Grafana 管理员 | **必须更改**——可编辑仪表板与数据源 |
 | `ALERT_WEBHOOK_TOKEN`、`GRAFANA_RENDERER_TOKEN` | 公开的示例值 | `.env` | **必须更改**——webhook 与 renderer 的共享密钥 |
-| `NODE_RED_CREDENTIAL_SECRET`、`NODE_RED_ADMIN_PASSWORD_HASH` | 公开的示例值 / 空 | `.env` → Node-RED | 在任何 flow 中保存凭据之前**必须更改**；哈希为空时编辑器没有管理员认证 |
+| `NODE_RED_CREDENTIAL_SECRET`、`NODE_RED_ADMIN_PASSWORD_HASH` | 公开的示例值 / 空 | `.env` → Node-RED | 在任何 flow 中保存凭据之前**必须更改**；哈希为空时 `nodered_data/settings.js` 会拒绝启动 Node-RED |
 | `PGADMIN_DEFAULT_PASSWORD` | 公开的示例值 | `.env` → pgAdmin | **必须更改**——pgAdmin 在所有接口上发布端口 |
 
 `.env.example` 中的每个值都是公开的（仓库为公开仓库）。应将其全部视为已泄露，切勿用于部署。
