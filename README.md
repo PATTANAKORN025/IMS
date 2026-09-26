@@ -288,7 +288,7 @@ flowchart LR
 
 15 dashboards — 5 infrastructure, 10 manufacturing (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, provisioned into separate Grafana folders — see **[Ownership](docs/architecture/OWNERSHIP.md)** for the domain boundary). Full table with panel counts and descriptions: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — auto-generated from the dashboard JSON itself (`node scripts/generate-dashboard-inventory.js`), CI-checked so it can't silently drift from the real dashboards the way a hand-typed table can.
 
-**Design System:** Cyberpunk HUD — `#030407` background, Tailwind palette (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), Roboto Mono for stat values, glassmorphism panels, Grid-24 overlap-free layout.
+**Design System:** Cyberpunk HUD — `#030407` background, Tailwind palette (`#22C55E` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#00F2FE` Info, `#3B82F6` Accent — the approved tokens in [GRAFANA_DESIGN_SYSTEM.md](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) §2.1), Roboto Mono for stat values, glassmorphism panels, Grid-24 overlap-free layout.
 
 </details>
 

@@ -288,7 +288,7 @@ flowchart LR
 
 15 个仪表板——5 个基础设施、10 个制造（`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`，分别预置到不同的 Grafana 文件夹；领域边界见 **[Ownership](docs/architecture/OWNERSHIP.md)**）。含面板数量与说明的完整表格见 **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)**：该表由仪表板 JSON 自动生成（`node scripts/generate-dashboard-inventory.js`）并经 CI 检查，不会像手工表格那样悄悄偏离真实仪表板。
 
-**设计系统：** Cyberpunk HUD —— `#030407` 背景，Tailwind 调色板（`#10B981` 正常、`#F59E0B` 警告、`#EF4444` 严重、`#3B82F6` 强调），统计数值使用 Roboto Mono，玻璃拟态面板，Grid-24 无重叠布局。
+**设计系统：** Cyberpunk HUD —— `#030407` 背景，Tailwind 调色板（`#22C55E` 正常、`#F59E0B` 警告、`#EF4444` 严重、`#00F2FE` 信息、`#3B82F6` 强调——即 [GRAFANA_DESIGN_SYSTEM.md](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) §2.1 中批准的 token），统计数值使用 Roboto Mono，玻璃拟态面板，Grid-24 无重叠布局。
 
 </details>
 

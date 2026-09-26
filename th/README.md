@@ -288,7 +288,7 @@ flowchart LR
 
 15 แดชบอร์ด — โครงสร้างพื้นฐาน 5 ชุด และการผลิต 10 ชุด (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/` provision แยกโฟลเดอร์ใน Grafana — ขอบเขตโดเมนดูที่ **[Ownership](docs/architecture/OWNERSHIP.md)**) ตารางเต็มพร้อมจำนวน panel และคำอธิบายอยู่ที่ **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** ซึ่งสร้างอัตโนมัติจาก JSON ของแดชบอร์ด (`node scripts/generate-dashboard-inventory.js`) และตรวจใน CI จึงไม่คลาดจากแดชบอร์ดจริงแบบตารางที่พิมพ์เอง
 
-**Design System:** Cyberpunk HUD — พื้นหลัง `#030407`, จานสี Tailwind (`#10B981` ปกติ, `#F59E0B` เตือน, `#EF4444` วิกฤต, `#3B82F6` สีเน้น), ตัวเลขสถิติใช้ Roboto Mono, panel แบบ glassmorphism, layout Grid-24 ไม่ซ้อนทับกัน
+**Design System:** Cyberpunk HUD — พื้นหลัง `#030407`, จานสี Tailwind (`#22C55E` ปกติ, `#F59E0B` เตือน, `#EF4444` วิกฤต, `#00F2FE` ข้อมูลทั่วไป, `#3B82F6` สีเน้น — token ที่อนุมัติใน [GRAFANA_DESIGN_SYSTEM.md](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) §2.1), ตัวเลขสถิติใช้ Roboto Mono, panel แบบ glassmorphism, layout Grid-24 ไม่ซ้อนทับกัน
 
 </details>
 
