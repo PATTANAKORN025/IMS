@@ -9,7 +9,7 @@
  <p>
  <img src="../assets/icons/gb-us.svg" width="16" align="center"/> <b>English</b> |
  <a href="../../th/docs/architecture/ARCHITECTURE.md"><img src="../assets/icons/th.svg" width="16" align="center"/> <b>ไทย</b></a> |
- <a href="../../zh-CN/docs/architecture/ARCHITECTURE.md"><img src="../assets/icons/cn.svg" width="16" align="center"/> <b>简体中文</b></a>
+ <a href="../../zh-CN/docs/architecture/ARCHITECTURE.md"><img src="../assets/icons/tw.svg" width="16" align="center"/> <b>简体中文</b></a>
  </p>
 </div>
 

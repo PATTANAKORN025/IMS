@@ -12,7 +12,7 @@
   <p>
     <a href="../../docs/README.md"><img src="../../docs/assets/icons/gb-us.svg" width="16" align="center"/> English</a> |
     <a href="README.md"><img src="../../docs/assets/icons/th.svg" width="16" align="center"/> ไทย</a> |
-    <a href="../../zh-CN/docs/README.md"><img src="../../docs/assets/icons/cn.svg" width="16" align="center"/> 简体中文</a>
+    <a href="../../zh-CN/docs/README.md"><img src="../../docs/assets/icons/tw.svg" width="16" align="center"/> 简体中文</a>
   </p>
 </div>
 

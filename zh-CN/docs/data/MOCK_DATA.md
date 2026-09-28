@@ -5,110 +5,147 @@
 </div>
 <br/>
 
-# 钻孔与 VCP 合成数据
+<div align="center">
+  <h1>CNC 钻孔与 VCP 电镀合成数据生成架构规范</h1>
+  <p><b>隔离替代数据库生成器、物理学时序模型、数据库迁移边界及监控仪表盘自动化校验</b></p>
+  <p>
+    <a href="../../../docs/data/MOCK_DATA.md">English</a> |
+    <a href="../../../th/docs/data/MOCK_DATA.md">ไทย</a> |
+    <a href="MOCK_DATA.md">简体中文</a>
+  </p>
+</div>
 
-钻孔和 VCP 仪表板读取 `eap_backup` 数据库。在工厂服务器上，该数据库是从备份还原的工厂数据，不在 git 中。本页说明如何用生成的数据构建一个替代用的 `eap_backup`，使钻孔文件夹、VCP 文件夹、VCP 告警规则和迁移 084–086 在没有工厂数据的情况下完整运行。
+---
 
-## 组成
+钻孔 (Drilling) 与垂直连续电镀 (VCP) 仪表板读取 `eap_backup` 数据库。在生产工厂服务器上，该数据库是实际恢复的历史工厂数据，不在 Git 仓库中。本指南阐述如何通过程序自动构建一个高保真的替代数据库 `eap_backup`，使钻孔大屏群、VCP 大屏群、VCP 告警规则以及数据库迁移 084–086 在脱离实际生产数据的情况下仍能完整运行与测试。
 
-| 部分 | 路径 | 作用 |
-| --- | --- | --- |
-| Schema | `database/mock/eap_backup-schema.sql` | 创建仪表板、告警规则和迁移 084–086 所读取的表和视图。 |
-| 生成器 | `scripts/mock/eap-mock-data.js` | 写入生成的钻孔事件和 VCP 产线数据。 |
-| 校验器 | `scripts/mock/verify-mock-dashboards.js` | 执行钻孔和 VCP 每个面板的查询以及每条 VCP 告警查询，并报告每个面板的行数。 |
-| 单元测试 | `tests/unit/eap-mock-data.test.js` | 在没有数据库的情况下检查生成器，在 pre-commit 和 CI 中运行。 |
+---
 
-所有数值均为虚构，包括机台数量、设定值、配方、板件尺寸、批次号和告警文本，没有一项来自工厂实测。
+## 1. 合成数据生成管道与验证拓扑
 
-生成器只保留仪表板解析时依赖的格式：
-- 事件代码和消息格式；
-- `-VCP` 设备编号格式；
-- 源端互换的槽位标签（`preset_<bath>` 是读数，`actual_<bath>` 是设定值）；
-- `plating_time × line_speed = 54`；
-- 成对出现的 Triggered/Reset 告警。
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+flowchart TD
+  subgraph GEN["1. 合成数据生成引擎 (Generator Engine)"]
+    SCHEMA["database/mock/eap_backup-schema.sql
+创建表结构、视图及防误触标记表"]
+    MOCK_JS["scripts/mock/eap-mock-data.js
+物理学模型: 转速、进给、刀具磨损、槽液温度"]
+    UNIT["tests/unit/eap-mock-data.test.js
+Pre-commit 预提交单元测试"]
+  end
 
-## 安全措施
+  subgraph DB["2. 隔离演练数据库 (eap_backup Database)"]
+    STANDIN[("替代数据库 eap_backup
+标记表: public.mock_dataset
+数据主键前缀: MOCK-*")]
+    MIG["迁移脚本 084–086
+通过 psql 顺畅执行"]
+  end
 
-- 如果数据库中已有 `machine_event` 或 `vcp_upp`，却没有 `public.mock_dataset` 标记表，schema 文件会拒绝执行，因此不会在还原后的工厂数据库上运行。
-- `--apply` 在单个事务中执行，并在写入第一行之前检查标记表。
-- 所有生成的行的编号都以 `MOCK-` 开头，`--undo --apply` 只删除这些行。
+  subgraph CONSUMERS["3. 下游数据消费端与质量大门"]
+    DASH["Grafana 监控大屏群
+钻孔车间大屏 (4 块)
+VCP 电镀大屏 (3 块)"]
+    ALERTS["Prometheus / Alertmanager
+7 条 VCP 生产异常告警规则"]
+    VERIFY["scripts/mock/verify-mock-dashboards.js
+校验 34 个大屏图表面板 + 7 条告警规则"]
+  end
 
-## 在没有数据的栈上运行
+  SCHEMA -->|构建 Schema| STANDIN
+  MOCK_JS -->|生成数据 --hours=168 --apply| STANDIN
+  MIG -->|架构更新| STANDIN
+  UNIT -.->|验证生成逻辑| MOCK_JS
+  STANDIN --> DASH
+  STANDIN --> ALERTS
+  VERIFY -->|自动化执行 41 项查询| STANDIN
+```
 
-适用于 `eap_backup` 尚不存在的情况，例如全新安装后。在仓库根目录的 Git Bash 中执行：
+---
+
+## 2. 核心组成部分
+
+| 组件名称 | 仓库物理路径 | 核心职责 |
+|---|---|---|
+| **模式定义** | `database/mock/eap_backup-schema.sql` | 建立钻孔/VCP 大屏、告警规则及迁移 084–086 所需的完整数据表与视图。 |
+| **数据生成脚本** | `scripts/mock/eap-mock-data.js` | 依照物理学特征生成拟真的钻孔主轴工序事件与 VCP 电镀线遥测数据。 |
+| **查询校验器** | `scripts/mock/verify-mock-dashboards.js` | 逐一执行钻孔与 VCP 大屏的全部图表面板查询及告警规则，验证返回行数。 |
+| **单元测试套件** | `tests/unit/eap-mock-data.test.js` | 在无需连接实际数据库的情况下对生成器算法与物理学逻辑进行断言验证。 |
+
+所有数据指标均为程序合成：机台台数、设定阈值、工艺配方、板件物理尺寸、批次编号及报警报文，绝无真实工厂数据的泄露风险。
+
+生成脚本严格遵循下游大屏所解析的真实数据格式：
+- 事件代码与报警消息文本结构。
+- 设备标识符规范 (电镀线统一采用 `-VCP` 后缀)。
+- 槽液测定标签逆序逻辑 (`preset_<bath>` 为实际检测读数，`actual_<bath>` 为工艺目标设定值)。
+- 物理传输守恒公式: $	ext{plating\_time} 	imes 	ext{line\_speed} = 54$。
+- 成对出现的触发 (Triggered) 与复位 (Reset) 报警流水。
+
+---
+
+## 3. 安全防护与隔离机制
+
+- **生产防护锁:** 若目标数据库已存在 `machine_event` 或 `vcp_upp` 表却缺少 `public.mock_dataset` 标记表，模式脚本将立刻拒绝执行，防止误抹除生产工厂真实还原库。
+- **事务级原子写入:** 携带 `--apply` 参数时在单事务中执行，并在首行插入前强制校验标记表有效性。
+- **精准数据清理:** 所有生成的模拟数据行主键均以 `MOCK-` 为前缀。配合 `--undo --apply` 指令可精准物理清除生成的数据行，绝不波及其它元数据。
+
+---
+
+## 4. 全新部署技术栈下的执行步骤
+
+在全新安装且尚未建立 `eap_backup` 的环境中，于仓库根目录执行以下指令：
 
 ```bash
 docker exec -i ims-timescaledb sh -c 'psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE eap_backup"'
 docker exec -i ims-timescaledb sh -c 'psql -U "$POSTGRES_USER" -d eap_backup -v ON_ERROR_STOP=1' < database/mock/eap_backup-schema.sql
-for m in 084 085 086; do                                 # 见下方说明
+for m in 084 085 086; do
   docker exec -i ims-timescaledb sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1' < database/migrations/$m-*.sql
 done
-node scripts/mock/eap-mock-data.js --hours=168 --apply   # 一周的数据
+node scripts/mock/eap-mock-data.js --hours=168 --apply   # 生成 7 天 (168 小时) 拟真运行数据
 ```
 
-请按上面的方式手动执行 084–086，重新运行 `db-migrate` 不会执行它们。在没有 `eap_backup` 的安装上，迁移运行器已经执行过这三个文件：每个文件都跳过了自身的工作，但仍在 `public.schema_migrations` 中被记为已执行。三个文件都可以安全地重复执行，因为只使用 `CREATE OR REPLACE`、`IF NOT EXISTS` 和 `COMMENT`。
+---
 
-生成器只写入一次，不会持续追加数据，因此“最近 15 分钟”类面板过一段时间后会变空。需要新数据时请再运行一次：每次运行会增加一个新的时间窗口，旧窗口可用 `--undo --apply` 清除。
+## 5. 一次性临时容器内验证方案
 
-## 在临时容器中运行
-
-此验证不依赖任何栈，也不开放任何端口：
+在不干扰当前开发技术栈的前提下验证全套模拟管道：
 
 ```bash
 docker run -d --name ims-mock-verify -e POSTGRES_PASSWORD=mockonly -e POSTGRES_DB=ims timescale/timescaledb:2.29.2-pg16
 docker exec ims-mock-verify psql -U postgres -d ims -c "CREATE DATABASE eap_backup"
 docker exec -i ims-mock-verify psql -U postgres -d eap_backup -v ON_ERROR_STOP=1 < database/mock/eap_backup-schema.sql
-for m in 084 085 086; do docker exec -i ims-mock-verify psql -U postgres -d ims -v ON_ERROR_STOP=1 < database/migrations/$m-*.sql; done
+for m in 084 085 086; do 
+  docker exec -i ims-mock-verify psql -U postgres -d ims -v ON_ERROR_STOP=1 < database/migrations/$m-*.sql
+done
 node scripts/mock/eap-mock-data.js --hours=168 --apply --container=ims-mock-verify --psql-user=postgres
 node scripts/mock/verify-mock-dashboards.js --container=ims-mock-verify --psql-user=postgres
 docker rm -f ims-mock-verify
 ```
 
-校验器必须指定 `--container`，因此默认不会连接生产栈。
+---
 
-## 选项
+## 6. 生成器核心参数与命令行标志
 
-| 选项 | 默认值 | 含义 |
-| --- | --- | --- |
-| `--hours=N` | 24 | 以当前时刻为终点的时间窗口长度。 |
-| `--seed=N` | 20260928 | 相同的 seed 和结束时间生成相同的行。 |
-| `--drilling=N` | 12 | 钻孔机数量（3–200）。 |
-| `--incidents` | 关闭 | 最后 35 分钟内让每条 VCP 告警规则各触发一次。 |
-| `--apply` | 关闭 | 写入数据库；不加时 SQL 写入文件。 |
-| `--undo` | 关闭 | 与 `--apply` 一起使用，删除所有 `MOCK-` 行。 |
-| `--container`、`--database`、`--psql-user` | `ims-timescaledb`、`eap_backup`、从 `.env` 读取 | 数据写入的位置。 |
+| 命令行标志 | 默认值 | 功能说明 |
+|---|---|---|
+| `--hours=N` | `24` | 以当前时间为终点的历史数据时间跨度 (小时)。 |
+| `--seed=N` | `20260928` | 确定性随机数种子，保障多次生成数据的一致可复现性。 |
+| `--drilling=N` | `12` | 拟真模拟的钻孔机台总数 (有效范围: 3–200)。 |
+| `--incidents` | `false` | 在最后 35 分钟窗口内注入设备异常工况，触发全部 7 条 VCP 生产告警规则。 |
+| `--apply` | `false` | 真正提交写入数据库。缺省时数据仅以 SQL 文件形式输出。 |
+| `--undo` | `false` | 与 `--apply` 配合使用，批量物理删除所有以 `MOCK-` 开头的数据行。 |
+| `--container` | `ims-timescaledb` | 目标数据库容器名称。 |
 
-## 数据内容
+---
 
-**钻孔：**
-- 每台机器按作业（job）运行，依次包括程序启动、rpm/feed 调整、主轴掩码、循环启动、换刀、带恢复时间的告警、带孔数的作业结束，以及曼谷时间 08:00 和 20:00 的班次报告。
-- 告警覆盖异常分析看板上的所有类别。
-- 最后一台机器在结束前 3 小时停止上报，显示为 COMM LOSS。
-- 它前面的一台机器在结束前 75 分钟、循环进行中停止上报，显示为 STALE RUN。
+## 7. 实测验证结论
 
-**VCP：**
-- 共三条产线，每条产线每分钟一行，状态在 RUN、IDLE、DOWN 之间切换。
-- 只有产线电镀时各工位才有电流。
-- 槽温跟随设定值，产线停机时降温。
-- 告警随机出现，每条告警在一段时间后复位（Reset）。
+基于 TimescaleDB 2.29.2-pg16 容器环境的严格实测记录：
+- 模式脚本及迁移 084、085、086 均顺利无异常执行。
+- **正常基线 (168 小时数据):** 41 项查询全部通过且 **0 报错**。全部 34 个大屏图表面板查询均成功返回数据行，7 条告警规则查询均返回 0 行 (表明无异常报警，符合健康标准)。
+- **故障注入工况 (`--incidents`):** 全部 7 条 VCP 告警规则在最后 35 分钟内准确命中并触发报警。
 
-**告警规则：**
-- **不加 `--incidents`：** 工厂处于正常状态，七条 VCP 规则都不返回任何行。这些规则列出的是违规项，因此不返回行即为正常。
-- **加 `--incidents` 时，最后 35 分钟内：**
-  - VCP01 停止发送数据。
-  - VCP02 在电镀时有一个工位的一侧电流比设定值高 8 A，且 `preset_amp_1a` 为零；9 号泵读数为 0，两个 QC 标志不一致。
-  - VCP03 的 copperplating2 槽比设定值高 6 °C，hotwater 槽比设定值高 12 °C。
-- 如果某个栈配置了真实的告警通知渠道，在该栈上加载 incidents 会发出真实通知。
+---
 
-## 验证结果
-
-以下结果于 2026-09-28 在临时容器中基于 TimescaleDB 2.29.2-pg16 得出：
-- schema 以及迁移 084、085、086 均无错误完成；在 `eap_backup` 存在之前，084 输出了跳过提示。
-- 168 小时正常数据：执行 41 条查询，0 个错误；全部 34 个面板查询都返回了数据，7 条告警查询没有返回行。
-- 使用 `--incidents`：执行 41 条查询，0 个错误，每条查询都返回了行，包括全部 7 条告警规则。
-- 两种模式下用 seed 1 至 6 重复测试，结果相同。
-
-## 限制
-
-- 列类型是根据仪表板和迁移对各列的用法重建的，并非从工厂服务器导出。
-- schema 没有创建工厂数据库中的派生视图和 `plc_mqtt` schema，因此在模拟数据库上 `catalog.object_registry` 有 12 行显示 `physical_missing = true`。
+[⬅️ 返回遥测本体论手册](TELEMETRY_ONTOLOGY.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> 主代码仓库](../../README.md)

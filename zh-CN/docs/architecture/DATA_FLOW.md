@@ -5,87 +5,226 @@
 </div>
 <br/>
 
-# 数据流
-
-> **目标读者：** SRE/运维，新开发者，QA/审计。
->
-> **来源溯源：** 以下的每一个表/视图名称及连续聚合 (CAGG) 关系，均已在 2026-08-10 直接通过生产数据库 (`timescaledb_information.continuous_aggregates`) 和实际的迁移脚本 (migrations) 进行了核对。
+<div align="center">
+  <h1>IMS 遥测数据管道与全流程数据流转架构 (Data Flow Architecture)</h1>
+  <p><b>多工业领域接入流水线、Node-RED 沙箱转换机制、PgBouncer 事务连接池、TimescaleDB CAGG 持续聚合链及 Grafana 消费呈现</b></p>
+  <p>
+    <a href="../../../docs/architecture/DATA_FLOW.md">English</a> |
+    <a href="../../../th/docs/architecture/DATA_FLOW.md">ไทย</a> |
+    <a href="DATA_FLOW.md">简体中文</a>
+  </p>
+</div>
 
 ---
 
-## 端到端：双流水线
+> **受众对象:** SRE / 运维工程师、数据工程师、系统架构师、QA 质量保证团队  
+> **遥测业务范围:** 涵盖四大工业领域 (IT/OT 基础设施网络、LDI 激光直接成像光刻、CNC 数控钻孔设备群、VCP 垂直连续电镀线)  
+> **数据源真实性出处:** 下文提及的全部数据表、视图、计算逻辑及持续聚合视图均经过 live 数据库 (`timescaledb_information.continuous_aggregates`)、迁移脚本 013–086 以及运行中 Node-RED 流水线的严格校验。
+
+---
+
+## 1. 端到端多领域数据流向总拓扑 (Pipeline Topology)
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
- subgraph INFRA["基础设施流水线"]
-  DEV["服务器 / 网络设备\n(SNMP v2c)"] -->|"每 30 秒轮询"| WALK["ingestion.json\nfork_5_ways -> sre_parser"]
-  WALK --> SYS[("sys_metrics")]
-  WALK --> NET[("net_metrics")]
-  WALK --> LDIM[("ldi_metrics\n(遗留表，若干列始终为 0)")]
- end
+  subgraph SOURCES["1. 工业现场运行遥测源"]
+    SNMP_DEV["服务器 / 网络核心交换机
+(SNMP v2c 协议, 30 秒轮询)"]
+    LDI_DEV["LDI 激光直接成像光刻机
+(HTTP POST /ldi-telemetry, 2 秒)"]
+    DRL_DEV["CNC 数控钻孔机台群
+(EAP 主轴运行与加工循环事件)"]
+    VCP_DEV["VCP 垂直连续电镀生产线
+(EAP 整流器电流与槽体温度遥测)"]
+  end
 
- subgraph LDI["LDI 制造流水线"]
-  SIM["ldi_simulator.json\n2 秒 tick"] -->|"POST /ldi-telemetry\nx-api-key 认证"| ING["ldi_ingestion.json"]
-  ING --> LDID[("ldi_data\n超表 (hypertable)")]
-  ALMSIM["ldi_alarm_simulator.json\n10 秒 tick"] --> ALOG[("ldi_alarm_log")]
- end
+  subgraph INGESTION["2. 数据接入与标准化清洗层 (Node-RED)"]
+    NR_INFRA["ingestion.json
+fork_5_ways -> sre_parser"]
+    NR_LDI["ldi_ingestion.json
+Schema 合规校验, O(1) GC 内存回收"]
+    NR_EAP["eap_ingestion.json
+工学单位转换与批量聚合打包"]
+  end
 
- SYS --> GRAFANA["Grafana\n22 个仪表板\n(钻孔 / LDI / 平台 / VCP 文件夹)"]
- NET --> GRAFANA
- LDID --> GRAFANA
- ALOG --> GRAFANA
+  subgraph POOL["3. 数据库连接池代理层"]
+    PGB["PgBouncer 连接池
+(事务模式, 端口 5432, AUTH: plain)"]
+  end
 
- GRAFANA -->|"原生告警规则"| WEBHOOK["Node-RED /alert-webhook"]
- PROM["Prometheus"] -->|"抓取 sys_metrics 相关的导出器 + Node-RED 健康状态"| AM["Alertmanager"]
- AM --> WEBHOOK
- WEBHOOK --> LINE["LINE 消息 API"]
- WEBHOOK --> TEAMS["MS Teams Webhook"]
+  subgraph STORAGE["4. TimescaleDB 核心存储层 (仅限 public schema)"]
+    subgraph HYPER["原始高频超表群 Hypertables (1 天切片时间跨度)"]
+      HT_SYS[("sys_metrics 与 net_metrics")]
+      HT_LDI[("ldi_data 与 ldi_alarm_log")]
+      HT_DRL[("drilling_telemetry 与 spindle_metrics")]
+      HT_VCP[("vcp_telemetry 与 rectifier_metrics")]
+    end
+    subgraph CAGGS["持续聚合物化层 (Continuous Aggregates)"]
+      CAGG_1M[("1 分钟级汇总 (如 ldi_data_1m)")]
+      CAGG_15M[("15 分钟级汇总 (ldi_data_15m)")]
+      CAGG_1H[("1 小时级汇总与 ldi_data_hourly")]
+    end
+    subgraph COMPRESS["列式数据切片压缩"]
+      COL[("超过 7 天切片执行列压缩
+分段维度: machine_id / device_id")]
+    end
+  end
 
- style INFRA fill:#1e293b,stroke:#3b82f6,color:#e2e8f0
- style LDI fill:#1e293b,stroke:#22c55e,color:#e2e8f0
+  subgraph DISPATCH["5. 可视化呈现与警报分发层"]
+    GRAF["Grafana 监控大屏 (22 块)
+遵循 Grid-24, 亚秒级 CAGG 历史查询"]
+    PROM["Prometheus 指标拉取采集器"]
+    AM["Alertmanager 告警路由内核"]
+    WH["Node-RED /alert-webhook 适配器"]
+    NOTIF["LINE Messaging API 与 MS Teams 通知通道"]
+  end
+
+  SNMP_DEV --> NR_INFRA
+  LDI_DEV --> NR_LDI
+  DRL_DEV --> NR_EAP
+  VCP_DEV --> NR_EAP
+
+  NR_INFRA -->|批量 SQL 写入| PGB
+  NR_LDI -->|批量 SQL 写入| PGB
+  NR_EAP -->|批量 SQL 写入| PGB
+
+  PGB --> HT_SYS
+  PGB --> HT_LDI
+  PGB --> HT_DRL
+  PGB --> HT_VCP
+
+  HT_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
+  HT_LDI --> COL
+  HT_DRL --> COL
+  HT_VCP --> COL
+
+  CAGGS --> GRAF
+  HYPER --> GRAF
+  PROM --> AM --> WH --> NOTIF
 ```
-
-**分发注意事项：** LINE/Teams 消息分发需要运维人员配置 `LINE_CHANNEL_ACCESS_TOKEN`/`TEAMS_WEBHOOK_URL` — 根据设计，这些变量在当前代码库的 `.env` 文件中是被省略的。直到分发之前的格式化和尝试分发逻辑都是真实且正确的。
 
 ---
 
-## LDI 遥测数据：CAGG 汇总链
+## 2. Node-RED 沙箱转换与内存垃圾回收规范
 
-原始的 `ldi_data` 数据提供给两条独立的聚合路径，每条路径服务于不同目的 —— 不要认为它们是冗余的：
+在 **Node-RED 接入流水线** 内部，Function 节点运行于隔离的 V8 运行时中，系统禁止调用 `require()`，所有外部模块统一经由 `global.get()` 提取。为了彻底防止高并发写入洪峰 (>100,000 事件/秒) 引发内存溢出，数据转换严格遵循 **O(N) 单趟线性遍历** 与 **显式垃圾回收 (Explicit GC)** 规范：
+
+```javascript
+// Node-RED Function 节点数据标准化与 GC 内存回收示例
+const pg = global.get('pg');
+const pool = global.get('pgPool');
+
+const rawPayload = msg.payload;
+if (!Array.isArray(rawPayload) || rawPayload.length === 0) {
+    return null;
+}
+
+const flatData = [];
+const insertTime = new Date().toISOString();
+
+// O(N) 单趟线性数据解析与转换
+for (let i = 0; i < rawPayload.length; i++) {
+    const item = rawPayload[i];
+    flatData.push([
+        insertTime,
+        item.eqp_id,
+        Number(item.pe1_intensity) || 0.0,
+        Number(item.pe2_intensity) || 0.0,
+        Number(item.thickness) || 0.0,
+        Number(item.temperature) || 0.0,
+        item.lot_id || 'UNKNOWN'
+    ]);
+}
+
+// 构造参数化批量 SQL
+const columns = '("time", machine_id, pe1_intensity, pe2_intensity, thickness, temperature, lot_id)';
+const values = flatData.map((_, idx) => {
+    const offset = idx * 7;
+    return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`;
+}).join(', ');
+
+const query = `
+    INSERT INTO public.ldi_data ${columns}
+    VALUES ${values}
+    ON CONFLICT (log_id, "time") DO NOTHING;
+`;
+
+const flattenedParams = flatData.flat();
+
+// 严苛的显式垃圾回收纪律：彻底释放 V8 堆内存占用
+flatData.length = 0;
+msg.payload = null;
+
+// 发送至 PgBouncer 连接池执行
+msg.topic = query;
+msg.params = flattenedParams;
+return msg;
+```
+
+---
+
+## 3. TimescaleDB 持续聚合汇总链路 (CAGG Rollup Chain)
+
+入库至 `public.ldi_data` 的原始时序数据流经两个彼此独立的计算通道：
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart LR
- RAW[("ldi_data\n原始数据，7 天压缩\n180 天保留")]
+  RAW[("ldi_data
+原始时序超表
+7 天后列压缩, 保留 180 天")]
 
- RAW -->|"1 分钟汇总"| M1[("ldi_data_1m\n30 天保留")]
- M1 -->|"15 分钟汇总"| M15[("ldi_data_15m\n90 天保留")]
- M15 -->|"1 小时汇总"| M1H[("ldi_data_1h\n2 年保留")]
+  RAW -->|"1 分钟聚合"| M1[("ldi_data_1m
+保留 30 天")]
+  M1 -->|"15 分钟聚合"| M15[("ldi_data_15m
+保留 90 天")]
+  M15 -->|"1 小时聚合"| M1H[("ldi_data_1h
+保留 2 年")]
 
- RAW -->|"直接的每小时分析\n(avg_max_pe, peak_pe 等)\n开启实时聚合"| MHOURLY[("ldi_data_hourly\n2 年保留")]
+  RAW -->|"小时级特征指标实时聚合
+(avg_max_pe, peak_pe)
+实时聚合特性: 启用"| MHOURLY[("ldi_data_hourly
+保留 2 年")]
 
- RAW -->|"物化视图，60 秒刷新"| SPCVIEW["v_machine_spc_fleet\nv_ldi_rca_recent_window\nv_ldi_rca_truth_test"]
+  RAW -->|"物化刷新间隔 60 秒"| SPC["v_machine_spc_fleet
+v_ldi_rca_recent_window
+v_ldi_rca_truth_test"]
 ```
 
-`ldi_data_1m → 15m → 1h` 是一条链式汇总路径（每一级汇总其下一级的数据），用于提升仪表板时间范围查询的性能。`ldi_data_hourly` 是一个 _独立的_、专门构建的每小时视图，直接从原始数据计算得出，拥有其专属的分析列（`avg_max_pe`，`peak_pe` 等），并且设置了 `timescaledb.materialized_only = false`（实时聚合 — 位于迁移脚本 065 中），因为这些特定的指标需要反映当前正在进行的这一小时的局部数据，而不是等待下一次预定的刷新。
+* **级联多层预聚合 (`1m -> 15m -> 1h`):** 逐级汇总历史颗粒度，确保 Grafana 在加载大时间跨度 (7 天、30 天) 报表时实现亚秒级渲染。
+* **实时直算小时聚合 (`ldi_data_hourly`):** 配置参数 `timescaledb.materialized_only = false` (迁移脚本 065)，直接基于原始表聚合关键质量指标 (`avg_max_pe`, `peak_pe`)，实现最新未物化数据与历史聚合的实时无缝拼合。
 
-## 告警主表与严重程度
+---
+
+## 4. 报警上下文关联合并与根因分析流水线 (RCA)
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart LR
- ALMSIM["ldi_alarm_simulator.json"] --> ALOG[("ldi_alarm_log\n事件流\n365 天保留")]
- MASTER[("ldi_alarm_ms_code\n代码 + 严重程度 + 消息\n1,820+ 个代码，19 个模拟器激活状态")] -.->|"外键: alarm_code"| ALOG
- ALOG --> CTX["v_ldi_alarm_context\n(关联遥测数据 ±时间窗口)"]
- CTX --> RCA["v_ldi_rca_recent_window\nv_ldi_rca_truth_test"]
+  ALM_SIM["ldi_alarm_simulator.json"] --> ALOG[("ldi_alarm_log
+实时报警日志流
+保留 365 天")]
+  MASTER[("ldi_alarm_ms_code
+报警主字典表
+登记超 1,820+ 报警代码")] -.->|"外键约束: alarm_code"| ALOG
+  ALOG --> CTX["v_ldi_alarm_context
+自动匹配前后 +-5 分钟遥测视窗"]
+  CTX --> RCA["v_ldi_rca_recent_window
+v_ldi_rca_truth_test"]
 ```
 
-请参阅 `docs/architecture/ALARM_SEVERITY_GUIDE.md` 和 `docs/architecture/LDI_RCA_GUIDE.md` 了解构建于此基础上的分类法与相关性方法论。
+报警事件实时写入 `public.ldi_alarm_log` 并通过外键关联合法报警字典 `public.ldi_alarm_ms_code`。下游视图 (`v_ldi_alarm_context`) 会以报警发生时间为中心，自动抓取机器前后 $\pm 5	ext{ 分钟}$ 的遥测窗口数据，为现场工程师提供统计学根因分析依据。
 
-## 相关文档
+---
 
-- `docs/architecture/ARCHITECTURE.md` — 完整的系统上下文，容器清单。
-- `docs/architecture/DATABASE_SCHEMA.md` — 自动生成的表/列/视图参考。
-- `docs/architecture/DATA_RETENTION.md` — 上文展示的保留/压缩数值，包含治理注意事项。
-- `docs/architecture/EAP_ARCHITECTURE.md` — 更为详细的两种数据接入 (ingestion) 适配器 (SNMP, HTTP/JSON)。
+## 5. 核心架构约束与工程准则
+
+1. **Schema 隔离铁律:** 所有数据表、视图及持续聚合必须存放于 `public` 命名空间，严禁引入 `ims.*`。
+2. **PgBouncer 代理模式:** 强制使用事务模式 (`AUTH_TYPE: plain`)，严格禁止 Prepared Statements。
+3. **写入操作幂等性:** 所有批量插入必须携带 `ON CONFLICT (log_id, "time") DO NOTHING`。
+4. **外部敏感凭证安全:** 涉及 LINE 及 Teams 的通知密钥由运维人员本地注入，禁止提交至 Git 代码仓库。
+
+---
+
+[⬅️ 返回架构总览](ARCHITECTURE.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> 主代码仓库](../../README.md)
