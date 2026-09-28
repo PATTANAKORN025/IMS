@@ -185,6 +185,94 @@ make test-load         # k6 run tests/k6/pipeline-stress.js (ต้องติ�
 
 > **สิ่งที่จะได้เห็น:** K6 เพิ่มจำนวนเซิร์ฟเวอร์จำลองแบบไล่ระดับ (ค่าเริ่มต้น `TARGET_SERVERS=100` ตั้งค่า environment variable นี้เพื่อเพิ่มขนาด) ยิงเข้า ingestion endpoint ของ Node-RED โดยมีเกณฑ์ผ่านคือ อัตรา `pipeline_success` > 95 % และ `e2e_duration` p95 < 10 วินาที ระหว่างทดสอบดูความหน่วงของการรับข้อมูลและคิวของ PgBouncer ได้สดบนแดชบอร์ด `IMS Meta-Monitoring`
 
+### แนวทาง C: ตัวอย่างโค้ดการเชื่อมต่อ API และ Telemetry (Code Examples)
+
+_ออกแบบมาสำหรับวิศวกรเชื่อมต่อระบบ (Integration Engineers) และนักพัฒนาที่ต้องการเชื่อมต่อเครื่องจักรในโรงงาน, MES ภายนอก หรือสคริปต์อัตโนมัติ_
+
+#### 1. ส่งข้อมูล Telemetry ของเครื่องจักร LDI ผ่าน HTTP POST
+ส่งข้อมูลอนุกรมเวลา (Time-series) เข้าสู่ไปป์ไลน์ Node-RED โดยตรงผ่าน Nginx reverse proxy:
+
+```bash
+curl -X POST http://localhost:3000/ldi-telemetry \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: ${INGEST_API_KEY}" \
+  -d '{
+    "time": "2026-09-28T04:00:00Z",
+    "factory": "F1",
+    "process": "LDI",
+    "eqp_id": "LDI-01",
+    "mo": "MO-001234",
+    "fpn": "PN-5678",
+    "layer_name": "L1",
+    "resist_dosage": 45.5,
+    "scale_x": 1.002,
+    "scale_y": 0.998,
+    "temperature": 24.5,
+    "humidity": 45.0,
+    "scan_speed": 120.0,
+    "air_vacuum": -15.2,
+    "thickness": 1.2,
+    "board_no": 1,
+    "total_board": 100,
+    "total_time": 450.5,
+    "state": true,
+    "pe_1": 1.1,
+    "je_1": 2.2,
+    "log_id": "LOG-10001"
+  }'
+```
+
+#### 2. เวิร์กโฟลว์จัดการสถานะการแจ้งเตือน (Acknowledge & Resolve)
+เรียกใช้งานเซอร์วิส `alarm-api` เพื่อเปลี่ยนสถานะของการแจ้งเตือนที่เกิดขึ้นในโรงงาน (`public.ldi_alarm_lifecycle`):
+
+```bash
+# ขั้นตอนที่ 1: รับทราบการแจ้งเตือน (เปลี่ยนสถานะ OPEN -> ACKNOWLEDGED)
+curl -X POST http://localhost:3000/alarms/ack \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logdate_ms": 1790568000000,
+    "logid": "LOG-10001",
+    "acknowledged_by": "operator-01"
+  }'
+
+# ขั้นตอนที่ 2: ปิดจบและแก้ไขปัญหาการแจ้งเตือน (เปลี่ยนสถานะ ACKNOWLEDGED -> RESOLVED)
+curl -X POST http://localhost:3000/alarms/resolve \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logdate_ms": 1790568000000,
+    "logid": "LOG-10001",
+    "resolved_by": "engineer-02",
+    "resolution_note": "เปลี่ยนไส้กรองนิวแมติกและตรวจสอบแรงดันลมดูดให้อยู่ในสเปกเรียบร้อย"
+  }'
+```
+
+#### 3. สร้างข้อมูลจำลองสังเคราะห์สำหรับงานเจาะ CNC และงานชุบ VCP
+เติมฐานข้อมูล `eap_backup` ด้วยข้อมูลจำลองสังเคราะห์ที่สมจริง เพื่อทดสอบแดชบอร์ดงานเจาะและงานชุบ VCP โดยไม่ต้องใช้ข้อมูลจริงของโรงงาน:
+
+```bash
+# สร้างข้อมูลการทำงานสังเคราะห์ย้อนหลัง 7 วัน (168 ชั่วโมง)
+node scripts/mock/eap-mock-data.js --hours=168 --apply
+
+# ตรวจสอบการรันคิวรีและจำนวนแถวข้อมูลของทุกพาเนลในแดชบอร์ด
+node scripts/mock/verify-mock-dashboards.js --container=ims-timescaledb --psql-user=ims_admin
+```
+
+#### 4. คิวรี Continuous Aggregates บน TimescaleDB (การวิเคราะห์ความเร็วสูง)
+ตัวอย่างคำสั่ง SQL ดึงข้อมูลสถิติที่ประมวลผลล่วงหน้าแบบ Sub-second ด้วย CAGG จากข้อมูลประวัติศาสตร์นับล้านแถว:
+
+```sql
+-- คิวรีข้อมูลสรุปทุก 15 นาทีสำหรับสมรรถนะของเครื่องจักรในสายการผลิต
+SELECT
+  bucket AS "time",
+  machine_id,
+  ROUND(avg_temperature::numeric, 2) AS temperature,
+  ROUND(avg_scan_speed::numeric, 2) AS scan_speed
+FROM public.ldi_data_15m
+WHERE machine_id = 'LDI-01'
+  AND bucket > NOW() - INTERVAL '24 hours'
+ORDER BY bucket ASC;
+```
+
 <details>
 <summary><b>ข้อจำกัดที่ทราบและการตั้งค่าด้วยตนเอง</b></summary>
 

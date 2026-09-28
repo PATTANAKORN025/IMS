@@ -185,6 +185,94 @@ make test-load         # k6 run tests/k6/pipeline-stress.js（需要 PATH 中有
 
 > **预期效果：** K6 逐级增加模拟服务器（默认 `TARGET_SERVERS=100`，可通过该环境变量扩大规模）压测 Node-RED 接入端点，通过阈值为 `pipeline_success` 成功率 > 95 %、`e2e_duration` p95 < 10 秒。可在 `IMS Meta-Monitoring` 仪表板上实时观察接入延迟与 PgBouncer 队列深度。
 
+### 路径 C：实时遥测与 API 集成实操示例 (Code Examples)
+
+_专为连接工厂硬件设备、第三方 MES 系统或编写自定义自动化脚本的集成工程师与软件开发者设计。_
+
+#### 1. 通过 HTTP POST 推送 LDI 机器遥测数据
+直接通过 Nginx 反向代理将时间序列制造指标推入 Node-RED 接入流水线：
+
+```bash
+curl -X POST http://localhost:3000/ldi-telemetry \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: ${INGEST_API_KEY}" \
+  -d '{
+    "time": "2026-09-28T04:00:00Z",
+    "factory": "F1",
+    "process": "LDI",
+    "eqp_id": "LDI-01",
+    "mo": "MO-001234",
+    "fpn": "PN-5678",
+    "layer_name": "L1",
+    "resist_dosage": 45.5,
+    "scale_x": 1.002,
+    "scale_y": 0.998,
+    "temperature": 24.5,
+    "humidity": 45.0,
+    "scan_speed": 120.0,
+    "air_vacuum": -15.2,
+    "thickness": 1.2,
+    "board_no": 1,
+    "total_board": 100,
+    "total_time": 450.5,
+    "state": true,
+    "pe_1": 1.1,
+    "je_1": 2.2,
+    "log_id": "LOG-10001"
+  }'
+```
+
+#### 2. 告警生命周期状态流转 (确认与解决)
+调用 `alarm-api` 服务对车间当前活动的告警记录（`public.ldi_alarm_lifecycle`）执行状态变更：
+
+```bash
+# 步骤 1：确认活动告警（状态由 OPEN 流转至 ACKNOWLEDGED）
+curl -X POST http://localhost:3000/alarms/ack \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logdate_ms": 1790568000000,
+    "logid": "LOG-10001",
+    "acknowledged_by": "operator-01"
+  }'
+
+# 步骤 2：彻底解决告警并记录根因（状态由 ACKNOWLEDGED 流转至 RESOLVED）
+curl -X POST http://localhost:3000/alarms/resolve \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logdate_ms": 1790568000000,
+    "logid": "LOG-10001",
+    "resolved_by": "engineer-02",
+    "resolution_note": "已更换气动滤芯，并验证真空负压恢复至标准公差范围内。"
+  }'
+```
+
+#### 3. 生成 CNC 钻孔与 VCP 电镀合成模拟数据
+在 `eap_backup` 数据库中生成高保真模拟数据，以便在完全脱离工厂专有数据的情况下验证钻孔与 VCP 仪表板：
+
+```bash
+# 生成 7 天（168 小时）的合成运行数据
+node scripts/mock/eap-mock-data.js --hours=168 --apply
+
+# 验证钻孔与 VCP 所有仪表板查询与面板行数
+node scripts/mock/verify-mock-dashboards.js --container=ims-timescaledb --psql-user=ims_admin
+```
+
+#### 4. 查询 TimescaleDB 连续聚合视图 (亚秒级 SQL 分析)
+利用 Continuous Aggregates (CAGGs) 在数百万行历史遥测数据上实现亚秒级高性能聚合分析：
+
+```sql
+-- 查询机群关键性能参数的 15 分钟聚合汇总
+SELECT
+  bucket AS "time",
+  machine_id,
+  ROUND(avg_temperature::numeric, 2) AS temperature,
+  ROUND(avg_scan_speed::numeric, 2) AS scan_speed
+FROM public.ldi_data_15m
+WHERE machine_id = 'LDI-01'
+  AND bucket > NOW() - INTERVAL '24 hours'
+ORDER BY bucket ASC;
+```
+
 <details>
 <summary><b>已知限制与手动配置</b></summary>
 

@@ -185,6 +185,94 @@ make test-load         # k6 run tests/k6/pipeline-stress.js (needs k6 on PATH)
 
 > **What to expect:** K6 ramps simulated servers (default `TARGET_SERVERS=100`; set the environment variable to scale up) against the Node-RED ingestion endpoints, with thresholds `pipeline_success` rate > 95 % and `e2e_duration` p95 < 10 s. You can monitor ingestion latency and PgBouncer queue depths live on the `IMS Meta-Monitoring` dashboard.
 
+### Path C: Live Telemetry & API Integration (Code Examples)
+
+_Designed for Integration Engineers and Software Developers connecting factory equipment, third-party MES, or custom scripts._
+
+#### 1. Ingest LDI Machine Telemetry via HTTP POST
+Push time-series manufacturing metrics directly to the Node-RED ingestion pipeline through the Nginx reverse proxy:
+
+```bash
+curl -X POST http://localhost:3000/ldi-telemetry \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: ${INGEST_API_KEY}" \
+  -d '{
+    "time": "2026-09-28T04:00:00Z",
+    "factory": "F1",
+    "process": "LDI",
+    "eqp_id": "LDI-01",
+    "mo": "MO-001234",
+    "fpn": "PN-5678",
+    "layer_name": "L1",
+    "resist_dosage": 45.5,
+    "scale_x": 1.002,
+    "scale_y": 0.998,
+    "temperature": 24.5,
+    "humidity": 45.0,
+    "scan_speed": 120.0,
+    "air_vacuum": -15.2,
+    "thickness": 1.2,
+    "board_no": 1,
+    "total_board": 100,
+    "total_time": 450.5,
+    "state": true,
+    "pe_1": 1.1,
+    "je_1": 2.2,
+    "log_id": "LOG-10001"
+  }'
+```
+
+#### 2. Alarm Lifecycle Transitions (Acknowledge & Resolve)
+Interact with the `alarm-api` service to change state on active factory alarms (`public.ldi_alarm_lifecycle`):
+
+```bash
+# Step 1: Acknowledge an active alarm (Transition OPEN -> ACKNOWLEDGED)
+curl -X POST http://localhost:3000/alarms/ack \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logdate_ms": 1790568000000,
+    "logid": "LOG-10001",
+    "acknowledged_by": "operator-01"
+  }'
+
+# Step 2: Permanently resolve an alarm (Transition ACKNOWLEDGED -> RESOLVED)
+curl -X POST http://localhost:3000/alarms/resolve \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logdate_ms": 1790568000000,
+    "logid": "LOG-10001",
+    "resolved_by": "engineer-02",
+    "resolution_note": "Replaced pneumatic filter; verified vacuum pressure within spec."
+  }'
+```
+
+#### 3. Generate Synthetic Stand-In Data (Drilling & VCP)
+Populate the `eap_backup` database with realistic synthetic data to verify CNC drilling and VCP plating dashboards without proprietary factory records:
+
+```bash
+# Generate 7 days (168 hours) of synthetic operational data
+node scripts/mock/eap-mock-data.js --hours=168 --apply
+
+# Verify query resolution and panel row counts across drilling and VCP dashboards
+node scripts/mock/verify-mock-dashboards.js --container=ims-timescaledb --psql-user=ims_admin
+```
+
+#### 4. Query Continuous Aggregates (TimescaleDB SQL)
+Sub-second analytical queries powered by Continuous Aggregates (CAGGs) over millions of historical telemetry rows:
+
+```sql
+-- Query 15-minute rollups for fleet machine performance
+SELECT
+  bucket AS "time",
+  machine_id,
+  ROUND(avg_temperature::numeric, 2) AS temperature,
+  ROUND(avg_scan_speed::numeric, 2) AS scan_speed
+FROM public.ldi_data_15m
+WHERE machine_id = 'LDI-01'
+  AND bucket > NOW() - INTERVAL '24 hours'
+ORDER BY bucket ASC;
+```
+
 <details>
 <summary><b>Known Limitations & Manual Configuration</b></summary>
 
