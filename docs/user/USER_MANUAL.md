@@ -82,7 +82,7 @@ Grafana provisions 22 dashboards in four folders:
  └── Real-Time Wall — Full-screen live status of every line for the plating floor
 ```
 
-The drilling and VCP dashboards read the `eap_backup` database. Without plant data they are empty; see [Synthetic Drilling and VCP Data](../data/MOCK_DATA.md).
+The drilling and VCP dashboards read the `eap_backup` database. Without plant data they are empty; see [Synthetic Drilling and VCP Data](../data/MOCK_DATA.md). For complete operational procedures, telemetry decoding rules, OCAP matrix, and panel breakdowns for the CNC drilling fleet, refer to the dedicated [CNC Drilling Operations & Engineering Manual](DRILLING_USER_MANUAL.md).
 
 The complete, generated list with panel counts is the [Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md).
 

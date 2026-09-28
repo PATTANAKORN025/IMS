@@ -15,9 +15,11 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart LR
   ROOT["docs/user"]
-  ROOT --> F0["USER_MANUAL"]
+  ROOT --> F0["DRILLING_USER_MANUAL"]
+  ROOT --> F1["USER_MANUAL"]
 ```
 
 ## <img src="../../../docs/assets/icons/file-text.svg" width="18" align="center" /> ดัชนีไฟล์
 
+- [DRILLING_USER_MANUAL.md](DRILLING_USER_MANUAL.md)
 - [USER_MANUAL.md](USER_MANUAL.md)

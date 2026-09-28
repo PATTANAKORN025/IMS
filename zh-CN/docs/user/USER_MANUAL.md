@@ -82,7 +82,7 @@ Grafana 在四个文件夹中预置了 22 个仪表板：
  └── Real-Time Wall — 为电镀车间全屏显示每条产线的实时状态
 ```
 
-钻孔与 VCP 仪表板读取 `eap_backup` 数据库；没有工厂数据时为空，参见[钻孔与 VCP 合成数据](../data/MOCK_DATA.md)。
+钻孔与 VCP 仪表板读取 `eap_backup` 数据库；没有工厂数据时为空，参见[钻孔与 VCP 合成数据](../data/MOCK_DATA.md)。有关数控钻孔机群的完整操作规程、遥测解码规则、OCAP 响应矩阵及 4 大仪表板操作指南，请参阅专用的 [数控钻孔运营与工程操作手册 (Drilling Operations Manual)](DRILLING_USER_MANUAL.md)。
 
 含面板数量的完整自动生成列表见 [Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md)。
 
