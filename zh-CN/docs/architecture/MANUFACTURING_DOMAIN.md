@@ -6,8 +6,8 @@
 <br/>
 
 <div align="center">
-  <h1>IMS 智能制造领域可扩展性与新工艺接入架构规范</h1>
-  <p><b>多工艺扩展范式、LDI/CNC/VCP 生产线参考架构、数据库 Schema 解耦及接入审查清单</b></p>
+  <h1>IMS 制造工序领域横向扩展与架构模式规范 (Manufacturing Domain Extensibility)</h1>
+  <p><b>多工艺扩展蓝图、LDI 参考架构模式、数据库命名空间隔离与新设备工序接入核对清单</b></p>
   <p>
     <a href="../../../docs/architecture/MANUFACTURING_DOMAIN.md">English</a> |
     <a href="../../../th/docs/architecture/MANUFACTURING_DOMAIN.md">ไทย</a> |
@@ -17,33 +17,154 @@
 
 ---
 
-> **目的 (Purpose)：** 记录 IMS 生产制造流程集成（LDI、数控钻孔 CNC、垂直连续电镀 VCP）背后的通用模式，以便_下一个_流程类型（例如 AOI、蚀刻）能够以纯增量形式添加——即新的迁移脚本、新的告警字典和新的仪表板三件套——而无需重构现有生产 Schema 或运行中仪表板。
+> **制定目标:** 为 IMS 工业制造工序接入 (如 LDI 光刻曝光、CNC 钻孔设备群、VCP 连续电镀生产线) 确立通用标准化架构范式，确保未来接入*全新工序类型* (例如：AOI 自动光学检测、化学蚀刻 Etching、表面贴装 SMT) 能够以完全增量 (Additive) 的形式落地 —— 仅需追加一个数据库版本迁移脚本、一套专属报警字典以及一组全新的工序三联仪表盘 —— 绝不重构或破坏现存运行中的生产流水线。
 >
-> **出处 (Provenance)：** 以下描述的每一个模式均准确映射当前在生产环境稳定运行的 LDI、CNC 钻孔和 VCP 电镀线真实架构，并经过实时数据库与仪表板清单的一致性校验。
+> **数据源真实性:** 下文所述的架构模式完整反映了 LDI、CNC 钻孔和 VCP 电镀生产线的实际工程落地，并与活动数据库元数据及仪表盘资产库严格对齐。
 >
-> **可扩展性 (Extensibility)：** 使时序数据库底层架构与摄入管道具备原生可扩展性，可在不干扰现有制造作业的前提下快速接入新产线。
+> **高内聚可扩展性:** 确保在跨越多生产制造阶段横向扩展时零系统停机，并恪守严格的关注点分离原则。
 
 ---
 
-## 模式说明（以 LDI 作为示例）
+## 1. 制造工序横向扩展架构拓扑 (Domain Topology)
 
-| 层级 (Layer)                         | LDI 的实现 (LDI's implementation)                                                                                                                                                                                                                                                                                                                                       | 下一个流程类型的通用模式 (Generic pattern for the next process type)                                                                                                                                                                                                                                                               |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **设备标识 (Device identity)**       | `public.devices.device_type = 'ldi'` (migration 013) 标识哪些行属于制造设备。`public.devices.process_type = 'ldi'` (migration 067/068) 标识是_哪个_制造流程，它独立于 `device_type` — 目前 `process_type` 对于所有非制造设备（服务器、网络设备）均为 `NULL`，且仅可能为 `'ldi'`。                                                                                       | 新的流程类型使用等同于 `device_type='ldi'` 的值进行注册（如果设备不属于 LDI 系列，则使用新值，例如 `device_type='aoi'`），并提供其自身的 `process_type` 值（如 `'aoi'`、`'plating'` 等）。`device_type` 和 `process_type` 刻意设计为独立的列 — 未来的流程可能会复用 `network` 轮询设备路径 (SNMP)，同时拥有独特的 `process_type`。 |
-| **遥测存储 (Telemetry storage)**     | `public.ldi_data` — 一个超表 (hypertable)，包含 LDI 专有列（`pe_1..pe_6`、`je_1..je_4`、`thickness`、`scan_speed` 等），以 `(eqp_id, time)` 为键，外键 (FK) 关联至 `devices.device_id`。                                                                                                                                                                                | 每个流程类型对应一个超表，以 `(device_id, time)` 为键，外键 (FK) 关联至 `devices`。列名在设计上是特定于流程的（AOI 表将包含缺陷计数/检测分数列，而不是 PE/JE）— 不应试图强制跨流程共享相同的遥测模式，因为测量的指标截然不同。                                                                                                     |
-| **告警主表 (Alarm master)**          | `public.ldi_alarm_ms_code` (code, severity, description) — 权威的告警目录；`public.ldi_alarm_log` 是事件流，通过外键关联到它。`tests/lint/alarm-sync-linter.js` 强制验证模拟器可生成的每一个代码都能针对此表进行解析。                                                                                                                                                  | 每个流程对应一个告警代码主表，具有相同的 `(code, severity, description)` 结构，相同的事件日志外键模式，以及相同的 linter 注册方式（`alarm-sync-linter.js` 已经从实时数据库读取，而不是使用硬编码的仅限 LDI 的列表 — 将其扩展到第二个流程只需添加配置，无需重写）。                                                                 |
-| **SPC / RCA 视图 (SPC / RCA views)** | `public.v_machine_spc_fleet`、`public.v_ldi_rca_recent_window` (物化视图，migration 064) 在聚合之前都使用 `WHERE d.device_type = 'ldi' AND d.enabled` 进行了过滤。                                                                                                                                                                                                      | 两个视图只需修改一个 `WHERE` 子句即可覆盖第二个流程：要么参数化过滤器，要么（更简单，也符合此代码库现有的“每个关注点一个视图 (one view per concern)”风格）创建特定于流程的同级视图（如 `v_aoi_spc_fleet`），共享相同的 Cpk/RCA 计算逻辑，并通过相同的 `add_job` 后台作业模式进行刷新。                                             |
-| **仪表板三件套 (Dashboard trio)**    | Andon（`ims-ldi-operator-andon.json`，一目了然的车间状态看板）、工程分析 / Engineering Analytics（`ims-ldi-engineering-analytics.json`，SPC/RCA 深入分析）、制造概览 / Manufacturing Overview（`ims-ldi-manufacturing.json`，KPI + 生产指挥中心） — 加上作为 LDI 专属附加组件的 `ims-easy-overview.json` (零配置机群一览) 和 `ldi-data-readiness.json` (数据质量审计)。 | 每个新流程类型至少获得 Andon + 工程分析 + 制造概览三件套，并在 `monitoring/grafana/dashboards/manufacturing/` 目录下进行配置（平台计划的 §1），带有 `tags: [..., "manufacturing"]` 标签，以便通过 `dashboard-linter.js` 的领域检查 (Check 18)。“easy overview”和“data readiness”仪表板是可选的附加组件，不属于必需的三件套。       |
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+flowchart TB
+  subgraph FOUNDATION["核心平台公共基石 (无需改动的稳定底座)"]
+    DEV[("public.devices
+统一硬件设备身份与元数据总表")]
+    PGB["PgBouncer 事务模式连接池
+(端口 5432, AUTH: plain)"]
+    CORE_LINT["CI 自动化门禁与合规检查套件
+(alarm-sync, query-budget, dashboard-linter)"]
+  end
+
+  subgraph DOMAINS["增量生产制造工序领域 (独立时序超表群)"]
+    subgraph D_LDI["工序领域: LDI 激光光刻曝光"]
+      LDI_TBL[("public.ldi_data (时序超表)")]
+      LDI_ALM[("public.ldi_alarm_ms_code 与 log")]
+      LDI_CAGGS[("cagg_ldi_metrics_1m / 1h")]
+    end
+    subgraph D_DRL["工序领域: CNC 数控钻孔设备群"]
+      DRL_TBL[("drilling_telemetry (时序超表)")]
+      DRL_ALM[("drilling_alarm_ms_code 与 log")]
+      DRL_CAGGS[("v_drilling_shift_summary")]
+    end
+    subgraph D_VCP["工序领域: VCP 垂直连续电镀生产线"]
+      VCP_TBL[("vcp_telemetry (时序超表)")]
+      VCP_ALM[("vcp_alarm_ms_code 与 log")]
+      VCP_CAGGS[("v_vcp_active_lines 与 bath_health")]
+    end
+    subgraph D_FUTURE["未来新增工序 (如 AOI 检测 / 蚀刻)"]
+      NEW_TBL[("public.<process>_data (时序超表)")]
+      NEW_ALM[("<process>_alarm_ms_code 与 log")]
+      NEW_CAGGS[("cagg_<process>_1m")]
+    end
+  end
+
+  subgraph DASHBOARDS["Grafana 预配仪表盘集群 (严格遵循 Grid-24)"]
+    LDI_DASH["LDI 工序三联仪表盘
+(安灯看版, 深度工程分析, 制造总览)"]
+    DRL_DASH["钻孔工序三联仪表盘
+(机群概览, 单机排查, 班次统计)"]
+    VCP_DASH["电镀工序三联仪表盘
+(实时电视墙, 运行控制台, 总体概览)"]
+    NEW_DASH["新工序三联仪表盘
+(现场看版, 工程分析, 指挥中心)"]
+  end
+
+  DEV --> LDI_TBL
+  DEV --> DRL_TBL
+  DEV --> VCP_TBL
+  DEV -.-> NEW_TBL
+
+  LDI_TBL --> LDI_CAGGS --> LDI_DASH
+  DRL_TBL --> DRL_CAGGS --> DRL_DASH
+  VCP_TBL --> VCP_CAGGS --> VCP_DASH
+  NEW_TBL -.-> NEW_CAGGS -.-> NEW_DASH
+
+  style FOUNDATION fill:#1e293b,stroke:#00F2FE,color:#f8fafc
+  style DOMAINS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
+  style DASHBOARDS fill:#1e293b,stroke:#10B981,color:#f8fafc
+```
 
 ---
 
-## 新流程类型的引导检查清单 (Onboarding checklist for a new process type)
+## 2. 标准五层扩展范式对比矩阵 (5-Tier Pattern)
 
-1. **迁移 (Migration)：** 在 `public.devices` 中使用适当的 `device_type` 和新的 `process_type` 值注册设备。如果流程需要自己的遥测列，在同一个迁移中创建超表（使用下一个顺序号 — 永远不要编辑已合并的迁移，请参阅 `IMS_MANUFACTURING_PLATFORM_V2.md` §7 版本控制策略）。
-2. **告警主表 (Alarm master)：** 初始化一个 `<process>_alarm_ms_code` 表（code, severity, description）以及一个通过外键关联它的 `<process>_alarm_log` 事件表。
-3. **SPC/RCA 视图 (SPC/RCA views)：** 遵循 `v_machine_spc_fleet` / `v_ldi_rca_recent_window` 模式添加特定流程的视图（物化视图，如果聚合不简单则通过 `add_job` 刷新 — 请参阅 migration 064 中关于何时值得使用物化视图而不是普通视图的理由）。
-4. **仪表板三件套 (Dashboard trio)：** 构建 Andon / 工程分析 / 制造概览仪表板，放置在 `monitoring/grafana/dashboards/manufacturing/` 目录下，并打上 `manufacturing` 标签（以及流程名称，例如 `aoi`）。
-5. **Linter 注册 (Linter registration)：** 扩展 `tests/lint/alarm-sync-linter.js` 和 `tests/lint/rca-mapping-coverage.js` 以包含新的告警主表 / 类别映射（根据本次会话之前的修复，两者都已经读取实时数据库/流程状态，而不是硬编码的仅限 LDI 列表 — 扩展它们是一种增量操作）。
-6. **清单重新生成 (Inventory regeneration)：** 运行 `node scripts/generate-dashboard-inventory.js` 和 `node scripts/generate-schema-inventory.js`，以便生成的文档自动获取新的仪表板/表 — 永远不要手动编辑这两个文件。
+| 架构层级 | LDI 光刻曝光 (生产标准参考范例) | 适用于下一工序的通用范式 (如 AOI / 蚀刻) |
+|---|---|---|
+| **1. 设备身份标识** | `public.devices.device_type = 'ldi'`, `public.devices.process_type = 'ldi'` (迁移 067/068)。非制造硬件 `process_type` 为 `NULL`。 | 为机台注册明确的 `device_type` (如 `'aoi'`) 以及独立的 `process_type` (`'aoi'`, `'etching'`)。解耦双字段支持未来设备复用网络采集协议而保持工艺独立。 |
+| **2. 时序数据存储** | `public.ldi_data` — 时序超表，承载专用参数 (`pe1..pe6`, `je1..je4`, 厚度, 扫描速度)，以 `(machine_id, time)` 为联合主键。 | 每种工艺工序建立专属超表，以 `(device_id, time)` 为键并外键关联 `public.devices`。字段设计严格遵循工艺物理指标 (如 AOI 存储缺陷数，蚀刻存储药水浓度)。 |
+| **3. 报警主字典** | `public.ldi_alarm_ms_code` (代码, 严重等级, 文本描述) 与 `public.ldi_alarm_log` 事件流水，受 `alarm-sync-linter.js` 门禁约束。 | 每个工序建立一套专属报警字典表 (`<process>_alarm_ms_code`)，遵循相同外键约束与字段定义，并在代码检查工具中完成注册。 |
+| **4. SPC / RCA 分析视图** | `public.v_machine_spc_fleet` 与 `public.v_ldi_rca_recent_window` (迁移 064)，基于 `device_type = 'ldi'` 进行过滤。 | 创建平级的工艺专用视图 (`v_<process>_spc_fleet`)，共享通用的 Cpk 计算与根因分析算法模型，并通过后台定时任务 `add_job` 自动刷新。 |
+| **5. 监控大屏三联套件** | **操作员安灯看板** (`ims-ldi-operator-andon.json`)、**深度工程分析** (`ims-ldi-engineering-analytics.json`) 及 **制造指挥中心** (`ims-ldi-manufacturing.json`)。 | 统一在 `monitoring/grafana/dashboards/manufacturing/` 目录下交付该工艺的专用三联看板，打上 `["manufacturing", "<process>"]` 标签并通过 Linter 自动化校验。 |
 
-以上任何步骤都不需要修改 LDI 现有的表、视图、仪表板或 linters —— 这正是该模式的核心意义所在。
+---
+
+## 3. 生产标准 DDL 迁移扩建模版
+
+接入新工序时，只需编写增量版本化迁移脚本：
+
+```sql
+-- Migration 087: 接入新制造工艺 (以自动光学检测 AOI 为例)
+-- 1. 在设备主表中注册新增设备
+INSERT INTO public.devices (device_id, hostname, ip_address, device_type, process_type, location, enabled)
+VALUES 
+  ('AOI-01', 'aoi-station-01.factory.local', '10.20.30.51', 'aoi', 'aoi', 'Floor 2 - SMT Line 1', TRUE),
+  ('AOI-02', 'aoi-station-02.factory.local', '10.20.30.52', 'aoi', 'aoi', 'Floor 2 - SMT Line 2', TRUE)
+ON CONFLICT (device_id) DO NOTHING;
+
+-- 2. 创建工艺专属时序表并转化为 TimescaleDB 超表
+CREATE TABLE IF NOT EXISTS public.aoi_telemetry (
+  "time" TIMESTAMPTZ NOT NULL,
+  machine_id VARCHAR(64) NOT NULL REFERENCES public.devices(device_id),
+  inspection_cycle_ms NUMERIC(10,2),
+  defect_count INT DEFAULT 0,
+  false_alarm_rate NUMERIC(5,2),
+  optical_lighting_lux NUMERIC(8,2),
+  lot_id VARCHAR(64)
+);
+
+SELECT create_hypertable('public.aoi_telemetry', 'time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+
+-- 3. 启用列式存储历史压缩
+ALTER TABLE public.aoi_telemetry SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'machine_id',
+  timescaledb.compress_orderby = 'time DESC'
+);
+SELECT add_compression_policy('public.aoi_telemetry', INTERVAL '7 days');
+
+-- 4. 创建专用报警字典表与事件流水记录表
+CREATE TABLE IF NOT EXISTS public.aoi_alarm_ms_code (
+  alarm_code VARCHAR(32) PRIMARY KEY,
+  severity VARCHAR(16) NOT NULL CHECK (severity IN ('CRITICAL', 'WARNING', 'INFO')),
+  description TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.aoi_alarm_log (
+  event_id BIGSERIAL PRIMARY KEY,
+  "time" TIMESTAMPTZ NOT NULL,
+  machine_id VARCHAR(64) NOT NULL REFERENCES public.devices(device_id),
+  alarm_code VARCHAR(32) NOT NULL REFERENCES public.aoi_alarm_ms_code(alarm_code),
+  status VARCHAR(16) DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'ACKNOWLEDGED', 'RESOLVED')),
+  acknowledged_by VARCHAR(64),
+  resolved_by VARCHAR(64)
+);
+```
+
+---
+
+## 4. 新工序接入标准化核对清单 (Checklist)
+
+1. **版本化数据库迁移:** 在 `public.devices` 中注册设备身份，设定全新的 `device_type` 与 `process_type`；在同个迁移中创建时序超表与列式压缩策略。
+2. **报警字典表初始化:** 建立 `<process>_alarm_ms_code` 报警主表并植入报警码字典，同步建立 `<process>_alarm_log` 事件流水表。
+3. **物化持续聚合与分析视图:** 建立对应的高效 CAGG 物化汇总视图 (`cagg_<process>_1m`) 与 SPC 分析视图。
+4. **大屏三联看板交付:** 构建操作员安灯板、工程分析板与指挥中心大屏，规范存放于 `manufacturing` 目录并配置对应标签。
+5. **门禁与自动化单测覆盖:** 在 `tests/lint/alarm-sync-linter.js` 中注册新工序报警校验规则，执行 `scripts/pre-commit.js` 确保 100% 通过。
+6. **自动刷新资产清单:** 运行 `node scripts/generate-dashboard-inventory.js` 与 `node scripts/generate-schema-inventory.js` 自动刷新架构文档。
+
+---
+
+[⬅️ 返回架构总览](ARCHITECTURE.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> 主代码仓库](../../README.md)

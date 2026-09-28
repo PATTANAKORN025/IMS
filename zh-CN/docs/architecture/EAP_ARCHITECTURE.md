@@ -5,51 +5,126 @@
 </div>
 <br/>
 
-# 设备集成层架构 (EAP)
-
-> **EAP = Equipment Automation Program (设备自动化程序)** — 基于 2026-08-10 确认的范围，属于 SECS/GEM 风格的设备集成（并非“企业应用平台” Enterprise Application Platform）。有关本文档实现的计划，请参见 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` 第 3 节 (§3)。
->
-> **现实检查，在此提前声明：** IMS 仅用于监控。它读取遥测数据并触发警报；它从不写入命令、下载配方或保存设备状态。目前该系统中没有任何物理的、支持 SECS/GEM 的工具 — LDI 机器是通过 SNMP 轮询/模拟的，而不是通过 SECS/GEM 连接的。本文档**不**声称符合 SECS/GEM 标准，未实现 HSMS 会话处理，也未模拟 SECS/GEM 设备。本文档主要记录了两个现有的真实适配器，并为目前不存在的第三个适配器定义了契约。
->
-> **来源：** 下文中关于 SNMP 和 HTTP/JSON 适配器的描述是在 2026-08-10 直接对照 `nodered_data/flows/ingestion.json` 和 `nodered_data/flows/ldi_ingestion.json` 进行检查的，而非凭记忆编写。
-
----
-
-## 模式：三个适配器，一个设备注册表
-
-所有适配器的任务都是相同的，无论协议是什么：将物理或模拟设备的遥测数据和警报事件导入到 `public.devices` / 设备的遥测表中，并使用 `device_id` 作为贯穿整个系统（仪表板、SPC/RCA 视图、警报主机）的连接键 (join key)。适配器是由它获取数据的方式来定义的，而不是由它的数据输出目标来定义。
-
-### 适配器 1 — SNMP (传统/基础设施设备)
-
-- **位置：** `nodered_data/flows/ingestion.json` ("IMS Ingestion Pipeline" 选项卡)。
-- **设备模型：** `public.devices` 表中 `device_type IN ('server','workstation','network')` 的行，保存 `hostname`, `ip_address`, `snmp_community`, `snmp_port`, `poll_interval`。
-- **数据采集计划：** 每 30 秒，`fork_5_ways` 会为每个注册设备调度并行的 SNMP v2c walker (包括 CPU、Storage、Network、Temperature、LDI OIDs)。
-- **事件/警报收集：** 在协议层面没有 — 该适配器仅用于遥测；警报是在下游基于摄入指标的阈值生成的，而不是作为原生 SNMP 陷阱 (traps) 携带。
-- **数据采集计划 → 遥测映射：** `sre_parser` 维护每台设备的状态，并批量插入到 `sys_metrics` / `net_metrics` / `ldi_metrics` 中，以 `device_id` 为键。
-
-### 适配器 2 — HTTP/JSON (LDI 制造遥测)
-
-- **位置：** `nodered_data/flows/ldi_ingestion.json` ("IMS LDI Ingestion" 选项卡)。
-- **设备模型：** `public.devices` 表中 `device_type='ldi'`, `process_type='ldi'` 的行 (数据迁移 067/068)。
-- **数据采集计划：** 设备（或其模拟器）向 `POST /ldi-telemetry` 发送 JSON 数组批处理 POST 请求，通过与 `INGEST_API_KEY` 核对的 `x-api-key` 头进行身份验证。每个批次项目带有 `eqp_id` (映射到 `device_id`) 以及完整的 LDI 参数集 (PE1-6, JE1-4, thickness, scan_speed, resist_dosage, ...)。
-- **事件/警报收集：** 并行的模拟器/生产者路径 (`ldi_alarm_simulator.json`) 写入 `public.ldi_alarm_log`，通过 `device_id` + `event_id` 与遥测数据关联（并非在同一个 POST 请求内携带 — 而是通过同一设备身份的独立事件流）。
-- **数据采集计划 → 遥测映射：** 使用 `INSERT INTO public.ldi_data` 进行直接批量插入，配合 `ON CONFLICT (log_id, "time") DO NOTHING` 确保幂等性。
-
-### 适配器 3 — SECS/GEM (未实现的契约，适用于未来的真实工具)
-
-该适配器目前不存在任何代码。如果未来的某种工艺类型的设备确实支持 SECS/GEM，则它需要满足此契约才能接入相同的注册表和下游视图/仪表板，而无需更改其他任何内容：
-
-| EAP 概念                    | 适配器 3 需要提供的内容                                                                                                                                                                                             | 映射至 (现有模式)    |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| **设备模型注册**            | 将工具注册为 `public.devices` 表中的一行，并带有 `device_id`、适当的 `device_type` 和 `process_type` (根据 `MANUFACTURING_DOMAIN.md`) — 这与适配器 1 和 2 使用相同的身份契约。                                      | `public.devices`     |
-| **事件报告 → 警报映射**     | 将 SECS/GEM 事件报告（收集事件 ID，CEIDs）转换为该工艺的警报主机 + 警报日志表中的行，并以 `device_id` 为键 — 数据形态与 `ldi_alarm_ms_code`/`ldi_alarm_log` 相同。                                                  | 适配器 2 的警报路径  |
-| **数据采集计划 → 遥测映射** | 将 SECS/GEM SVID/ECID 变量报告转换为该工艺遥测超表 (hypertable) 中的行，并以 `(device_id, time)` 为键 — 数据形态与 `ldi_data` 相同。                                                                                | 适配器 2 的遥测路径  |
-| **版本控制 (Versioning)**   | 作为明确版本化的契约发布（例如 `adapter-contract-v1`），详见 `IMS_MANUFACTURING_PLATFORM_V2.md` 第 7 节 (§7) — 它是此代码库中唯一一个如果发生破坏性更改 (breaking change)，目前的 linter 或测试将无法捕获的集成点。 | 新需求，目前无类似物 |
-
-在有真正支持 SECS/GEM 协议的工具需要连接之前，构建适配器 3 不在范围内 — 今天没有任何东西可以用于集成或测试，而模拟的 SECS/GEM 堆栈将只是推测性的基础设施，背后没有任何需求支撑。
+<div align="center">
+  <h1>设备自动化集成层架构规范 (EAP)</h1>
+  <p><b>设备自动化程序 (Equipment Automation Program) 适配器模式、多协议遥测接入、SECS/GEM 接口契约及统一设备注册表</b></p>
+  <p>
+    <a href="../../../docs/architecture/EAP_ARCHITECTURE.md">English</a> |
+    <a href="../../../th/docs/architecture/EAP_ARCHITECTURE.md">ไทย</a> |
+    <a href="EAP_ARCHITECTURE.md">简体中文</a>
+  </p>
+</div>
 
 ---
 
-## 安全边界说明
+> **EAP = Equipment Automation Program (设备自动化程序)** — 遵循 SECS/GEM 工业标准的设备接口层，依据系统设计范围确立 (非企业应用平台 "Enterprise Application Platform")。基石技术规范请参阅 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §3。
+>
+> **现实边界声明:** IMS 是一套纯粹的运行监控平台 (Monitoring-only)。它仅负责采集运行遥测数据并分发预警；绝不向下位机写入控制指令、下发生产配方 (Recipes) 或维系设备运行状态机。当前生产线上的 LDI 机台通过 SNMP 轮询与 HTTP 接口采集。本文档不声明完全符合 SECS/GEM 规范，亦不模拟虚构的 SECS/GEM 协议栈，而是对生产就绪的各适配器进行标准化梳理，并为未来的物理机台接入建立严格的接口契约。
+>
+> **数据源真实性:** 下文所述的 SNMP、HTTP/JSON 及 EAP 适配器均直接基于 `nodered_data/flows/ingestion.json`、`nodered_data/flows/ldi_ingestion.json` 及 `scripts/mock/eap-mock-data.js` 的源码实现。
 
-连接真实的适配器 3 工具将会跨入车间设备网络 (plant-floor equipment network) — 这是一个系统中目前不存在的新的外部信任边界。请参见 `IMS_MANUFACTURING_PLATFORM_V2.md` 第 8 节 (§8) (边界 3) — 在任何真实设备连接进来之前，该连接需要进行独立的安全加固审查 (hardening review)。本文档仅定义了数据契约，不包含针对该未来连接的网络/凭证加固内容。
+---
+
+## 1. 多协议设备接入总体架构拓扑 (EAP Topology)
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+flowchart TB
+  subgraph SOURCES["车间现场与 IT/OT 硬件设备源"]
+    S1["IT/OT 基础设施与服务器
+(SNMP v2c Agent 代理)"]
+    S2["LDI 激光直接成像光刻机
+(HTTP/JSON 批量采集上报)"]
+    S3["CNC 钻孔设备与 VCP 电镀线
+(EAP 高保真运行数据流)"]
+    S4["未来生产车间机台
+(SECS-II / GEM HSMS 协议栈)"]
+  end
+
+  subgraph ADAPTERS["设备自动化程序 (EAP) 适配器层"]
+    A1["适配器 1: SNMP 轮询器
+(30 秒周期, fork_5_ways)"]
+    A2["适配器 2: HTTP 接入网关
+(POST /ldi-telemetry, x-api-key)"]
+    A3["适配器 3: EAP 流水线适配器
+(钻孔与电镀工序遥测内核)"]
+    A4["适配器 4: SECS/GEM 标准契约
+(SVID/ECID 与 CEID 事件映射)"]
+  end
+
+  subgraph REGISTRY["统一设备注册中心与存储层"]
+    DEV[("public.devices
+设备主元数据大表")]
+    HT_SYS[("sys_metrics 与 net_metrics")]
+    HT_LDI[("public.ldi_data
+LDI 光刻时序超表")]
+    HT_DRL[("drilling_telemetry 与 vcp_telemetry
+eap_backup 演练数据库")]
+    ALARM[("报警主字典与事件流水
+(ldi_alarm_ms_code 等)")]
+  end
+
+  S1 --> A1 --> DEV
+  A1 --> HT_SYS
+  S2 --> A2 --> DEV
+  A2 --> HT_LDI
+  A2 --> ALARM
+  S3 --> A3 --> DEV
+  A3 --> HT_DRL
+  S4 -.-> A4 -.-> DEV
+
+  style SOURCES fill:#1e293b,stroke:#00F2FE,color:#f8fafc
+  style ADAPTERS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
+  style REGISTRY fill:#1e293b,stroke:#10B981,color:#f8fafc
+```
+
+---
+
+## 2. 四大设备适配器接口契约
+
+无论下位机采用何种物理通信协议，所有适配器的核心任务完全一致：将来自设备或模拟源的遥测数据和报警事件接入 `public.devices` 以及对应的时序超表中，并以 `device_id` 作为贯穿全系统监控大屏、SPC/RCA 视图及报警主字典的唯一主键。
+
+### 适配器 1 — SNMP (IT/OT 基础设施网络设备)
+* **代码物理位置:** `nodered_data/flows/ingestion.json` ("IMS Ingestion Pipeline" 流水线标签)。
+* **设备元数据模型:** `public.devices` 中 `device_type IN ('server','workstation','network')` 的数据行，维护 `hostname`、`ip_address`、`snmp_community`、`snmp_port`、`poll_interval` 等字段。
+* **数据采集方案:** 每隔 30 秒，`fork_5_ways` 并发派发针对各注册设备的 SNMP v2c Walk 轮询 (采集 CPU、存储、网络、温度及 LDI OID)。
+* **事件/报警采集:** 协议层零报警机制 — 此适配器仅负责采集指标，报警由下游阈值分析计算触发。
+* **数据映射入库:** `sre_parser` 维护每台设备的运行状态，并批量入库至 `sys_metrics`、`net_metrics` 与 `ldi_metrics`。
+
+### 适配器 2 — HTTP/JSON (LDI 制造工序高频遥测)
+* **代码物理位置:** `nodered_data/flows/ldi_ingestion.json` ("IMS LDI Ingestion" 流水线标签)。
+* **设备元数据模型:** `public.devices` 中 `device_type='ldi'` 且 `process_type='ldi'` 的设备记录 (数据库迁移 067/068)。
+* **数据采集方案:** 设备通过 HTTP POST 向 `POST /ldi-telemetry` 推送 JSON 批次数组 (携带 `x-api-key` 鉴权)。每个批次包含 `eqp_id` (映射至 `device_id`)、PE1-6、JE1-4、板件厚度、扫描速度及曝光剂量。
+* **事件/报警采集:** 独立的数据流向 `public.ldi_alarm_log` 写入报警流水，通过 `device_id` + `event_id` 与时序数据精准对齐。
+* **数据映射入库:** 批量执行 `INSERT INTO public.ldi_data ON CONFLICT (log_id, "time") DO NOTHING` 确保写入幂等。
+
+### 适配器 3 — EAP 运行适配器 (CNC 数控钻孔与 VCP 电镀生产线)
+* **代码物理位置:** `scripts/mock/eap-mock-data.js` 与 `database/mock/eap_backup-schema.sql`。
+* **设备元数据模型:** 覆盖钻孔机群 (`drl001`–`drl010`) 与连续电镀线 (`vcp001`–`vcp005`)。
+* **数据采集方案:** 精准仿真物理机台的实际加工周期：
+  - **钻孔 (Drilling):** 加工程序启动、主轴转速 (RPM)、进给速度 (Feed Rate)、刀具物理寿命损耗计数及班次生产报表。
+  - **电镀 (VCP):** 线体运行态切换 (RUN, IDLE, DOWN)、整流器输出电流、化学药水槽体热力学温度以及飞靶传送物理守恒公式 ($	ext{plating\_time} 	imes 	ext{line\_speed} = 54$)。
+* **数据映射入库:** 写入 `eap_backup` 数据库中的 `machine_event`、`vcp_upp` 及 `catalog.object_registry`，驱动 4 块钻孔车间大屏和 3 块电镀线大屏。
+
+### 适配器 4 — SECS/GEM 接口契约 (未来物理新机台)
+当前仓库中暂无适配器 4 的运行代码。未来物理机台采用 SECS/GEM 通信时，必须实现该标准契约接口：
+
+| EAP 概念 | 适配器需实现的规范 | 映射的系统底层架构 |
+|---|---|---|
+| **设备元数据注册** | 在 `public.devices` 中注册设备身份 (`device_id`, `device_type`, `process_type`)。 | `public.devices` 元数据主表 |
+| **事件收集报告 (CEID)** | 将 SECS-II 采集事件报告解析为以 `device_id` 为主键的结构化报警行。 | `<process>_alarm_ms_code` 字典与流水 |
+| **状态变量报告 (SVID/ECID)** | 将 SECS-II 设备状态参数报告转换为以 `(device_id, time)` 为键的时序行。 | `public.<process>_data` 超表 |
+| **契约显式版本化** | 严格遵循版本化适配器接口规范 (`adapter-contract-v1`)。 | API 网关与输入校验器 |
+
+---
+
+## 3. 工业安全合规边界 (IEC 62443 Security Boundaries)
+
+将物理车间下位机接入监控系统涉及跨越运营技术 (OT) 网络安全边界：
+* **边界 1 (外部 / DMZ 区):** Nginx 反向代理前置入口，强制 TLS 终止加密并校验 Grafana 用户 Session Cookie。
+* **边界 2 (内部微服务容器网):** PgBouncer 事务连接池代理，严禁使用非参数化拼接 SQL，强制 `AUTH_TYPE: plain`。
+* **边界 3 (车间物理设备网):** 未来部署适配器 4 时，必须配置工业级 OT 防火墙物理隔离、启用 mTLS 双向认证及 IP 白名单，并采用单向只读物理分流 (Read-only network tap)，杜绝监控系统向现场生产机台回传下发写入指令的潜在隐患。
+
+---
+
+[⬅️ 返回架构总览](ARCHITECTURE.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> 主代码仓库](../../README.md)

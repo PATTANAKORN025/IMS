@@ -1,13 +1,13 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าแรก</b></a> &nbsp;|&nbsp;
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
   <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
 </div>
 <br/>
 
 <div align="center">
-  <h1>สถาปัตยกรรมโดเมนการผลิตและการขยายกระบวนการใหม่ใน IMS (Manufacturing Extensibility)</h1>
-  <p><b>แบบแผนการขยายกระบวนการผลิต, สถาปัตยกรรมอ้างอิง LDI/CNC/VCP, การแยกสกีมาฐานข้อมูล และรายการตรวจสอบการเริ่มใช้งาน</b></p>
+  <h1>สถาปัตยกรรมการขยายโดเมนการผลิตและกระบวนการอุตสาหกรรม IMS (Manufacturing Domain Extensibility)</h1>
+  <p><b>รูปแบบการขยายกระบวนการผลิต, สถาปัตยกรรมอ้างอิง LDI, การแยกสคีมาฐานข้อมูล และรายการตรวจสอบความพร้อมในการเพิ่มกระบวนการใหม่</b></p>
   <p>
     <a href="../../../docs/architecture/MANUFACTURING_DOMAIN.md">English</a> |
     <a href="MANUFACTURING_DOMAIN.md">ไทย</a> |
@@ -17,33 +17,154 @@
 
 ---
 
-> **จุดประสงค์ (Purpose):** เพื่อจัดทำเอกสารเกี่ยวกับรูปแบบทั่วไป (generic pattern) ของการผสานรวมกระบวนการผลิตในระบบ IMS (LDI, เครื่องเจาะ CNC, สายชุบ VCP) เพื่อให้กระบวนการผลิตประเภท _ถัดไป_ (เช่น AOI, การกัดกรด) เป็นแบบส่วนเพิ่ม (additive) — กล่าวคือ เป็นการทำไมเกรชันใหม่ (migration), สร้าง alarm master ใหม่, สร้างชุดแดชบอร์ด 3 ส่วน (dashboard trio) ใหม่ — แทนที่จะเป็นการเขียนสคีมาหรือแดชบอร์ดที่มีอยู่แล้วขึ้นมาใหม่
+> **วัตถุประสงค์:** จัดทำพิมพ์เขียวทางสถาปัตยกรรมสำหรับการเชื่อมต่อกระบวนการผลิตเข้ากับ IMS (เช่น LDI Photolithography, CNC Drilling, VCP Plating) เพื่อให้การเพิ่มกระบวนการผลิตใหม่ในอนาคต (เช่น เครื่องตรวจจับข้อบกพร่องทางแสง AOI, การกัดแผ่นวงจร Etching, การประกอบชิ้นส่วน SMT) เป็นไปในรูปแบบการเพิ่มส่วนขยาย (Additive) — เพียงเพิ่มไฟล์ไมเกรชันใหม่, พจนานุกรมการแจ้งเตือนใหม่ และชุดแดชบอร์ด 3 ประสานใหม่ — โดยไม่ต้องแก้ไของค์ประกอบเดิมหรือกระทบต่อสายการผลิตที่กำลังทำงานอยู่
 >
-> **ที่มา (Provenance):** รูปแบบทั้งหมดที่อธิบายด้านล่างนี้สะท้อนการนำไปใช้งานจริงของ LDI, CNC drilling และสายชุบ VCP plating ซึ่งตรวจสอบกับสคีมาจริงและบัญชีรายชื่อแดชบอร์ดในระบบปัจจุบัน
+> **ที่มา:** รูปแบบทั้งหมดสะท้อนการทำงานจริงของเครื่องจักร LDI, CNC Drilling และสายชุบ VCP ที่ได้รับการยืนยันตรงกับสคีมาฐานข้อมูลและแคตตาล็อกแดชบอร์ดจริง
 >
-> **การขยายระบบ (Extensibility):** ทำให้สคีมาของแพลตฟอร์มและไปป์ไลน์การรับข้อมูลพร้อมสำหรับการเพิ่มกระบวนการผลิตใหม่โดยไม่กระทบต่อกระบวนการเดิมที่มีอยู่
+> **ความยืดหยุ่นในการขยายระบบ:** รองรับการเชื่อมต่อกระบวนการผลิตที่หลากหลายโดยไม่มี Downtime และรักษาการแบ่งแยกความรับผิดชอบอย่างเคร่งครัด
 
 ---
 
-## รูปแบบ (The pattern) โดยใช้ LDI เป็นตัวอย่าง
+## 1. แผนผังสถาปัตยกรรมการขยายโดเมนการผลิต (Domain Topology)
 
-| ชั้นการทำงาน (Layer)                              | การนำไปใช้งานของ LDI (LDI's implementation)                                                                                                                                                                                                                                                                                                                                                                    | รูปแบบทั่วไปสำหรับกระบวนการประเภทถัดไป (Generic pattern for the next process type)                                                                                                                                                                                                                                                                                                                                                |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ข้อมูลระบุตัวตนอุปกรณ์ (Device identity)**      | `public.devices.device_type = 'ldi'` (migration 013) ระบุว่าแถวใดเป็นอุปกรณ์การผลิตทั้งหมด `public.devices.process_type = 'ldi'` (migration 067/068) ระบุว่า _เป็น_ กระบวนการผลิตใด ซึ่งแยกต่างหากจาก `device_type` — `process_type` จะเป็น `NULL` สำหรับอุปกรณ์ที่ไม่เกี่ยวกับการผลิตทุกชนิด (เซิร์ฟเวอร์, อุปกรณ์เครือข่าย) และปัจจุบันมีเพียงค่า `'ldi'` เท่านั้น                                           | กระบวนการประเภทใหม่จะลงทะเบียนด้วยค่าที่เทียบเท่า `device_type='ldi'` (เป็นค่าใหม่หากอุปกรณ์นั้นไม่ได้อยู่ในตระกูล LDI เช่น `device_type='aoi'`) และมีค่า `process_type` เป็นของตัวเอง (`'aoi'`, `'plating'`, ฯลฯ) `device_type` และ `process_type` จงใจแยกเป็นคอลัมน์อิสระจากกัน — กระบวนการในอนาคตอาจนำ path การดึงข้อมูลอุปกรณ์ของ `network` (SNMP) กลับมาใช้ใหม่ ในขณะที่มี `process_type` ที่แตกต่างกัน                      |
-| **การจัดเก็บข้อมูลเทเลเมทรี (Telemetry storage)** | `public.ldi_data` — ไฮเปอร์เทเบิลหนึ่งตาราง, คอลัมน์เฉพาะของ LDI (`pe_1..pe_6`, `je_1..je_4`, `thickness`, `scan_speed`, ...), มีคีย์คือ `(eqp_id, time)`, ทำ FK ไปยัง `devices.device_id`                                                                                                                                                                                                                     | ไฮเปอร์เทเบิลหนึ่งตารางต่อประเภทกระบวนการ, มีคีย์คือ `(device_id, time)`, ทำ FK ไปยัง `devices` ชื่อคอลัมน์ถูกออกแบบมาเฉพาะสำหรับแต่ละกระบวนการ (ตารางของ AOI จะมีคอลัมน์จำนวณข้อบกพร่อง/คะแนนการตรวจสอบ ไม่ใช่ PE/JE) — ไม่มีความพยายามในการบังคับให้ใช้สคีมาของเทเลเมทรีร่วมกันระหว่างกระบวนการต่างๆ เนื่องจากปริมาณที่วัดได้นั้นแตกต่างกันอย่างแท้จริง                                                                         |
-| **Alarm master**                                  | `public.ldi_alarm_ms_code` (code, severity, description) — แคตตาล็อกแจ้งเตือนที่เป็นมาตรฐาน; `public.ldi_alarm_log` เป็น event stream ที่ทำ FK ไปยังแคตตาล็อกนี้ `tests/lint/alarm-sync-linter.js` บังคับให้รหัสทุกตัวที่ซิมูเลเตอร์สามารถสร้างได้ ต้องได้รับการแก้ไขและตรงกันกับตารางนี้                                                                                                                      | ตาราง alarm-code master หนึ่งตารางต่อกระบวนการ, มีโครงสร้าง `(code, severity, description)` เหมือนกัน, รูปแบบ FK ของ event-log เหมือนกัน, ลงทะเบียน linter เหมือนกัน (`alarm-sync-linter.js` อ่านจาก DB จริงแล้ว แทนที่จะใช้รายการของ LDI ที่ฮาร์ดโค้ดไว้ — การขยายไปยังกระบวนการที่สองจึงเป็นการเพิ่มคอนฟิก ไม่ใช่การเขียนใหม่)                                                                                                  |
-| **มุมมอง SPC / RCA (SPC / RCA views)**            | `public.v_machine_spc_fleet`, `public.v_ldi_rca_recent_window` (materialized, migration 064) ทั้งคู่มีการกรอง `WHERE d.device_type = 'ldi' AND d.enabled` ก่อนที่จะทำการรวมข้อมูล (aggregating)                                                                                                                                                                                                                | มุมมองทั้งสองนี้ต้องการแค่คำสั่ง `WHERE` เดียวเพื่อครอบคลุมกระบวนการที่สอง: ไม่ว่าจะกำหนดพารามิเตอร์ให้กับตัวกรอง, หรือ (ง่ายกว่า และตรงกับสไตล์ "หนึ่งมุมมองต่อหนึ่งหน้าที่ (one view per concern)" ที่มีอยู่ในรีโพนี้อยู่แล้ว) สร้างมุมมองพี่น้องที่เฉพาะเจาะจงกับกระบวนการ (`v_aoi_spc_fleet`) ที่ใช้ตรรกะการคำนวณ Cpk/RCA ร่วมกัน, ซึ่งจะถูกรีเฟรชด้วยรูปแบบของแบ็กกราวด์จ็อบ `add_job` แบบเดียวกัน                           |
-| **แดชบอร์ดสามส่วน (Dashboard trio)**              | Andon (`ims-ldi-operator-andon.json`, บอร์ดสถานะบนพื้นโรงงานที่ดูได้อย่างรวดเร็ว), Engineering Analytics (`ims-ldi-engineering-analytics.json`, การเจาะลึก SPC/RCA), Manufacturing Overview (`ims-ldi-manufacturing.json`, KPI + ศูนย์บัญชาการการผลิต) — พร้อมด้วย `ims-easy-overview.json` (ภาพรวมทั้งกลุ่มโดยไม่ต้องคอนฟิก) และ `ldi-data-readiness.json` (การตรวจสอบคุณภาพข้อมูล) เป็นส่วนเสริมเฉพาะของ LDI | กระบวนการประเภทใหม่ทุกประเภทจะได้รับชุด Andon + Engineering Analytics + Manufacturing Overview อย่างน้อยสามอย่าง, ซึ่งจะถูกจัดเตรียมไว้ใน `monitoring/grafana/dashboards/manufacturing/` (§1 ของแผนแพลตฟอร์ม) โดยมีแท็ก: `tags: [..., "manufacturing"]` เพื่อให้การตรวจสอบโดเมนของ `dashboard-linter.js` (Check 18) ผ่าน ส่วนแดชบอร์ด "easy overview" และ "data readiness" เป็นส่วนเสริมทางเลือก ไม่ได้อยู่ในสามส่วนหลักที่จำเป็น |
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+flowchart TB
+  subgraph FOUNDATION["ฐานรากแพลตฟอร์มส่วนกลาง (Zero-Modification Foundation)"]
+    DEV[("public.devices
+แคตตาล็อกอุปกรณ์และตัวตนเครื่องจักรหลัก")]
+    PGB["PgBouncer Transaction Pooler
+(พอร์ต 5432, AUTH: plain)"]
+    CORE_LINT["ระบบตรวจสอบคุณภาพ CI & Linters
+(alarm-sync, query-budget, dashboard-linter)"]
+  end
+
+  subgraph DOMAINS["โดเมนกระบวนการผลิตที่เพิ่มเข้ามา (Additive Process Domains)"]
+    subgraph D_LDI["โดเมน: กระบวนการฉายแสง LDI"]
+      LDI_TBL[("public.ldi_data (Hypertable)")]
+      LDI_ALM[("public.ldi_alarm_ms_code & log")]
+      LDI_CAGGS[("cagg_ldi_metrics_1m / 1h")]
+    end
+    subgraph D_DRL["โดเมน: ฝูงเครื่องเจาะ CNC Drilling"]
+      DRL_TBL[("drilling_telemetry (Hypertable)")]
+      DRL_ALM[("drilling_alarm_ms_code & log")]
+      DRL_CAGGS[("v_drilling_shift_summary")]
+    end
+    subgraph D_VCP["โดเมน: สายชุบโลหะด้วยไฟฟ้า VCP"]
+      VCP_TBL[("vcp_telemetry (Hypertable)")]
+      VCP_ALM[("vcp_alarm_ms_code & log")]
+      VCP_CAGGS[("v_vcp_active_lines & bath_health")]
+    end
+    subgraph D_FUTURE["โดเมน: กระบวนการผลิตในอนาคต (เช่น AOI / Etching)"]
+      NEW_TBL[("public.<process>_data (Hypertable)")]
+      NEW_ALM[("<process>_alarm_ms_code & log")]
+      NEW_CAGGS[("cagg_<process>_1m")]
+    end
+  end
+
+  subgraph DASHBOARDS["ระบบแดชบอร์ด Grafana (มาตรฐาน Grid-24)"]
+    LDI_DASH["แดชบอร์ด 3 ประสาน LDI
+(Andon, Analytics, Manufacturing)"]
+    DRL_DASH["แดชบอร์ด 3 ประสาน Drilling
+(Fleet, Investigation, Shift)"]
+    VCP_DASH["แดชบอร์ด 3 ประสาน VCP
+(Wall, Console, Overview)"]
+    NEW_DASH["แดชบอร์ด 3 ประสานใหม่
+(Andon, Analytics, Command)"]
+  end
+
+  DEV --> LDI_TBL
+  DEV --> DRL_TBL
+  DEV --> VCP_TBL
+  DEV -.-> NEW_TBL
+
+  LDI_TBL --> LDI_CAGGS --> LDI_DASH
+  DRL_TBL --> DRL_CAGGS --> DRL_DASH
+  VCP_TBL --> VCP_CAGGS --> VCP_DASH
+  NEW_TBL -.-> NEW_CAGGS -.-> NEW_DASH
+
+  style FOUNDATION fill:#1e293b,stroke:#00F2FE,color:#f8fafc
+  style DOMAINS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
+  style DASHBOARDS fill:#1e293b,stroke:#10B981,color:#f8fafc
+```
 
 ---
 
-## รายการตรวจสอบการเริ่มต้นใช้งานสำหรับกระบวนการประเภทใหม่ (Onboarding checklist for a new process type)
+## 2. รูปแบบมาตรฐาน 5 ระดับสำหรับการขยายระบบ (5-Tier Pattern)
 
-1. **ไมเกรชัน (Migration):** ลงทะเบียนอุปกรณ์ใน `public.devices` ด้วย `device_type` ที่เหมาะสมและค่า `process_type` ใหม่ หากกระบวนการต้องการคอลัมน์เทเลเมทรีของตัวเอง ให้สร้างไฮเปอร์เทเบิลในไมเกรชันเดียวกัน (หมายเลขลำดับถัดไป — ห้ามแก้ไขไมเกรชันที่ถูกรวม (merged) แล้ว ดู `IMS_MANUFACTURING_PLATFORM_V2.md` §7 นโยบายการกำหนดเวอร์ชัน)
-2. **Alarm master:** สร้างตาราง `<process>_alarm_ms_code` (code, severity, description) และตารางเหตุการณ์ `<process>_alarm_log` ซึ่งทำ FK เชื่อมโยงไปหามัน
-3. **มุมมอง SPC/RCA (SPC/RCA views):** เพิ่มมุมมองเฉพาะกระบวนการตามรูปแบบของ `v_machine_spc_fleet` / `v_ldi_rca_recent_window` (แบบ materialized, รีเฟรชด้วย `add_job` หากการรวมข้อมูลมีความซับซ้อน — ดูเหตุผลของ migration 064 ว่าเมื่อใดที่ materialization ถึงคุ้มค่ากว่า plain view)
-4. **แดชบอร์ดสามส่วน (Dashboard trio):** สร้างแดชบอร์ด Andon / Engineering Analytics / Manufacturing Overview ซึ่งวางไว้ใน `monitoring/grafana/dashboards/manufacturing/`, แท็กว่า `manufacturing` (และชื่อกระบวนการ เช่น `aoi`)
-5. **การลงทะเบียน Linter (Linter registration):** ขยาย `tests/lint/alarm-sync-linter.js` และ `tests/lint/rca-mapping-coverage.js` เพื่อรวมถึง alarm master / การจับคู่หมวดหมู่ใหม่ (ทั้งคู่อ่านจาก DB/สถานะ flow จริงแล้ว แทนที่จะใช้รายการเฉพาะ LDI ที่ฮาร์ดโค้ดไว้ ตามที่ได้แก้ไขไปก่อนหน้านี้ในเซสชัน — การขยายสิ่งเหล่านี้จึงเป็นการทำส่วนเพิ่ม)
-6. **การสร้างบัญชีรายชื่อใหม่ (Inventory regeneration):** รัน `node scripts/generate-dashboard-inventory.js` และ `node scripts/generate-schema-inventory.js` เพื่อให้เอกสารที่สร้างขึ้นดึงแดชบอร์ด/ตารางใหม่ไปใช้งานโดยอัตโนมัติ — ห้ามแก้ไขไฟล์ใดไฟล์หนึ่งด้วยตนเอง
+| ระดับสถาปัตยกรรม | การใช้งานจริงของ LDI (Reference Implementation) | รูปแบบทั่วไปสำหรับกระบวนการถัดไป (เช่น AOI / Etching) |
+|---|---|---|
+| **1. ตัวตนเครื่องจักร (Device Identity)** | กำหนด `public.devices.device_type = 'ldi'`, `public.devices.process_type = 'ldi'` (ไมเกรชัน 067/068) อุปกรณ์ที่ไม่ใช่เครื่องจักรจะมี `process_type = NULL` | ลงทะเบียนอุปกรณ์ด้วย `device_type` เฉพาะ (เช่น `'aoi'`) และระบุ `process_type` (`'aoi'`, `'etching'`) การแยกสองคอลัมน์นี้ช่วยให้สามารถเพิ่มกระบวนการใหม่ได้โดยไม่กระทบต่อตรรกะเดิม |
+| **2. การจัดเก็บข้อมูลโทรมาตร** | ตาราง Hypertable `public.ldi_data` เก็บฟิลด์เฉพาะของ LDI (`pe1..pe6`, `je1..je4`, ความหนาแผ่น, ความเร็วสแกน) อ้างอิงตาม `(machine_id, time)` | สร้าง Hypertable 1 ตารางต่อ 1 กระบวนการ โดยมีคีย์ `(device_id, time)` เชื่อมโยงกับ `public.devices` คอลัมน์จะเป็นค่าเฉพาะของกระบวนการนั้นโดยตรง (เช่น จำนวนข้อบกพร่องสำหรับ AOI) |
+| **3. พจนานุกรมการแจ้งเตือน** | ตาราง `public.ldi_alarm_ms_code` (รหัส, ความรุนแรง, คำอธิบาย) และประวัติเหตุการณ์ `public.ldi_alarm_log` ตรวจสอบผ่าน `alarm-sync-linter.js` | สร้างตารางรหัสแจ้งเตือน 1 ชุดต่อกระบวนการ (`<process>_alarm_ms_code`) โดยใช้โครงสร้างและ Foreign Key รูปแบบเดียวกันทั้งหมด |
+| **4. วิว SPC / RCA** | วิว `public.v_machine_spc_fleet` และ `public.v_ldi_rca_recent_window` (ไมเกรชัน 064) กรองเฉพาะ `device_type = 'ldi'` | สร้างวิวน้องใหม่ (`v_<process>_spc_fleet`) สำหรับคำนวณค่า Cpk และ RCA โดยใช้สูตรมาตรฐานเดียวกัน และกำหนดเวลารีเฟรชผ่าน `add_job` |
+| **5. ชุดแดชบอร์ด 3 ประสาน** | **Operator Andon** (`ims-ldi-operator-andon.json`), **Engineering Analytics** (`ims-ldi-engineering-analytics.json`) และ **Manufacturing Overview** (`ims-ldi-manufacturing.json`) | สร้างชุดแดชบอร์ด 3 ประสานสำหรับกระบวนการใหม่ จัดเก็บใน `monitoring/grafana/dashboards/manufacturing/` พร้อมติดแท็ก `["manufacturing", "<process>"]` เพื่อให้ผ่านการตรวจของ Linter |
 
-ไม่มีขั้นตอนใดข้างต้นที่ต้องไปปรับแต่งตาราง, มุมมอง, แดชบอร์ด, หรือ linter ของ LDI เลย — นั่นคือประเด็นสำคัญของรูปแบบนี้
+---
+
+## 3. โค้ด DDL ตัวอย่างสำหรับการเชื่อมต่อกระบวนการผลิตใหม่
+
+เมื่อต้องการเชื่อมต่อกระบวนการผลิตใหม่ ให้สร้างไฟล์ไมเกรชันตามโครงสร้างมาตรฐานดังนี้:
+
+```sql
+-- Migration 087: ตัวอย่างการเชื่อมต่อกระบวนการใหม่ (Automated Optical Inspection - AOI)
+-- 1. ลงทะเบียนอุปกรณ์ใหม่ลงในแคตตาล็อกหลัก
+INSERT INTO public.devices (device_id, hostname, ip_address, device_type, process_type, location, enabled)
+VALUES 
+  ('AOI-01', 'aoi-station-01.factory.local', '10.20.30.51', 'aoi', 'aoi', 'Floor 2 - SMT Line 1', TRUE),
+  ('AOI-02', 'aoi-station-02.factory.local', '10.20.30.52', 'aoi', 'aoi', 'Floor 2 - SMT Line 2', TRUE)
+ON CONFLICT (device_id) DO NOTHING;
+
+-- 2. สร้างตารางจัดเก็บโทรมาตรเฉพาะกระบวนการ และแปลงเป็น Hypertable
+CREATE TABLE IF NOT EXISTS public.aoi_telemetry (
+  "time" TIMESTAMPTZ NOT NULL,
+  machine_id VARCHAR(64) NOT NULL REFERENCES public.devices(device_id),
+  inspection_cycle_ms NUMERIC(10,2),
+  defect_count INT DEFAULT 0,
+  false_alarm_rate NUMERIC(5,2),
+  optical_lighting_lux NUMERIC(8,2),
+  lot_id VARCHAR(64)
+);
+
+SELECT create_hypertable('public.aoi_telemetry', 'time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+
+-- 3. เปิดใช้งานการบีบอัดข้อมูลแบบ Columnar อัตโนมัติ
+ALTER TABLE public.aoi_telemetry SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'machine_id',
+  timescaledb.compress_orderby = 'time DESC'
+);
+SELECT add_compression_policy('public.aoi_telemetry', INTERVAL '7 days');
+
+-- 4. สร้างพจนานุกรมรหัสการแจ้งเตือนและประวัติเหตุการณ์
+CREATE TABLE IF NOT EXISTS public.aoi_alarm_ms_code (
+  alarm_code VARCHAR(32) PRIMARY KEY,
+  severity VARCHAR(16) NOT NULL CHECK (severity IN ('CRITICAL', 'WARNING', 'INFO')),
+  description TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.aoi_alarm_log (
+  event_id BIGSERIAL PRIMARY KEY,
+  "time" TIMESTAMPTZ NOT NULL,
+  machine_id VARCHAR(64) NOT NULL REFERENCES public.devices(device_id),
+  alarm_code VARCHAR(32) NOT NULL REFERENCES public.aoi_alarm_ms_code(alarm_code),
+  status VARCHAR(16) DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'ACKNOWLEDGED', 'RESOLVED')),
+  acknowledged_by VARCHAR(64),
+  resolved_by VARCHAR(64)
+);
+```
+
+---
+
+## 4. รายการตรวจสอบความพร้อมในการเพิ่มกระบวนการใหม่ (Checklist)
+
+1. **ไมเกรชันฐานข้อมูล:** ลงทะเบียนเครื่องจักรใน `public.devices` พร้อมระบุ `device_type` และ `process_type` ใหม่ สร้างตาราง Hypertable และนโยบายบีบอัดข้อมูล
+2. **พจนานุกรมแจ้งเตือน:** สร้างตารางรหัส `<process>_alarm_ms_code` และตารางประวัติเหตุการณ์ `<process>_alarm_log`
+3. **ผลรวมสรุปต่อเนื่องและวิว:** เพิ่ม CAGG Rollups (`cagg_<process>_1m`) และวิว SPC/RCA ประจำกระบวนการ
+4. **ชุดแดชบอร์ด 3 ประสาน:** สร้างแดชบอร์ด Operator Andon, Engineering Analytics และ Manufacturing Overview จัดเก็บในโฟลเดอร์ `manufacturing` พร้อมแท็ก `["manufacturing", "<process>"]`
+5. **การทดสอบความถูกต้อง:** ลงทะเบียนกระบวนการใหม่ใน `tests/lint/alarm-sync-linter.js` และสั่งรัน `scripts/pre-commit.js` เพื่อยืนยันว่าผ่านเกณฑ์ 100%
+6. **อัปเดตเอกสารอัตโนมัติ:** สั่งรัน `node scripts/generate-dashboard-inventory.js` และ `node scripts/generate-schema-inventory.js` เพื่ออัปเดตรายการแดชบอร์ดและสคีมาโดยอัตโนมัติ
+
+---
+
+[⬅️ กลับสู่ภาพรวมสถาปัตยกรรม](ARCHITECTURE.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> หน้าหลักคลังข้อมูล](../../README.md)
