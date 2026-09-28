@@ -9,7 +9,7 @@
 
 <img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **文档：** 安全策略
 <img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **状态：** 投产前（Pre-production）
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **更新日期：** 2026-09-26（已对照 `main` 核实）
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **更新日期：** 2026-09-28（已对照 `main` 核实）
 
 </div>
 

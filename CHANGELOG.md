@@ -15,15 +15,18 @@
 
 ---
 
-## [Unreleased] — `main` as of 2026-09-26
+## [Unreleased] — `main` as of 2026-09-28
 
-### Added (merged to `main`, 2026-09-10 to 2026-09-26)
+### Added (merged to `main`, 2026-09-10 to 2026-09-28)
 - **PR #20** — EAP SCADA Floor 1: the operational map defaults to REAL/UNAVAILABLE instead of simulated state, with a full audit.
 - **PR #21** — CSS/UI/UX: design tokens, typography, responsive layout, motion and a committed visual-regression baseline; token-parity and status-colour drift lints run in pre-commit and CI.
 - **PR #22** — `integration/andon-layout-safe` → `main`: the Factory Twin 3D and EAP work reconciled onto `main` (13 conflicts resolved, main-only commits preserved); the Operator Andon board fits without scrolling at 1920×1080 and 3840×2160, and 1280×720 is declared unsupported.
 - **PR #23** — Factory Twin 3D deep runtime audit (render loop, WebGL lifecycle, measured performance) and cached private geometry/mapping/zone file reads.
 
-### Documentation
+### Documentation & Repository Hygiene
+- Re-verified all living documentation and inventories against live runtime (`main`) as of 2026-09-28 across EN, TH, and ZH-CN.
+- Synchronized release badge to `v1.0.1` and removed living rule files (`AGENTS.md`) from `.gitignore`.
+- Regenerated and verified `DASHBOARD_INVENTORY.md` (15 dashboards, 190 panels) and `DATABASE_SCHEMA.md` (12 tables, 7 CAGGs, 57 migrations) with zero drift.
 - Living documents re-verified against `main` in English, Thai and Simplified Chinese: README, `CLAUDE.md`, docs index, admin and user manuals, operations runbook, architecture, security policy, contributing guide.
 - Floor 1 facility dimensions withheld from public documents; real server hostnames and mirrored personal files removed.
 - Standardized trilingual global navigation (`GLOBAL_NAV`) with localized labels and relative paths across all 600+ markdown files.

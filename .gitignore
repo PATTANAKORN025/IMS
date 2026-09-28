@@ -36,7 +36,6 @@ ops-logs/
 .ai/
 .opencode/
 .mcp.json
-AGENTS.md
 MEMORY.md
 checkpoint.md
 

@@ -9,7 +9,7 @@
 
 <img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Document:** Security Policy
 <img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Pre-production
-<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Updated:** 2026-09-26 (verified against `main`)
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Updated:** 2026-09-28 (verified against `main`)
 
 </div>
 

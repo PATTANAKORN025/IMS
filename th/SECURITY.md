@@ -9,7 +9,7 @@
 
 <img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **เอกสาร:** นโยบายความปลอดภัย
 <img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **สถานะ:** ก่อนใช้งานจริง (Pre-production)
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **ปรับปรุงล่าสุด:** 2026-09-26 (ตรวจทานเทียบกับ `main`)
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **ปรับปรุงล่าสุด:** 2026-09-28 (ตรวจทานเทียบกับ `main`)
 
 </div>
 

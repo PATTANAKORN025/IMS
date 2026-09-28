@@ -11,7 +11,7 @@
 > (`node scripts/generate-dashboard-inventory.js --check`) 会在
 > 此文件与当前仪表板内容不匹配时使构建失败。
 >
-> 最后生成时间：2026-08-18 | 仪表板总数：15 | 面板总数：190
+> 最后生成时间：2026-09-28 | 仪表板总数：15 | 面板总数：190
 
 ## Infrastructure (5)
 

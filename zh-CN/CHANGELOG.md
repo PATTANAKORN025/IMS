@@ -15,15 +15,18 @@
 
 ---
 
-## [Unreleased] — 截至 2026-09-26 的 `main`
+## [Unreleased] — 截至 2026-09-28 的 `main`
 
-### 新增（2026-09-10 至 2026-09-26 合并到 `main`）
+### 新增（2026-09-10 至 2026-09-28 合并到 `main`）
 - **PR #20** — EAP SCADA 一楼：运行地图默认显示 REAL/UNAVAILABLE，而非模拟状态，并附完整审计。
 - **PR #21** — CSS/UI/UX：设计 token、排版、响应式布局、动效以及已提交的可视化回归基线；token 一致性与状态颜色漂移检查在 pre-commit 与 CI 中运行。
 - **PR #22** — `integration/andon-layout-safe` → `main`：将 Factory Twin 3D 与 EAP 相关工作合并到 `main`（解决 13 处冲突，保留仅存在于 main 的提交）；Operator Andon 看板在 1920×1080 与 3840×2160 下无需滚动，并声明不支持 1280×720。
 - **PR #23** — Factory Twin 3D 运行时深度审计（渲染循环、WebGL 生命周期、实测性能），并缓存私有几何/映射/区域文件的读取。
 
-### 文档
+### 文档与仓库规范化治理 (Documentation & Repository Hygiene)
+- 截至 2026-09-28 对照实时运行系统 (`main`) 在英、泰、简中三语下重新核实所有现行文档与系统清单。
+- 同步全语言 README 版本徽标至 `v1.0.1`，并从 `.gitignore` 中移除核心规则文档 (`AGENTS.md`)。
+- 重新生成并核实 `DASHBOARD_INVENTORY.md`（15 个仪表板，190 个面板）与 `DATABASE_SCHEMA.md`（12 个数据表，7 个 CAGG，57 项迁移），确保零漂移。
 - 现行文档已对照 `main` 以英文、泰文与简体中文重新核实：README、`CLAUDE.md`、文档索引、管理员与用户手册、运维手册、架构、安全策略、贡献指南。
 - 公开文档不再披露一楼建筑尺寸；删除真实服务器主机名以及被镜像的个人文件。
 - 在全仓库 600 多个 Markdown 文件中统一标准化三语全局导航（`GLOBAL_NAV`），包含本地化文字与正确相对路径。
