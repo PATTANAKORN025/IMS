@@ -66,7 +66,9 @@ scratchpad/
 /prod-*.png
 /*.diff
 /*.patch
-.agents.zip
+*.zip
+*.tar.gz
+*.tgz
 
 
 # K6 results

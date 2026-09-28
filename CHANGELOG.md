@@ -39,7 +39,8 @@
 ### Documentation & Repository Hygiene
 - Re-verified all living documentation and inventories against live runtime (`main`) as of 2026-09-28 across EN, TH, and ZH-CN.
 - Synchronized release badge to `v1.0.1` and removed living rule files (`AGENTS.md`) from `.gitignore`.
-- Regenerated and verified `DASHBOARD_INVENTORY.md` (15 dashboards, 190 panels) and `DATABASE_SCHEMA.md` (12 tables, 7 CAGGs, 57 migrations) with zero drift.
+- Regenerated and verified `DASHBOARD_INVENTORY.md` (22 dashboards, 288 panels) and `DATABASE_SCHEMA.md` (61 migrations, 013–086) with zero drift.
+- Hardened `.gitignore` with global archive ignore patterns (`*.zip`, `*.tar.gz`, `*.tgz`).
 - Living documents re-verified against `main` in English, Thai and Simplified Chinese: README, `CLAUDE.md`, docs index, admin and user manuals, operations runbook, architecture, security policy, contributing guide.
 - Floor 1 facility dimensions withheld from public documents; real server hostnames and mirrored personal files removed.
 - Standardized trilingual global navigation (`GLOBAL_NAV`) with localized labels and relative paths across all 600+ markdown files.
