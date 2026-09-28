@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+</div>
+<br/>
+
 # ข้อมูลสังเคราะห์สำหรับงานเจาะ (Drilling) และ VCP
 
 แดชบอร์ดงานเจาะและ VCP อ่านข้อมูลจากฐานข้อมูล `eap_backup` บนเซิร์ฟเวอร์โรงงาน ฐานข้อมูลนี้คือข้อมูลโรงงานที่กู้คืนมาจากสำรอง และไม่ได้อยู่ใน git หน้านี้อธิบายวิธีสร้าง `eap_backup` ทดแทนจากข้อมูลที่สร้างขึ้นเอง เพื่อให้โฟลเดอร์ Drilling, โฟลเดอร์ VCP, กฎแจ้งเตือนของ VCP และ migration 084–086 ทำงานได้ครบโดยไม่ต้องใช้ข้อมูลโรงงาน

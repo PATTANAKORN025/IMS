@@ -28,7 +28,7 @@
 การออกแบบระดับสูง คุณค่าทางธุรกิจ และความสามารถของผลิตภัณฑ์
 
 - **[ภาพรวมผลิตภัณฑ์](product/README.md)** - ฟีเจอร์และภาพรวมระบบ
-- **[ระบบนิเวศแดชบอร์ด](product/DASHBOARD_ECOSYSTEM.md)** - แดชบอร์ด Grafana ที่ provision ไว้ 15 ชุดทำงานร่วมกันอย่างไร
+- **[ระบบนิเวศแดชบอร์ด](product/DASHBOARD_ECOSYSTEM.md)** - แดชบอร์ด Grafana ที่ provision ไว้ 22 ชุดทำงานร่วมกันอย่างไร
 - **[Architecture Book](architecture/IMS_PLATFORM_BOOK.md)** - สถาปัตยกรรมทางเทคนิคทั้ง stack พร้อมอภิธานศัพท์
 - **[สถาปัตยกรรม](architecture/ARCHITECTURE.md)** - บริบทระบบ บริการ ข้อจำกัด และการตัดสินใจเชิงสถาปัตยกรรม
 - **[การไหลของข้อมูล](architecture/DATA_FLOW.md)** - ไปป์ไลน์ telemetry ตั้งแต่ต้นทางจนถึงการแสดงผล

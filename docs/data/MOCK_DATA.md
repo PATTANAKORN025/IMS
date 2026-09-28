@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Synthetic Drilling and VCP Data
 
 The drilling and VCP dashboards read the `eap_backup` database. On the plant server that database is a restore of factory data, and it is not in git. This page shows how to build a stand-in `eap_backup` from generated data, so the drilling folder, the VCP folder, the VCP alert rules and migrations 084–086 all run with no factory data.

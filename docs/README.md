@@ -28,7 +28,7 @@
 The high-level design, business value, and product capabilities.
 
 - **[Product Overview](product/README.md)** - Features and ecosystem.
-- **[Dashboard Ecosystem](product/DASHBOARD_ECOSYSTEM.md)** - How the 15 provisioned Grafana dashboards fit together.
+- **[Dashboard Ecosystem](product/DASHBOARD_ECOSYSTEM.md)** - How the 22 provisioned Grafana dashboards fit together.
 - **[Architecture Book](architecture/IMS_PLATFORM_BOOK.md)** - Full-stack technical architecture and glossary.
 - **[Architecture](architecture/ARCHITECTURE.md)** - System context, services, constraints and decisions.
 - **[Data Flow](architecture/DATA_FLOW.md)** - Telemetry pipeline from edge to visualization.

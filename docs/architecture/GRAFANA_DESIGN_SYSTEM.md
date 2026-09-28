@@ -286,7 +286,7 @@ Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
 
 ## 7.2 Panel-container styling (CSS-injection text panel) — undocumented until 2026-08-25
 
-12 of 15 dashboards (counted 2026-09-26) carry a small, `transparent: true` `text` panel (usually
+11 of 22 dashboards (counted 2026-09-28; originally 12 of the 15 baseline dashboards) carry a small, `transparent: true` `text` panel (usually
 `gridPos: {x:0, y:0, w:24, h:1}`, sometimes split across 2 panels) whose
 `options.content` is a bare `<style>` block targeting Grafana's own
 `[class*="-panel-container"]`/`[class*="-panel-title"]` selectors: rounded

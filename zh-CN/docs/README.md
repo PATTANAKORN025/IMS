@@ -28,7 +28,7 @@
 高层设计、业务价值与产品能力。
 
 - **[产品概览](product/README.md)** - 功能与整体生态。
-- **[仪表板生态](product/DASHBOARD_ECOSYSTEM.md)** - 已预置的 15 个 Grafana 仪表板如何协同工作。
+- **[仪表板生态](product/DASHBOARD_ECOSYSTEM.md)** - 已预置的 22 个 Grafana 仪表板如何协同工作。
 - **[Architecture Book](architecture/IMS_PLATFORM_BOOK.md)** - 全栈技术架构与术语表。
 - **[架构](architecture/ARCHITECTURE.md)** - 系统上下文、服务、约束与架构决策。
 - **[数据流](architecture/DATA_FLOW.md)** - 从边缘到可视化的遥测流水线。

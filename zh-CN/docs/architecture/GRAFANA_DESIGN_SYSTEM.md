@@ -266,7 +266,7 @@ stat/gauge/bargauge 面板发出警告，以防在添加新面板时暗中出现
 
 ## 7.2 面板容器样式（注入 CSS 的 text 面板）— 2026-08-25 之前未有文档
 
-15 个仪表板中有 12 个（2026-09-26 统计）带有一个小型、`transparent: true` 的 `text` 面板（通常位于
+22 个仪表板中有 11 个（2026-09-28 统计；最初为 15 个基准仪表板中的 12 个）带有一个小型、`transparent: true` 的 `text` 面板（通常位于
 `gridPos: {x:0, y:0, w:24, h:1}`，有时拆成 2 个面板），其 `options.content` 是一个纯 `<style>` 块，
 作用于 Grafana 自身的 `[class*="-panel-container"]`/`[class*="-panel-title"]` 选择器：圆角、淡青色边框、
 悬停发光效果，以及大写小号字的面板标题。

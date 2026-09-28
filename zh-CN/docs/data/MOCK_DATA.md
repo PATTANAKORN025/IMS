@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+</div>
+<br/>
+
 # 钻孔与 VCP 合成数据
 
 钻孔和 VCP 仪表板读取 `eap_backup` 数据库。在工厂服务器上，该数据库是从备份还原的工厂数据，不在 git 中。本页说明如何用生成的数据构建一个替代用的 `eap_backup`，使钻孔文件夹、VCP 文件夹、VCP 告警规则和迁移 084–086 在没有工厂数据的情况下完整运行。

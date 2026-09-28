@@ -276,7 +276,7 @@ stat/gauge/bargauge ใด ๆ ที่ใช้ `colorMode: "background"` ภ�
 
 ## 7.2 การตกแต่งกรอบ panel (text panel ที่ฉีด CSS) — ไม่มีเอกสารจนถึง 2026-08-25
 
-แดชบอร์ด 12 จาก 15 ชุด (นับเมื่อ 2026-09-26) มี `text` panel ขนาดเล็กแบบ `transparent: true` (ส่วนใหญ่อยู่ที่
+แดชบอร์ด 11 จาก 22 ชุด (นับเมื่อ 2026-09-28; เดิม 12 จาก 15 ชุดใน baseline) มี `text` panel ขนาดเล็กแบบ `transparent: true` (ส่วนใหญ่อยู่ที่
 `gridPos: {x:0, y:0, w:24, h:1}` บางชุดแบ่งเป็น 2 panel) ซึ่ง `options.content` เป็นบล็อก `<style>` ล้วน
 ที่เล็งไปยัง selector ของ Grafana เอง `[class*="-panel-container"]`/`[class*="-panel-title"]`: มุมโค้ง
 ขอบสีฟ้าอมเขียวจาง ๆ แสงเรืองเมื่อเลื่อนเมาส์ผ่าน และชื่อ panel เป็นตัวพิมพ์ใหญ่ขนาดเล็ก
