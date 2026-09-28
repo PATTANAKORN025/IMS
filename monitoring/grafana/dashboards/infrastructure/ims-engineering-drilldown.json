@@ -1,11 +1,18 @@
 {
   "uid": "ims-engineering",
-  "title": "IMS Engineering Drill-Down",
+  "title": "Platform — 02 Host & Network Infrastructure Engineering Drill-Down",
   "description": "Per-server deep dive: CPU/RAM/disk/temperature/network gauges and timeseries for a selected machine, plus legacy-pipeline LDI throughput/quality and Z-Score anomaly panels.",
   "tags": [
-    "ims",
+    "drilldown",
     "engineering",
-    "infrastructure"
+    "hosts",
+    "ims",
+    "infrastructure",
+    "level-3-diagnostic",
+    "network",
+    "platform",
+    "snmp",
+    "sre"
   ],
   "timezone": "UTC",
   "schemaVersion": 39,

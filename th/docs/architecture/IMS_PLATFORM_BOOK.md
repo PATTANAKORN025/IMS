@@ -15,7 +15,7 @@
 
 ## บทสรุปผู้บริหาร (Executive summary)
 
-IMS คือ monitoring platform ที่ครอบคลุมสองโดเมน ได้แก่ **infrastructure** (เซิร์ฟเวอร์, อุปกรณ์เครือข่าย) และ **LDI manufacturing** (สายการผลิต PCB Laser Direct Imaging) — โดยใช้งาน TimescaleDB ร่วมกันหนึ่งตัว, Grafana หนึ่งอินสแตนซ์ (15 แดชบอร์ด แบ่งออกเป็นโฟลเดอร์ `Infrastructure`/`Manufacturing`), และระบบ alerting ผ่านทั้งกฎเนทีฟของ Grafana และ Prometheus/Alertmanager ฝั่งการผลิตครอบคลุมการวิเคราะห์ (analytics) ทางด้าน SPC (กระบวนการวัดความสามารถ Cpk) และ RCA (ความสัมพันธ์ระหว่างการแจ้งเตือนกับพารามิเตอร์) ที่แท้จริง ไม่ใช่เป็นเพียงการแสดงผล telemetry เท่านั้น ทั้งสองโดเมนถูกแยกออกจากกันเชิงตรรกะ (logical separation) ด้วย (โฟลเดอร์, แท็ก, `CODEOWNERS`) แต่ใช้งาน infrastructure ร่วมกัน — ดู `docs/architecture/OWNERSHIP.md` สำหรับเหตุผลว่าทำไมการแยกโครงสร้างทางกายภาพ (physical split) จึงไม่คุ้มค่าสำหรับขนาดของระบบในปัจจุบัน
+IMS คือ monitoring platform ที่ครอบคลุมสองโดเมน ได้แก่ **infrastructure** (เซิร์ฟเวอร์, อุปกรณ์เครือข่าย) และ **LDI manufacturing** (สายการผลิต PCB Laser Direct Imaging) — โดยใช้งาน TimescaleDB ร่วมกันหนึ่งตัว, Grafana หนึ่งอินสแตนซ์ (22 แดชบอร์ด ในสี่โฟลเดอร์: งานเจาะ, LDI, แพลตฟอร์ม, VCP), และระบบ alerting ผ่านทั้งกฎเนทีฟของ Grafana และ Prometheus/Alertmanager ฝั่งการผลิตครอบคลุมการวิเคราะห์ (analytics) ทางด้าน SPC (กระบวนการวัดความสามารถ Cpk) และ RCA (ความสัมพันธ์ระหว่างการแจ้งเตือนกับพารามิเตอร์) ที่แท้จริง ไม่ใช่เป็นเพียงการแสดงผล telemetry เท่านั้น ทั้งสองโดเมนถูกแยกออกจากกันเชิงตรรกะ (logical separation) ด้วย (โฟลเดอร์, แท็ก, `CODEOWNERS`) แต่ใช้งาน infrastructure ร่วมกัน — ดู `docs/architecture/OWNERSHIP.md` สำหรับเหตุผลว่าทำไมการแยกโครงสร้างทางกายภาพ (physical split) จึงไม่คุ้มค่าสำหรับขนาดของระบบในปัจจุบัน
 
 ---
 

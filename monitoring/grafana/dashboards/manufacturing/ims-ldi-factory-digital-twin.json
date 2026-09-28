@@ -3102,7 +3102,7 @@
   "links": [],
   "id": null,
   "uid": "ims-ldi-factory-digital-twin",
-  "title": "IMS LDI - Factory Digital Twin",
+  "title": "LDI — 03 Factory 3D Digital Twin & Spatial Layout",
   "version": 2,
   "time": {
     "from": "now-2h",
@@ -3111,10 +3111,14 @@
   "timezone": "UTC",
   "refresh": "30s",
   "tags": [
-    "IMS",
-    "LDI",
-    "real-data",
-    "current-database",
-    "manufacturing"
+    "cad",
+    "digital-twin",
+    "ims",
+    "ldi",
+    "level-2-operation",
+    "lithography",
+    "manufacturing",
+    "spatial",
+    "supervisor"
   ]
 }

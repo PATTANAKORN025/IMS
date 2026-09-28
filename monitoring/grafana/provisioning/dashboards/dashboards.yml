@@ -1,9 +1,31 @@
 apiVersion: 1
 
 providers:
+  - name: 'IMS Drilling'
+    orgId: 1
+    folder: '01 · Drilling Operations (CNC)'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards/drilling
+      foldersFromFilesStructure: false
+
+  - name: 'IMS Manufacturing'
+    orgId: 1
+    folder: '02 · Lithography Operations (LDI PCB)'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards/manufacturing
+      foldersFromFilesStructure: false
+
   - name: 'IMS Infrastructure'
     orgId: 1
-    folder: 'IMS Infrastructure'
+    folder: '03 · Platform Infrastructure & NOC'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
@@ -12,15 +34,16 @@ providers:
       path: /var/lib/grafana/dashboards/infrastructure
       foldersFromFilesStructure: false
 
-  - name: 'IMS Manufacturing'
+  - name: 'IMS Plating'
     orgId: 1
-    folder: 'IMS Manufacturing'
+    folder: '04 · Plating Operations (VCP Line)'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
     allowUiUpdates: false
     options:
-      path: /var/lib/grafana/dashboards/manufacturing
+      path: /var/lib/grafana/dashboards/vcp
       foldersFromFilesStructure: false
+
 
 

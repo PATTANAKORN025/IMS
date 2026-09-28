@@ -1,0 +1,22 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "IMS TimescaleDB (Direct 5432)",
+      "Group": "IMS Cluster",
+      "Host": "timescaledb",
+      "Port": 5432,
+      "MaintenanceDB": "ims",
+      "Username": "ims_admin",
+      "SSLMode": "prefer"
+    },
+    "2": {
+      "Name": "IMS PgBouncer (Pool 5432)",
+      "Group": "IMS Cluster",
+      "Host": "pgbouncer",
+      "Port": 5432,
+      "MaintenanceDB": "ims",
+      "Username": "ims_admin",
+      "SSLMode": "disable"
+    }
+  }
+}

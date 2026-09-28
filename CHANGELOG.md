@@ -22,6 +22,19 @@
 - **PR #21** — CSS/UI/UX: design tokens, typography, responsive layout, motion and a committed visual-regression baseline; token-parity and status-colour drift lints run in pre-commit and CI.
 - **PR #22** — `integration/andon-layout-safe` → `main`: the Factory Twin 3D and EAP work reconciled onto `main` (13 conflicts resolved, main-only commits preserved); the Operator Andon board fits without scrolling at 1920×1080 and 3840×2160, and 1280×720 is declared unsupported.
 - **PR #23** — Factory Twin 3D deep runtime audit (render loop, WebGL lifecycle, measured performance) and cached private geometry/mapping/zone file reads.
+- **Drilling and VCP plating** — 7 dashboards in two new Grafana folders (01 Drilling, 04 VCP), 7 VCP alert rules, the `drilling-timescaledb` data source for the `eap_backup` database, and migrations 083–086:
+  - 083: database guardrails;
+  - 084–086: drilling views, indexes, and domain schemas with a data catalog. These use views only and rename nothing.
+
+  All four Grafana folders are now numbered 01–04.
+
+  For databases without plant data, a synthetic generator now builds `eap_backup` (`docs/data/MOCK_DATA.md`); a unit test covering it runs in pre-commit and CI.
+
+  Runtime guardrails:
+  - `jit=off` and worker, timeout, and slow-query logging settings on TimescaleDB;
+  - pgAdmin bound to `127.0.0.1`;
+  - nginx paths for Grafana health checks and Grafana Live WebSocket;
+  - two LDI Cpk alert rules paused until `v_machine_spc_ranking` is fixed.
 
 ### Documentation & Repository Hygiene
 - Re-verified all living documentation and inventories against live runtime (`main`) as of 2026-09-28 across EN, TH, and ZH-CN.

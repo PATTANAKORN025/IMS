@@ -1,0 +1,543 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "01 · Fleet Overview",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/001/ims-drilling",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "02 · Shift Production",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-history",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "03 · Machine Investigation",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-detail",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "04 · Anomaly Analysis",
+      "type": "link",
+      "icon": "shield",
+      "url": "/d/ims-drilling-5-anomaly",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Bit Breakage & BBD Trends",
+      "description": "Bit breakage and broken bit detection incidents",
+      "type": "stat",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF003C"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ]
+        },
+        "textMode": "auto",
+        "noValue": "0"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL statement_timeout = '15s'; SET LOCAL work_mem = '64MB'; SET LOCAL jit = off;\nWITH anomaly_base AS (\n  SELECT\n    id, equipment_id, event_time, event_type, event_code, event_message, spindle,\n    (\n      event_code IN ('0408', '0417', '0120')\n      OR event_message ~* 'broken|bbd'\n    ) AS is_bit_breakage\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n    AND ('All' = ANY(ARRAY[${machine_id:sqlstring}]::text[]) OR equipment_id = ANY(ARRAY[${machine_id:sqlstring}]::text[]))\n    AND (\n      event_type IN ('ALARM', 'E')\n      OR event_code LIKE '04%'\n      OR event_code LIKE '07%'\n      OR event_code = '0204'\n      OR event_code IN ('0102', '0113', '0114', '0119', '0120', '0124', '0125', '0126', '0127', '0128', '0218')\n    )\n)\nSELECT $__timeGroup(event_time, '1h') AS time, COUNT(*) AS \"Events\" \nFROM anomaly_base \nWHERE is_bit_breakage \nGROUP BY time ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Spindle Over-Current & Thermal Trends",
+      "description": "Spindle overload and temperature spikes",
+      "type": "stat",
+      "transparent": true,
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ]
+        },
+        "textMode": "auto",
+        "noValue": "0"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL statement_timeout = '15s'; SET LOCAL work_mem = '64MB'; SET LOCAL jit = off;\nWITH anomaly_base AS (\n  SELECT\n    id, equipment_id, event_time, event_type, event_code, event_message, spindle,\n    (\n      event_code IN ('0124', '0125', '0126', '0127', '0128')\n      OR (event_code = '0120' AND (event_type IN ('E', 'ALARM') OR event_message ~* 'spin.*over current'))\n      OR event_message ~* 'over current|overheat|over-current|over heat'\n    ) AS is_spindle_overload\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n    AND ('All' = ANY(ARRAY[${machine_id:sqlstring}]::text[]) OR equipment_id = ANY(ARRAY[${machine_id:sqlstring}]::text[]))\n    AND (\n      event_type IN ('ALARM', 'E')\n      OR event_code LIKE '04%'\n      OR event_code LIKE '07%'\n      OR event_code = '0204'\n      OR event_code IN ('0102', '0113', '0114', '0119', '0120', '0124', '0125', '0126', '0127', '0128', '0218')\n    )\n)\nSELECT $__timeGroup(event_time, '1h') AS time, COUNT(*) AS \"Events\" \nFROM anomaly_base \nWHERE is_spindle_overload \nGROUP BY time ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Laser & Collet Fault Trends",
+      "description": "Optical measurement and shank/collet clamping errors",
+      "type": "stat",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ]
+        },
+        "textMode": "auto",
+        "noValue": "0"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL statement_timeout = '15s'; SET LOCAL work_mem = '64MB'; SET LOCAL jit = off;\nWITH anomaly_base AS (\n  SELECT\n    id, equipment_id, event_time, event_type, event_code, event_message, spindle,\n    (\n      event_code IN ('0404', '0405', '0406', '0409', '0410', '0411', '0414', '0415', '0416', '0419', '0421', '0424', '0425')\n      OR (event_code LIKE '04%' AND event_message ~* 'diameter|length|optical|laser|collet|shank|claw')\n    ) AS is_laser_tool_fault\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n    AND ('All' = ANY(ARRAY[${machine_id:sqlstring}]::text[]) OR equipment_id = ANY(ARRAY[${machine_id:sqlstring}]::text[]))\n    AND (\n      event_type IN ('ALARM', 'E')\n      OR event_code LIKE '04%'\n      OR event_code LIKE '07%'\n      OR event_code = '0204'\n      OR event_code IN ('0102', '0113', '0114', '0119', '0120', '0124', '0125', '0126', '0127', '0128', '0218')\n    )\n)\nSELECT $__timeGroup(event_time, '1h') AS time, COUNT(*) AS \"Events\" \nFROM anomaly_base \nWHERE is_laser_tool_fault \nGROUP BY time ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Actual Alarm Downtime (Minutes)",
+      "description": "Total downtime in minutes caused by alarms",
+      "type": "stat",
+      "transparent": true,
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#E02F44"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ]
+        },
+        "textMode": "auto",
+        "noValue": "0"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL statement_timeout = '15s'; SET LOCAL work_mem = '64MB'; SET LOCAL jit = off;\nWITH anomaly_base AS (\n  SELECT\n    id, equipment_id, event_time, event_type, event_code, event_message, spindle,\n    (\n      event_code = '0204' OR event_message ~* 'alarm time:'\n    ) AS is_alarm_downtime,\n    COALESCE(\n      (substring(event_message FROM 'Alarm Time:\\s*([0-9]{2}):[0-9]{2}'))::int * 60 +\n      (substring(event_message FROM 'Alarm Time:\\s*[0-9]{2}:([0-9]{2})'))::int,\n      0\n    ) AS alarm_duration_sec\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n    AND ('All' = ANY(ARRAY[${machine_id:sqlstring}]::text[]) OR equipment_id = ANY(ARRAY[${machine_id:sqlstring}]::text[]))\n    AND (\n      event_type IN ('ALARM', 'E')\n      OR event_code LIKE '04%'\n      OR event_code LIKE '07%'\n      OR event_code = '0204'\n      OR event_code IN ('0102', '0113', '0114', '0119', '0120', '0124', '0125', '0126', '0127', '0128', '0218')\n    )\n)\nSELECT $__timeGroup(event_time, '1h') AS time, ROUND(SUM(alarm_duration_sec) / 60.0, 1) AS \"Duration (min)\" \nFROM anomaly_base \nWHERE is_alarm_downtime \nGROUP BY time ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Root Cause Distribution (Alarm Guide)",
+      "description": "Classification of machine errors according to manufacturer guide",
+      "type": "piechart",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 8,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "pieType": "pie"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL statement_timeout = '15s'; SET LOCAL work_mem = '64MB'; SET LOCAL jit = off;\nWITH anomaly_base AS (\n  SELECT\n    id, equipment_id, event_time, event_type, event_code, event_message, spindle,\n    (\n      (event_type IN ('ALARM', 'E') OR event_code LIKE '04%' OR event_code LIKE '07%')\n      AND event_code NOT IN ('0101', '0115')\n      AND event_message NOT ILIKE '%Emergency Stop Released%'\n    ) AS is_anomaly,\n    CASE\n      WHEN event_code IN ('0409', '0404', '0410') OR (event_code LIKE '04%' AND event_message ~* 'laser|diameter error|length error|optical') THEN 'laser_measurement'\n      WHEN event_code IN ('0424', '0425', '0405', '0411', '0419', '0421') OR (event_code LIKE '04%' AND event_message ~* 'shank|collet|claw|grap') THEN 'shank_collet'\n      WHEN event_code IN ('0408', '0417', '0120', '0218') OR event_message ~* 'broken|bbd' THEN 'bit_breakage'\n      WHEN event_code IN ('0414', '0119') OR event_message ~* 'tool life|clear.*life' THEN 'tool_life'\n      WHEN event_code IN ('0124', '0125', '0126', '0127', '0128') OR event_message ~* 'over current|overheat|over heat' THEN 'spindle_overload'\n      WHEN event_code IN ('0113', '0114') OR event_message ~* 'invertor|coolant|collant' THEN 'spindle_utility'\n      WHEN event_code = '0102' OR event_message ~* 'air low' THEN 'air_low'\n      WHEN event_code = '0406' OR event_message ~* 'magazine' THEN 'magazine'\n      WHEN event_code LIKE '05%' OR event_code LIKE '06%' OR event_code LIKE '07%' OR event_message ~* 'clamp pin|simulation|not locked|syntax' THEN 'safety_sim'\n      WHEN event_code LIKE '02%' OR event_code LIKE '03%' OR event_code IN ('0103', '0104', '0105', '0106', '0107', '0108', '0109') OR event_message ~* 'driver|axis|limit|servo|position|velocity' THEN 'mech_depth'\n      WHEN (event_code = '0101' AND event_type IN ('E', 'ALARM') AND event_message NOT ILIKE '%Released%') OR event_message ~* 'emergency stop|e-stop' THEN 'estop'\n      ELSE 'other'\n    END AS anomaly_category\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n    AND ('All' = ANY(ARRAY[${machine_id:sqlstring}]::text[]) OR equipment_id = ANY(ARRAY[${machine_id:sqlstring}]::text[]))\n    AND (\n      event_type IN ('ALARM', 'E')\n      OR event_code LIKE '04%'\n      OR event_code LIKE '07%'\n      OR event_code = '0204'\n      OR event_code IN ('0102', '0113', '0114', '0119', '0120', '0124', '0125', '0126', '0127', '0128', '0218')\n    )\n)\nSELECT\n  CASE anomaly_category\n    WHEN 'laser_measurement' THEN 'Laser Diameter & Length Error'\n    WHEN 'shank_collet' THEN 'Shank & Collet Clamping'\n    WHEN 'bit_breakage' THEN 'Bit Breakage / BBD'\n    WHEN 'tool_life' THEN 'Tool Life Limit Exceeded'\n    WHEN 'mech_depth' THEN 'Axis Limit & Servo Driver'\n    WHEN 'safety_sim' THEN 'Safety Interlock & Simulation'\n    WHEN 'air_low' THEN 'Pneumatic Pressure Low'\n    WHEN 'magazine' THEN 'Tool Magazine Mechanism'\n    WHEN 'spindle_utility' THEN 'Inverter & Spindle Coolant'\n    WHEN 'spindle_overload' THEN 'Spindle Overload & Thermal'\n    WHEN 'estop' THEN 'Emergency Stop (E-Stop)'\n    ELSE 'Other Anomaly'\n  END AS \"Anomaly Category\",\n  COUNT(*) AS \"Count\"\nFROM anomaly_base\nWHERE is_anomaly\nGROUP BY \"Anomaly Category\"\nORDER BY \"Count\" DESC",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Hourly Anomaly Stacked Trend",
+      "description": "Hourly stacked trend of anomalies across categories",
+      "type": "timeseries",
+      "transparent": true,
+      "gridPos": {
+        "x": 8,
+        "y": 5,
+        "w": 16,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "opacity",
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "connectNullPoints": true,
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL statement_timeout = '15s'; SET LOCAL work_mem = '64MB'; SET LOCAL jit = off;\nWITH anomaly_base AS (\n  SELECT\n    id, equipment_id, event_time, event_type, event_code, event_message, spindle,\n    (\n      (event_type IN ('ALARM', 'E') OR event_code LIKE '04%' OR event_code LIKE '07%')\n      AND event_code NOT IN ('0101', '0115')\n      AND event_message NOT ILIKE '%Emergency Stop Released%'\n    ) AS is_anomaly,\n    CASE\n      WHEN event_code IN ('0409', '0404', '0410') OR (event_code LIKE '04%' AND event_message ~* 'laser|diameter error|length error|optical') THEN 'laser_measurement'\n      WHEN event_code IN ('0424', '0425', '0405', '0411', '0419', '0421') OR (event_code LIKE '04%' AND event_message ~* 'shank|collet|claw|grap') THEN 'shank_collet'\n      WHEN event_code IN ('0408', '0417', '0120', '0218') OR event_message ~* 'broken|bbd' THEN 'bit_breakage'\n      WHEN event_code IN ('0414', '0119') OR event_message ~* 'tool life|clear.*life' THEN 'tool_life'\n      WHEN event_code IN ('0124', '0125', '0126', '0127', '0128') OR event_message ~* 'over current|overheat|over heat' THEN 'spindle_overload'\n      WHEN event_code IN ('0113', '0114') OR event_message ~* 'invertor|coolant|collant' THEN 'spindle_utility'\n      WHEN event_code = '0102' OR event_message ~* 'air low' THEN 'air_low'\n      WHEN event_code = '0406' OR event_message ~* 'magazine' THEN 'magazine'\n      WHEN event_code LIKE '05%' OR event_code LIKE '06%' OR event_code LIKE '07%' OR event_message ~* 'clamp pin|simulation|not locked|syntax' THEN 'safety_sim'\n      WHEN event_code LIKE '02%' OR event_code LIKE '03%' OR event_code IN ('0103', '0104', '0105', '0106', '0107', '0108', '0109') OR event_message ~* 'driver|axis|limit|servo|position|velocity' THEN 'mech_depth'\n      WHEN (event_code = '0101' AND event_type IN ('E', 'ALARM') AND event_message NOT ILIKE '%Released%') OR event_message ~* 'emergency stop|e-stop' THEN 'estop'\n      ELSE 'other'\n    END AS anomaly_category\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n    AND ('All' = ANY(ARRAY[${machine_id:sqlstring}]::text[]) OR equipment_id = ANY(ARRAY[${machine_id:sqlstring}]::text[]))\n    AND (\n      event_type IN ('ALARM', 'E')\n      OR event_code LIKE '04%'\n      OR event_code LIKE '07%'\n      OR event_code = '0204'\n      OR event_code IN ('0102', '0113', '0114', '0119', '0120', '0124', '0125', '0126', '0127', '0128', '0218')\n    )\n)\nSELECT\n  time_bucket('1 hour', event_time) AS time,\n  COUNT(*) FILTER (WHERE anomaly_category = 'laser_measurement') AS \"Laser Diameter\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'shank_collet') AS \"Shank & Collet\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'bit_breakage') AS \"Bit Breakage / BBD\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'tool_life') AS \"Tool Life\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'mech_depth') AS \"Axis & Drive\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'safety_sim') AS \"Safety & Simulation\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'air_low') AS \"Pneumatic Low\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'magazine') AS \"Tool Magazine\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'spindle_utility') AS \"Inverter & Coolant\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'spindle_overload') AS \"Spindle Overload\",\n  COUNT(*) FILTER (WHERE anomaly_category = 'estop') AS \"Emergency Stop (E-Stop)\"\nFROM anomaly_base\nWHERE is_anomaly\nGROUP BY time\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 7,
+      "title": "Top 15 Machine Offenders",
+      "description": "Ranking of machines with highest anomaly counts",
+      "type": "barchart",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL statement_timeout = '15s'; SET LOCAL work_mem = '64MB'; SET LOCAL jit = off;\nWITH anomaly_base AS (\n  SELECT\n    id, equipment_id, event_time, event_type, event_code, event_message, spindle,\n    (\n      (event_type IN ('ALARM', 'E') OR event_code LIKE '04%' OR event_code LIKE '07%')\n      AND event_code NOT IN ('0101', '0115')\n      AND event_message NOT ILIKE '%Emergency Stop Released%'\n    ) AS is_anomaly\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n    AND ('All' = ANY(ARRAY[${machine_id:sqlstring}]::text[]) OR equipment_id = ANY(ARRAY[${machine_id:sqlstring}]::text[]))\n    AND (\n      event_type IN ('ALARM', 'E')\n      OR event_code LIKE '04%'\n      OR event_code LIKE '07%'\n      OR event_code = '0204'\n      OR event_code IN ('0102', '0113', '0114', '0119', '0120', '0124', '0125', '0126', '0127', '0128', '0218')\n    )\n)\nSELECT\n  equipment_id AS \"Machine\",\n  COUNT(*)::int AS \"Anomalies (Count)\"\nFROM anomaly_base\nWHERE is_anomaly\nGROUP BY equipment_id\nORDER BY \"Anomalies (Count)\" DESC\nLIMIT 15",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 8,
+      "title": "Recent Critical Alarm Incidents",
+      "description": "Log of most recent critical anomaly events across fleet",
+      "type": "table",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL statement_timeout = '15s'; SET LOCAL work_mem = '64MB'; SET LOCAL jit = off;\nWITH anomaly_base AS (\n  SELECT\n    id, equipment_id, event_time, event_type, event_code, event_message, spindle,\n    (\n      (event_type IN ('ALARM', 'E') OR event_code LIKE '04%' OR event_code LIKE '07%')\n      AND event_code NOT IN ('0101', '0115')\n      AND event_message NOT ILIKE '%Emergency Stop Released%'\n    ) AS is_anomaly,\n    CASE\n      WHEN event_code IN ('0409', '0404', '0410') OR (event_code LIKE '04%' AND event_message ~* 'laser|diameter error|length error|optical') THEN 'laser_measurement'\n      WHEN event_code IN ('0424', '0425', '0405', '0411', '0419', '0421') OR (event_code LIKE '04%' AND event_message ~* 'shank|collet|claw|grap') THEN 'shank_collet'\n      WHEN event_code IN ('0408', '0417', '0120', '0218') OR event_message ~* 'broken|bbd' THEN 'bit_breakage'\n      WHEN event_code IN ('0414', '0119') OR event_message ~* 'tool life|clear.*life' THEN 'tool_life'\n      WHEN event_code IN ('0124', '0125', '0126', '0127', '0128') OR event_message ~* 'over current|overheat|over heat' THEN 'spindle_overload'\n      WHEN event_code IN ('0113', '0114') OR event_message ~* 'invertor|coolant|collant' THEN 'spindle_utility'\n      WHEN event_code = '0102' OR event_message ~* 'air low' THEN 'air_low'\n      WHEN event_code = '0406' OR event_message ~* 'magazine' THEN 'magazine'\n      WHEN event_code LIKE '05%' OR event_code LIKE '06%' OR event_code LIKE '07%' OR event_message ~* 'clamp pin|simulation|not locked|syntax' THEN 'safety_sim'\n      WHEN event_code LIKE '02%' OR event_code LIKE '03%' OR event_code IN ('0103', '0104', '0105', '0106', '0107', '0108', '0109') OR event_message ~* 'driver|axis|limit|servo|position|velocity' THEN 'mech_depth'\n      WHEN (event_code = '0101' AND event_type IN ('E', 'ALARM') AND event_message NOT ILIKE '%Released%') OR event_message ~* 'emergency stop|e-stop' THEN 'estop'\n      ELSE 'other'\n    END AS anomaly_category\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n    AND ('All' = ANY(ARRAY[${machine_id:sqlstring}]::text[]) OR equipment_id = ANY(ARRAY[${machine_id:sqlstring}]::text[]))\n    AND (\n      event_type IN ('ALARM', 'E')\n      OR event_code LIKE '04%'\n      OR event_code LIKE '07%'\n      OR event_code = '0204'\n      OR event_code IN ('0102', '0113', '0114', '0119', '0120', '0124', '0125', '0126', '0127', '0128', '0218')\n    )\n)\nSELECT\n  event_time AT TIME ZONE 'Asia/Bangkok' AS \"Time\",\n  equipment_id AS \"Machine\",\n  CASE WHEN event_code ~ '^[0-9]+' THEN 'E-' || event_code ELSE event_code END AS \"Code\",\n  CASE anomaly_category\n    WHEN 'laser_measurement' THEN 'Laser Measurement'\n    WHEN 'shank_collet' THEN 'Shank & Collet'\n    WHEN 'bit_breakage' THEN 'Bit Breakage'\n    WHEN 'tool_life' THEN 'Tool Life Reached'\n    WHEN 'mech_depth' THEN 'Mechanical/Drive'\n    WHEN 'safety_sim' THEN 'Safety & Simulation'\n    WHEN 'air_low' THEN 'Pneumatic (Air Low)'\n    WHEN 'magazine' THEN 'Tool Magazine'\n    WHEN 'spindle_utility' THEN 'Inverter / Coolant'\n    WHEN 'spindle_overload' THEN 'Spindle Overload'\n    WHEN 'estop' THEN 'E-Stop'\n    ELSE 'Other'\n  END AS \"Category\",\n  COALESCE((regexp_match(event_message, '(?i)spin[a-z]*[[:space:]]*#?([0-9]+)'))[1], spindle, '-') AS \"Spindle\",\n  event_message AS \"Recorded Evidence\"\nFROM anomaly_base\nWHERE is_anomaly\nORDER BY event_time DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "anomaly",
+    "cnc",
+    "drilling",
+    "engineer",
+    "ims",
+    "level-4-analytics",
+    "quality",
+    "root-cause",
+    "tool-breakage"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "query": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL;",
+        "definition": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL;",
+        "current": {},
+        "multi": true,
+        "includeAll": false,
+        "refresh": 1,
+        "sort": 0,
+        "hide": 0,
+        "options": [],
+        "skipUrlSync": false
+      },
+      {
+        "name": "factory",
+        "label": "Factory",
+        "type": "custom",
+        "query": "All, 1, 2, 3",
+        "current": {
+          "text": [
+            "2"
+          ],
+          "value": [
+            "2"
+          ]
+        },
+        "multi": true,
+        "includeAll": false,
+        "hide": 0,
+        "options": [],
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Drilling — 04 Fleet Anomaly & Root Cause Analysis",
+  "description": "Fleet anomaly detection, spindle vibration out-of-spec events, and multi-factor root cause analysis across the CNC drilling fleet.",
+  "uid": "ims-drilling-5-anomaly"
+}

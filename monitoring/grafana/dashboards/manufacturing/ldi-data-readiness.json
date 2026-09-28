@@ -1,14 +1,18 @@
 {
   "id": null,
   "uid": "ldi-data-readiness",
-  "title": "LDI Data Readiness & Integration Gaps (Real Database)",
+  "title": "LDI — 10 Telemetry Signal Quality & Integration Readiness",
   "description": "Evidence-based readiness dashboard using only current PostgreSQL rows. No simulated data.",
   "tags": [
-    "LDI",
+    "audit",
     "data-quality",
-    "readiness",
-    "real-data",
-    "manufacturing"
+    "data-readiness",
+    "governance",
+    "ims",
+    "ldi",
+    "lithography",
+    "manufacturing",
+    "sre"
   ],
   "timezone": "UTC",
   "schemaVersion": 39,

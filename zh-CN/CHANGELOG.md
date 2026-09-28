@@ -22,6 +22,19 @@
 - **PR #21** — CSS/UI/UX：设计 token、排版、响应式布局、动效以及已提交的可视化回归基线；token 一致性与状态颜色漂移检查在 pre-commit 与 CI 中运行。
 - **PR #22** — `integration/andon-layout-safe` → `main`：将 Factory Twin 3D 与 EAP 相关工作合并到 `main`（解决 13 处冲突，保留仅存在于 main 的提交）；Operator Andon 看板在 1920×1080 与 3840×2160 下无需滚动，并声明不支持 1280×720。
 - **PR #23** — Factory Twin 3D 运行时深度审计（渲染循环、WebGL 生命周期、实测性能），并缓存私有几何/映射/区域文件的读取。
+- **钻孔与 VCP 电镀** — 两个新 Grafana 文件夹（01 钻孔、04 VCP）中的 7 个仪表板、7 条 VCP 告警规则、用于 `eap_backup` 数据库的数据源 `drilling-timescaledb`，以及迁移 083–086：
+  - 083：数据库防护；
+  - 084–086：钻孔视图、索引，以及按领域划分的 schema 与数据目录。只使用视图，不重命名任何对象。
+
+  四个 Grafana 文件夹现已统一编号为 01–04。
+
+  没有工厂数据时，合成数据生成器会构建 `eap_backup`（`docs/data/MOCK_DATA.md`），覆盖它的单元测试在 pre-commit 与 CI 中运行。
+
+  运行时防护：
+  - TimescaleDB 设置 `jit=off`，并配置工作进程、超时与慢查询日志；
+  - pgAdmin 绑定到 `127.0.0.1`；
+  - 新增 nginx 路径，用于 Grafana 健康检查与 Grafana Live WebSocket；
+  - 两条 LDI Cpk 告警规则暂停，待 `v_machine_spc_ranking` 修复后恢复。
 
 ### 文档与仓库规范化治理 (Documentation & Repository Hygiene)
 - 截至 2026-09-28 对照实时运行系统 (`main`) 在英、泰、简中三语下重新核实所有现行文档与系统清单。

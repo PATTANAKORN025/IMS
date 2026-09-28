@@ -1,0 +1,337 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "01 · Fleet Overview",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/001/ims-drilling",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "02 · Shift Production",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-history",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "03 · Machine Investigation",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-detail",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "04 · Anomaly Analysis",
+      "type": "link",
+      "icon": "shield",
+      "url": "/d/ims-drilling-5-anomaly",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "liveNow": true,
+  "panels": [
+    {
+      "id": 9000,
+      "title": "",
+      "description": "Drilling machine investigation header and quick navigation",
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "code": {},
+        "content": "# Machine Investigation & Diagnostics\n",
+        "mode": "markdown"
+      },
+      "targets": [],
+      "transformations": []
+    },
+    {
+      "id": 301,
+      "title": "Live Machine Status",
+      "description": "Single-machine live operational card with spindle status and alarms",
+      "type": "marcusolsson-dynamictext-panel",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 7,
+        "h": 12
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "content": "<div class=\"drill-m-card state-{{data.[0].StateClass}}\">\n<div>\n<div class=\"drill-card-header\">\n<div class=\"drill-m-title\">\n<span class=\"drill-m-name\">{{data.[0].Machine}}</span>\n<span class=\"drill-status-pill\">{{data.[0].StateLabel}}</span>\n</div>\n<span class=\"drill-m-timeago\">{{data.[0].TimeAgo}}</span>\n</div>\n\n<div class=\"drill-detail-table\">\n<div class=\"drill-detail-row\">\n<span class=\"drill-detail-label\">Current Code:</span>\n<span class=\"drill-detail-val drill-code-val\">{{data.[0].Code}}</span>\n</div>\n<div class=\"drill-detail-row\">\n<span class=\"drill-detail-label\">Program:</span>\n<span class=\"drill-detail-val drill-prog-val\" title=\"{{data.[0].Program}}\">{{data.[0].Program}}</span>\n</div>\n<div class=\"drill-detail-row\">\n<span class=\"drill-detail-label\">Hole Progress:</span>\n<span class=\"drill-detail-val drill-hole-val\">{{data.[0].Holes}}</span>\n</div>\n<div class=\"drill-detail-row\">\n<span class=\"drill-detail-label\">Tool / Dia:</span>\n<span class=\"drill-detail-val drill-tool-val\">{{data.[0].ToolDia}}</span>\n</div>\n<div class=\"drill-detail-row drill-msg-row\">\n<span class=\"drill-detail-label\">Message:</span>\n<span class=\"drill-detail-val drill-msg-val\" title=\"{{data.[0].Message}}\">{{data.[0].Message}}</span>\n</div>\n</div>\n\n<div class=\"drill-spindle-box\">\n<div class=\"drill-spindle-header\">\n  <span>Spindle</span>\n  <span class=\"drill-spindle-sub\">1 - 6</span>\n</div>\n<div class=\"drill-spindle-badges\">\n<span class=\"drill-spindle-circle {{data.[0].Spindle1}}\" title=\"Spindle 1: {{data.[0].Spindle1}}\">1</span>\n<span class=\"drill-spindle-circle {{data.[0].Spindle2}}\" title=\"Spindle 2: {{data.[0].Spindle2}}\">2</span>\n<span class=\"drill-spindle-circle {{data.[0].Spindle3}}\" title=\"Spindle 3: {{data.[0].Spindle3}}\">3</span>\n<span class=\"drill-spindle-circle {{data.[0].Spindle4}}\" title=\"Spindle 4: {{data.[0].Spindle4}}\">4</span>\n<span class=\"drill-spindle-circle {{data.[0].Spindle5}}\" title=\"Spindle 5: {{data.[0].Spindle5}}\">5</span>\n<span class=\"drill-spindle-circle {{data.[0].Spindle6}}\" title=\"Spindle 6: {{data.[0].Spindle6}}\">6</span>\n</div>\n</div>\n</div>\n\n<div>\n<div class=\"drill-mid-pills\">\n<span class=\"drill-pill-tag\">RPM: <span class=\"drill-pill-val-rpm\">{{data.[0].RPM}}</span></span>\n<span class=\"drill-pill-sep\">|</span>\n<span class=\"drill-pill-tag\">FEED: <span class=\"drill-pill-val-feed\">{{data.[0].FEED}}</span></span>\n</div>\n\n<div class=\"drill-card-footer\">\n<span class=\"drill-footer-last\">Last: {{data.[0].LastTime}}</span>\n</div>\n</div>\n</div>",
+        "styles": "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');\n\n.drill-m-card {\nbackground: #14171D;\nborder-radius: 8px;\npadding: 12px 14px;\nborder: 1.5px solid #232731;\ndisplay: flex;\nflex-direction: column;\njustify-content: space-between;\nbox-shadow: 0 4px 14px rgba(0,0,0,0.3);\nheight: 100%;\nbox-sizing: border-box;\nfont-family: 'Inter', sans-serif;\ncolor: #E2E8F0;\n}\n\n.drill-m-card.state-run { border-color: rgba(16, 185, 129, 0.45); }\n.drill-m-card.state-alarm { border-color: rgba(239, 68, 68, 0.85); background: linear-gradient(180deg, rgba(239, 68, 68, 0.1) 0%, #14171D 35%); }\n.drill-m-card.state-stop { border-color: rgba(245, 158, 11, 0.5); }\n.drill-m-card.state-warning { border-color: rgba(234, 179, 8, 0.5); }\n.drill-m-card.state-standby { border-color: rgba(100, 116, 139, 0.4); }\n.drill-m-card.state-offline { border: 1.5px dashed rgba(100, 116, 139, 0.45); background: #101217; }\n\n.drill-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }\n.drill-m-title { display: flex; align-items: center; gap: 8px; }\n.drill-m-name { font-size: 16px; font-weight: 800; color: #F8FAFC; font-family: 'JetBrains Mono', monospace; }\n\n.drill-status-pill { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; }\n.state-run .drill-status-pill { background: rgba(16, 185, 129, 0.2); color: #34D399; }\n.state-alarm .drill-status-pill { background: rgba(239, 68, 68, 0.25); color: #F87171; }\n.state-stop .drill-status-pill { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }\n.state-warning .drill-status-pill { background: rgba(234, 179, 8, 0.2); color: #FDE047; }\n.state-standby .drill-status-pill { background: rgba(100, 116, 139, 0.2); color: #94A3B8; }\n.state-offline .drill-status-pill { background: rgba(100, 116, 139, 0.18); color: #94A3B8; border: 1px solid rgba(100, 116, 139, 0.35); }\n\n.drill-m-timeago { font-size: 10.5px; color: #94A3B8; font-weight: 600; }\n.state-offline .drill-m-timeago { color: #F97316; font-weight: 700; }\n\n.drill-detail-table { display: flex; flex-direction: column; gap: 4px; font-size: 12px; margin-bottom: 8px; }\n.drill-detail-row { display: grid; grid-template-columns: 95px 1fr; align-items: baseline; gap: 6px; }\n.drill-detail-label { color: #94A3B8; font-weight: 500; font-size: 11px; }\n.drill-detail-val { color: #E2E8F0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.drill-code-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; }\n.state-alarm .drill-code-val { color: #F87171; }\n.state-run .drill-code-val { color: #34D399; }\n.drill-prog-val { font-family: 'JetBrains Mono', monospace; color: #38BDF8; font-weight: 600; }\n.drill-hole-val { font-family: 'JetBrains Mono', monospace; color: #FBBF24; font-weight: 700; }\n.drill-tool-val { color: #F1F5F9; font-weight: 600; }\n.drill-msg-row {\ngrid-template-columns: 60px 1fr;\nalign-items: flex-start;\nmargin-top: 2px;\n}\n.drill-msg-val {\ncolor: #CBD5E1;\nfont-size: 11px;\nwhite-space: normal !important;\nword-break: break-word;\nline-height: 1.3;\n}\n.state-alarm .drill-msg-val { color: #FECACA; font-weight: 600; }\n\n.drill-spindle-box { margin: 6px 0 8px 0; display: flex; flex-direction: column; gap: 4px; }\n.drill-spindle-header { font-size: 10px; font-weight: 600; color: #94A3B8; display: flex; align-items: center; justify-content: space-between; }\n.drill-spindle-sub { font-size: 9px; color: #64748B; font-family: 'JetBrains Mono', monospace; }\n.drill-spindle-badges { display: flex; align-items: center; gap: 6px; }\n.drill-spindle-circle { width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }\n.drill-spindle-circle.is-on { background: radial-gradient(circle at 45% 38%, #86EFAC 0%, #22C55E 45%, #15803D 85%, #14532D 100%); border: 1px solid #14532D; color: #064E3B; }\n.drill-spindle-circle.is-off { background: radial-gradient(circle at 45% 38%, #4A171E 0%, #2A0E13 100%); border: 1px solid #661D26; color: #D19CA4; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); }\n.drill-spindle-circle.is-alarm { background: radial-gradient(circle at 45% 38%, #FECACA 0%, #EF4444 45%, #B91C1C 85%, #7F1D1D 100%); border: 1px solid #7F1D1D; color: #FFFFFF; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); box-shadow: 0 0 6px rgba(239, 68, 68, 0.6); }\n\n.drill-mid-pills { display: flex; justify-content: space-around; align-items: center; gap: 8px; margin-bottom: 8px; background: #0E1014; padding: 4px 8px; border-radius: 4px; border: 1px solid #1E222A; }\n.drill-pill-tag { font-size: 10.5px; color: #94A3B8; font-weight: 600; }\n.drill-pill-val-rpm { color: #38BDF8; font-family: 'JetBrains Mono', monospace; font-weight: 700; }\n.drill-pill-val-feed { color: #34D399; font-family: 'JetBrains Mono', monospace; font-weight: 700; }\n.drill-pill-sep { color: #334155; font-weight: 700; }\n\n.drill-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 6px; border-top: 1px solid #232731; font-size: 11px; }\n.drill-footer-last { color: #CBD5E1; font-family: 'JetBrains Mono', monospace; font-size: 10px; }\n"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SET LOCAL jit = off;\nWITH target_machine AS (\n  SELECT COALESCE(NULLIF(${focus_machine:singlequote}, ''), 'DRL001-M') AS equipment_id\n),\nlatest_per_eqp AS (\n  SELECT t.equipment_id, me.*\n  FROM target_machine t\n  CROSS JOIN LATERAL (\n    SELECT event_type, event_code, event_message, event_time, spindle, id\n    FROM public.machine_event m\n    WHERE m.equipment_id = t.equipment_id\n      AND $__timeFilter(m.event_time)\n    ORDER BY m.event_time DESC, m.id DESC\n    LIMIT 1\n  ) me\n),\nfleet_ref AS (\n  SELECT \n    CASE \n      WHEN NOW() - MAX(event_time) > INTERVAL '24 hours' THEN MAX(event_time)\n      ELSE to_timestamp(${__to} / 1000.0)\n    END AS anchor_time\n  FROM public.machine_event\n  WHERE $__timeFilter(event_time)\n),\nclassified AS (\n  SELECT\n    l.equipment_id,\n    l.event_type,\n    l.event_code,\n    l.event_message,\n    l.event_time,\n    l.spindle,\n    l.id,\n    p.prog,\n    rf.rpm,\n    rf.feed,\n    h.holes,\n    sp.sp_report,\n    sp.s1, sp.s2, sp.s3, sp.s4, sp.s5, sp.s6,\n    COALESCE(sa.alm_mask, (regexp_match(l.event_message, '(?i)spin[a-z]*[[:space:]]*([0-9]+)'))[1]::int) AS alm_mask,\n    COALESCE(sa.event_message, l.event_message) AS alm_msg,\n    CASE \n      WHEN fr.anchor_time - l.event_time >= INTERVAL '2 hours' THEN 'COMM LOSS'\n      WHEN fr.anchor_time - l.event_time >= INTERVAL '1 hour' \n           AND (l.event_code IN ('0112', '0114', '0201', '0109', '0302') OR (l.event_code = '0101' AND l.event_message ILIKE '[START]:%') OR l.event_type = 'RUN') \n           THEN 'STALE RUN'\n      WHEN l.event_code IN ('0408', '0417', '0120') THEN 'BIT BROKEN'\n      WHEN (l.event_type IN ('ALARM', 'E') OR l.event_code LIKE '04%' OR l.event_code LIKE '07%')\n           AND l.event_code NOT IN ('0101', '0115') \n           AND l.event_message NOT ILIKE '%Emergency Stop Released%' THEN 'ALARM'\n      WHEN l.event_code IN ('0110', '0214', '0215', '0308', '0310', '0211', '0115', '0119')\n           OR l.event_type = 'TOOL_CHANGE' THEN 'TOOL_CHANGE'\n      WHEN l.event_code = '0108' OR l.event_type = 'STOP' THEN 'STOP'\n      WHEN l.event_code IN ('0112', '0114', '0201', '0109', '0302') \n           OR (l.event_code = '0101' AND l.event_message ILIKE '[START]:%')\n           OR l.event_type = 'RUN' THEN 'RUN'\n      ELSE 'STANDBY'\n    END AS \"StateLabel\",\n    CASE \n      WHEN fr.anchor_time - l.event_time >= INTERVAL '2 hours' THEN 'offline'\n      WHEN fr.anchor_time - l.event_time >= INTERVAL '1 hour' \n           AND (l.event_code IN ('0112', '0114', '0201', '0109', '0302') OR (l.event_code = '0101' AND l.event_message ILIKE '[START]:%') OR l.event_type = 'RUN') \n           THEN 'warning'\n      WHEN l.event_code IN ('0408', '0417', '0120') THEN 'alarm'\n      WHEN (l.event_type IN ('ALARM', 'E') OR l.event_code LIKE '04%' OR l.event_code LIKE '07%')\n           AND l.event_code NOT IN ('0101', '0115') \n           AND l.event_message NOT ILIKE '%Emergency Stop Released%' THEN 'alarm'\n      WHEN l.event_code IN ('0110', '0214', '0215', '0308', '0310', '0211', '0115', '0119')\n           OR l.event_type = 'TOOL_CHANGE' THEN 'warning'\n      WHEN l.event_code = '0108' OR l.event_type = 'STOP' THEN 'stop'\n      WHEN l.event_code IN ('0112', '0114', '0201', '0109', '0302') \n           OR (l.event_code = '0101' AND l.event_message ILIKE '[START]:%')\n           OR l.event_type = 'RUN' THEN 'run'\n      ELSE 'standby'\n    END AS \"StateClass\"\n  FROM latest_per_eqp l\n  CROSS JOIN fleet_ref fr\n  LEFT JOIN LATERAL (\n    SELECT (regexp_match(event_message, '(?i)([a-zA-Z0-9_-]+\\.tlp)'))[1] AS prog\n    FROM public.machine_event me\n    WHERE me.equipment_id = l.equipment_id\n      AND me.event_time <= l.event_time\n      AND me.event_time >= l.event_time - INTERVAL '48 hours'\n      AND (me.event_code IN ('0101', '0103') OR me.event_message LIKE '%.tlp%')\n    ORDER BY me.event_time DESC, me.id DESC\n    LIMIT 1\n  ) p ON true\n  LEFT JOIN LATERAL (\n    SELECT \n      ROUND((regexp_match(event_message, '(?i)\\[Rpm\\]:[^>]+->[[:space:]]*([0-9.]+)'))[1]::numeric)::text || 'k' AS rpm,\n      ROUND((regexp_match(event_message, '(?i)\\[Feed\\]:[^>]+->[[:space:]]*([0-9.]+)'))[1]::numeric, 1)::text AS feed\n    FROM public.machine_event me\n    WHERE me.equipment_id = l.equipment_id\n      AND me.event_time <= l.event_time\n      AND me.event_time >= l.event_time - INTERVAL '2 hours'\n      AND me.event_code = '0109'\n    ORDER BY me.event_time DESC, me.id DESC\n    LIMIT 1\n  ) rf ON true\n  LEFT JOIN LATERAL (\n    SELECT \n      to_char((regexp_match(event_message, '(?i)(?:at hole|Hole:|start:)[[:space:]]*([0-9]+)'))[1]::bigint, 'FM999,999,999') || ' (' ||\n      CASE \n        WHEN event_code = '0110' THEN 'Tool Change'\n        WHEN event_code = '0108' THEN 'Machine Stop'\n        WHEN event_code IN ('0417', '0120') THEN 'Tool is Broken'\n        WHEN event_code = '0112' THEN 'Cycle Start'\n        ELSE 'Running'\n      END || ')' AS holes\n    FROM public.machine_event me\n    WHERE me.equipment_id = l.equipment_id\n      AND me.event_time <= l.event_time\n      AND me.event_code IN ('0110', '0108', '0417', '0120', '0112')\n      AND me.event_message ~* '(?i)(?:at hole|Hole:|start:)[[:space:]]*([0-9]+)'\n    ORDER BY me.event_time DESC, me.id DESC\n    LIMIT 1\n  ) h ON true\n  LEFT JOIN LATERAL (\n    SELECT \n      to_char(me.event_time AT TIME ZONE 'Asia/Bangkok', 'DD/MM HH24:MI') AS sp_report,\n      CASE \n        WHEN td_match IS NOT NULL THEN CASE WHEN UPPER(td_match[1]) != 'OFF' THEN 'is-on' ELSE 'is-off' END\n        WHEN mask_val IS NOT NULL THEN CASE WHEN (mask_val & 1) > 0 THEN 'is-on' ELSE 'is-off' END\n        WHEN me.event_message ~ '#1(?![0-9])' THEN 'is-on'\n        ELSE 'is-off'\n      END AS s1,\n      CASE \n        WHEN td_match IS NOT NULL THEN CASE WHEN UPPER(td_match[2]) != 'OFF' THEN 'is-on' ELSE 'is-off' END\n        WHEN mask_val IS NOT NULL THEN CASE WHEN (mask_val & 2) > 0 THEN 'is-on' ELSE 'is-off' END\n        WHEN me.event_message ~ '#2(?![0-9])' THEN 'is-on'\n        ELSE 'is-off'\n      END AS s2,\n      CASE \n        WHEN td_match IS NOT NULL THEN CASE WHEN UPPER(td_match[3]) != 'OFF' THEN 'is-on' ELSE 'is-off' END\n        WHEN mask_val IS NOT NULL THEN CASE WHEN (mask_val & 4) > 0 THEN 'is-on' ELSE 'is-off' END\n        WHEN me.event_message ~ '#3(?![0-9])' THEN 'is-on'\n        ELSE 'is-off'\n      END AS s3,\n      CASE \n        WHEN td_match IS NOT NULL THEN CASE WHEN UPPER(td_match[4]) != 'OFF' THEN 'is-on' ELSE 'is-off' END\n        WHEN mask_val IS NOT NULL THEN CASE WHEN (mask_val & 8) > 0 THEN 'is-on' ELSE 'is-off' END\n        WHEN me.event_message ~ '#4(?![0-9])' THEN 'is-on'\n        ELSE 'is-off'\n      END AS s4,\n      CASE \n        WHEN td_match IS NOT NULL THEN CASE WHEN UPPER(td_match[5]) != 'OFF' THEN 'is-on' ELSE 'is-off' END\n        WHEN mask_val IS NOT NULL THEN CASE WHEN (mask_val & 16) > 0 THEN 'is-on' ELSE 'is-off' END\n        WHEN me.event_message ~ '#5(?![0-9])' THEN 'is-on'\n        ELSE 'is-off'\n      END AS s5,\n      CASE \n        WHEN td_match IS NOT NULL THEN CASE WHEN UPPER(td_match[6]) != 'OFF' THEN 'is-on' ELSE 'is-off' END\n        WHEN mask_val IS NOT NULL THEN CASE WHEN (mask_val & 32) > 0 THEN 'is-on' ELSE 'is-off' END\n        WHEN me.event_message ~ '#6(?![0-9])' THEN 'is-on'\n        ELSE 'is-off'\n      END AS s6\n    FROM (\n      SELECT \n        me.event_time,\n        me.event_message,\n        regexp_match(me.event_message, 'tool diameter:\\s*(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)', 'i') AS td_match,\n        (regexp_match(me.event_message, 'spindle\\s*ON:\\s*([0-9]+)', 'i'))[1]::int AS mask_val\n      FROM public.machine_event me\n      WHERE me.equipment_id = l.equipment_id\n        AND me.event_time <= l.event_time\n        AND (me.event_code IN ('0211', '0215') OR me.event_message ~* 'spindle ON|tool diameter')\n      ORDER BY me.event_time DESC, me.id DESC\n      LIMIT 1\n    ) me\n  ) sp ON true\n  LEFT JOIN LATERAL (\n    SELECT \n      me.event_message,\n      (regexp_match(me.event_message, '(?i)spin[a-z]*[[:space:]]*([0-9]+)'))[1]::int AS alm_mask\n    FROM public.machine_event me\n    WHERE me.equipment_id = l.equipment_id\n      AND me.event_time <= l.event_time\n      AND (\n        me.id = l.id \n        OR (\n          me.event_time >= l.event_time - INTERVAL '1 hour'\n          AND (me.event_type IN ('ALARM', 'E') OR me.event_code IN ('0408', '0417', '0404', '0409', '0218', '0425', '0424', '0411', '0421', '0125'))\n          AND me.event_message ~* 'spin'\n        )\n      )\n    ORDER BY me.event_time DESC, me.id DESC\n    LIMIT 1\n  ) sa ON true\n),\ncalculated AS (\n  SELECT \n    c.equipment_id AS \"Machine\",\n    c.\"StateLabel\",\n    c.\"StateClass\",\n    COALESCE(\n      CASE \n        WHEN c.event_code ~ '^[0-9]+' AND (c.\"StateClass\" = 'alarm' OR c.event_type IN ('ALARM', 'E')) THEN 'E-' || c.event_code\n        WHEN c.event_code ~ '^[0-9]+' THEN 'M-' || c.event_code\n        ELSE c.event_code\n      END, 'N/A'\n    ) AS \"Code\",\n    COALESCE(NULLIF(TRIM(regexp_replace(c.event_message, '\\s*\\(\\s*Key\\s*''[0-9]''\\s*to\\s*check\\s*\\)', '', 'gi')), ''), 'Normal execution') AS \"Message\",\n    CASE\n      WHEN c.event_message ~* 'T[0-9]+' AND c.event_message ~* 'C[0-9]+(?:\\.[0-9]+)?' THEN\n        UPPER((regexp_match(c.event_message, '(T[0-9]+)', 'i'))[1]) || ' (' || \n        (regexp_match(c.event_message, 'C([0-9]+(?:\\.[0-9]+)?)', 'i'))[1] || 'mm)'\n      WHEN c.event_message ~* '->[[:space:]]*T[1-9][0-9]*M[0-9]+' THEN\n        UPPER((regexp_match(c.event_message, '->[[:space:]]*(T[0-9]+)', 'i'))[1]) || ' (' || \n        UPPER((regexp_match(c.event_message, '->[[:space:]]*T[0-9]+(M[0-9]+)', 'i'))[1]) || ')'\n      WHEN c.event_message ~* 'ATC[[:space:]]*T[1-9][0-9]*M[0-9]+' THEN\n        UPPER((regexp_match(c.event_message, 'ATC[[:space:]]*(T[0-9]+)', 'i'))[1]) || ' (' || \n        UPPER((regexp_match(c.event_message, 'ATC[[:space:]]*T[0-9]+(M[0-9]+)', 'i'))[1]) || ')'\n      WHEN c.event_message ~* '^(T[0-9]+)[[:space:]]+' THEN\n        UPPER((regexp_match(c.event_message, '^(T[0-9]+)', 'i'))[1])\n      WHEN c.event_message ~* '[[:<:]](T[0-9]{1,4})[[:>:]]' THEN\n        UPPER((regexp_match(c.event_message, '[[:<:]](T[0-9]{1,4})[[:>:]]', 'i'))[1])\n      ELSE 'N/A'\n    END AS \"ToolDia\",\n    to_char(c.event_time AT TIME ZONE 'Asia/Bangkok', 'HH12:MI:SS AM') AS \"LastTime\",\n    to_char(c.event_time AT TIME ZONE 'Asia/Bangkok', 'DD/MM/YYYY HH24:MI:SS') AS \"ObservedAt\",\n    CASE\n      WHEN (SELECT anchor_time FROM fleet_ref) - c.event_time < INTERVAL '10 seconds' THEN 'Just now'\n      WHEN (SELECT anchor_time FROM fleet_ref) - c.event_time < INTERVAL '1 minute' THEN ROUND(EXTRACT(EPOCH FROM ((SELECT anchor_time FROM fleet_ref) - c.event_time)))::TEXT || 's ago'\n      WHEN (SELECT anchor_time FROM fleet_ref) - c.event_time < INTERVAL '1 hour' THEN ROUND(EXTRACT(EPOCH FROM ((SELECT anchor_time FROM fleet_ref) - c.event_time)) / 60)::TEXT || 'm ago'\n      WHEN (SELECT anchor_time FROM fleet_ref) - c.event_time < INTERVAL '1 day' THEN ROUND(EXTRACT(EPOCH FROM ((SELECT anchor_time FROM fleet_ref) - c.event_time)) / 3600)::TEXT || 'h ago'\n      ELSE ROUND(EXTRACT(EPOCH FROM ((SELECT anchor_time FROM fleet_ref) - c.event_time)) / 86400)::TEXT || 'd ago'\n    END AS \"TimeAgo\",\n    COALESCE(c.holes, 'N/A') AS \"Holes\",\n    CASE WHEN c.\"StateClass\" IN ('standby', 'stop', 'offline') THEN 'N/A' ELSE COALESCE(c.prog, 'N/A') END AS \"Program\",\n    CASE WHEN c.\"StateClass\" IN ('standby', 'stop', 'offline') THEN 'N/A' ELSE COALESCE(c.rpm, 'N/A') END AS \"RPM\",\n    CASE WHEN c.\"StateClass\" IN ('standby', 'stop', 'offline') THEN 'N/A' ELSE COALESCE(c.feed, 'N/A') END AS \"FEED\",\n    CASE \n      WHEN c.\"StateClass\" = 'offline' THEN 'is-off'\n      WHEN c.\"StateClass\" = 'alarm' THEN\n        CASE \n          WHEN (c.alm_mask IS NOT NULL AND (c.alm_mask & 1) > 0) OR c.alm_msg ~* 'spin[^,]*#1(?![0-9])' THEN 'is-alarm'\n          ELSE 'is-off'\n        END\n      WHEN c.\"StateClass\" IN ('standby', 'stop') THEN 'is-off'\n      WHEN c.\"StateClass\" IN ('run', 'warning') THEN COALESCE(c.s1, 'is-off')\n      ELSE 'is-off'\n    END AS \"Spindle1\",\n    CASE \n      WHEN c.\"StateClass\" = 'offline' THEN 'is-off'\n      WHEN c.\"StateClass\" = 'alarm' THEN\n        CASE \n          WHEN (c.alm_mask IS NOT NULL AND (c.alm_mask & 2) > 0) OR c.alm_msg ~* 'spin[^,]*#2(?![0-9])' THEN 'is-alarm'\n          ELSE 'is-off'\n        END\n      WHEN c.\"StateClass\" IN ('standby', 'stop') THEN 'is-off'\n      WHEN c.\"StateClass\" IN ('run', 'warning') THEN COALESCE(c.s2, 'is-off')\n      ELSE 'is-off'\n    END AS \"Spindle2\",\n    CASE \n      WHEN c.\"StateClass\" = 'offline' THEN 'is-off'\n      WHEN c.\"StateClass\" = 'alarm' THEN\n        CASE \n          WHEN (c.alm_mask IS NOT NULL AND (c.alm_mask & 4) > 0) OR c.alm_msg ~* 'spin[^,]*#3(?![0-9])' THEN 'is-alarm'\n          ELSE 'is-off'\n        END\n      WHEN c.\"StateClass\" IN ('standby', 'stop') THEN 'is-off'\n      WHEN c.\"StateClass\" IN ('run', 'warning') THEN COALESCE(c.s3, 'is-off')\n      ELSE 'is-off'\n    END AS \"Spindle3\",\n    CASE \n      WHEN c.\"StateClass\" = 'offline' THEN 'is-off'\n      WHEN c.\"StateClass\" = 'alarm' THEN\n        CASE \n          WHEN (c.alm_mask IS NOT NULL AND (c.alm_mask & 8) > 0) OR c.alm_msg ~* 'spin[^,]*#4(?![0-9])' THEN 'is-alarm'\n          ELSE 'is-off'\n        END\n      WHEN c.\"StateClass\" IN ('standby', 'stop') THEN 'is-off'\n      WHEN c.\"StateClass\" IN ('run', 'warning') THEN COALESCE(c.s4, 'is-off')\n      ELSE 'is-off'\n    END AS \"Spindle4\",\n    CASE \n      WHEN c.\"StateClass\" = 'offline' THEN 'is-off'\n      WHEN c.\"StateClass\" = 'alarm' THEN\n        CASE \n          WHEN (c.alm_mask IS NOT NULL AND (c.alm_mask & 16) > 0) OR c.alm_msg ~* 'spin[^,]*#5(?![0-9])' THEN 'is-alarm'\n          ELSE 'is-off'\n        END\n      WHEN c.\"StateClass\" IN ('standby', 'stop') THEN 'is-off'\n      WHEN c.\"StateClass\" IN ('run', 'warning') THEN COALESCE(c.s5, 'is-off')\n      ELSE 'is-off'\n    END AS \"Spindle5\",\n    CASE \n      WHEN c.\"StateClass\" = 'offline' THEN 'is-off'\n      WHEN c.\"StateClass\" = 'alarm' THEN\n        CASE \n          WHEN (c.alm_mask IS NOT NULL AND (c.alm_mask & 32) > 0) OR c.alm_msg ~* 'spin[^,]*#6(?![0-9])' THEN 'is-alarm'\n          ELSE 'is-off'\n        END\n      WHEN c.\"StateClass\" IN ('standby', 'stop') THEN 'is-off'\n      WHEN c.\"StateClass\" IN ('run', 'warning') THEN COALESCE(c.s6, 'is-off')\n      ELSE 'is-off'\n    END AS \"Spindle6\",\n    CASE \n      WHEN c.\"StateClass\" = 'offline' THEN 'OFF (No Telemetry)'\n      WHEN c.\"StateClass\" = 'standby' THEN 'OFF (Standby)'\n      WHEN c.\"StateClass\" = 'stop' THEN 'OFF (Stop)'\n      WHEN c.\"StateClass\" = 'alarm' THEN 'OFF (Emergency Stop)'\n      ELSE COALESCE(c.sp_report, '-')\n    END AS \"SpindleReport\"\n  FROM classified c\n),\nfallback AS (\n  SELECT \n    t.equipment_id AS \"Machine\",\n    'STANDBY' AS \"StateLabel\",\n    'standby' AS \"StateClass\",\n    'N/A' AS \"Code\",\n    'No event data in selected time range' AS \"Message\",\n    'N/A' AS \"ToolDia\",\n    '-' AS \"LastTime\",\n    '-' AS \"ObservedAt\",\n    '-' AS \"TimeAgo\",\n    'N/A' AS \"Holes\",\n    'N/A' AS \"Program\",\n    'N/A' AS \"RPM\",\n    'N/A' AS \"FEED\",\n    'is-off' AS \"Spindle1\",\n    'is-off' AS \"Spindle2\",\n    'is-off' AS \"Spindle3\",\n    'is-off' AS \"Spindle4\",\n    'is-off' AS \"Spindle5\",\n    'is-off' AS \"Spindle6\",\n    'OFF (Standby)' AS \"SpindleReport\"\n  FROM target_machine t\n  WHERE NOT EXISTS (SELECT 1 FROM calculated)\n  LIMIT 1\n)\nSELECT * FROM calculated\nUNION ALL\nSELECT * FROM fallback;",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 302,
+      "title": "Event Distribution",
+      "description": "Telemetry volume distribution across Log, Status, Event, and Alarm categories",
+      "type": "barchart",
+      "transparent": true,
+      "gridPos": {
+        "x": 7,
+        "y": 3,
+        "w": 17,
+        "h": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "auto",
+        "showValue": "always",
+        "xField": "Distribution"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  ' ' AS \"Distribution\",\n  COALESCE(COUNT(*) FILTER (WHERE event_type = 'M'), 0) AS \"M\",\n  COALESCE(COUNT(*) FILTER (WHERE event_type = 'E'), 0) AS \"E\",\n  COALESCE(COUNT(*) FILTER (WHERE event_type = 'EVENT'), 0) AS \"EVENT\",\n  COALESCE(COUNT(*) FILTER (WHERE event_type = 'TOOL_CHANGE'), 0) AS \"TOOL_CHANGE\",\n  COALESCE(COUNT(*) FILTER (WHERE event_type = 'RUN'), 0) AS \"RUN\",\n  COALESCE(COUNT(*) FILTER (WHERE event_type = 'ALARM'), 0) AS \"ALARM\",\n  COALESCE(COUNT(*) FILTER (WHERE event_type = 'STOP'), 0) AS \"STOP\",\n  COALESCE(COUNT(*) FILTER (WHERE event_type = 'PROGRAM_LOAD'), 0) AS \"PROGRAM_LOAD\"\nFROM public.machine_event\nWHERE equipment_id = COALESCE(NULLIF(${focus_machine:singlequote}, ''), 'DRL001-M')\n  AND $__timeFilter(event_time);",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 17,
+      "title": "Machine Event Timeline",
+      "description": "Complete chronological event log recorded for the focused machine",
+      "type": "table",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": false,
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  event_time AS \"Time\", \n  message_type AS \"Message Type\", \n  event_type AS \"Event Type\", \n  event_code AS \"Code\", \n  event_message AS \"Recorded Evidence\", \n  source_file AS \"Source File\"\nFROM public.machine_event\nWHERE equipment_id = COALESCE(NULLIF(${focus_machine:singlequote}, ''), 'DRL001-M') \n  AND $__timeFilter(event_time)\nORDER BY event_time DESC, id DESC\nLIMIT 100;",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 8,
+      "title": "Machine & Tool Alarms",
+      "description": "Latest decoded machine alarm and error records",
+      "type": "table",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": false,
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n  event_time AS \"Time\", \n  CASE \n    WHEN event_code ~ '^[0-9]+$' THEN 'E' || event_code \n    ELSE event_code \n  END AS \"Code\",\n  COALESCE((regexp_match(event_message, '(?i)spin[a-z]*[[:space:]#]*([0-9#]+)'))[1], '-') AS \"Spindle\",\n  COALESCE((regexp_match(event_message, '(?i)(T[0-9]+)'))[1], '-') AS \"Tool\",\n  COALESCE((regexp_match(event_message, '(?i)C([0-9]+(?:\\.[0-9]+)?)'))[1], '-') AS \"Diameter\",\n  COALESCE((regexp_match(event_message, '(?i)(?:at hole|Hole:)[[:space:]]*([0-9]+)'))[1], '-') AS \"Hole\",\n  event_message AS \"Alarm Message\"\nFROM public.machine_event \nWHERE equipment_id = COALESCE(NULLIF(${focus_machine:singlequote}, ''), 'DRL001-M')\n  AND $__timeFilter(event_time)\n  AND (\n    event_code IN ('0408', '0417', '0120')\n    OR (\n      (event_type IN ('ALARM', 'E') OR message_type = 'alarm' OR event_code LIKE '04%' OR event_code LIKE '07%')\n      AND event_code NOT IN ('0101', '0115')\n      AND event_message NOT ILIKE '%Emergency Stop Released%'\n    )\n  )\nORDER BY event_time DESC, id DESC \nLIMIT 50;",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "cnc",
+    "diagnostics",
+    "drilling",
+    "engineer",
+    "ims",
+    "level-3-diagnostic",
+    "machine-detail",
+    "maintenance",
+    "spindle"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "focus_machine",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "query": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "definition": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "current": {},
+        "multi": false,
+        "includeAll": false,
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "options": [],
+        "skipUrlSync": false
+      },
+      {
+        "name": "factory",
+        "label": "Factory",
+        "type": "custom",
+        "query": "All, 1, 2, 3",
+        "current": {
+          "text": [
+            "2"
+          ],
+          "value": [
+            "2"
+          ]
+        },
+        "multi": true,
+        "includeAll": false,
+        "hide": 0,
+        "options": [],
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Drilling — 03 Machine Investigation & Spindle Diagnostics",
+  "description": "Deep-dive diagnostic console for individual drilling machines: spindle RPM, motor load, feed rate, and drill bit wear telemetry.",
+  "uid": "ims-drilling-machine-detail"
+}

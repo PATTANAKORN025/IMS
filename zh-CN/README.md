@@ -114,7 +114,7 @@
 </tr>
 </table>
 
-> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **了解整体生态：** 阅读 [15 个仪表板从宏观到微观的架构指南](docs/product/DASHBOARD_ECOSYSTEM.md)，了解 IMS 如何从管理层业务指标一路下钻到传感器级诊断数据。
+> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **了解整体生态：** 阅读 [仪表板从宏观到微观的架构指南](docs/product/DASHBOARD_ECOSYSTEM.md)，了解 IMS 如何从管理层业务指标一路下钻到传感器级诊断数据。
 
 <br/>
 
@@ -278,7 +278,7 @@ flowchart LR
 3. **解析** — `sre_parser` 在 flow context 中保存每台设备的状态（`dev_state_<deviceId>`），并将数据行缓存在 `batch_buf_<deviceId>` 中。设备故障时，离线心跳（`_walker: "offline"`）会立即将所有指标置零。
 4. **存储** — 按定时器独立刷写：每类表（sys/net/ldi）仅在自身缓冲区有数据时才执行插入，部分 walker 失败不会阻塞无关数据的写入。
 5. **连续聚合** — TimescaleDB 刷新策略的执行间隔从每分钟（`ldi_data_1m`、`ldi_oee_1m`）到每 6 小时（周汇总）不等；基础设施的日、周 CAGG 基于小时 CAGG 汇总（见 [Data Flow](docs/architecture/DATA_FLOW.md)）。实际保留期（对照运行中的数据库核实，而非依据迁移历史——两者之间的偏差记录在 `docs/architecture/DATA_RETENTION.md`）：原始 `sys_metrics`/`net_metrics`/`ldi_metrics` 30 天，`ldi_data` 180 天，小时汇总 2 年。
-6. **可视化** — 两个领域共 15 个仪表板：5 个基础设施（NOC Overview、Engineering Drill-Down、AIOps & Capacity、Meta-Monitoring、Ingestion Latency）+ 10 个制造（Easy Overview、LDI Manufacturing、Operator Andon、Alarm Console、Alarm Dictionary、Alarm Response (MTTA/MTTR)、Engineering Analytics & SPC、Machine Snapshot、Data Readiness、Factory Digital Twin）。
+6. **可视化** — 四个 Grafana 文件夹共 22 个仪表板：01 钻孔（4 个：机群总览、班次产量、单机排查、异常与根因分析），02 LDI（10 个：管理层总览、操作员 Andon、工厂数字孪生、机群指挥中心、单机快照、工程分析与 SPC、告警控制台、告警响应 MTTA/MTTR、告警字典、数据就绪度），03 平台与 NOC（5 个：NOC 总览、工程下钻、AIOps 容量、采集延迟、元监控），04 VCP 电镀（3 个：产线总览、操作控制台、实时墙屏）。
 7. **告警** — Prometheus 抓取 `/metrics`，Alertmanager 附带 runbook 链接路由到 LINE Messaging API 与 MS Teams（实际投递需要运维人员自行配置凭据，默认有意不提供）。Z-Score 异常通过 Grafana 对 TimescaleDB 的 SQL 查询计算。
 
 </details>
@@ -286,7 +286,7 @@ flowchart LR
 <details>
 <summary><b>仪表板架构</b></summary>
 
-15 个仪表板——5 个基础设施、10 个制造（`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`，分别预置到不同的 Grafana 文件夹；领域边界见 **[Ownership](docs/architecture/OWNERSHIP.md)**）。含面板数量与说明的完整表格见 **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)**：该表由仪表板 JSON 自动生成（`node scripts/generate-dashboard-inventory.js`）并经 CI 检查，不会像手工表格那样悄悄偏离真实仪表板。
+22 个仪表板——4 个钻孔、10 个 LDI 制造、5 个基础设施、3 个 VCP 电镀（`monitoring/grafana/dashboards/{drilling,manufacturing,infrastructure,vcp}/`，每个领域预置到一个 Grafana 文件夹；领域边界见 **[Ownership](docs/architecture/OWNERSHIP.md)**）。钻孔与 VCP 仪表板通过数据源 `drilling-timescaledb` 读取 `eap_backup` 数据库；没有工厂数据时，可加载 **[合成数据](docs/data/MOCK_DATA.md)**。含面板数量与说明的完整表格见 **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)**：该表由仪表板 JSON 自动生成（`node scripts/generate-dashboard-inventory.js`）并经 CI 检查，不会像手工表格那样悄悄偏离真实仪表板。
 
 **设计系统：** Cyberpunk HUD —— `#030407` 背景，Tailwind 调色板（`#22C55E` 正常、`#F59E0B` 警告、`#EF4444` 严重、`#00F2FE` 信息、`#3B82F6` 强调——即 [GRAFANA_DESIGN_SYSTEM.md](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) §2.1 中批准的 token），统计数值使用 Roboto Mono，玻璃拟态面板，Grid-24 无重叠布局。
 
@@ -316,7 +316,7 @@ flowchart LR
 | **编排** | Docker Compose | 15 个服务的栈（`docker-compose.yaml`）+ 生产资源叠加配置 |
 | **采集** | Node-RED + net-snmp | 顺序异步批量 SNMP 遍历，5 线程并行 walker |
 | **数据库** | TimescaleDB 2.29 (PostgreSQL 16) + PgBouncer 1.25 | Hypertable、CAGG 汇总、原生压缩、保留策略 |
-| **可视化** | Grafana 13.1.2 + image renderer | 15 个仪表板（5 个基础设施 + 10 个制造） |
+| **可视化** | Grafana 13.1.2 + image renderer | 22 个仪表板（4 个钻孔 + 10 个 LDI + 5 个基础设施 + 3 个 VCP） |
 | **告警** | Prometheus + Alertmanager | 指标抓取、抑制规则、LINE Messaging API + MS Teams webhooks |
 | **负载测试** | K6 | 流水线压力测试，阈值：成功率 > 95 %、端到端 p95 < 10 秒 |
 | **服务** | Node.js 22 (Express) | `alarm-api`（确认/解决写入路径）、`factory-twin-3d`（一楼数字孪生） |
@@ -348,7 +348,7 @@ IMS/
 ├── proxy/nginx.conf            # 唯一统一入口（Grafana、alarm-api、孪生服务、LDI 接入）
 ├── monitoring/
 │  ├── grafana/
-│  │  ├── dashboards/{infrastructure,manufacturing}/  # 预置的 5 + 10 个仪表板（事实来源）
+│  │  ├── dashboards/{drilling,manufacturing,infrastructure,vcp}/  # 预置的 4 + 10 + 5 + 3 个仪表板（事实来源）
 │  │  ├── library-panels/        # 共享库面板（Fleet Health Score）
 │  │  └── provisioning/, grafana.ini
 │  ├── prometheus/, alertmanager/, blackbox/, snmpsim/
@@ -357,7 +357,7 @@ IMS/
 │  ├── lib/                    # circuit-breaker.js、parser.js、snmp-normalize.js、units.js
 │  └── settings.js
 ├── postgres/init/              # 首次启动的引导 SQL + grafana 密码脚本
-├── database/migrations/        # 按编号、仅向前的迁移（最大 082），由 db-migrate 应用
+├── database/migrations/        # 按编号、仅向前的迁移（最大 086），由 db-migrate 应用
 ├── services/
 │  ├── alarm-api/              # 确认/解决写入路径（Express + pg）
 │  └── factory-twin-3d/        # 一楼数字孪生（Express、lib/*.js + public/ 前端查看器）

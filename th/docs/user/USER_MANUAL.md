@@ -50,28 +50,39 @@
 
 ### ภาพรวมแดชบอร์ด
 
-Grafana provision แดชบอร์ดไว้ 15 ชุดในสองโฟลเดอร์:
+Grafana provision แดชบอร์ดไว้ 22 ชุดในสี่โฟลเดอร์:
 
 ```text
  IMS Dashboards
-├── Infrastructure (เซิร์ฟเวอร์/เครือข่าย)
+├── 01 · Drilling Operations (กลุ่มเครื่องเจาะ CNC)
+│ ├── Fleet Digital Twin & Overview — สถานะสดของเครื่องเจาะทุกเครื่อง: ทำงาน, หยุด, เปลี่ยนดอก, แจ้งเตือน, ออฟไลน์
+│ ├── Shift Production & OEE — จำนวน hit กะกลางวันและกลางคืน เวลาออนไลน์และเวลาหยุดรายเครื่อง ย้อนหลัง 7 วัน
+│ ├── Machine Investigation — สถานะสด สัดส่วนเหตุการณ์ ไทม์ไลน์เหตุการณ์ และการแจ้งเตือนของดอกสว่าน ของเครื่องเดียว
+│ └── Fleet Anomaly & Root Cause — หมวดการแจ้งเตือน เครื่องที่เกิดบ่อยที่สุด แนวโน้มดอกหักและ spindle โหลดเกิน
+├── 02 · Lithography Operations — LDI (กลุ่มเครื่อง PCB laser direct imaging)
+│ ├── Easy Overview        — ดูภาพรวมทั้งกลุ่มได้ทันที ไม่ต้องตั้งตัวกรอง
+│ ├── LDI Manufacturing    — Command Center: KPI ผู้บริหาร + telemetry เครื่อง + สตรีม alarm
+│ ├── LDI Operator Andon   — จอ kiosk หน้าไลน์ อ่านอย่างเดียว ไม่ต้องเลื่อนจอที่ 1920×1080 ขึ้นไป
+│ ├── LDI Alarm Console    — ขั้นตอน Acknowledge/Resolve แบบโต้ตอบ คู่กับบอร์ด Andon ที่อ่านอย่างเดียว
+│ ├── LDI Alarm Response   — MTTA/MTTR จากวงจรชีวิต alarm จริง
+│ ├── LDI Alarm Dictionary — ค้นนิยาม alarm ของผู้ผลิตเครื่อง + เหตุการณ์ล่าสุด
+│ ├── LDI Engineering Analytics — จัดอันดับ Cpk/SPC, RCA Truth Test, การกระจายของ PE/JE
+│ ├── LDI Machine Snapshot — คลิก alarm/log ใดก็ได้เพื่อดูสถานะ ณ มิลลิวินาทีนั้น
+│ ├── LDI Factory Digital Twin — แผนผัง Canvas ของเครื่อง LDI ที่ส่งข้อมูล แยกตามโซน
+│ └── LDI Data Readiness   — แดชบอร์ดตรวจคุณภาพข้อมูลด้วยตัวเอง (% ความครอบคลุม, ช่องว่าง)
+├── 03 · Platform Infrastructure & NOC (เซิร์ฟเวอร์/เครือข่าย)
 │ ├── NOC Overview        — ภาพรวมกลุ่มเซิร์ฟเวอร์ (เฉพาะโครงสร้างพื้นฐาน; LDI อยู่ด้านล่าง)
 │ ├── Engineering Drill-Down — เจาะลึกรายเซิร์ฟเวอร์: CPU/RAM/disk/อุณหภูมิ/เครือข่าย และ scatter คุณภาพ LDI
 │ ├── AIOps & Capacity    — พยากรณ์จำนวนวันจนเต็ม และตรวจจับความผิดปกติด้วย Z-Score
 │ ├── Meta-Monitoring     — สุขภาพของไปป์ไลน์เอง (แถว/วินาที, batch สำเร็จ, คิว retry, circuit breaker)
 │ └── Ingestion Latency   — ความหน่วงจริงจากต้นทางถึงฐานข้อมูล แบบอ่านอย่างเดียว
-└── LDI Manufacturing (กลุ่มเครื่อง PCB laser direct imaging)
- ├── Easy Overview        — ดูภาพรวมทั้งกลุ่มได้ทันที ไม่ต้องตั้งตัวกรอง
- ├── LDI Manufacturing    — Command Center: KPI ผู้บริหาร + telemetry เครื่อง + สตรีม alarm
- ├── LDI Operator Andon   — จอ kiosk หน้าไลน์ อ่านอย่างเดียว ไม่ต้องเลื่อนจอที่ 1920×1080 ขึ้นไป
- ├── LDI Alarm Console    — ขั้นตอน Acknowledge/Resolve แบบโต้ตอบ คู่กับบอร์ด Andon ที่อ่านอย่างเดียว
- ├── LDI Alarm Response   — MTTA/MTTR จากวงจรชีวิต alarm จริง
- ├── LDI Alarm Dictionary — ค้นนิยาม alarm ของผู้ผลิตเครื่อง + เหตุการณ์ล่าสุด
- ├── LDI Engineering Analytics — จัดอันดับ Cpk/SPC, RCA Truth Test, การกระจายของ PE/JE
- ├── LDI Machine Snapshot — คลิก alarm/log ใดก็ได้เพื่อดูสถานะ ณ มิลลิวินาทีนั้น
- ├── LDI Factory Digital Twin — แผนผัง Canvas ของเครื่อง LDI ที่ส่งข้อมูล แยกตามโซน
- └── LDI Data Readiness   — แดชบอร์ดตรวจคุณภาพข้อมูลด้วยตัวเอง (% ความครอบคลุม, ช่องว่าง)
+└── 04 · Plating Operations (สายการชุบ VCP)
+ ├── Fleet Overview & Process Analytics — ชั่วโมงตามสถานะ ค่าเบี่ยงเบนของบ่อและกระแส การปฏิบัติตามสูตรรายล็อต
+ ├── Operations Console — สถานะสายแบบสด กระแสและแรงดันรายสถานี อุณหภูมิบ่อ บันทึกการแจ้งเตือน
+ └── Real-Time Wall — จอเต็มแสดงสถานะสดของทุกสายสำหรับพื้นที่ชุบ
 ```
+
+แดชบอร์ดงานเจาะและ VCP อ่านฐานข้อมูล `eap_backup` หากไม่มีข้อมูลโรงงานจะว่างเปล่า ดู [ข้อมูลสังเคราะห์สำหรับงานเจาะและ VCP](../data/MOCK_DATA.md)
 
 รายการฉบับเต็มที่สร้างอัตโนมัติพร้อมจำนวน panel อยู่ที่ [Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md)
 

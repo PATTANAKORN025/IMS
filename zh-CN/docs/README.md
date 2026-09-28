@@ -107,6 +107,7 @@
 - **[架构决策记录 (ADR)](architecture/decisions/)** - 历史技术选型。
 - **[服务等级目标 (SLO)](sre/SLO_DEFINITIONS.md)** - 可靠性、错误预算与 SLI。
 - **[遥测本体](data/TELEMETRY_ONTOLOGY.md)** - 数据字典与载荷标准。
+- **[钻孔与 VCP 合成数据](data/MOCK_DATA.md)** - 使用生成的数据运行钻孔和 VCP 仪表板，无需工厂数据。
 
 ### 8. 治理
 

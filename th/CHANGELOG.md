@@ -22,6 +22,19 @@
 - **PR #21** — CSS/UI/UX: design token, ตัวอักษร, เลย์เอาต์ responsive, motion และ baseline ของ visual regression ที่ commit ไว้ พร้อม lint ตรวจความตรงกันของ token และการคลาดเคลื่อนของสีสถานะใน pre-commit และ CI
 - **PR #22** — `integration/andon-layout-safe` → `main`: รวมงาน Factory Twin 3D และ EAP เข้าสู่ `main` (แก้ conflict 13 จุด และคง commit ที่มีเฉพาะใน main ไว้) บอร์ด Operator Andon แสดงได้พอดีโดยไม่ต้องเลื่อนที่ 1920×1080 และ 3840×2160 และประกาศไม่รองรับ 1280×720
 - **PR #23** — ตรวจสอบเชิงลึกขณะรันของ Factory Twin 3D (render loop, วงจรชีวิต WebGL, ประสิทธิภาพที่วัดได้) และ cache การอ่านไฟล์ geometry/mapping/zone ที่เป็นข้อมูลลับ
+- **งานเจาะและงานชุบ VCP** — แดชบอร์ด 7 ชุดในโฟลเดอร์ Grafana ใหม่สองโฟลเดอร์ (01 งานเจาะ, 04 VCP), กฎแจ้งเตือน VCP 7 ข้อ, data source `drilling-timescaledb` สำหรับฐานข้อมูล `eap_backup` และ migration 083–086:
+  - 083: ตัวป้องกันฐานข้อมูล;
+  - 084–086: view ของงานเจาะ, index และ schema แยกตามโดเมนพร้อมแค็ตตาล็อกข้อมูล ใช้ view เท่านั้นและไม่เปลี่ยนชื่อสิ่งใด
+
+  โฟลเดอร์ Grafana ทั้งสี่โฟลเดอร์ใช้หมายเลข 01–04 แล้ว
+
+  สำหรับฐานข้อมูลที่ไม่มีข้อมูลโรงงาน มีตัวสร้างข้อมูลสังเคราะห์ที่สร้าง `eap_backup` ให้ (`docs/data/MOCK_DATA.md`) และมี unit test ครอบคลุมตัวสร้างนี้ ซึ่งรันใน pre-commit และ CI
+
+  ตัวป้องกันขณะรัน:
+  - ตั้ง `jit=off` และค่าจำนวน worker, timeout และการบันทึก query ที่ช้าบน TimescaleDB;
+  - ผูก pgAdmin ไว้ที่ `127.0.0.1`;
+  - เพิ่มเส้นทาง nginx สำหรับการตรวจสุขภาพของ Grafana และ WebSocket ของ Grafana Live;
+  - หยุดกฎแจ้งเตือน Cpk ของ LDI สองข้อไว้ชั่วคราวจนกว่าจะแก้ `v_machine_spc_ranking`
 
 ### เอกสารและการจัดระเบียบคลังโค้ด (Documentation & Repository Hygiene)
 - ตรวจทานเอกสารและรายการแสดงสถานะระบบทั้งหมดเทียบกับระบบจริง (`main`) ณ 2026-09-28 ครบทั้ง 3 ภาษา (EN/TH/ZH-CN)

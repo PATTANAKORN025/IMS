@@ -163,6 +163,9 @@ jobs:
       - name: Run Factory Twin MES Import Boundary Tests
         run: node tests/unit/factory-twin-mes-import.test.js
 
+      - name: Run Drilling/VCP Mock Data Tests
+        run: node tests/unit/eap-mock-data.test.js
+
       - name: Run Factory Twin Geometry Mutation Tests
         run: node tests/unit/factory-twin-geometry-mutation.test.js
 

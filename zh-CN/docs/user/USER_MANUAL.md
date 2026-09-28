@@ -50,28 +50,39 @@
 
 ### 仪表板概览
 
-Grafana 在两个文件夹中预置了 15 个仪表板：
+Grafana 在四个文件夹中预置了 22 个仪表板：
 
 ```text
  IMS Dashboards
-├── Infrastructure（服务器/网络）
+├── 01 · Drilling Operations（CNC 钻孔机群）
+│ ├── Fleet Digital Twin & Overview — 每台钻孔机的实时状态：运行、停机、换刀、告警、离线
+│ ├── Shift Production & OEE — 近 7 天白班与夜班孔数、每台机器的在线与停机时间
+│ ├── Machine Investigation — 单台机器的实时状态、事件分布、事件时间线与刀具告警
+│ └── Fleet Anomaly & Root Cause — 告警类别、高发机台、断刀与主轴过载趋势
+├── 02 · Lithography Operations — LDI（PCB 激光直接成像设备群）
+│ ├── Easy Overview        — 零配置的全设备群一览，无需设置筛选
+│ ├── LDI Manufacturing    — 指挥中心：管理层 KPI + 设备遥测 + 告警流
+│ ├── LDI Operator Andon   — 产线 kiosk 看板，只读，1920×1080 及以上无需滚动
+│ ├── LDI Alarm Console    — 交互式确认/解决流程，与只读的 Andon 看板配套
+│ ├── LDI Alarm Response   — 基于真实告警生命周期的 MTTA/MTTR
+│ ├── LDI Alarm Dictionary — 参考查询：设备厂商告警定义 + 最近发生记录
+│ ├── LDI Engineering Analytics — Cpk/SPC 排名、RCA Truth Test、PE/JE 分布
+│ ├── LDI Machine Snapshot — 点击任意告警/日志，查看该毫秒的设备状态
+│ ├── LDI Factory Digital Twin — 按区域展示上报数据的 LDI 设备的 Canvas 平面图
+│ └── LDI Data Readiness   — 自检式数据质量仪表板（覆盖率 %、缺口）
+├── 03 · Platform Infrastructure & NOC（服务器/网络）
 │ ├── NOC Overview        — 服务器设备群总览（仅基础设施；LDI 见下方）
 │ ├── Engineering Drill-Down — 单台服务器深入分析：CPU/内存/磁盘/温度/网络，以及 LDI 质量散点图
 │ ├── AIOps & Capacity    — 距离耗尽天数预测与 Z-Score 异常检测
 │ ├── Meta-Monitoring     — 流水线自身健康（行/秒、批次成功率、重试队列、熔断器）
 │ └── Ingestion Latency   — 从源头到数据库的真实延迟，只读
-└── LDI Manufacturing（PCB 激光直接成像设备群）
- ├── Easy Overview        — 零配置的全设备群一览，无需设置筛选
- ├── LDI Manufacturing    — 指挥中心：管理层 KPI + 设备遥测 + 告警流
- ├── LDI Operator Andon   — 产线 kiosk 看板，只读，1920×1080 及以上无需滚动
- ├── LDI Alarm Console    — 交互式确认/解决流程，与只读的 Andon 看板配套
- ├── LDI Alarm Response   — 基于真实告警生命周期的 MTTA/MTTR
- ├── LDI Alarm Dictionary — 参考查询：设备厂商告警定义 + 最近发生记录
- ├── LDI Engineering Analytics — Cpk/SPC 排名、RCA Truth Test、PE/JE 分布
- ├── LDI Machine Snapshot — 点击任意告警/日志，查看该毫秒的设备状态
- ├── LDI Factory Digital Twin — 按区域展示上报数据的 LDI 设备的 Canvas 平面图
- └── LDI Data Readiness   — 自检式数据质量仪表板（覆盖率 %、缺口）
+└── 04 · Plating Operations（VCP 电镀线）
+ ├── Fleet Overview & Process Analytics — 各状态时长、槽温与电流偏差、各批次配方符合度
+ ├── Operations Console — 产线实时状态、各工位电流与电压、槽温、告警日志
+ └── Real-Time Wall — 为电镀车间全屏显示每条产线的实时状态
 ```
+
+钻孔与 VCP 仪表板读取 `eap_backup` 数据库；没有工厂数据时为空，参见[钻孔与 VCP 合成数据](../data/MOCK_DATA.md)。
 
 含面板数量的完整自动生成列表见 [Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md)。
 

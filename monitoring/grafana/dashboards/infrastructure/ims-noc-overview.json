@@ -1,10 +1,16 @@
 {
   "uid": "ims-noc-overview",
-  "title": "IMS NOC Overview",
+  "title": "Platform — 01 Network Operations Center (NOC) Overview",
   "tags": [
     "ims",
+    "infrastructure",
+    "kiosk",
+    "level-1-overview",
     "noc",
-    "infrastructure"
+    "operator",
+    "overview",
+    "platform",
+    "sre"
   ],
   "timezone": "UTC",
   "schemaVersion": 39,
@@ -193,18 +199,32 @@
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "#EF4444", "value": null },
-                  { "color": "#F59E0B", "value": 70 },
-                  { "color": "#22C55E", "value": 90 }
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 70
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 90
+                  }
                 ]
               },
-              "color": { "mode": "thresholds" },
+              "color": {
+                "mode": "thresholds"
+              },
               "mappings": [
                 {
                   "type": "special",
                   "options": {
                     "match": "null+nan",
-                    "result": { "text": "NO_DATA", "color": "#64748B" }
+                    "result": {
+                      "text": "NO_DATA",
+                      "color": "#64748B"
+                    }
                   }
                 }
               ]
@@ -217,14 +237,18 @@
             "textMode": "value",
             "noValue": "NO_DATA",
             "reduceOptions": {
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "values": false
             }
           },
           "targets": [
             {
               "refId": "A",
-              "datasource": { "uid": "timescaledb" },
+              "datasource": {
+                "uid": "timescaledb"
+              },
               "format": "table",
               "rawSql": "WITH latest AS (SELECT device_id, disk_used_gb / NULLIF(disk_total_gb, 0) * 100 AS disk_pct, ram_used_mb / NULLIF(ram_total_mb, 0) * 100 AS ram_pct, cpu_load_percent AS cpu_pct FROM public.sys_metrics WHERE \"time\" > NOW() - INTERVAL '5 minutes') SELECT ROUND(AVG(CASE WHEN disk_pct > 90 OR ram_pct > 95 OR cpu_pct > 90 THEN 0 WHEN disk_pct > 80 OR ram_pct > 85 OR cpu_pct > 80 THEN 50 ELSE 100 END), 1) AS value FROM latest"
             }

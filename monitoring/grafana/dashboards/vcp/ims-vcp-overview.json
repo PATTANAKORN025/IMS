@@ -1,0 +1,1886 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "name": "Annotations & Alerts",
+        "type": "dashboard",
+        "iconColor": "#3b82f6"
+      },
+      {
+        "name": "Left RUN",
+        "enable": false,
+        "hide": false,
+        "iconColor": "#f59e0b",
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "target": {
+          "refId": "Anno",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "rawSql": "SELECT log_date AS time,\n       'VCP' || right(split_part(equipment_id, '-', 1), 2) || ' · RUN → ' || current_status AS title,\n       'previous_status = ' || previous_status || ', current_status = ' || current_status AS text,\n       'VCP' || right(split_part(equipment_id, '-', 1), 2) AS tags\nFROM public.eap_api_vcp_status_change\nWHERE $__timeFilter(log_date)\n  AND previous_status = 'RUN'\n  AND current_status <> 'RUN'\n  AND ('All' IN (${equipment_id:sqlstring}) OR equipment_id IN (${equipment_id:sqlstring}))\nORDER BY log_date DESC\nLIMIT 200;"
+        },
+        "type": "dashboard"
+      },
+      {
+        "name": "ALARM before a stop",
+        "enable": false,
+        "hide": false,
+        "iconColor": "#ef4444",
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "target": {
+          "refId": "Anno",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "rawSql": "WITH exits AS (\n    SELECT equipment_id, log_date\n    FROM public.eap_api_vcp_status_change\n    WHERE $__timeFilter(log_date)\n      AND previous_status = 'RUN' AND current_status <> 'RUN'\n      AND ('All' IN (${equipment_id:sqlstring}) OR equipment_id IN (${equipment_id:sqlstring}))\n)\nSELECT a.log_date AS time,\n       'VCP' || right(split_part(a.equipment_id, '-', 1), 2) || ' · ' || a.error_code AS title,\n       a.error_msg AS text,\n       'VCP' || right(split_part(a.equipment_id, '-', 1), 2) AS tags\nFROM exits e\nCROSS JOIN LATERAL (\n    -- the last ALARM-severity trigger in the quarter hour before the machine\n    -- left RUN: at most one annotation per exit\n    SELECT log_date, error_code, error_msg, equipment_id\n    FROM public.eap_api_vcp_alarm\n    WHERE equipment_id = e.equipment_id\n      AND alarm_status = 'Triggered'\n      AND error_type = 'ALARM'\n      AND log_date <= e.log_date\n      AND log_date >= e.log_date - interval '15 minutes'\n    ORDER BY log_date DESC\n    LIMIT 1\n) a\nORDER BY a.log_date DESC\nLIMIT 200;"
+        },
+        "type": "dashboard"
+      },
+      {
+        "name": "New lot started",
+        "enable": false,
+        "hide": false,
+        "iconColor": "#3b82f6",
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "target": {
+          "refId": "Anno",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "rawSql": "SELECT min(log_date) AS time,\n       'VCP' || right(split_part(equipment_id, '-', 1), 2) || ' · ' || jobkey AS title,\n       'jobkey = ' || jobkey AS text,\n       'VCP' || right(split_part(equipment_id, '-', 1), 2) AS tags\nFROM public.eap_api_vcp_upp\nWHERE $__timeFilter(log_date)\n  AND jobkey IS NOT NULL AND jobkey <> ''\n  AND ('All' IN (${equipment_id:sqlstring}) OR equipment_id IN (${equipment_id:sqlstring}))\nGROUP BY 'VCP' || right(split_part(equipment_id, '-', 1), 2), jobkey\nORDER BY 1 DESC\nLIMIT 200;"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Fleet overview and process analytics for the vertical copper plating (VCP) lines: hours by state, bath and station-current deviation from setpoint, cell resistance, pump deviation, recipe compliance by lot, and the alarm codes that precede stops.\n\n**Before reading any panel:** a new row lands in `eap_api_vcp_upp` about **once a minute**, so the dashboard can trail the floor by about one minute. `nowDelay` is 1 minute so the right edge of a graph is never a stretch with no data yet. The refresh choices start at 1 minute, because anything shorter re-queries the same rows. **The machines were renamed on 2026-09-11** from `VCP001-VCP` to `VCP01-VCP` (lines 02 and 03 likewise). The \"Line\" filter therefore selects a physical line, and every panel treats both names as one line; no panel shows an old name as a fourth to sixth line. **Every colour threshold in this folder is tied to an alert rule already in place** or to a property of the data, except where a panel says it is a readability band. A column whose unit the source does not give is shown without a unit. The database is read-only: the `grafana_reader` user cannot write. This dashboard is the analysis layer, with a 7-day default window. For live minute-by-minute values, go to dashboard 02.\n\n**Basis of the statements in every panel description:** properties checked against the source tables across every machine name they have recorded (`VCP001/002/003-VCP` before the rename, `VCP01/02/03-VCP` after it, and a stray `VCP001-L`). Plant figures such as row counts, setpoints and measured values are deliberately left out of these descriptions.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Go to 02 · Operations Console",
+      "tooltip": "Keeps the selected time range and filters",
+      "type": "link",
+      "url": "/d/ims-vcp-operations-console/?${__url_time_range}&${equipment_id:queryparam}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}"
+    },
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "vcp"
+      ],
+      "targetBlank": false,
+      "title": "All VCP dashboards",
+      "tooltip": "Every dashboard tagged vcp",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
+  "liveNow": false,
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "alarms",
+    "electroplating",
+    "fleet",
+    "ims",
+    "level-1-overview",
+    "plating",
+    "rectifier",
+    "supervisor",
+    "vcp"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "equipment_id",
+        "label": "Line",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "query": "SELECT DISTINCT 'VCP' || right(split_part(equipment_id, '-', 1), 2) FROM public.eap_api_vcp_status_change WHERE equipment_id LIKE '%-VCP' ORDER BY 1;",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "description": "Physical plating lines VCP01, VCP02 and VCP03. The machines were renamed on 2026-09-11 (for example `VCP002-VCP` became `VCP02-VCP`), so every panel matches rows on the last two digits of the name. Selecting one line returns the rows of both names, and no row is lost to the rename. Old links that still pass a full machine name such as `VCP002-VCP` keep working for the same reason. The single `VCP001-L` row is not counted.",
+        "definition": "SELECT DISTINCT 'VCP' || right(split_part(equipment_id, '-', 1), 2) FROM public.eap_api_vcp_status_change WHERE equipment_id LIKE '%-VCP' ORDER BY 1;",
+        "allValue": null
+      },
+      {
+        "name": "severity",
+        "label": "error_type",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "query": "SELECT DISTINCT error_type FROM public.eap_api_vcp_alarm ORDER BY 1;",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "description": "Values the error_type column of eap_api_vcp_alarm actually holds over the last 30 days",
+        "definition": "SELECT DISTINCT error_type FROM public.eap_api_vcp_alarm WHERE log_date > now() - interval '30 days' ORDER BY 1;",
+        "allValue": null
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "nowDelay": "1m",
+    "hidden": false
+  },
+  "timezone": "Asia/Bangkok",
+  "title": "VCP — 01 Plating Fleet Overview & Process Analytics",
+  "uid": "ims-vcp-overview",
+  "version": 2,
+  "weekStart": "monday",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Latest State by Line",
+      "description": "**Use it when:** opening a shift, or when someone reports a line stopped. It answers one question: which line is running now.\n\n**How to read it:** one row per line. The text is the value `current_status` actually holds, not a number derived from it: green RUN, cyan IDLE, red DOWN, STOP or ALARM, blue PM. The source does not define these codes, so none is given a meaning here; RUN is a machine state and does not by itself mean the bank is plating. This tile ignores the time range above and always shows the latest state.\n\n**Calculated from:** the newest row of the line in `eap_api_vcp_status_change`, from both names of the line, with no time limit, because the last state change may predate the selected range. The printed age is the age of the newest evidence, a status row or a data row, because a line that runs on writes no new status row but still sends data every 60 s. **If a line has sent no data for more than 5 minutes, the value reads NO DATA in grey** and the label names the last known state and its age, so an old state never looks current.\n\n**Abnormal when:** a line that the production plan says should run shows IDLE or DOWN, or ALARM stands for longer than a shift.\n\n**What to do next:** click the tile to open dashboard 02 for the selected line, check \"Machine State Timeline\" for when it stopped, then \"Alarm Log\" for the codes before the stop.\n\n**Good to know:** lines are matched on the last two digits, because the table renamed `VCP001-VCP` to `VCP01-VCP` on 2026-09-11, and no rows of the old and new names overlap in time. Over 180 days this column holds five values: RUN, DOWN, IDLE, ALARM and PM. STOP appears only in `previous_status`.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "options": {
+        "reduceOptions": {
+          "values": true,
+          "calcs": [],
+          "fields": "/^value$/"
+        },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "noValue": "-",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 22
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "RUN": {
+                  "text": "RUN",
+                  "color": "#22c55e"
+                },
+                "IDLE": {
+                  "text": "IDLE",
+                  "color": "#00f2fe"
+                },
+                "DOWN": {
+                  "text": "DOWN",
+                  "color": "#ef4444"
+                },
+                "STOP": {
+                  "text": "STOP",
+                  "color": "#ef4444"
+                },
+                "ALARM": {
+                  "text": "ALARM",
+                  "color": "#ef4444"
+                },
+                "PM": {
+                  "text": "PM",
+                  "color": "#3b82f6"
+                },
+                "NO DATA": {
+                  "text": "NO DATA",
+                  "color": "#64748b"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open the operations console for the selected line",
+              "url": "/d/ims-vcp-operations-console/?${__url_time_range}&${equipment_id:queryparam}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ],
+          "unit": "none",
+          "decimals": 0,
+          "noValue": "No status row for the selected line. Check the time range, and that the filters above still have a value selected."
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "rawSql": "WITH sel AS (\n    SELECT DISTINCT right(split_part(e, '-', 1), 2) AS code\n    FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS e\n), probe AS (\n    -- newest status of either name of the line (VCP002-VCP before 2026-09-11,\n    -- VCP02-VCP after), and the newest telemetry row of either name\n    SELECT s.code, st.current_status, st.log_date AS status_at, up.last_row\n    FROM sel s\n    LEFT JOIN LATERAL (\n        SELECT current_status, log_date\n        FROM public.eap_api_vcp_status_change\n        WHERE equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) = s.code\n        ORDER BY log_date DESC, log_id DESC\n        LIMIT 1\n    ) st ON true\n    LEFT JOIN LATERAL (\n        SELECT max(log_date) AS last_row\n        FROM public.eap_api_vcp_upp\n        WHERE equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) = s.code\n    ) up ON true\n    WHERE st.current_status IS NOT NULL\n), aged AS (\n    -- age of the newest evidence of any kind: a line that is running steadily\n    -- writes no status rows but keeps writing telemetry every 60 seconds\n    SELECT code, current_status, status_at,\n           now() - GREATEST(status_at, COALESCE(last_row, status_at)) AS age\n    FROM probe\n)\nSELECT 'VCP' || code || ' · ' ||\n         CASE WHEN age > interval '5 minutes' THEN 'last state ' || current_status || ' · ' ELSE '' END ||\n         CASE WHEN age < interval '1 hour'\n                THEN ROUND(EXTRACT(EPOCH FROM age)/60)::text || ' min ago'\n              WHEN age < interval '48 hours'\n                THEN ROUND(EXTRACT(EPOCH FROM age)/3600)::text || ' h ago'\n              ELSE ROUND(EXTRACT(EPOCH FROM age)/86400)::text || ' d ago'\n         END AS line,\n       -- no telemetry for more than five minutes (rows land every 60.2 s): the last\n       -- known state is printed in the label, the value says the line is silent\n       CASE WHEN age > interval '5 minutes' THEN 'NO DATA' ELSE current_status END AS value\nFROM aged\nORDER BY code;\n"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Fleet KPIs",
+      "description": "**Use it when:** starting or closing a shift. These four numbers summarise the whole fleet for the selected range before you drill into the panels below.\n\n**How to read it:**\n- **RUN share**: the share of reported time spent in RUN. Higher is better. Green from 85%, amber 70–85%, red below 70%.\n- **Alarms per RUN hour**: Triggered incidents per hour of actual running. Lower is better. Amber from 20, red from 40.\n- **Median time to clear**: seconds from Triggered to the Reset of the same code. Lower is better. Amber from 120 s, red from 600 s.\n- **Data coverage**: the share of minutes that had at least one data row.\n\n**These colour bands are readability bands**, set so the tiles read at a glance. They do not come from a spec column or an alert rule, because the database has neither for these KPIs.\n\n**Calculated from:** `eap_api_vcp_status_change` for state spans and `eap_api_vcp_alarm` for alarms. State spans are built once: the state before the range is carried in, and the last span is cut at the right edge. The same spans are the denominator of both RUN share and alarm rate. Time to clear first drops repeated consecutive rows, then pairs each Triggered with the next Reset of the same code, and takes the median so an alarm standing across shifts does not skew it.\n\n**Abnormal when:** RUN share drops while alarms per RUN hour do not rise, meaning the time went to waiting rather than faults. High alarms per RUN hour together with a long time to clear means alarms repeat and never get fixed.\n\n**What to do next:**\n- RUN share drops: see \"Hours by State\" to tell whether the time went to IDLE or DOWN.\n- Alarms are frequent: see \"Alarm Codes Preceding Stops\" for the leading code.\n- Click a tile to open dashboard 02 for the selected line.\n\n**Good to know:**\n- **RUN share leaves out time with no data.** The last state is cut 5 minutes after the machine's last data row. Before this fix, a renamed machine stayed in RUN for days after it stopped sending data, which inflated the share.\n- **Data coverage** is the share of minutes in the window, times the number of selected lines, that have at least one data row. It counts gaps at the start, middle and end of the window, so below 100% means the machines went silent for part of it.\n- RUN share uses the status rows of both names of the line, counted only up to 5 minutes after the line's last data row. It uses the same spans as \"Hours by State\", so the two panels always agree. Alarm rate and time to clear likewise count only lines that sent data in the window.\n- **Alarms count incidents, not rows:** a code that re-fires on the same machine within 30 minutes is one incident still standing. Most `alarm_status = Triggered` rows re-fire within a few minutes, so counting rows would overstate alarms several times over.\n- Alarm rate divides by hours actually run, not calendar hours, so a long-stopped line does not score better for it.\n- Checked: the state spans tile the window exactly once per line.\n- Triggered–Reset pairing looks one day past each edge of the window, so a pair straddling the edge is not lost.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "options": {
+        "reduceOptions": {
+          "values": true,
+          "calcs": [],
+          "fields": ""
+        },
+        "orientation": "horizontal",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "No data. Check the time range, and that the filters above still have a value selected.",
+        "text": {
+          "titleSize": 13,
+          "valueSize": 26
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected.",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open the operations console for the selected line",
+              "url": "/d/ims-vcp-operations-console/?${__url_time_range}&${equipment_id:queryparam}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RUN share"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#ef4444",
+                      "value": null
+                    },
+                    {
+                      "color": "#f59e0b",
+                      "value": 70
+                    },
+                    {
+                      "color": "#22c55e",
+                      "value": 85
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarms per RUN hour"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22c55e",
+                      "value": null
+                    },
+                    {
+                      "color": "#f59e0b",
+                      "value": 20
+                    },
+                    {
+                      "color": "#ef4444",
+                      "value": 40
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Median time to clear"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22c55e",
+                      "value": null
+                    },
+                    {
+                      "color": "#f59e0b",
+                      "value": 120
+                    },
+                    {
+                      "color": "#ef4444",
+                      "value": 600
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Data coverage"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "rawSql": "WITH sel AS (\n    SELECT DISTINCT right(split_part(e, '-', 1), 2) AS code\n    FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS e\n), reporting AS (\n    -- a line counts when either of its names wrote telemetry inside the window\n    SELECT DISTINCT right(split_part(u.equipment_id, '-', 1), 2) AS code\n    FROM public.eap_api_vcp_upp u\n    WHERE $__timeFilter(u.log_date) AND u.equipment_id LIKE '%-VCP'\n      AND right(split_part(u.equipment_id, '-', 1), 2) IN (SELECT code FROM sel)\n), f AS (\n    -- status rows of both names of the line: the state standing when the window\n    -- opened may have been written under the retired name\n    SELECT right(split_part(equipment_id, '-', 1), 2) AS code, current_status, log_date, log_id\n    FROM public.eap_api_vcp_status_change\n    WHERE log_date <= $__timeTo()::timestamptz\n      AND log_date > $__timeFrom()::timestamptz - interval '30 days'\n      AND equipment_id LIKE '%-VCP'\n      AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT code FROM reporting)\n), carry AS (\n    SELECT code, current_status, $__timeFrom()::timestamptz AS log_date, log_id\n    FROM (\n        SELECT DISTINCT ON (code) code, current_status, log_date, log_id\n        FROM f\n        WHERE log_date <= $__timeFrom()::timestamptz\n        ORDER BY code, log_date DESC, log_id DESC\n    ) latest_f\n), in_range AS (\n    SELECT code, current_status, log_date, log_id FROM carry\n    UNION ALL\n    SELECT code, current_status, log_date, log_id FROM f WHERE log_date > $__timeFrom()::timestamptz\n), seen AS (\n    -- the last moment each line reported telemetry, plus one grace period: rows\n    -- land every 60.2 s, so five minutes of silence is a real gap\n    SELECT right(split_part(u.equipment_id, '-', 1), 2) AS code, max(u.log_date) + interval '5 minutes' AS last_seen\n    FROM public.eap_api_vcp_upp u\n    WHERE u.log_date <= $__timeTo()::timestamptz AND u.equipment_id LIKE '%-VCP'\n      AND right(split_part(u.equipment_id, '-', 1), 2) IN (SELECT code FROM reporting)\n    GROUP BY 1\n), ordered AS (\n    SELECT code, current_status, log_date AS t0,\n           LEAD(log_date) OVER (PARTITION BY code ORDER BY log_date, log_id) AS t1\n    FROM in_range\n), spans AS (\n    -- every second of the window belongs to exactly one state of one line, and\n    -- nothing is counted after the line stopped reporting\n    SELECT o.code, o.current_status,\n           GREATEST(EXTRACT(EPOCH FROM (\n               LEAST(COALESCE(o.t1, $__timeTo()::timestamptz), $__timeTo()::timestamptz, sn.last_seen) - o.t0)), 0) AS seconds\n    FROM ordered o JOIN seen sn ON sn.code = o.code\n    WHERE o.t0 < $__timeTo()::timestamptz\n), availability AS (\n    SELECT ROUND((100.0 * COALESCE(SUM(seconds) FILTER (WHERE current_status = 'RUN'), 0)\n                  / NULLIF(SUM(seconds), 0))::NUMERIC, 1) AS pct,\n           COALESCE(SUM(seconds) FILTER (WHERE current_status = 'RUN'), 0) / 3600.0 AS run_hours\n    FROM spans\n), incident_alarm AS (\n    -- a code that re-fires within 30 minutes on the same machine is the same incident\n    -- still standing: most Triggered rows are re-fires of an open incident\n    SELECT *, (log_date - LAG(log_date) OVER (\n                 PARTITION BY equipment_id, error_code, error_type, alarm_status\n                 ORDER BY log_date, log_id) >= interval '30 minutes'\n               OR LAG(log_date) OVER (\n                 PARTITION BY equipment_id, error_code, error_type, alarm_status\n                 ORDER BY log_date, log_id) IS NULL) AS is_incident\n    FROM public.eap_api_vcp_alarm\n    WHERE log_date >= $__timeFrom()::timestamptz - interval '30 minutes'\n      AND log_date <= $__timeTo()::timestamptz\n      AND equipment_id LIKE '%-VCP'\n      AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT code FROM reporting)\n), alarms AS (\n    SELECT count(*)::numeric AS triggered\n    FROM incident_alarm a0\n    WHERE $__timeFilter(a0.log_date)\n      AND a0.alarm_status = 'Triggered' AND a0.is_incident\n      AND a0.error_type IN (${severity:sqlstring})\n), dedup AS (\n    -- same line population as the rate above, so the two figures describe one fleet\n    SELECT equipment_id, error_code, alarm_status, log_date, log_id\n    FROM (\n        SELECT equipment_id, error_code, alarm_status, log_date, log_id,\n               LAG(alarm_status) OVER (PARTITION BY equipment_id, error_code ORDER BY log_date, log_id) AS prev_status\n        FROM public.eap_api_vcp_alarm\n        WHERE log_date >= $__timeFrom()::timestamptz - interval '1 day'\n          AND log_date <= $__timeTo()::timestamptz + interval '1 day'\n          AND error_type IN (${severity:sqlstring})\n          AND equipment_id LIKE '%-VCP'\n          AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT code FROM reporting)\n    ) x\n    WHERE prev_status IS DISTINCT FROM alarm_status\n), paired AS (\n    SELECT log_date AS t0,\n           LEAD(log_date) OVER w AS t1,\n           alarm_status,\n           LEAD(alarm_status) OVER w AS next_status\n    FROM dedup\n    WINDOW w AS (PARTITION BY equipment_id, error_code ORDER BY log_date, log_id)\n), mttr AS (\n    SELECT ROUND(percentile_cont(0.5) WITHIN GROUP (\n               ORDER BY EXTRACT(EPOCH FROM (t1 - t0))::double precision))::BIGINT AS seconds\n    FROM paired\n    WHERE alarm_status = 'Triggered' AND next_status = 'Reset'\n      AND t0 >= $__timeFrom()::timestamptz AND t0 <= $__timeTo()::timestamptz\n), covered AS (\n    -- share of (selected line, minute) slots in the window that hold at least one\n    -- telemetry row: gaps at the start, the middle or the end all count\n    SELECT ROUND((100.0 * count(DISTINCT (right(split_part(u.equipment_id, '-', 1), 2), date_trunc('minute', u.log_date)))\n                  / NULLIF((SELECT count(*) FROM sel)\n                           * EXTRACT(EPOCH FROM ($__timeTo()::timestamptz - $__timeFrom()::timestamptz)) / 60.0, 0))::NUMERIC, 0) AS pct\n    FROM public.eap_api_vcp_upp u\n    WHERE $__timeFilter(u.log_date) AND u.equipment_id LIKE '%-VCP'\n      AND right(split_part(u.equipment_id, '-', 1), 2) IN (SELECT code FROM sel)\n)\nSELECT a.pct AS \"RUN share\",\n       ROUND((al.triggered / NULLIF(a.run_hours, 0))::NUMERIC, 1) AS \"Alarms per RUN hour\",\n       m.seconds AS \"Median time to clear\",\n       LEAST(cv.pct, 100) AS \"Data coverage\"\nFROM availability a CROSS JOIN alarms al CROSS JOIN mttr m CROSS JOIN covered cv;\n"
+        }
+      ],
+      "transformations": []
+    },
+    {
+      "id": 8,
+      "title": "Hours by State",
+      "description": "**Use it when:** production time is missing and you need to know where it went: waiting or faults.\n\n**How to read it:** one row per line. Bar length is hours in the selected range. Green RUN, cyan IDLE, red DOWN (DOWN, STOP and ALARM together), blue PM. For a line that reported all through the window, the four add up to the window length. A line that went silent shows fewer hours, because time after its last data row plus 5 minutes is not given to any state.\n\n**Calculated from:** the same state spans as \"Fleet KPIs\": `eap_api_vcp_status_change` with the state before the window carried in and the last span cut at the right edge, summed in seconds per state and divided by 3600.\n\n**Abnormal when:** IDLE is longer than RUN in a fully planned shift, so the bottleneck is outside the machine. DOWN is long on one line while the others are normal, so it is that machine.\n\n**What to do next:** click a bar to open dashboard 02 for that line, then read \"Machine State Timeline\" for when each DOWN began and how long it lasted.\n\n**Good to know:** the unit is a plain number with \"hours\" on the axis, instead of Grafana's time unit, which would turn 30 hours into \"1.3 days\" on its own. A line with no status row at all in the window does not appear, rather than showing zero.",
+      "type": "barchart",
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "normal",
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": []
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "axisLabel": "Hours"
+          },
+          "links": [
+            {
+              "title": "Open the operations console for this line",
+              "url": "/d/ims-vcp-operations-console/?${__url_time_range}&var-equipment_id=${__data.fields[\"equipment_id\"]}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ],
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected."
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RUN (h)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#22c55e",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "IDLE (h)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00f2fe",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DOWN (h)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ef4444",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PM (h)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3b82f6",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "equipment_id"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH sel AS (\n    SELECT DISTINCT right(split_part(e, '-', 1), 2) AS code\n    FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS e\n), reporting AS (\n    -- a line counts when either of its names wrote telemetry inside the window\n    SELECT DISTINCT right(split_part(u.equipment_id, '-', 1), 2) AS code\n    FROM public.eap_api_vcp_upp u\n    WHERE $__timeFilter(u.log_date) AND u.equipment_id LIKE '%-VCP'\n      AND right(split_part(u.equipment_id, '-', 1), 2) IN (SELECT code FROM sel)\n), f AS (\n    -- status rows of both names of the line: the state standing when the window\n    -- opened may have been written under the retired name\n    SELECT right(split_part(equipment_id, '-', 1), 2) AS code, current_status, log_date, log_id\n    FROM public.eap_api_vcp_status_change\n    WHERE log_date <= $__timeTo()::timestamptz\n      AND log_date > $__timeFrom()::timestamptz - interval '30 days'\n      AND equipment_id LIKE '%-VCP'\n      AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT code FROM reporting)\n), carry AS (\n    SELECT code, current_status, $__timeFrom()::timestamptz AS log_date, log_id\n    FROM (\n        SELECT DISTINCT ON (code) code, current_status, log_date, log_id\n        FROM f\n        WHERE log_date <= $__timeFrom()::timestamptz\n        ORDER BY code, log_date DESC, log_id DESC\n    ) latest_f\n), in_range AS (\n    SELECT code, current_status, log_date, log_id FROM carry\n    UNION ALL\n    SELECT code, current_status, log_date, log_id FROM f WHERE log_date > $__timeFrom()::timestamptz\n), seen AS (\n    -- the last moment each line reported telemetry, plus one grace period: rows\n    -- land every 60.2 s, so five minutes of silence is a real gap\n    SELECT right(split_part(u.equipment_id, '-', 1), 2) AS code, max(u.log_date) + interval '5 minutes' AS last_seen\n    FROM public.eap_api_vcp_upp u\n    WHERE u.log_date <= $__timeTo()::timestamptz AND u.equipment_id LIKE '%-VCP'\n      AND right(split_part(u.equipment_id, '-', 1), 2) IN (SELECT code FROM reporting)\n    GROUP BY 1\n), ordered AS (\n    SELECT code, current_status, log_date AS t0,\n           LEAD(log_date) OVER (PARTITION BY code ORDER BY log_date, log_id) AS t1\n    FROM in_range\n), spans AS (\n    -- every second of the window belongs to exactly one state of one line, and\n    -- nothing is counted after the line stopped reporting\n    SELECT o.code, o.current_status,\n           GREATEST(EXTRACT(EPOCH FROM (\n               LEAST(COALESCE(o.t1, $__timeTo()::timestamptz), $__timeTo()::timestamptz, sn.last_seen) - o.t0)), 0) AS seconds\n    FROM ordered o JOIN seen sn ON sn.code = o.code\n    WHERE o.t0 < $__timeTo()::timestamptz\n)\nSELECT 'VCP' || code AS line,\n       'VCP' || code AS equipment_id,\n       ROUND((COALESCE(SUM(seconds) FILTER (WHERE current_status = 'RUN'), 0) / 3600.0)::NUMERIC, 1) AS \"RUN (h)\",\n       ROUND((COALESCE(SUM(seconds) FILTER (WHERE current_status = 'IDLE'), 0) / 3600.0)::NUMERIC, 1) AS \"IDLE (h)\",\n       ROUND((COALESCE(SUM(seconds) FILTER (WHERE current_status IN ('DOWN', 'STOP', 'ALARM')), 0) / 3600.0)::NUMERIC, 1) AS \"DOWN (h)\",\n       ROUND((COALESCE(SUM(seconds) FILTER (WHERE current_status = 'PM'), 0) / 3600.0)::NUMERIC, 1) AS \"PM (h)\"\nFROM spans\nGROUP BY code\nORDER BY code;\n",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Bath Deviation from Setpoint",
+      "description": "**Use it when:** you suspect a bath is not holding its temperature, or before releasing a lot a customer has complained about.\n\n**How to read it:** one line per bath. The value is **reading − setpoint in °C**. **Positive means the bath is hotter than its setpoint; negative means colder.** Zero is on setpoint. A line swinging around zero is a bath under control; a line parked on one side is systematically off target.\n\n**Calculated from:** the 9 real column pairs in `eap_api_vcp_upp`, written `preset_x − actual_x` because the source swaps the names: `preset_*` is the sensor reading and `actual_*` the recipe setpoint. Averaged per row in each time bucket at the window's resolution.\n\n**Abnormal when:** compared with the control the lines actually achieve (\\|difference\\| in °C, across every machine name):\n- **The plating baths hold tight.** copperplating1, copperplating2 and rectifier stay within a few degrees of setpoint in practically every row, so more than 4 °C on any of them is genuinely abnormal.\n- **The support baths are much looser.** peeloff, heating, dry and hotwater routinely sit several degrees off setpoint, some of them on one side for long stretches.\n\n**What to do next:**\n- A plating bath out of band: stop feeding the line and check that bath's heater and sensor first.\n- A support bath parked on one side for a whole shift: that is calibration or a heater, not a passing event.\n- For affected lots, see \"Recipe Compliance by Lot\", column \"Max bath deviation (°C)\".\n\n**Alert rules in place:**\n- **The three plating baths:** more than 4 °C, 15-minute mean, for 15 minutes. This sits above what the three baths reach in normal running.\n- **The six support baths:** more than 10 °C, 30-minute mean, for 30 minutes. It fires on a small share of bath windows.\n\n**Good to know:**\n- **Why the names are swapped:** the `actual_*` side holds constant through every lot and has only a few values in the whole table. The `preset_*` side moves through many values within one lot, the signature of a reading.\n- A `preset_dry` of 0 means no reading, not a cold dryer, so this panel and the alert rules skip zero readings.\n- `actual_prep` has no paired column, so it appears as a temperature line on dashboard 02 instead.\n- **Where °C comes from:** the source describes no column at all (`pg_description` is empty on every column of `vcp_upp` and the view). The source documents a unit only for `actual_copperplating1`, `actual_copperplating2`, `actual_clean` and `actual_dry`. The other six baths (`ao`, `hotwater`, `heating`, `peeloff`, `rectifier` and `prep`) are °C by inference from the data, not from a spec. All ten sit in one plausible temperature band and each has only a few distinct setpoints, the signature of one family of bath temperatures. If an engineering spec shows a bath is not in °C, remove that bath from this panel rather than only changing the unit label, because two alert rules also judge it in degrees.\n- **The vertical event lines (annotations) are off by default.** Turn them on with the \"Left RUN\" and \"ALARM before a stop\" switches at the top of the dashboard. They are off because a month holds hundreds of exits from RUN, and the dashed lines would cover the graph. The same events show in dashboard 02's timeline and in the alarm-code panel.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "rawSql": "SELECT $__timeGroupAlias(log_date, $__interval),\n       -- a reading of 0 means the sensor reported nothing, not a cold bath.\n       -- one line's dryer sensor reads 0 on every row, which dragged the fleet\n       -- mean far below the true deviation.\n       -- Same guard as the alert rule that points at this panel (vcp-rules.yml).\n       ROUND(AVG(preset_clean - actual_clean) FILTER (WHERE preset_clean > 0 AND actual_clean > 0)::numeric, 2) AS \"Δ clean\",\n       ROUND(AVG(preset_copperplating1 - actual_copperplating1) FILTER (WHERE preset_copperplating1 > 0 AND actual_copperplating1 > 0)::numeric, 2) AS \"Δ copperplating1\",\n       ROUND(AVG(preset_copperplating2 - actual_copperplating2) FILTER (WHERE preset_copperplating2 > 0 AND actual_copperplating2 > 0)::numeric, 2) AS \"Δ copperplating2\",\n       ROUND(AVG(preset_ao - actual_ao) FILTER (WHERE preset_ao > 0 AND actual_ao > 0)::numeric, 2) AS \"Δ ao\",\n       ROUND(AVG(preset_hotwater - actual_hotwater) FILTER (WHERE preset_hotwater > 0 AND actual_hotwater > 0)::numeric, 2) AS \"Δ hotwater\",\n       ROUND(AVG(preset_dry - actual_dry) FILTER (WHERE preset_dry > 0 AND actual_dry > 0)::numeric, 2) AS \"Δ dry\",\n       ROUND(AVG(preset_heating - actual_heating) FILTER (WHERE preset_heating > 0 AND actual_heating > 0)::numeric, 2) AS \"Δ heating\",\n       ROUND(AVG(preset_peeloff - actual_peeloff) FILTER (WHERE preset_peeloff > 0 AND actual_peeloff > 0)::numeric, 2) AS \"Δ peeloff\",\n       ROUND(AVG(preset_rectifier - actual_rectifier) FILTER (WHERE preset_rectifier > 0 AND actual_rectifier > 0)::numeric, 2) AS \"Δ rectifier\"\nFROM public.eap_api_vcp_upp\nWHERE $__timeFilter(log_date)\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\nGROUP BY 1\nORDER BY 1;"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "connectNullPoints": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 2,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected.",
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "Reading − setpoint (°C)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open bath temperature on the operations console",
+              "url": "/d/ims-vcp-operations-console/?${__url_time_range}&${equipment_id:queryparam}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ clean"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3b82f6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ copperplating1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#22c55e"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ copperplating2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#15803d"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ ao"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#64748b"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ hotwater"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#f59e0b"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ dry"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#ef4444"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ heating"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#a855f7"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ peeloff"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00f2fe"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Δ rectifier"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eab308"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "type": "barchart",
+      "title": "Current Deviation by Station",
+      "description": "**Use it when:** confirming a line really runs to recipe, before releasing a lot or after a recipe change.\n\n**How to read it:** one bar per station side. The value is **reading − setpoint in amperes**. **Positive means more current than the setpoint; negative means less.** Zero is on recipe. Bar colour is the line's identity colour, not severity; read severity from bar length and the left axis.\n\n**Calculated from:** `eap_api_vcp_upp` as `actual_current_* − preset_current_*` for all 36 station sides (18 stations × side a and side b). Only rows where that side draws current or has a setpoint above 0 are counted, so rows where the line is not plating do not bury the value. Then averaged over the selected range.\n\n**Abnormal when:** the two columns match on practically every cell, so a bar that is not zero is always real, not noise.\n\n**What to do next:** note the station and side from the bottom axis, then open \"Recipe Compliance by Lot\" to see which lots were affected. Click a lot row to open dashboard 02 at that lot's time and check the same cell's voltage.\n\n**Alert rule in place:** a difference above 5 A, 15-minute mean, for 10 minutes. It notifies with line, lot, station and side.\n\n**Good to know:**\n- **Only minutes where the bank is plating are averaged.** Including minutes when the line is not producing would give −(setpoint) for every idle station, which is not a recipe breach.\n- `preset_current` of side b equals side a on every row for all 18 stations, so the recipe is set per station and both sides are measured against one setpoint. The measured current of the two sides really differs, so this panel keeps the sides apart.\n- **Pattern to recognise:** one station side reading about half its setpoint for days while the other side holds it, with the voltage falling alongside the current. No column says whether a rectifier module dropped out or a value was mis-mapped, so treat it as a lead for the floor, not a diagnosis.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "rawSql": "WITH agg AS (\n    -- one grouped pass over the window, then unpivot the 36 aggregates\n    SELECT 'VCP' || right(split_part(equipment_id, '-', 1), 2) AS line,\n           AVG(actual_current_1a - preset_current_1a) FILTER (WHERE actual_current_1a > 0 OR preset_current_1a > 0) AS d1a,\n           AVG(actual_current_1b - preset_current_1b) FILTER (WHERE actual_current_1b > 0 OR preset_current_1b > 0) AS d1b,\n           AVG(actual_current_2a - preset_current_2a) FILTER (WHERE actual_current_2a > 0 OR preset_current_2a > 0) AS d2a,\n           AVG(actual_current_2b - preset_current_2b) FILTER (WHERE actual_current_2b > 0 OR preset_current_2b > 0) AS d2b,\n           AVG(actual_current_3a - preset_current_3a) FILTER (WHERE actual_current_3a > 0 OR preset_current_3a > 0) AS d3a,\n           AVG(actual_current_3b - preset_current_3b) FILTER (WHERE actual_current_3b > 0 OR preset_current_3b > 0) AS d3b,\n           AVG(actual_current_4a - preset_current_4a) FILTER (WHERE actual_current_4a > 0 OR preset_current_4a > 0) AS d4a,\n           AVG(actual_current_4b - preset_current_4b) FILTER (WHERE actual_current_4b > 0 OR preset_current_4b > 0) AS d4b,\n           AVG(actual_current_5a - preset_current_5a) FILTER (WHERE actual_current_5a > 0 OR preset_current_5a > 0) AS d5a,\n           AVG(actual_current_5b - preset_current_5b) FILTER (WHERE actual_current_5b > 0 OR preset_current_5b > 0) AS d5b,\n           AVG(actual_current_6a - preset_current_6a) FILTER (WHERE actual_current_6a > 0 OR preset_current_6a > 0) AS d6a,\n           AVG(actual_current_6b - preset_current_6b) FILTER (WHERE actual_current_6b > 0 OR preset_current_6b > 0) AS d6b,\n           AVG(actual_current_7a - preset_current_7a) FILTER (WHERE actual_current_7a > 0 OR preset_current_7a > 0) AS d7a,\n           AVG(actual_current_7b - preset_current_7b) FILTER (WHERE actual_current_7b > 0 OR preset_current_7b > 0) AS d7b,\n           AVG(actual_current_8a - preset_current_8a) FILTER (WHERE actual_current_8a > 0 OR preset_current_8a > 0) AS d8a,\n           AVG(actual_current_8b - preset_current_8b) FILTER (WHERE actual_current_8b > 0 OR preset_current_8b > 0) AS d8b,\n           AVG(actual_current_9a - preset_current_9a) FILTER (WHERE actual_current_9a > 0 OR preset_current_9a > 0) AS d9a,\n           AVG(actual_current_9b - preset_current_9b) FILTER (WHERE actual_current_9b > 0 OR preset_current_9b > 0) AS d9b,\n           AVG(actual_current_10a - preset_current_10a) FILTER (WHERE actual_current_10a > 0 OR preset_current_10a > 0) AS d10a,\n           AVG(actual_current_10b - preset_current_10b) FILTER (WHERE actual_current_10b > 0 OR preset_current_10b > 0) AS d10b,\n           AVG(actual_current_11a - preset_current_11a) FILTER (WHERE actual_current_11a > 0 OR preset_current_11a > 0) AS d11a,\n           AVG(actual_current_11b - preset_current_11b) FILTER (WHERE actual_current_11b > 0 OR preset_current_11b > 0) AS d11b,\n           AVG(actual_current_12a - preset_current_12a) FILTER (WHERE actual_current_12a > 0 OR preset_current_12a > 0) AS d12a,\n           AVG(actual_current_12b - preset_current_12b) FILTER (WHERE actual_current_12b > 0 OR preset_current_12b > 0) AS d12b,\n           AVG(actual_current_13a - preset_current_13a) FILTER (WHERE actual_current_13a > 0 OR preset_current_13a > 0) AS d13a,\n           AVG(actual_current_13b - preset_current_13b) FILTER (WHERE actual_current_13b > 0 OR preset_current_13b > 0) AS d13b,\n           AVG(actual_current_14a - preset_current_14a) FILTER (WHERE actual_current_14a > 0 OR preset_current_14a > 0) AS d14a,\n           AVG(actual_current_14b - preset_current_14b) FILTER (WHERE actual_current_14b > 0 OR preset_current_14b > 0) AS d14b,\n           AVG(actual_current_15a - preset_current_15a) FILTER (WHERE actual_current_15a > 0 OR preset_current_15a > 0) AS d15a,\n           AVG(actual_current_15b - preset_current_15b) FILTER (WHERE actual_current_15b > 0 OR preset_current_15b > 0) AS d15b,\n           AVG(actual_current_16a - preset_current_16a) FILTER (WHERE actual_current_16a > 0 OR preset_current_16a > 0) AS d16a,\n           AVG(actual_current_16b - preset_current_16b) FILTER (WHERE actual_current_16b > 0 OR preset_current_16b > 0) AS d16b,\n           AVG(actual_current_17a - preset_current_17a) FILTER (WHERE actual_current_17a > 0 OR preset_current_17a > 0) AS d17a,\n           AVG(actual_current_17b - preset_current_17b) FILTER (WHERE actual_current_17b > 0 OR preset_current_17b > 0) AS d17b,\n           AVG(actual_current_18a - preset_current_18a) FILTER (WHERE actual_current_18a > 0 OR preset_current_18a > 0) AS d18a,\n           AVG(actual_current_18b - preset_current_18b) FILTER (WHERE actual_current_18b > 0 OR preset_current_18b > 0) AS d18b\n    FROM public.eap_api_vcp_upp\n    WHERE $__timeFilter(log_date)\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n      -- only rows where the bank was drawing current: a setpoint the line was\n      -- not running to is not a compliance deviation\n      AND (COALESCE(actual_current_1a,0) + COALESCE(actual_current_1b,0) + COALESCE(actual_current_2a,0) + COALESCE(actual_current_2b,0) + COALESCE(actual_current_3a,0) + COALESCE(actual_current_3b,0) + COALESCE(actual_current_4a,0) + COALESCE(actual_current_4b,0) + COALESCE(actual_current_5a,0) + COALESCE(actual_current_5b,0) + COALESCE(actual_current_6a,0) + COALESCE(actual_current_6b,0) + COALESCE(actual_current_7a,0) + COALESCE(actual_current_7b,0) + COALESCE(actual_current_8a,0) + COALESCE(actual_current_8b,0) + COALESCE(actual_current_9a,0) + COALESCE(actual_current_9b,0) + COALESCE(actual_current_10a,0) + COALESCE(actual_current_10b,0) + COALESCE(actual_current_11a,0) + COALESCE(actual_current_11b,0) + COALESCE(actual_current_12a,0) + COALESCE(actual_current_12b,0) + COALESCE(actual_current_13a,0) + COALESCE(actual_current_13b,0) + COALESCE(actual_current_14a,0) + COALESCE(actual_current_14b,0) + COALESCE(actual_current_15a,0) + COALESCE(actual_current_15b,0) + COALESCE(actual_current_16a,0) + COALESCE(actual_current_16b,0) + COALESCE(actual_current_17a,0) + COALESCE(actual_current_17b,0) + COALESCE(actual_current_18a,0) + COALESCE(actual_current_18b,0)) > 0\n    GROUP BY 1\n)\nSELECT 'Stn ' || LPAD(v.num::text, 2, '0') AS \"station\",\n       a.line || ' ' || v.side AS \"line_side\",\n       ROUND(v.dev::numeric, 1) AS \"actual_current - preset_current\"\nFROM agg a\nCROSS JOIN LATERAL (VALUES\n           (1, 'a', a.d1a),\n           (1, 'b', a.d1b),\n           (2, 'a', a.d2a),\n           (2, 'b', a.d2b),\n           (3, 'a', a.d3a),\n           (3, 'b', a.d3b),\n           (4, 'a', a.d4a),\n           (4, 'b', a.d4b),\n           (5, 'a', a.d5a),\n           (5, 'b', a.d5b),\n           (6, 'a', a.d6a),\n           (6, 'b', a.d6b),\n           (7, 'a', a.d7a),\n           (7, 'b', a.d7b),\n           (8, 'a', a.d8a),\n           (8, 'b', a.d8b),\n           (9, 'a', a.d9a),\n           (9, 'b', a.d9b),\n           (10, 'a', a.d10a),\n           (10, 'b', a.d10b),\n           (11, 'a', a.d11a),\n           (11, 'b', a.d11b),\n           (12, 'a', a.d12a),\n           (12, 'b', a.d12b),\n           (13, 'a', a.d13a),\n           (13, 'b', a.d13b),\n           (14, 'a', a.d14a),\n           (14, 'b', a.d14b),\n           (15, 'a', a.d15a),\n           (15, 'b', a.d15b),\n           (16, 'a', a.d16a),\n           (16, 'b', a.d16b),\n           (17, 'a', a.d17a),\n           (17, 'b', a.d17b),\n           (18, 'a', a.d18a),\n           (18, 'b', a.d18b)\n) AS v(num, side, dev)\nORDER BY v.num, 2;"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "line_side",
+            "rowField": "station",
+            "valueField": "actual_current - preset_current"
+          }
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0,
+        "showValue": "never",
+        "stacking": "none",
+        "groupWidth": 0.74,
+        "barWidth": 0.9,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ]
+        },
+        "xField": "station"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix:A",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected.",
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "actual_current − preset_current (A)",
+            "axisPlacement": "auto",
+            "fillOpacity": 85,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 12,
+      "title": "Cell Resistance Deviation",
+      "description": "**Use it when:** you suspect a contact, anode or cable of one cell, especially when the current matches the recipe but the plated surface is still uneven.\n\n**How to read it:** one group of bars per cell, 01a to 18b by station and side, with one bar per line (VCP01, VCP02, VCP03). Hover to see which bar is which line. The value is **the cell's resistance against the median of its bank, in percent**. **Positive means more resistance than its neighbours**, a cell that needs more voltage at equal current. **Negative means less.** Green within ±5%, amber beyond ±5%, red beyond ±10%.\n\n**Calculated from:** `eap_api_vcp_upp`, mΩ = 1000 × `actual_voltage` ÷ `actual_current` on rows with current above 0. Averaged per cell **per line** first, then compared with the median of the 36 cells **in that line's own bank** over the same range. Both machine names of a line (for example `VCP002-VCP` and `VCP02-VCP`) are one bank, because they are the same rectifiers.\n\n**Abnormal when:** one bar sticks out of its group while the other cells of the station are normal, which is the cell, not the recipe. A whole line rising together points to the chemistry or the measurement rather than the cells.\n\n**What to do next:** take the cell number to the floor, and compare with \"Cell Voltage by Station\" on dashboard 02 to see which side of that station needs more voltage.\n\n**Good to know:**\n- **Compare only within a bank.** Resistance differs several-fold between lines, so each cell is judged against its own bank's median.\n- Pooling all lines would average a truly abnormal cell away. Before this panel compared within banks, cells that stood out in their own bank disappeared into the pooled median.\n- A cell's deviation can swing sign between windows, so read it over the range you care about, not a single number. The source does not say which pump serves which station.\n- **The ±5% and ±10% bands are readability bands.** They do not come from a spec column, because the table has no resistance limits.\n- The side-to-side difference is mostly voltage: `actual_voltage` of side a and side b often differs, while `actual_current` almost never does.",
+      "type": "barchart",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "options": {
+        "orientation": "vertical",
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": []
+        },
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0,
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "custom": {
+            "axisCenteredZero": true,
+            "axisLabel": "Against bank median (%)"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#ef4444",
+                "value": null
+              },
+              {
+                "color": "#f59e0b",
+                "value": -10
+              },
+              {
+                "color": "#22c55e",
+                "value": -5
+              },
+              {
+                "color": "#f59e0b",
+                "value": 5
+              },
+              {
+                "color": "#ef4444",
+                "value": 10
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "links": [
+            {
+              "title": "Open current and voltage by station on the operations console",
+              "url": "/d/ims-vcp-operations-console/?${__url_time_range}&${equipment_id:queryparam}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ],
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected."
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "-- 64 MB keeps the per-line grouping in memory; at 30 days the default 16 MB\n-- spilled to disk. LOCAL: ends with this query\nSET LOCAL work_mem = '64MB';\nWITH agg AS (\n    -- grouped per physical line, both name eras pooled (VCP002-VCP and VCP02-VCP\n    -- are one bank). Bank resistance differs about fourfold between lines (line 01\n    -- runs near 19 milliohm, lines 02 and 03 near 4.6), so pooling every selected\n    -- line into one average hid every real outlier.\n    SELECT 'VCP' || right(split_part(equipment_id, '-', 1), 2) AS line,\n        AVG(1000.0 * actual_voltage_1a / NULLIF(actual_current_1a, 0)) FILTER (WHERE actual_current_1a > 0) AS r_1a,\n        AVG(1000.0 * actual_voltage_1b / NULLIF(actual_current_1b, 0)) FILTER (WHERE actual_current_1b > 0) AS r_1b,\n        AVG(1000.0 * actual_voltage_2a / NULLIF(actual_current_2a, 0)) FILTER (WHERE actual_current_2a > 0) AS r_2a,\n        AVG(1000.0 * actual_voltage_2b / NULLIF(actual_current_2b, 0)) FILTER (WHERE actual_current_2b > 0) AS r_2b,\n        AVG(1000.0 * actual_voltage_3a / NULLIF(actual_current_3a, 0)) FILTER (WHERE actual_current_3a > 0) AS r_3a,\n        AVG(1000.0 * actual_voltage_3b / NULLIF(actual_current_3b, 0)) FILTER (WHERE actual_current_3b > 0) AS r_3b,\n        AVG(1000.0 * actual_voltage_4a / NULLIF(actual_current_4a, 0)) FILTER (WHERE actual_current_4a > 0) AS r_4a,\n        AVG(1000.0 * actual_voltage_4b / NULLIF(actual_current_4b, 0)) FILTER (WHERE actual_current_4b > 0) AS r_4b,\n        AVG(1000.0 * actual_voltage_5a / NULLIF(actual_current_5a, 0)) FILTER (WHERE actual_current_5a > 0) AS r_5a,\n        AVG(1000.0 * actual_voltage_5b / NULLIF(actual_current_5b, 0)) FILTER (WHERE actual_current_5b > 0) AS r_5b,\n        AVG(1000.0 * actual_voltage_6a / NULLIF(actual_current_6a, 0)) FILTER (WHERE actual_current_6a > 0) AS r_6a,\n        AVG(1000.0 * actual_voltage_6b / NULLIF(actual_current_6b, 0)) FILTER (WHERE actual_current_6b > 0) AS r_6b,\n        AVG(1000.0 * actual_voltage_7a / NULLIF(actual_current_7a, 0)) FILTER (WHERE actual_current_7a > 0) AS r_7a,\n        AVG(1000.0 * actual_voltage_7b / NULLIF(actual_current_7b, 0)) FILTER (WHERE actual_current_7b > 0) AS r_7b,\n        AVG(1000.0 * actual_voltage_8a / NULLIF(actual_current_8a, 0)) FILTER (WHERE actual_current_8a > 0) AS r_8a,\n        AVG(1000.0 * actual_voltage_8b / NULLIF(actual_current_8b, 0)) FILTER (WHERE actual_current_8b > 0) AS r_8b,\n        AVG(1000.0 * actual_voltage_9a / NULLIF(actual_current_9a, 0)) FILTER (WHERE actual_current_9a > 0) AS r_9a,\n        AVG(1000.0 * actual_voltage_9b / NULLIF(actual_current_9b, 0)) FILTER (WHERE actual_current_9b > 0) AS r_9b,\n        AVG(1000.0 * actual_voltage_10a / NULLIF(actual_current_10a, 0)) FILTER (WHERE actual_current_10a > 0) AS r_10a,\n        AVG(1000.0 * actual_voltage_10b / NULLIF(actual_current_10b, 0)) FILTER (WHERE actual_current_10b > 0) AS r_10b,\n        AVG(1000.0 * actual_voltage_11a / NULLIF(actual_current_11a, 0)) FILTER (WHERE actual_current_11a > 0) AS r_11a,\n        AVG(1000.0 * actual_voltage_11b / NULLIF(actual_current_11b, 0)) FILTER (WHERE actual_current_11b > 0) AS r_11b,\n        AVG(1000.0 * actual_voltage_12a / NULLIF(actual_current_12a, 0)) FILTER (WHERE actual_current_12a > 0) AS r_12a,\n        AVG(1000.0 * actual_voltage_12b / NULLIF(actual_current_12b, 0)) FILTER (WHERE actual_current_12b > 0) AS r_12b,\n        AVG(1000.0 * actual_voltage_13a / NULLIF(actual_current_13a, 0)) FILTER (WHERE actual_current_13a > 0) AS r_13a,\n        AVG(1000.0 * actual_voltage_13b / NULLIF(actual_current_13b, 0)) FILTER (WHERE actual_current_13b > 0) AS r_13b,\n        AVG(1000.0 * actual_voltage_14a / NULLIF(actual_current_14a, 0)) FILTER (WHERE actual_current_14a > 0) AS r_14a,\n        AVG(1000.0 * actual_voltage_14b / NULLIF(actual_current_14b, 0)) FILTER (WHERE actual_current_14b > 0) AS r_14b,\n        AVG(1000.0 * actual_voltage_15a / NULLIF(actual_current_15a, 0)) FILTER (WHERE actual_current_15a > 0) AS r_15a,\n        AVG(1000.0 * actual_voltage_15b / NULLIF(actual_current_15b, 0)) FILTER (WHERE actual_current_15b > 0) AS r_15b,\n        AVG(1000.0 * actual_voltage_16a / NULLIF(actual_current_16a, 0)) FILTER (WHERE actual_current_16a > 0) AS r_16a,\n        AVG(1000.0 * actual_voltage_16b / NULLIF(actual_current_16b, 0)) FILTER (WHERE actual_current_16b > 0) AS r_16b,\n        AVG(1000.0 * actual_voltage_17a / NULLIF(actual_current_17a, 0)) FILTER (WHERE actual_current_17a > 0) AS r_17a,\n        AVG(1000.0 * actual_voltage_17b / NULLIF(actual_current_17b, 0)) FILTER (WHERE actual_current_17b > 0) AS r_17b,\n        AVG(1000.0 * actual_voltage_18a / NULLIF(actual_current_18a, 0)) FILTER (WHERE actual_current_18a > 0) AS r_18a,\n        AVG(1000.0 * actual_voltage_18b / NULLIF(actual_current_18b, 0)) FILTER (WHERE actual_current_18b > 0) AS r_18b\n    FROM public.eap_api_vcp_upp\n    WHERE $__timeFilter(log_date) AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n    GROUP BY 1\n), per_cell AS (\n    SELECT a.line, m.cell, m.milliohm\n    FROM agg a\n    CROSS JOIN LATERAL (\n        VALUES\n               ('1a', a.r_1a), ('1b', a.r_1b), ('2a', a.r_2a), ('2b', a.r_2b),\n               ('3a', a.r_3a), ('3b', a.r_3b), ('4a', a.r_4a), ('4b', a.r_4b),\n               ('5a', a.r_5a), ('5b', a.r_5b), ('6a', a.r_6a), ('6b', a.r_6b),\n               ('7a', a.r_7a), ('7b', a.r_7b), ('8a', a.r_8a), ('8b', a.r_8b),\n               ('9a', a.r_9a), ('9b', a.r_9b), ('10a', a.r_10a), ('10b', a.r_10b),\n               ('11a', a.r_11a), ('11b', a.r_11b), ('12a', a.r_12a), ('12b', a.r_12b),\n               ('13a', a.r_13a), ('13b', a.r_13b), ('14a', a.r_14a), ('14b', a.r_14b),\n               ('15a', a.r_15a), ('15b', a.r_15b), ('16a', a.r_16a), ('16b', a.r_16b),\n               ('17a', a.r_17a), ('17b', a.r_17b), ('18a', a.r_18a), ('18b', a.r_18b)\n    ) AS m(cell, milliohm)\n), bank AS (\n    -- the median of the bank the cell belongs to, which is what the axis label\n    -- has always said this panel compares against\n    SELECT line,\n           percentile_cont(0.5) WITHIN GROUP (ORDER BY milliohm::double precision) AS median_milliohm\n    FROM per_cell\n    WHERE milliohm IS NOT NULL\n    GROUP BY line\n)\nSELECT lpad(regexp_replace(c.cell, '[ab]$', ''), 2, '0') || right(c.cell, 1) AS cell,\n       c.line AS line,\n       ROUND((100 * (c.milliohm - b.median_milliohm) / NULLIF(b.median_milliohm, 0))::NUMERIC, 1) AS \"milliohm_vs_median_pct\"\nFROM per_cell c\nJOIN bank b ON b.line = c.line\nORDER BY (regexp_replace(c.cell, '[ab]$', ''))::int, right(c.cell, 1), 2;\n",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "line",
+            "rowField": "cell",
+            "valueField": "milliohm_vs_median_pct"
+          }
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "barchart",
+      "title": "Pump Deviation from Setpoint",
+      "description": "**Use it when:** you suspect the circulation of one bath, for example an uneven surface while current and temperature match the recipe.\n\n**How to read it:** one bar per pump. The value is **reading − setpoint**. **Positive means the pump runs above its setpoint; negative means below.** Bar colour is the line, not severity. The source gives no unit for either column, so values are shown as recorded.\n\n**Calculated from:** `eap_api_vcp_upp` as `actual_pump_* − preset_pump_*` for all 18 pumps, averaged per row over the selected range.\n\n**Abnormal when:** a bar is deeply negative and stays there for the whole shift, which means the pump really runs short of its setpoint, not a passing swing. A pump that reads exactly 0 on every row while it has a setpoint is the clearest case; small offsets of a unit or two are far more common and less urgent. Check both machine names of a line: the same pump shows under each.\n\n**What to do next:** note the pump and the line, and have a technician check the pump, the valve and the transmitter of that bath. If it reads exactly 0 on every row, check the transmitter first: a pump that really stopped usually moves the bath temperature too, visible in \"Bath Deviation from Setpoint\".\n\n**Alert rule in place:** any pump off its setpoint on more than half the rows of a 15-minute window, for 10 minutes. Direction is ignored: running under and running over both count.\n\n**Good to know:** **only minutes where the bank is plating are averaged**, for the same reason as the current panel. `preset_pump_*` really is the setpoint and is not swapped with `actual_pump_*`, unlike the bath pairs. Checked from the preset side being steadier than the actual side within a lot.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "rawSql": "WITH agg AS (\n    -- One grouped pass over the window; the unpivot runs on the 18 aggregates\n    -- afterwards rather than on every row.\n    SELECT 'VCP' || right(split_part(equipment_id, '-', 1), 2) AS line,\n           AVG(actual_pump_1 - preset_pump_1) AS d1,\n           AVG(actual_pump_2 - preset_pump_2) AS d2,\n           AVG(actual_pump_3 - preset_pump_3) AS d3,\n           AVG(actual_pump_4 - preset_pump_4) AS d4,\n           AVG(actual_pump_5 - preset_pump_5) AS d5,\n           AVG(actual_pump_6 - preset_pump_6) AS d6,\n           AVG(actual_pump_7 - preset_pump_7) AS d7,\n           AVG(actual_pump_8 - preset_pump_8) AS d8,\n           AVG(actual_pump_9 - preset_pump_9) AS d9,\n           AVG(actual_pump_10 - preset_pump_10) AS d10,\n           AVG(actual_pump_11 - preset_pump_11) AS d11,\n           AVG(actual_pump_12 - preset_pump_12) AS d12,\n           AVG(actual_pump_13 - preset_pump_13) AS d13,\n           AVG(actual_pump_14 - preset_pump_14) AS d14,\n           AVG(actual_pump_15 - preset_pump_15) AS d15,\n           AVG(actual_pump_16 - preset_pump_16) AS d16,\n           AVG(actual_pump_17 - preset_pump_17) AS d17,\n           AVG(actual_pump_18 - preset_pump_18) AS d18\n    FROM public.eap_api_vcp_upp\n    WHERE $__timeFilter(log_date)\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n      -- only rows where the bank was drawing current: a setpoint the line was\n      -- not running to is not a compliance deviation\n      AND (COALESCE(actual_current_1a,0) + COALESCE(actual_current_1b,0) + COALESCE(actual_current_2a,0) + COALESCE(actual_current_2b,0) + COALESCE(actual_current_3a,0) + COALESCE(actual_current_3b,0) + COALESCE(actual_current_4a,0) + COALESCE(actual_current_4b,0) + COALESCE(actual_current_5a,0) + COALESCE(actual_current_5b,0) + COALESCE(actual_current_6a,0) + COALESCE(actual_current_6b,0) + COALESCE(actual_current_7a,0) + COALESCE(actual_current_7b,0) + COALESCE(actual_current_8a,0) + COALESCE(actual_current_8b,0) + COALESCE(actual_current_9a,0) + COALESCE(actual_current_9b,0) + COALESCE(actual_current_10a,0) + COALESCE(actual_current_10b,0) + COALESCE(actual_current_11a,0) + COALESCE(actual_current_11b,0) + COALESCE(actual_current_12a,0) + COALESCE(actual_current_12b,0) + COALESCE(actual_current_13a,0) + COALESCE(actual_current_13b,0) + COALESCE(actual_current_14a,0) + COALESCE(actual_current_14b,0) + COALESCE(actual_current_15a,0) + COALESCE(actual_current_15b,0) + COALESCE(actual_current_16a,0) + COALESCE(actual_current_16b,0) + COALESCE(actual_current_17a,0) + COALESCE(actual_current_17b,0) + COALESCE(actual_current_18a,0) + COALESCE(actual_current_18b,0)) > 0\n    GROUP BY 1\n)\nSELECT 'pump ' || LPAD(v.num::text, 2, '0') AS \"pump\",\n       a.line AS \"line\",\n       ROUND(v.dev::numeric, 2) AS \"actual_pump - preset_pump\"\nFROM agg a\nCROSS JOIN LATERAL (VALUES\n           (1, a.d1),\n           (2, a.d2),\n           (3, a.d3),\n           (4, a.d4),\n           (5, a.d5),\n           (6, a.d6),\n           (7, a.d7),\n           (8, a.d8),\n           (9, a.d9),\n           (10, a.d10),\n           (11, a.d11),\n           (12, a.d12),\n           (13, a.d13),\n           (14, a.d14),\n           (15, a.d15),\n           (16, a.d16),\n           (17, a.d17),\n           (18, a.d18)\n) AS v(num, dev)\nORDER BY v.num, 2;"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "line",
+            "rowField": "pump",
+            "valueField": "actual_pump - preset_pump"
+          }
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0,
+        "showValue": "never",
+        "stacking": "none",
+        "groupWidth": 0.72,
+        "barWidth": 0.9,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": []
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 2,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected.",
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "actual_pump − preset_pump",
+            "axisPlacement": "auto",
+            "fillOpacity": 85,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          },
+          "links": [
+            {
+              "title": "Open current and voltage by station on the operations console",
+              "url": "/d/ims-vcp-operations-console/?${__url_time_range}&${equipment_id:queryparam}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "VCP01"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3b82f6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "VCP02"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00f2fe"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "VCP03"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eab308"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 27,
+      "type": "table",
+      "title": "Recipe Compliance by Lot",
+      "description": "**Use it when:** checking quality lot by lot, or when a customer complaint means looking back at whether a lot ran to recipe.\n\n**How to read it:** one row per `jobkey`, sorted by the largest bath deviation first and capped at 15 lots. The columns:\n- **Max bath deviation (°C)**: the largest bath deviation in the lot. It is an absolute value with no sign, so it gives size only, not whether the bath was hotter or colder than its setpoint. Green is low and red is high.\n- **Current mismatches**: station sides whose current differs from the setpoint, counted in cell-rows.\n- **Pump mismatches**: pumps that differ from the setpoint, counted in cell-rows.\n- Both mismatch counts use **only rows where the bank is plating** (any of the 36 cells draws current), as the pump and current deviation panels do, because a setpoint the line is not plating to is not a deviation. More means more to check.\n- **ALARM** and **Warning**: Triggered incidents of that `error_type` in the lot.\n- **Check mode 1 (%)**: the share of rows with `current_check = 1`, which is a current-check mode. Rows where the two QC flags disagree moved to the column register, because that is data quality rather than lot quality.\n- **Plating rows (%)**: the share of rows where the bank really plates, counted over all 36 cells, not cell 1a alone (cell 1a is often empty while other cells plate). Always read it together with the check mode.\n\n**Calculated from:** every row of the lot in `eap_api_vcp_upp` within the selected range. Bath deviation is the `GREATEST` of `abs(preset_x − actual_x)` over the 9 pairs in the same row, then the lot maximum. Triggered counts come from `eap_api_vcp_alarm` through `job_key`, which matches the same machine's `jobkey` on every row.\n\n**Abnormal when:** high bath deviation together with a high share of plating rows, meaning the deviation happened while plating, which affects quality. High bath deviation with almost no plating is usually a stopped line whose baths cooled, not a quality issue.\n\n**What to do next:** click any cell of a row to open dashboard 02 for that line at exactly that lot's time. The window starts 2 minutes early and ends 1 second after the lot's last row, read from `min(log_date)` and `max(log_date)` of the lot. There is no margin at the end, because dashboard 02's live cards show the newest row at the right edge; a margin would show the next job instead of the lot you clicked.\n\n**Good to know:**\n- **Sorted by the largest bath deviation**, not by panel area. The earlier version sorted by `plating_area_a`, contradicting its own description.\n- **A sensor that sends no value is not counted as deviation on any of the 9 baths.** This is the alert rules' condition: reading and setpoint must both be above 0.\n- Before this guard, a dryer sensor that always reads 0 counted as a large deviation, and a short heating-sensor dropout could push an unaffected lot to the top. The count of rows with a silent bath sensor is in the column register.\n- **Alarms count incidents, not rows:** a code that re-fires on the same machine within 30 minutes is one incident still standing. Most `alarm_status = Triggered` rows re-fire within a few minutes, so counting rows would overstate alarms several times over.\n- **`current_check = 1` does not mean the current passed a check.** It is a current-check mode. In the data, rows flagged 1 mostly do not plate at all, and when they do they run well below the current of rows flagged 0; a whole lot can be flagged 1 while barely plating.\n- The QC flags hold three value pairs in the table: (0,0), (1,1) and, very rarely, (OK,PASS).",
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "rawSql": "-- 64 MB keeps the per-lot aggregate in memory; at 30 days the default 16 MB\n-- spilled about 36 MB per worker to disk. LOCAL: ends with this query\nSET LOCAL work_mem = '64MB';\nWITH incident_alarm AS (\n    -- a code that re-fires within 30 minutes on the same machine is the same incident\n    -- still standing: most Triggered rows are re-fires of an open incident\n    SELECT *, (log_date - LAG(log_date) OVER (\n                 PARTITION BY equipment_id, error_code, error_type, alarm_status\n                 ORDER BY log_date, log_id) >= interval '30 minutes'\n               OR LAG(log_date) OVER (\n                 PARTITION BY equipment_id, error_code, error_type, alarm_status\n                 ORDER BY log_date, log_id) IS NULL) AS is_incident\n    FROM public.eap_api_vcp_alarm\n    -- bound the window to the panel's range plus one incident gap, so the LAG runs\n    -- over a slice rather than the whole table\n    WHERE log_date >= $__timeFrom()::timestamptz - interval '30 minutes'\n      AND log_date <= $__timeTo()::timestamptz\n),\nlots AS (\nSELECT equipment_id,\n       'VCP' || right(split_part(equipment_id, '-', 1), 2) AS \"line\",\n       jobkey AS \"jobkey\",\n       count(*) AS \"rows\",\n       ROUND(MAX(plating_area_a)::numeric, 2) AS \"plating_area_a (dm²)\",\n       -- the lot's own window: two minutes of lead-in, and it ends one second\n       -- after the lot's last row. A padded right edge caught the next job's\n       -- first carrier, and the live card on board 02 (newest row at the right\n       -- edge) then showed that job instead of this lot\n       (EXTRACT(EPOCH FROM MIN(log_date)) - 120) * 1000 AS \"_from\",\n       (EXTRACT(EPOCH FROM MAX(log_date)) + 1) * 1000 AS \"_to\",\n       -- a reading of 0 is a sensor that sent nothing, not a bath at 0 °C: the heating\n       -- sensor dropout on a single lot used to rank that lot first\n       ROUND(MAX(GREATEST(CASE WHEN preset_clean > 0 AND actual_clean > 0 THEN abs(preset_clean - actual_clean) END,\n                        CASE WHEN preset_copperplating1 > 0 AND actual_copperplating1 > 0 THEN abs(preset_copperplating1 - actual_copperplating1) END,\n                        CASE WHEN preset_copperplating2 > 0 AND actual_copperplating2 > 0 THEN abs(preset_copperplating2 - actual_copperplating2) END,\n                        CASE WHEN preset_ao > 0 AND actual_ao > 0 THEN abs(preset_ao - actual_ao) END,\n                        CASE WHEN preset_hotwater > 0 AND actual_hotwater > 0 THEN abs(preset_hotwater - actual_hotwater) END,\n                        CASE WHEN preset_dry > 0 AND actual_dry > 0 THEN abs(preset_dry - actual_dry) END,\n                        CASE WHEN preset_heating > 0 AND actual_heating > 0 THEN abs(preset_heating - actual_heating) END,\n                        CASE WHEN preset_peeloff > 0 AND actual_peeloff > 0 THEN abs(preset_peeloff - actual_peeloff) END,\n                        CASE WHEN preset_rectifier > 0 AND actual_rectifier > 0 THEN abs(preset_rectifier - actual_rectifier) END))::numeric, 1) AS \"Max bath deviation (°C)\",\n       count(*) FILTER (WHERE plating AND actual_current_1a IS DISTINCT FROM preset_current_1a)\n       + count(*) FILTER (WHERE plating AND actual_current_1b IS DISTINCT FROM preset_current_1b)\n       + count(*) FILTER (WHERE plating AND actual_current_2a IS DISTINCT FROM preset_current_2a)\n       + count(*) FILTER (WHERE plating AND actual_current_2b IS DISTINCT FROM preset_current_2b)\n       + count(*) FILTER (WHERE plating AND actual_current_3a IS DISTINCT FROM preset_current_3a)\n       + count(*) FILTER (WHERE plating AND actual_current_3b IS DISTINCT FROM preset_current_3b)\n       + count(*) FILTER (WHERE plating AND actual_current_4a IS DISTINCT FROM preset_current_4a)\n       + count(*) FILTER (WHERE plating AND actual_current_4b IS DISTINCT FROM preset_current_4b)\n       + count(*) FILTER (WHERE plating AND actual_current_5a IS DISTINCT FROM preset_current_5a)\n       + count(*) FILTER (WHERE plating AND actual_current_5b IS DISTINCT FROM preset_current_5b)\n       + count(*) FILTER (WHERE plating AND actual_current_6a IS DISTINCT FROM preset_current_6a)\n       + count(*) FILTER (WHERE plating AND actual_current_6b IS DISTINCT FROM preset_current_6b)\n       + count(*) FILTER (WHERE plating AND actual_current_7a IS DISTINCT FROM preset_current_7a)\n       + count(*) FILTER (WHERE plating AND actual_current_7b IS DISTINCT FROM preset_current_7b)\n       + count(*) FILTER (WHERE plating AND actual_current_8a IS DISTINCT FROM preset_current_8a)\n       + count(*) FILTER (WHERE plating AND actual_current_8b IS DISTINCT FROM preset_current_8b)\n       + count(*) FILTER (WHERE plating AND actual_current_9a IS DISTINCT FROM preset_current_9a)\n       + count(*) FILTER (WHERE plating AND actual_current_9b IS DISTINCT FROM preset_current_9b)\n       + count(*) FILTER (WHERE plating AND actual_current_10a IS DISTINCT FROM preset_current_10a)\n       + count(*) FILTER (WHERE plating AND actual_current_10b IS DISTINCT FROM preset_current_10b)\n       + count(*) FILTER (WHERE plating AND actual_current_11a IS DISTINCT FROM preset_current_11a)\n       + count(*) FILTER (WHERE plating AND actual_current_11b IS DISTINCT FROM preset_current_11b)\n       + count(*) FILTER (WHERE plating AND actual_current_12a IS DISTINCT FROM preset_current_12a)\n       + count(*) FILTER (WHERE plating AND actual_current_12b IS DISTINCT FROM preset_current_12b)\n       + count(*) FILTER (WHERE plating AND actual_current_13a IS DISTINCT FROM preset_current_13a)\n       + count(*) FILTER (WHERE plating AND actual_current_13b IS DISTINCT FROM preset_current_13b)\n       + count(*) FILTER (WHERE plating AND actual_current_14a IS DISTINCT FROM preset_current_14a)\n       + count(*) FILTER (WHERE plating AND actual_current_14b IS DISTINCT FROM preset_current_14b)\n       + count(*) FILTER (WHERE plating AND actual_current_15a IS DISTINCT FROM preset_current_15a)\n       + count(*) FILTER (WHERE plating AND actual_current_15b IS DISTINCT FROM preset_current_15b)\n       + count(*) FILTER (WHERE plating AND actual_current_16a IS DISTINCT FROM preset_current_16a)\n       + count(*) FILTER (WHERE plating AND actual_current_16b IS DISTINCT FROM preset_current_16b)\n       + count(*) FILTER (WHERE plating AND actual_current_17a IS DISTINCT FROM preset_current_17a)\n       + count(*) FILTER (WHERE plating AND actual_current_17b IS DISTINCT FROM preset_current_17b)\n       + count(*) FILTER (WHERE plating AND actual_current_18a IS DISTINCT FROM preset_current_18a)\n       + count(*) FILTER (WHERE plating AND actual_current_18b IS DISTINCT FROM preset_current_18b) AS \"Current mismatches\",\n       count(*) FILTER (WHERE plating AND actual_pump_1 IS DISTINCT FROM preset_pump_1)\n       + count(*) FILTER (WHERE plating AND actual_pump_2 IS DISTINCT FROM preset_pump_2)\n       + count(*) FILTER (WHERE plating AND actual_pump_3 IS DISTINCT FROM preset_pump_3)\n       + count(*) FILTER (WHERE plating AND actual_pump_4 IS DISTINCT FROM preset_pump_4)\n       + count(*) FILTER (WHERE plating AND actual_pump_5 IS DISTINCT FROM preset_pump_5)\n       + count(*) FILTER (WHERE plating AND actual_pump_6 IS DISTINCT FROM preset_pump_6)\n       + count(*) FILTER (WHERE plating AND actual_pump_7 IS DISTINCT FROM preset_pump_7)\n       + count(*) FILTER (WHERE plating AND actual_pump_8 IS DISTINCT FROM preset_pump_8)\n       + count(*) FILTER (WHERE plating AND actual_pump_9 IS DISTINCT FROM preset_pump_9)\n       + count(*) FILTER (WHERE plating AND actual_pump_10 IS DISTINCT FROM preset_pump_10)\n       + count(*) FILTER (WHERE plating AND actual_pump_11 IS DISTINCT FROM preset_pump_11)\n       + count(*) FILTER (WHERE plating AND actual_pump_12 IS DISTINCT FROM preset_pump_12)\n       + count(*) FILTER (WHERE plating AND actual_pump_13 IS DISTINCT FROM preset_pump_13)\n       + count(*) FILTER (WHERE plating AND actual_pump_14 IS DISTINCT FROM preset_pump_14)\n       + count(*) FILTER (WHERE plating AND actual_pump_15 IS DISTINCT FROM preset_pump_15)\n       + count(*) FILTER (WHERE plating AND actual_pump_16 IS DISTINCT FROM preset_pump_16)\n       + count(*) FILTER (WHERE plating AND actual_pump_17 IS DISTINCT FROM preset_pump_17)\n       + count(*) FILTER (WHERE plating AND actual_pump_18 IS DISTINCT FROM preset_pump_18) AS \"Pump mismatches\",\n       ROUND(100.0 * count(*) FILTER (WHERE current_check = '1') / count(*), 1) AS \"Check mode 1 (%)\",\n       ROUND(100.0 * count(*) FILTER (WHERE plating) / count(*), 1) AS \"Plating rows (%)\"\nFROM (\n    -- the bank is plating when any of its 36 cells draws current\n    SELECT *, (COALESCE(actual_current_1a, 0) + COALESCE(actual_current_1b, 0) + COALESCE(actual_current_2a, 0) + COALESCE(actual_current_2b, 0) + COALESCE(actual_current_3a, 0) + COALESCE(actual_current_3b, 0) + COALESCE(actual_current_4a, 0) + COALESCE(actual_current_4b, 0) + COALESCE(actual_current_5a, 0) + COALESCE(actual_current_5b, 0) + COALESCE(actual_current_6a, 0) + COALESCE(actual_current_6b, 0) + COALESCE(actual_current_7a, 0) + COALESCE(actual_current_7b, 0) + COALESCE(actual_current_8a, 0) + COALESCE(actual_current_8b, 0) + COALESCE(actual_current_9a, 0) + COALESCE(actual_current_9b, 0) + COALESCE(actual_current_10a, 0) + COALESCE(actual_current_10b, 0) + COALESCE(actual_current_11a, 0) + COALESCE(actual_current_11b, 0) + COALESCE(actual_current_12a, 0) + COALESCE(actual_current_12b, 0) + COALESCE(actual_current_13a, 0) + COALESCE(actual_current_13b, 0) + COALESCE(actual_current_14a, 0) + COALESCE(actual_current_14b, 0) + COALESCE(actual_current_15a, 0) + COALESCE(actual_current_15b, 0) + COALESCE(actual_current_16a, 0) + COALESCE(actual_current_16b, 0) + COALESCE(actual_current_17a, 0) + COALESCE(actual_current_17b, 0) + COALESCE(actual_current_18a, 0) + COALESCE(actual_current_18b, 0)) > 0 AS plating\n    FROM public.eap_api_vcp_upp\n) upp\nWHERE $__timeFilter(log_date)\n  AND jobkey IS NOT NULL AND jobkey <> ''\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\nGROUP BY 1, 2, 3\n), alarms AS (\n    -- every alarm row carries the lot it belongs to, so the counts attach to\n    -- the same row as the recipe deviations\n    SELECT equipment_id, job_key,\n           count(*) FILTER (WHERE a0.error_type = 'ALARM' AND a0.alarm_status = 'Triggered' AND a0.is_incident) AS alarm_triggered,\n           count(*) FILTER (WHERE a0.error_type = 'Warning' AND a0.alarm_status = 'Triggered' AND a0.is_incident) AS warning_triggered\n    FROM incident_alarm a0\n    WHERE $__timeFilter(log_date)\n      AND job_key IS NOT NULL AND job_key <> ''\n      AND error_type IN (${severity:sqlstring})\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n    GROUP BY 1, 2\n)\nSELECT l.\"line\", l.\"jobkey\", l.\"rows\", l.\"plating_area_a (dm²)\",\n       l.\"_from\", l.\"_to\", l.equipment_id AS \"equipment_id\",\n       l.\"Max bath deviation (°C)\",\n       l.\"Current mismatches\",\n       l.\"Pump mismatches\",\n       COALESCE(a.alarm_triggered, 0) AS \"ALARM\",\n       COALESCE(a.warning_triggered, 0) AS \"Warning\",\n       l.\"Check mode 1 (%)\",\n       l.\"Plating rows (%)\"\nFROM lots l\nLEFT JOIN alarms a ON a.equipment_id = l.equipment_id AND a.job_key = l.\"jobkey\"\nORDER BY l.\"Max bath deviation (°C)\" DESC NULLS LAST, l.\"Current mismatches\" DESC\nLIMIT 15;"
+        }
+      ],
+      "transformations": [],
+      "options": {
+        "showHeader": true,
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "sortBy": []
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected.",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          },
+          "links": [
+            {
+              "title": "Open the operations console at this lot's time",
+              "url": "/d/ims-vcp-operations-console/?from=${__data.fields[\"_from\"]}&to=${__data.fields[\"_to\"]}&var-equipment_id=${__data.fields[\"equipment_id\"]}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "line"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 60
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "jobkey"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rows"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max bath deviation (°C)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 174
+              },
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22c55e",
+                      "value": null
+                    },
+                    {
+                      "color": "#f59e0b",
+                      "value": 5
+                    },
+                    {
+                      "color": "#ef4444",
+                      "value": 15
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Current mismatches"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 126
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22c55e",
+                      "value": null
+                    },
+                    {
+                      "color": "#f59e0b",
+                      "value": 1
+                    },
+                    {
+                      "color": "#ef4444",
+                      "value": 200
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pump mismatches"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 118
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22c55e",
+                      "value": null
+                    },
+                    {
+                      "color": "#f59e0b",
+                      "value": 1
+                    },
+                    {
+                      "color": "#ef4444",
+                      "value": 200
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Check mode 1 (%)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 118
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Plating rows (%)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 142
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ALARM"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22c55e",
+                      "value": null
+                    },
+                    {
+                      "color": "#ef4444",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Warning"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    },
+                    {
+                      "color": "#f59e0b",
+                      "value": 50
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "plating_area_a (dm²)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 178
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_from"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_to"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "equipment_id"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": true,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "title": "Alarm Codes Preceding Stops",
+      "description": "**Use it when:** prioritising repair work, or choosing which alarm code to chase first when several fire at once.\n\n**How to read it:** one bar per alarm code, top ten. The value is **the share of occurrences of that code followed by a stop within 15 minutes, in percent of occurrences**. Higher is riskier, and it is never negative. A long bar means the machine usually stops after this code, not that the code is frequent.\n\n**Calculated from:** `eap_api_vcp_alarm`, Triggered rows only and only the `error_type` selected above, matched by JOIN LATERAL to an `eap_api_vcp_status_change` row with `previous_status = RUN` and `current_status <> RUN` within the next 15 minutes.\n\n**Abnormal when:** a code with both a high share and many occurrences is the one most worth fixing at the root. For a code with a high share but few occurrences, beware of concluding from a small sample.\n\n**What to do next:** open \"Alarm Log\" on dashboard 02 and filter by the code to read the full message and the real order of events before handing it to maintenance.\n\n**Good to know:**\n- **Alarms count incidents, not rows:** a code that re-fires on the same machine within 30 minutes is one incident still standing. Most `alarm_status = Triggered` rows re-fire within a few minutes, so counting rows would overstate alarms several times over.\n- This is a time relationship, not proof of cause. Codes that fire together get similar scores as a group.\n- `previous_status` is used as the source records it, not recomputed. It matches the previous row's `current_status` in almost every change; most mismatches hold STOP, a value `current_status` never records.\n- Using a recomputed previous state would change the count of exits from RUN only marginally.",
+      "type": "barchart",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false,
+          "calcs": []
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22c55e",
+                "value": null
+              },
+              {
+                "color": "#f59e0b",
+                "value": 20
+              },
+              {
+                "color": "#ef4444",
+                "value": 50
+              }
+            ]
+          },
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected.",
+          "custom": {
+            "axisLabel": "Share followed by a stop (%)"
+          },
+          "links": [
+            {
+              "title": "Open the alarm log on the operations console",
+              "url": "/d/ims-vcp-operations-console/?${__url_time_range}&${equipment_id:queryparam}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH incident_alarm AS (\n    -- a code that re-fires within 30 minutes on the same machine is the same incident\n    -- still standing: most Triggered rows are re-fires of an open incident\n    SELECT *, (log_date - LAG(log_date) OVER (\n                 PARTITION BY equipment_id, error_code, error_type, alarm_status\n                 ORDER BY log_date, log_id) >= interval '30 minutes'\n               OR LAG(log_date) OVER (\n                 PARTITION BY equipment_id, error_code, error_type, alarm_status\n                 ORDER BY log_date, log_id) IS NULL) AS is_incident\n    FROM public.eap_api_vcp_alarm\n    -- bound the window to the panel's range plus one incident gap, so the LAG runs\n    -- over a slice rather than the whole table\n    WHERE log_date >= $__timeFrom()::timestamptz - interval '30 minutes'\n      AND log_date <= $__timeTo()::timestamptz\n),\npre_alarms AS (\n    SELECT a0.equipment_id, a0.error_code, a0.error_msg, a0.log_date\n    FROM incident_alarm a0\n    WHERE $__timeFilter(a0.log_date)\n      AND a0.alarm_status = 'Triggered' AND a0.is_incident\n      AND a0.error_type IN (${severity:sqlstring})\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n), run_exits AS (\n    SELECT equipment_id, log_date AS exit_time\n    FROM public.eap_api_vcp_status_change\n    WHERE log_date >= $__timeFrom()::timestamptz\n      AND log_date <= $__timeTo()::timestamptz + interval '15 minutes'\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n      AND previous_status = 'RUN' AND current_status <> 'RUN'\n), matched AS (\n    SELECT a.error_code, a.error_msg,\n           (x.exit_time IS NOT NULL)::int AS caused_stop\n    FROM pre_alarms a\n    LEFT JOIN LATERAL (\n        SELECT exit_time FROM run_exits r\n        WHERE r.equipment_id = a.equipment_id\n          AND r.exit_time >= a.log_date\n          AND r.exit_time <= a.log_date + interval '15 minutes'\n        ORDER BY exit_time\n        LIMIT 1\n    ) x ON true\n), ranked AS (\n    SELECT error_code, error_msg,\n           count(*) AS cnt,\n           ROUND((100.0 * SUM(caused_stop) / count(*))::NUMERIC, 1) AS \"Downtime Risk %\"\n    FROM matched\n    GROUP BY error_code, error_msg\n    HAVING count(*) >= 10\n)\nSELECT 'code ' || error_code || ' (' || error_msg || ')' AS \"Alarm Code\",\n       \"Downtime Risk %\"\nFROM ranked\n-- code breaks the remaining ties, so the ten shown never swap between refreshes\nORDER BY \"Downtime Risk %\" DESC, cnt DESC, error_code\nLIMIT 10;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "type": "table",
+      "title": "Column Register & Data Quality",
+      "description": "**Use it when:** you suspect a number on the dashboard is off because of the data rather than the machine, or before trusting a column in a new analysis. This table records which columns can be trusted, which are copies, and which are dead.\n\n**How to read it:** one row per check and one column per `equipment_id`. Each check ends with a tag:\n- **(rows)**: should be 0. The exceptions are the two `shielding_board` rows, which read a small constant on one line because a few rows written on the rename day do not match `height`. Those rows were checked; they are not a change in meaning at the source. A number above that constant is a real change.\n- **(survey)**: counts rows that meet a condition. It is not an error count and need not be 0.\n- **(watch)**: known data defects that every other panel skips. The number is shown so it can be watched, not hidden.\n- Rows with no tag are per-line reference values with no good or bad reading of their own.\n\nA copy check that rises from zero means the source changed the meaning of a column, and that column must be plotted on its own again.\n\n**Calculated from:** `eap_api_vcp_upp`, `eap_api_vcp_alarm` and `eap_api_vcp_status_change` over the selected range. `timestamp`, `error_time` and `event_time` are the machine clock, written as digits in local time (+07), while `log_date` is timestamptz. The first 14 digits are therefore read as Bangkok time and subtracted to measure how late data reaches the database. `plating_area_a` equals (height/100) × (width/100) to two decimals on nearly every row, so it is in dm². This table sums one side and divides by 100 for m².\n\n**Abnormal when:**\n- a copy row rises from 0;\n- the \"other\" slot of the `error_type` row rises from 0, which means a new type besides ALARM and Warning;\n- a p50 lag row jumps from seconds to minutes, which means the pipeline slowed;\n- the row counting values in `actual_amp_1a`, `actual_amp_1b`, `preset_tank` or `actual_tank` rises from 0, which means a dead column started being written.\n\n**What to do next:** if a copy row rises from zero, stop using that copy in place of its original at once and fix the panel queries that use it. If the lag is unusually high, check the data sender before the machine, because every panel will trail with it.\n\n**Copies proven on the source table:**\n- `preset_current_*b` equals `preset_current_*a` on all 18 stations, with not one row different. The current recipe is set per station, not per side. The measured `actual_current` of the two sides differs only rarely.\n- `shielding_board` = `actual_shielding_board` = `preset_shielding_board`, and all three equal `height` (a few rows differ). The column name does not match what it stores.\n- `pump_frequency` = `actual_frequency_1` = `preset_frequency_1`, with not one row different.\n- `pre_clean` = `preset_clean` = `preset_cleaning_temp`, and `actual_cleaning_temp` = `actual_clean`.\n- `plating_area_b` = `plating_area_a`.\n- `copper_b_preset_current` = `copper_a_preset_current`.\n- `frequency_check` = `current_check`.\n- Each pair differs only on the rare (OK,PASS) rows.\n\n**Dead columns:**\n- **The 35 `preset_amp_*` columns are not current setpoints.** Each holds only a few distinct values, most copy a neighbour on every row, and the values step in fives like a percentage rather than amperes: `preset_current_*` rises with them.\n- **VCP03 reads 0 on every station while it plates**, under both `VCP003-VCP` and `VCP03-VCP`. The tag is simply not sent, not set to zero, and an alert rule already covers it.\n- `actual_amp_1a`, `actual_amp_1b` and `preset_tank` are always empty, and `actual_tank` is 0 on every row.\n- The current recipe in use is `preset_current_*` and `preset_pump_*`.\n\n**Copper recipe values:** `copper_thick_low` and `copper_thick_high` are filled only on a few lots of one line. The two names are swapped: `low` sits a fixed step above `high`. `thickness` (unit not given) never falls inside that range. They are different quantities, so neither can judge quality.\n\n**Good to know:** unlike the other panels in this folder, this table does not filter by `error_type`. Its job is to catch the source changing shape; with the filter on, a third type could never show. `trx_id` is a transmission batch ID with no process meaning, so it is counted as batches rather than plotted.\n\n**Unit register:** the database describes no column. `pg_description` is empty on every column of `vcp_upp` and the view, and there is no dictionary or spec table in this database. Every unit on the two dashboards falls into one of three tiers:\n- **Documented by the source:**\n  - A: `actual_current_*` and `preset_current_*`\n  - °C: `actual_copperplating1/2`, `actual_clean` and `actual_dry`\n  - m/min: `line_speed`\n  - ASD (A/dm²): `density`\n  - dm²: `plating_area_a/b`\n- **Inferred from the data, with evidence:**\n  - V: `actual_voltage_*`. The mΩ of the resistance panel comes from 1000 × V ÷ A.\n  - mm: `height` and `width`. `plating_area_a` = (height/100) × (width/100) on nearly every row, and one decimetre is one hundred millimetres.\n  - Minutes: `plating_time`. `plating_time × line_speed` lands within ±0.2 of 54.00 on nearly every row across every machine name, which reads as a 54 m plating section.\n  - °C for the other six baths, inferred from the shared temperature band.\n- **No unit given and none provable, so shown as bare numbers:**\n  - `thickness` and `copper_thick_high/low`\n  - all 18 pairs of `actual_pump_*` and `preset_pump_*`\n  - `pump_frequency` and `actual/preset_frequency_1`. **Not labelled Hz, because the source does not confirm it.**\n  - the `current_check` and `frequency_check` flags, which are mode codes, not quantities.\n- **Removed:** dashboard 02's live card once labelled `shielding_board` and `thickness` in millimetres. Neither has evidence, so the unit labels came off. `shielding_board` left the card entirely, because it copies `height` (see the copy rows in this table).\n\n**The \"Line\" filter selects a physical line**, VCP01 to VCP03, and every panel matches rows on the last two digits of the machine name. The rows from before the 2026-09-11 rename always belong to the same line as the rows after it.\n\n**Silent bath sensors (watch):** counts rows where a bath reading is 0, which every deviation panel and alert rule skips. It is not a zero that should be there. A dryer sensor that never reports, or a short heating-sensor dropout, shows here.\n\n**Identities that must hold (watch):** `plating_time × line_speed` must equal 54 (the plating section length in metres), and `plating_area_a` must equal `width × height ÷ 10,000` (mm² to dm²). Breaks are rare and well beyond rounding, so they are values written wrong, clustered on a few days. The other panels do not correct these values to look normal.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 56
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "rawSql": "-- LOCAL: the setting ends with this query and never rides on to the next\n-- query that reuses the pooled connection\nSET LOCAL work_mem = '64MB';\nWITH u AS (\n    SELECT equipment_id,\n           count(*) AS upp_rows,\n           count(DISTINCT jobkey) AS jobs,\n           SUM(plating_area_a) AS area_dm2,\n           count(DISTINCT trx_id) AS trx_ids,\n           min(factory) AS factory,\n           AVG(pump_frequency) AS pump_frequency,\n           count(*) FILTER (WHERE actual_frequency_1 IS DISTINCT FROM pump_frequency\n                              OR preset_frequency_1 IS DISTINCT FROM pump_frequency) AS freq_mismatch,\n           100.0 * count(*) FILTER (WHERE current_check = '1') / NULLIF(count(*), 0) AS check_pct,\n           count(*) FILTER (WHERE current_check IS DISTINCT FROM frequency_check) AS check_mismatch,\n           count(*) FILTER (WHERE current_check NOT IN ('0', '1')) AS check_other,\n           count(*) FILTER (WHERE actual_current_1a IS DISTINCT FROM preset_current_1a)\n           + count(*) FILTER (WHERE actual_current_1b IS DISTINCT FROM preset_current_1b)\n           + count(*) FILTER (WHERE actual_current_2a IS DISTINCT FROM preset_current_2a)\n           + count(*) FILTER (WHERE actual_current_2b IS DISTINCT FROM preset_current_2b)\n           + count(*) FILTER (WHERE actual_current_3a IS DISTINCT FROM preset_current_3a)\n           + count(*) FILTER (WHERE actual_current_3b IS DISTINCT FROM preset_current_3b)\n           + count(*) FILTER (WHERE actual_current_4a IS DISTINCT FROM preset_current_4a)\n           + count(*) FILTER (WHERE actual_current_4b IS DISTINCT FROM preset_current_4b)\n           + count(*) FILTER (WHERE actual_current_5a IS DISTINCT FROM preset_current_5a)\n           + count(*) FILTER (WHERE actual_current_5b IS DISTINCT FROM preset_current_5b)\n           + count(*) FILTER (WHERE actual_current_6a IS DISTINCT FROM preset_current_6a)\n           + count(*) FILTER (WHERE actual_current_6b IS DISTINCT FROM preset_current_6b)\n           + count(*) FILTER (WHERE actual_current_7a IS DISTINCT FROM preset_current_7a)\n           + count(*) FILTER (WHERE actual_current_7b IS DISTINCT FROM preset_current_7b)\n           + count(*) FILTER (WHERE actual_current_8a IS DISTINCT FROM preset_current_8a)\n           + count(*) FILTER (WHERE actual_current_8b IS DISTINCT FROM preset_current_8b)\n           + count(*) FILTER (WHERE actual_current_9a IS DISTINCT FROM preset_current_9a)\n           + count(*) FILTER (WHERE actual_current_9b IS DISTINCT FROM preset_current_9b)\n           + count(*) FILTER (WHERE actual_current_10a IS DISTINCT FROM preset_current_10a)\n           + count(*) FILTER (WHERE actual_current_10b IS DISTINCT FROM preset_current_10b)\n           + count(*) FILTER (WHERE actual_current_11a IS DISTINCT FROM preset_current_11a)\n           + count(*) FILTER (WHERE actual_current_11b IS DISTINCT FROM preset_current_11b)\n           + count(*) FILTER (WHERE actual_current_12a IS DISTINCT FROM preset_current_12a)\n           + count(*) FILTER (WHERE actual_current_12b IS DISTINCT FROM preset_current_12b)\n           + count(*) FILTER (WHERE actual_current_13a IS DISTINCT FROM preset_current_13a)\n           + count(*) FILTER (WHERE actual_current_13b IS DISTINCT FROM preset_current_13b)\n           + count(*) FILTER (WHERE actual_current_14a IS DISTINCT FROM preset_current_14a)\n           + count(*) FILTER (WHERE actual_current_14b IS DISTINCT FROM preset_current_14b)\n           + count(*) FILTER (WHERE actual_current_15a IS DISTINCT FROM preset_current_15a)\n           + count(*) FILTER (WHERE actual_current_15b IS DISTINCT FROM preset_current_15b)\n           + count(*) FILTER (WHERE actual_current_16a IS DISTINCT FROM preset_current_16a)\n           + count(*) FILTER (WHERE actual_current_16b IS DISTINCT FROM preset_current_16b)\n           + count(*) FILTER (WHERE actual_current_17a IS DISTINCT FROM preset_current_17a)\n           + count(*) FILTER (WHERE actual_current_17b IS DISTINCT FROM preset_current_17b)\n           + count(*) FILTER (WHERE actual_current_18a IS DISTINCT FROM preset_current_18a)\n           + count(*) FILTER (WHERE actual_current_18b IS DISTINCT FROM preset_current_18b) AS preset_current_mismatch,\n           count(*) FILTER (WHERE copper_thick_low <> 0 OR copper_thick_high <> 0) AS thick_rows,\n           string_agg(DISTINCT ROUND(copper_thick_low::numeric, 2)::text, ', ')\n             FILTER (WHERE copper_thick_low <> 0) AS thick_low,\n           string_agg(DISTINCT ROUND(copper_thick_high::numeric, 2)::text, ', ')\n             FILTER (WHERE copper_thick_high <> 0) AS thick_high,\n           count(*) FILTER (WHERE pre_clean IS DISTINCT FROM preset_clean) AS pre_clean_mismatch,\n           count(*) FILTER (WHERE preset_cleaning_temp IS DISTINCT FROM preset_clean) AS cleaning_temp_mismatch,\n           count(*) FILTER (WHERE actual_cleaning_temp IS DISTINCT FROM actual_clean) AS actual_cleaning_mismatch,\n           count(*) FILTER (WHERE preset_shielding_board IS DISTINCT FROM height) AS preset_shield_mismatch,\n           count(*) FILTER (WHERE actual_frequency_1 IS DISTINCT FROM pump_frequency) AS actual_freq_mismatch,\n           count(*) FILTER (WHERE preset_current_1b IS DISTINCT FROM preset_current_1a)\n           + count(*) FILTER (WHERE preset_current_2b IS DISTINCT FROM preset_current_2a)\n           + count(*) FILTER (WHERE preset_current_3b IS DISTINCT FROM preset_current_3a)\n           + count(*) FILTER (WHERE preset_current_4b IS DISTINCT FROM preset_current_4a)\n           + count(*) FILTER (WHERE preset_current_5b IS DISTINCT FROM preset_current_5a)\n           + count(*) FILTER (WHERE preset_current_6b IS DISTINCT FROM preset_current_6a)\n           + count(*) FILTER (WHERE preset_current_7b IS DISTINCT FROM preset_current_7a)\n           + count(*) FILTER (WHERE preset_current_8b IS DISTINCT FROM preset_current_8a)\n           + count(*) FILTER (WHERE preset_current_9b IS DISTINCT FROM preset_current_9a)\n           + count(*) FILTER (WHERE preset_current_10b IS DISTINCT FROM preset_current_10a)\n           + count(*) FILTER (WHERE preset_current_11b IS DISTINCT FROM preset_current_11a)\n           + count(*) FILTER (WHERE preset_current_12b IS DISTINCT FROM preset_current_12a)\n           + count(*) FILTER (WHERE preset_current_13b IS DISTINCT FROM preset_current_13a)\n           + count(*) FILTER (WHERE preset_current_14b IS DISTINCT FROM preset_current_14a)\n           + count(*) FILTER (WHERE preset_current_15b IS DISTINCT FROM preset_current_15a)\n           + count(*) FILTER (WHERE preset_current_16b IS DISTINCT FROM preset_current_16a)\n           + count(*) FILTER (WHERE preset_current_17b IS DISTINCT FROM preset_current_17a)\n           + count(*) FILTER (WHERE preset_current_18b IS DISTINCT FROM preset_current_18a) AS b_side_recipe_mismatch,\n           count(*) FILTER (WHERE plating_area_b IS DISTINCT FROM plating_area_a) AS area_copy_mismatch,\n           count(*) FILTER (WHERE copper_b_preset_current IS DISTINCT FROM copper_a_preset_current) AS copper_side_mismatch,\n           count(*) FILTER (WHERE copper_thick_low <> 0 AND copper_thick_low - copper_thick_high = 6) AS thick_gap6,\n           count(*) FILTER (WHERE copper_thick_high > copper_thick_low) AS thick_high_above_low,\n           count(*) FILTER (WHERE thickness BETWEEN copper_thick_low AND copper_thick_high) AS thick_inside,\n           avg(actual_current_1a) FILTER (WHERE current_check = '0') AS amp_mode0,\n           avg(actual_current_1a) FILTER (WHERE current_check = '1') AS amp_mode1,\n           count(*) FILTER (WHERE actual_amp_1a IS NOT NULL)\n           + count(*) FILTER (WHERE actual_amp_1b IS NOT NULL)\n           + count(*) FILTER (WHERE preset_tank IS NOT NULL)\n           + count(*) FILTER (WHERE actual_tank <> 0) AS dead_col_values,\n           count(*) FILTER (WHERE COALESCE(preset_amp_1a, 0) = 0 AND actual_current_1a > 10) AS amp_zero_while_plating,\n           avg(actual_current_1a) FILTER (WHERE COALESCE(preset_amp_1a, 0) = 0 AND actual_current_1a > 10) AS amp_zero_current,\n           avg(preset_current_1a) FILTER (WHERE preset_amp_1a = 70) AS cur_at_70,\n           avg(preset_current_1a) FILTER (WHERE preset_amp_1a = 100) AS cur_at_100,\n           count(*) FILTER (WHERE preset_shielding_board IS DISTINCT FROM height\n                              OR actual_shielding_board IS DISTINCT FROM height) AS shield_copy_mismatch,\n           count(actual_amp_1a) + count(actual_amp_1b) + count(actual_tank) + count(preset_tank) AS empty_cols_nonnull,\n           -- bath sensors that sent 0: left out of every deviation, counted here\n           -- two identities that hold on nearly every row: when they break,\n           -- a recipe field or a panel size was written wrong\n           count(*) FILTER (WHERE plating_time IS NOT NULL AND line_speed > 0\n                              AND abs(plating_time * line_speed - 54) > 0.2) AS speed_identity_break,\n           count(*) FILTER (WHERE width > 0 AND height > 0 AND plating_area_a > 0\n                              AND abs(plating_area_a - width * height / 10000.0) > 0.01) AS area_identity_break,\n           count(*) FILTER (WHERE COALESCE(preset_dry, 0) = 0) AS zero_dry,\n           count(*) FILTER (WHERE COALESCE(preset_heating, 0) = 0) AS zero_heating,\n           count(*) FILTER (WHERE COALESCE(preset_clean, 0) = 0 OR COALESCE(preset_copperplating1, 0) = 0 OR COALESCE(preset_copperplating2, 0) = 0 OR COALESCE(preset_ao, 0) = 0 OR COALESCE(preset_hotwater, 0) = 0 OR COALESCE(preset_peeloff, 0) = 0 OR COALESCE(preset_rectifier, 0) = 0) AS zero_other_bath,\n           min(actual_heating) AS sp_heating, min(actual_peeloff) AS sp_peeloff, min(actual_rectifier) AS sp_rectifier,\n           percentile_cont(0.5) WITHIN GROUP (ORDER BY\n             CASE WHEN \"timestamp\" ~ '^[0-9]{14}'\n                  THEN EXTRACT(EPOCH FROM (log_date - (to_timestamp(substring(\"timestamp\", 1, 14), 'YYYYMMDDHH24MISS')::timestamp AT TIME ZONE 'Asia/Bangkok')))::float8\n             END) AS upp_lag\n    FROM public.eap_api_vcp_upp\n    WHERE $__timeFilter(log_date)\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n    GROUP BY equipment_id\n), amp AS (\n    SELECT l.equipment_id,\n           count(DISTINCT v.amp) AS amp_values,\n           array_to_string(array_agg(DISTINCT round(v.amp)::int ORDER BY round(v.amp)::int), ', ') AS amp_list\n    FROM (\n        SELECT DISTINCT ON (equipment_id) *\n        FROM public.eap_api_vcp_upp\n        WHERE $__timeFilter(log_date)\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n        ORDER BY equipment_id, log_date DESC, log_id DESC\n    ) l\n    CROSS JOIN LATERAL (VALUES ((l.preset_amp_1a)), ((l.preset_amp_1b)), ((l.preset_amp_2a)), ((l.preset_amp_2b)), ((l.preset_amp_3a)), ((l.preset_amp_3b)), ((l.preset_amp_4a)), ((l.preset_amp_4b)), ((l.preset_amp_5a)), ((l.preset_amp_5b)), ((l.preset_amp_6a)), ((l.preset_amp_6b)), ((l.preset_amp_7a)), ((l.preset_amp_7b)), ((l.preset_amp_8a)), ((l.preset_amp_8b)), ((l.preset_amp_9a)), ((l.preset_amp_9b)), ((l.preset_amp_10a)), ((l.preset_amp_10b)), ((l.preset_amp_11a)), ((l.preset_amp_11b)), ((l.preset_amp_12a)), ((l.preset_amp_12b)), ((l.preset_amp_13a)), ((l.preset_amp_13b)), ((l.preset_amp_14a)), ((l.preset_amp_14b)), ((l.preset_amp_15a)), ((l.preset_amp_16a)), ((l.preset_amp_16b)), ((l.preset_amp_17a)), ((l.preset_amp_17b)), ((l.preset_amp_18a)), ((l.preset_amp_18b))) AS v(amp)\n    GROUP BY l.equipment_id\n), a AS (\n    -- error_time, event_time and timestamp are device clocks written as digits\n    -- of Bangkok local time; log_date is the stored timestamptz.\n    SELECT equipment_id,\n           count(*) AS alarm_rows,\n           string_agg(DISTINCT error_type, ' · ') AS error_types,\n           count(*) FILTER (WHERE error_type = 'ALARM') AS alarm_severity,\n           count(*) FILTER (WHERE error_type = 'Warning') AS warning_severity,\n           count(*) FILTER (WHERE error_type NOT IN ('ALARM', 'Warning')) AS other_severity,\n           count(DISTINCT job_key) FILTER (WHERE job_key <> '') AS job_keys,\n           count(*) FILTER (WHERE job_key = '' OR job_key IS NULL) AS no_job_key,\n           min(process) AS process,\n           percentile_cont(0.5) WITHIN GROUP (ORDER BY lag_s) AS lag_p50\n    FROM (\n        SELECT equipment_id, job_key, process, error_type,\n               CASE WHEN error_time ~ '^[0-9]{14}'\n                    THEN EXTRACT(EPOCH FROM (log_date - (to_timestamp(substring(error_time, 1, 14), 'YYYYMMDDHH24MISS')::timestamp AT TIME ZONE 'Asia/Bangkok')))::float8\n               END AS lag_s\n        FROM public.eap_api_vcp_alarm\n        WHERE $__timeFilter(log_date)\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n    ) x\n    GROUP BY equipment_id\n), s AS (\n    SELECT equipment_id,\n           count(*) AS status_rows,\n           count(DISTINCT transaction_id) AS transaction_ids,\n           percentile_cont(0.5) WITHIN GROUP (ORDER BY lag_s) AS lag_p50\n    FROM (\n        SELECT equipment_id, transaction_id,\n               CASE WHEN event_time ~ '^[0-9]{14}'\n                    THEN EXTRACT(EPOCH FROM (log_date - (to_timestamp(substring(event_time, 1, 14), 'YYYYMMDDHH24MISS')::timestamp AT TIME ZONE 'Asia/Bangkok')))::float8\n               END AS lag_s\n        FROM public.eap_api_vcp_status_change\n        WHERE $__timeFilter(log_date)\n      AND (equipment_id LIKE '%-VCP' AND right(split_part(equipment_id, '-', 1), 2) IN (SELECT right(split_part(sel, '-', 1), 2) FROM unnest(ARRAY[${equipment_id:sqlstring}]) AS sel))\n    ) y\n    GROUP BY equipment_id\n), n AS (\n    SELECT u.*, amp.amp_values, amp.amp_list,\n           COALESCE(to_char(a.alarm_rows, 'FM999,999,999'), '-') AS alarm_rows_t,\n           COALESCE(a.error_types, '-') AS error_types,\n           COALESCE(to_char(a.alarm_severity, 'FM999,999,999'), '-') AS alarm_severity_t,\n           COALESCE(to_char(a.warning_severity, 'FM999,999,999'), '-') AS warning_severity_t,\n           COALESCE(to_char(a.other_severity, 'FM999,999,999'), '-') AS other_severity_t,\n           COALESCE(to_char(a.job_keys, 'FM999,999'), '-') AS job_keys_t,\n           COALESCE(to_char(a.no_job_key, 'FM999,999'), '-') AS no_job_key_t,\n           COALESCE(a.process, '-') AS process,\n           COALESCE(to_char(ROUND(a.lag_p50::numeric, 1), 'FM999,990.0'), '-') AS alarm_lag_t,\n           COALESCE(to_char(s.status_rows, 'FM999,999'), '0') AS status_rows_t,\n           COALESCE(to_char(s.transaction_ids, 'FM999,999'), '0') AS transaction_ids_t,\n           COALESCE(to_char(ROUND(s.lag_p50::numeric, 1), 'FM999,990.0'), '-') AS status_lag_t\n    FROM u\n    LEFT JOIN amp USING (equipment_id)\n    LEFT JOIN a USING (equipment_id)\n    LEFT JOIN s USING (equipment_id)\n)\nSELECT v.metric AS \"Check\",\n       n.equipment_id AS \"equipment_id\",\n       v.value AS \"Value\"\nFROM n\nCROSS JOIN LATERAL (VALUES\n    ( 1, 'count(eap_api_vcp_upp rows) / count(DISTINCT jobkey)',\n         to_char(n.upp_rows, 'FM999,999,999') || '  /  ' || to_char(n.jobs, 'FM999,999')),\n    ( 2, 'count(eap_api_vcp_alarm rows) / count(DISTINCT job_key) / job_key empty',\n         n.alarm_rows_t || '  /  ' || n.job_keys_t || '  /  ' || n.no_job_key_t),\n    ( 3, 'error_type values seen · ALARM / Warning / other (other must be 0)',\n         n.error_types || '  ·  ' || n.alarm_severity_t || '  /  ' || n.warning_severity_t\n         || '  /  ' || n.other_severity_t),\n    ( 4, 'count(status_change rows) / count(DISTINCT transaction_id)',\n         n.status_rows_t || '  /  ' || n.transaction_ids_t),\n    ( 5, 'count(DISTINCT trx_id)',\n         to_char(n.trx_ids, 'FM999,999')),\n    ( 6, 'factory / process',\n         COALESCE(n.factory, '-') || '  /  ' || n.process),\n    ( 7, 'sum(plating_area_a)',\n         to_char(ROUND(n.area_dm2::numeric, 0), 'FM999,999,999') || ' dm² = '\n         || to_char(ROUND((n.area_dm2 / 100.0)::numeric, 1), 'FM999,999.0') || ' m²'),\n    ( 8, 'log_date − timestamp, p50 (s)',\n         COALESCE(to_char(ROUND(n.upp_lag::numeric, 1), 'FM999,990.0'), '-')),\n    ( 9, 'log_date − error_time, p50 (s)',\n         n.alarm_lag_t),\n    (10, 'log_date − event_time, p50 (s)',\n         n.status_lag_t),\n    (11, 'setpoint actual_heating / actual_peeloff / actual_rectifier',\n         COALESCE(ROUND(n.sp_heating::numeric, 1)::text, '-') || '  /  '\n         || COALESCE(ROUND(n.sp_peeloff::numeric, 1)::text, '-') || '  /  '\n         || COALESCE(ROUND(n.sp_rectifier::numeric, 1)::text, '-')),\n    (12, 'avg(pump_frequency) / rows where frequency_1 differs',\n         to_char(ROUND(n.pump_frequency::numeric, 2), 'FM999,990.00') || '  /  '\n         || to_char(n.freq_mismatch, 'FM999,999,999')),\n    (13, 'cells where preset_current differs from actual_current',\n         to_char(n.preset_current_mismatch, 'FM999,999,999')),\n    (14, 'current_check = 1 (%) · avg(actual_current_1a) mode 0 / mode 1',\n         to_char(ROUND(n.check_pct::numeric, 1), 'FM990.0') || ' %  ·  '\n         || COALESCE(to_char(ROUND(n.amp_mode0::numeric, 1), 'FM999,990.0'), '-') || ' A  /  '\n         || COALESCE(to_char(ROUND(n.amp_mode1::numeric, 1), 'FM999,990.0'), '-') || ' A'),\n    (15, 'frequency_check differs from current_check / values other than 0 and 1 (rows)',\n         to_char(n.check_mismatch, 'FM999,999,999') || '  /  ' || to_char(n.check_other, 'FM999,999,999')),\n    (16, 'copper_thick_low / copper_thick_high values seen',\n         'low [' || COALESCE(n.thick_low, '-') || ']  high [' || COALESCE(n.thick_high, '-') || ']  · '\n         || to_char(n.thick_rows, 'FM999,999') || ' rows'),\n    (17, 'copper_thick: low − high = 6 / high above low / thickness inside the range (survey)',\n         to_char(n.thick_gap6, 'FM999,999') || '  /  ' || to_char(n.thick_high_above_low, 'FM999,999')\n         || '  /  ' || to_char(n.thick_inside, 'FM999,999')),\n    (18, 'preset_amp: values seen in 35 columns / distinct values (newest row)',\n         COALESCE(n.amp_list, '-') || '  ·  ' || COALESCE(n.amp_values::text, '-') || ' values'),\n    (19, 'preset_amp = 70 / = 100 against avg(preset_current_1a)',\n         COALESCE(to_char(ROUND(n.cur_at_70::numeric, 1), 'FM999,990.0'), '-') || ' A  /  '\n         || COALESCE(to_char(ROUND(n.cur_at_100::numeric, 1), 'FM999,990.0'), '-') || ' A'),\n    (20, 'rows plating while preset_amp_1a = 0 / their mean current',\n         to_char(n.amp_zero_while_plating, 'FM999,999,999') || '  /  '\n         || COALESCE(to_char(ROUND(n.amp_zero_current::numeric, 1), 'FM999,990.0'), '-') || ' A'),\n    (21, 'preset_current side b differs from side a on any of 18 stations (rows)',\n         to_char(n.b_side_recipe_mismatch, 'FM999,999,999')),\n    (22, 'plating_area_b differs from plating_area_a (rows)',\n         to_char(n.area_copy_mismatch, 'FM999,999,999')),\n    (23, 'copper_b_preset_current differs from copper_a_preset_current (rows)',\n         to_char(n.copper_side_mismatch, 'FM999,999,999')),\n    (24, 'pre_clean differs from preset_clean (rows)',\n         to_char(n.pre_clean_mismatch, 'FM999,999,999')),\n    (25, 'preset_cleaning_temp differs from preset_clean (rows)',\n         to_char(n.cleaning_temp_mismatch, 'FM999,999,999')),\n    (26, 'actual_cleaning_temp differs from actual_clean (rows)',\n         to_char(n.actual_cleaning_mismatch, 'FM999,999,999')),\n    (27, 'preset_shielding_board differs from height (rows)',\n         to_char(n.preset_shield_mismatch, 'FM999,999,999')),\n    (28, 'actual_shielding_board differs from height (rows)',\n         to_char(n.shield_copy_mismatch, 'FM999,999,999')),\n    (29, 'actual_frequency_1 differs from pump_frequency (rows)',\n         to_char(n.actual_freq_mismatch, 'FM999,999,999')),\n    (30, 'rows with a value in actual_amp_1a, actual_amp_1b, preset_tank or actual_tank ≠ 0 (rows)',\n         to_char(n.dead_col_values, 'FM999,999,999')),\n    (31, 'silent bath sensor (reads 0): preset_dry / preset_heating / the other seven baths, rows (watch)',\n         to_char(n.zero_dry, 'FM999,999,999') || '  /  ' || to_char(n.zero_heating, 'FM999,999,999')\n         || '  /  ' || to_char(n.zero_other_bath, 'FM999,999,999')),\n    (32, 'plating_time × line_speed more than 0.2 from 54 / plating_area_a more than 0.01 dm² from width × height ÷ 10,000, rows (watch)',\n         to_char(n.speed_identity_break, 'FM999,999,999') || '  /  ' || to_char(n.area_identity_break, 'FM999,999,999'))\n) AS v(ord, metric, value)\nORDER BY v.ord, n.equipment_id;",
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          }
+        }
+      ],
+      "transformations": [
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "equipment_id",
+            "rowField": "Check",
+            "valueField": "Value"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Check\\equipment_id": "Check"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "sortBy": []
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data. Check the time range, and that the filters above still have a value selected.",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false
+          },
+          "links": [
+            {
+              "title": "Open the operations console for this row's line",
+              "url": "/d/ims-vcp-operations-console/?${__url_time_range}&var-equipment_id=${__data.fields[\"equipment_id\"]}&var-factory=$__all&var-status_filter=$__all&${severity:queryparam}",
+              "targetBlank": false
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Check"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 520
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#64748b"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "preload": false
+}

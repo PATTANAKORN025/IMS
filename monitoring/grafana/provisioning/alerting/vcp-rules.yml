@@ -1,0 +1,539 @@
+# VCP Plating Data-Quality Alerts
+#
+# Seven rules, each with a threshold chosen from the behaviour of the table
+# rather than a guess, and each carrying the line, lot, station and side in its
+# annotations so the notification points at one physical thing. Plant figures
+# (row counts, setpoints, measured values) are deliberately kept out of this file.
+#
+# Rule 1 — rectifier current away from its setpoint.
+#   actual_current_* and preset_current_* agree on practically every cell, and
+#   the one real fault seen in the data was a station side running at about half
+#   its setpoint for days, so 5 A over a 15-minute window is well clear of noise
+#   and far under that fault.
+#
+# Rule 2 — a line plating with no preset_amp tag recorded.
+#   Every line that sends the tag holds it above 0 whenever it plates. A line
+#   that plates with preset_amp = 0 on every row is not sending the tag, rather
+#   than setting it to zero on purpose.
+#
+# Rule 3 — a circulation pump away from its setpoint.
+#   A pump that reads 0 against its setpoint on every row is the case to catch;
+#   the other pumps differ from the setpoint by a unit or two at most. Half the
+#   rows in a 15-minute window is far above that and catches a stuck pump within
+#   a quarter hour.
+#
+# Rule 4 — the two QC flags disagreeing, or holding a value outside 0 and 1.
+#   current_check and frequency_check hold ('0','0') or ('1','1'), and very
+#   rarely ('OK','PASS'). Any disagreement, or any third value, means the source
+#   changed shape and the panels that read them need checking.
+#
+# Rule 5 — a plating bath outside the envelope it has actually held.
+#   The column names are the wrong way round in the source: preset_* is the
+#   reading and actual_* the setpoint, proved by actual_* holding one value for
+#   every lot while preset_* moves many values inside a single lot.
+#   copperplating1, copperplating2 and rectifier are the tightest baths on the
+#   line and stay within a few degrees in normal running, so a 15-minute average
+#   past 4 °C means a real excursion.
+#
+# Rule 6 — a support bath running far off target for half an hour.
+#   clean, ao, hotwater, dry, heating and peeloff run looser. A 30-minute
+#   average past 10 °C fires on a small share of bath windows, mostly a heating
+#   bath that routinely sits under its setpoint and a dryer that jumps as it
+#   ramps. A preset_dry of 0 is a missing reading, so both bath rules skip zero
+#   readings.
+#
+# Plating guard (rules 1, 2, 3, 5, 6). Replayed over the whole table in
+# rule-sized windows, most pump breaches and nearly all support-bath breaches
+# came from windows where the bank drew no current (pumps idle, baths cooling
+# while the line stood). Each rule now counts only rows where any of the 36
+# cells draws current, the same rule the panels use. Rule 2 once tested cell 1a
+# alone and missed windows where the line plated with no preset_amp.
+#
+# noDataState OK. These rules list breaches, so an empty result is the healthy
+# state; with the default NoData every rule raised a DatasourceNoData alert
+# whenever nothing breached.
+#
+# Rule 7 — a line that stopped sending telemetry for 15 minutes.
+#
+# Table format. Every rule returns one row per breach with a text column `metric`.
+# With time_series format Grafana turned that column into a series name, so two
+# breaches at once gave two unlabelled series and the rule failed with "invalid
+# format of evaluation results"; {{ $labels.metric }} was always empty. As a table,
+# each row is one alert instance and metric becomes its label.
+
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: VCP Recipe Compliance
+    folder: '04 · Plating Operations (VCP Line)'
+    interval: 5m
+    rules:
+      - uid: vcp-current-deviation-001
+        title: 'VCP station off its current setpoint'
+        condition: C
+        for: 10m
+        # a rule that lists breaches returns no rows when nothing breaches; that is
+        # the normal state, not a datasource failure (a silent feed has its own rule)
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: drilling-timescaledb
+            model:
+              format: table
+              intervalMs: 300000
+              maxDataPoints: 100
+              rawSql: |
+                WITH agg AS (
+                  SELECT equipment_id,
+                         max(jobkey) AS jobkey,
+                         v.num AS station, v.side AS side,
+                         avg(v.actual - v.preset) FILTER (WHERE v.actual > 0 OR v.preset > 0) AS dev
+                  FROM public.eap_api_vcp_upp u
+                  CROSS JOIN LATERAL (VALUES
+                    (1,'a',u.actual_current_1a,u.preset_current_1a),(1,'b',u.actual_current_1b,u.preset_current_1b),
+                    (2,'a',u.actual_current_2a,u.preset_current_2a),(2,'b',u.actual_current_2b,u.preset_current_2b),
+                    (3,'a',u.actual_current_3a,u.preset_current_3a),(3,'b',u.actual_current_3b,u.preset_current_3b),
+                    (4,'a',u.actual_current_4a,u.preset_current_4a),(4,'b',u.actual_current_4b,u.preset_current_4b),
+                    (5,'a',u.actual_current_5a,u.preset_current_5a),(5,'b',u.actual_current_5b,u.preset_current_5b),
+                    (6,'a',u.actual_current_6a,u.preset_current_6a),(6,'b',u.actual_current_6b,u.preset_current_6b),
+                    (7,'a',u.actual_current_7a,u.preset_current_7a),(7,'b',u.actual_current_7b,u.preset_current_7b),
+                    (8,'a',u.actual_current_8a,u.preset_current_8a),(8,'b',u.actual_current_8b,u.preset_current_8b),
+                    (9,'a',u.actual_current_9a,u.preset_current_9a),(9,'b',u.actual_current_9b,u.preset_current_9b),
+                    (10,'a',u.actual_current_10a,u.preset_current_10a),(10,'b',u.actual_current_10b,u.preset_current_10b),
+                    (11,'a',u.actual_current_11a,u.preset_current_11a),(11,'b',u.actual_current_11b,u.preset_current_11b),
+                    (12,'a',u.actual_current_12a,u.preset_current_12a),(12,'b',u.actual_current_12b,u.preset_current_12b),
+                    (13,'a',u.actual_current_13a,u.preset_current_13a),(13,'b',u.actual_current_13b,u.preset_current_13b),
+                    (14,'a',u.actual_current_14a,u.preset_current_14a),(14,'b',u.actual_current_14b,u.preset_current_14b),
+                    (15,'a',u.actual_current_15a,u.preset_current_15a),(15,'b',u.actual_current_15b,u.preset_current_15b),
+                    (16,'a',u.actual_current_16a,u.preset_current_16a),(16,'b',u.actual_current_16b,u.preset_current_16b),
+                    (17,'a',u.actual_current_17a,u.preset_current_17a),(17,'b',u.actual_current_17b,u.preset_current_17b),
+                    (18,'a',u.actual_current_18a,u.preset_current_18a),(18,'b',u.actual_current_18b,u.preset_current_18b)
+                  ) AS v(num, side, actual, preset)
+                  WHERE u.log_date >= NOW() - INTERVAL '15 minutes'
+                  -- only while the bank is plating (any of the 36 cells draws current), the
+                  -- same rule as the panel this alert opens; a setpoint the line is not running
+                  -- to, or a bath cooling while the line stands, is not a deviation
+                  AND (COALESCE(u.actual_current_1a, 0) + COALESCE(u.actual_current_1b, 0) + COALESCE(u.actual_current_2a, 0) + COALESCE(u.actual_current_2b, 0) + COALESCE(u.actual_current_3a, 0) + COALESCE(u.actual_current_3b, 0)
+                     + COALESCE(u.actual_current_4a, 0) + COALESCE(u.actual_current_4b, 0) + COALESCE(u.actual_current_5a, 0) + COALESCE(u.actual_current_5b, 0) + COALESCE(u.actual_current_6a, 0) + COALESCE(u.actual_current_6b, 0)
+                     + COALESCE(u.actual_current_7a, 0) + COALESCE(u.actual_current_7b, 0) + COALESCE(u.actual_current_8a, 0) + COALESCE(u.actual_current_8b, 0) + COALESCE(u.actual_current_9a, 0) + COALESCE(u.actual_current_9b, 0)
+                     + COALESCE(u.actual_current_10a, 0) + COALESCE(u.actual_current_10b, 0) + COALESCE(u.actual_current_11a, 0) + COALESCE(u.actual_current_11b, 0) + COALESCE(u.actual_current_12a, 0) + COALESCE(u.actual_current_12b, 0)
+                     + COALESCE(u.actual_current_13a, 0) + COALESCE(u.actual_current_13b, 0) + COALESCE(u.actual_current_14a, 0) + COALESCE(u.actual_current_14b, 0) + COALESCE(u.actual_current_15a, 0) + COALESCE(u.actual_current_15b, 0)
+                     + COALESCE(u.actual_current_16a, 0) + COALESCE(u.actual_current_16b, 0) + COALESCE(u.actual_current_17a, 0) + COALESCE(u.actual_current_17b, 0) + COALESCE(u.actual_current_18a, 0) + COALESCE(u.actual_current_18b, 0)) > 0
+                  GROUP BY u.equipment_id, v.num, v.side
+                )
+                SELECT
+                       equipment_id || ' · lot ' || COALESCE(jobkey, '-')
+                         || ' · station ' || lpad(station::text, 2, '0') || ' side ' || side AS metric,
+                       round(dev::numeric, 1) AS value
+                FROM agg
+                WHERE abs(dev) > 5
+                ORDER BY abs(dev) DESC
+          - refId: C
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        annotations:
+          summary: '{{ $labels.metric }} is {{ $values.A }} A off its setpoint'
+          description: >-
+            actual_current of this station side has differed from preset_current by more than 5 A for 10 minutes.
+            Positive is more current than the setpoint, negative is less.
+            The two columns normally match on practically every cell, so any sustained difference is real.
+            Open "Current Deviation by Station" to see which station and side,
+            then "Recipe Compliance by Lot" to see which lots it touched.
+          __dashboardUid__: ims-vcp-overview
+          __panelId__: '25'
+        labels:
+          severity: critical
+          team: plating
+          category: recipe-compliance
+
+      - uid: vcp-missing-preset-002
+        title: 'VCP line plating with preset_amp at zero'
+        condition: C
+        for: 15m
+        # a rule that lists breaches returns no rows when nothing breaches; that is
+        # the normal state, not a datasource failure (a silent feed has its own rule)
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: drilling-timescaledb
+            model:
+              format: table
+              intervalMs: 300000
+              maxDataPoints: 100
+              rawSql: |
+                SELECT
+                       equipment_id || ' · lot ' || COALESCE(max(jobkey), '-') AS metric,
+                       count(*) AS value
+                FROM public.eap_api_vcp_upp
+                WHERE log_date >= NOW() - INTERVAL '15 minutes'
+                  -- plating = any of the 36 cells draws current; cell 1a alone missed
+                  -- windows in the history where the line plated with no preset_amp
+                  AND (COALESCE(actual_current_1a, 0) + COALESCE(actual_current_1b, 0) + COALESCE(actual_current_2a, 0) + COALESCE(actual_current_2b, 0) + COALESCE(actual_current_3a, 0) + COALESCE(actual_current_3b, 0)
+                     + COALESCE(actual_current_4a, 0) + COALESCE(actual_current_4b, 0) + COALESCE(actual_current_5a, 0) + COALESCE(actual_current_5b, 0) + COALESCE(actual_current_6a, 0) + COALESCE(actual_current_6b, 0)
+                     + COALESCE(actual_current_7a, 0) + COALESCE(actual_current_7b, 0) + COALESCE(actual_current_8a, 0) + COALESCE(actual_current_8b, 0) + COALESCE(actual_current_9a, 0) + COALESCE(actual_current_9b, 0)
+                     + COALESCE(actual_current_10a, 0) + COALESCE(actual_current_10b, 0) + COALESCE(actual_current_11a, 0) + COALESCE(actual_current_11b, 0) + COALESCE(actual_current_12a, 0) + COALESCE(actual_current_12b, 0)
+                     + COALESCE(actual_current_13a, 0) + COALESCE(actual_current_13b, 0) + COALESCE(actual_current_14a, 0) + COALESCE(actual_current_14b, 0) + COALESCE(actual_current_15a, 0) + COALESCE(actual_current_15b, 0)
+                     + COALESCE(actual_current_16a, 0) + COALESCE(actual_current_16b, 0) + COALESCE(actual_current_17a, 0) + COALESCE(actual_current_17b, 0) + COALESCE(actual_current_18a, 0) + COALESCE(actual_current_18b, 0)) > 0
+                  AND COALESCE(preset_amp_1a, 0) = 0
+                GROUP BY equipment_id
+                ORDER BY 2 DESC
+          - refId: C
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        annotations:
+          summary: '{{ $labels.metric }} is plating with preset_amp at 0 ({{ $values.A }} rows)'
+          description: >-
+            The machine draws current while preset_amp is 0.
+            preset_amp steps in fives like a percentage and is not in amperes. Every line that sends the tag holds it above 0 while plating,
+            so a line that reads 0 on every station while it plates is not sending the tag.
+            The tag is therefore not being sent; it is not a setpoint of zero.
+            Open the preset_amp rows of "Column Register & Data Quality" to see whether the whole line or only some stations are missing.
+          __dashboardUid__: ims-vcp-overview
+          __panelId__: '24'
+        labels:
+          severity: warning
+          team: plating
+          category: data-quality
+
+      - uid: vcp-pump-mismatch-003
+        title: 'VCP circulation pump away from its setpoint'
+        condition: C
+        for: 10m
+        # a rule that lists breaches returns no rows when nothing breaches; that is
+        # the normal state, not a datasource failure (a silent feed has its own rule)
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: drilling-timescaledb
+            model:
+              format: table
+              intervalMs: 300000
+              maxDataPoints: 100
+              rawSql: |
+                WITH agg AS (
+                  SELECT equipment_id, max(jobkey) AS jobkey, v.num AS pump,
+                         count(*) AS rows,
+                         count(*) FILTER (WHERE v.actual IS DISTINCT FROM v.preset) AS off
+                  FROM public.eap_api_vcp_upp u
+                  CROSS JOIN LATERAL (VALUES
+                    (1,u.actual_pump_1,u.preset_pump_1),(2,u.actual_pump_2,u.preset_pump_2),
+                    (3,u.actual_pump_3,u.preset_pump_3),(4,u.actual_pump_4,u.preset_pump_4),
+                    (5,u.actual_pump_5,u.preset_pump_5),(6,u.actual_pump_6,u.preset_pump_6),
+                    (7,u.actual_pump_7,u.preset_pump_7),(8,u.actual_pump_8,u.preset_pump_8),
+                    (9,u.actual_pump_9,u.preset_pump_9),(10,u.actual_pump_10,u.preset_pump_10),
+                    (11,u.actual_pump_11,u.preset_pump_11),(12,u.actual_pump_12,u.preset_pump_12),
+                    (13,u.actual_pump_13,u.preset_pump_13),(14,u.actual_pump_14,u.preset_pump_14),
+                    (15,u.actual_pump_15,u.preset_pump_15),(16,u.actual_pump_16,u.preset_pump_16),
+                    (17,u.actual_pump_17,u.preset_pump_17),(18,u.actual_pump_18,u.preset_pump_18)
+                  ) AS v(num, actual, preset)
+                  WHERE u.log_date >= NOW() - INTERVAL '15 minutes'
+                  -- only while the bank is plating (any of the 36 cells draws current), the
+                  -- same rule as the panel this alert opens; a setpoint the line is not running
+                  -- to, or a bath cooling while the line stands, is not a deviation
+                  AND (COALESCE(u.actual_current_1a, 0) + COALESCE(u.actual_current_1b, 0) + COALESCE(u.actual_current_2a, 0) + COALESCE(u.actual_current_2b, 0) + COALESCE(u.actual_current_3a, 0) + COALESCE(u.actual_current_3b, 0)
+                     + COALESCE(u.actual_current_4a, 0) + COALESCE(u.actual_current_4b, 0) + COALESCE(u.actual_current_5a, 0) + COALESCE(u.actual_current_5b, 0) + COALESCE(u.actual_current_6a, 0) + COALESCE(u.actual_current_6b, 0)
+                     + COALESCE(u.actual_current_7a, 0) + COALESCE(u.actual_current_7b, 0) + COALESCE(u.actual_current_8a, 0) + COALESCE(u.actual_current_8b, 0) + COALESCE(u.actual_current_9a, 0) + COALESCE(u.actual_current_9b, 0)
+                     + COALESCE(u.actual_current_10a, 0) + COALESCE(u.actual_current_10b, 0) + COALESCE(u.actual_current_11a, 0) + COALESCE(u.actual_current_11b, 0) + COALESCE(u.actual_current_12a, 0) + COALESCE(u.actual_current_12b, 0)
+                     + COALESCE(u.actual_current_13a, 0) + COALESCE(u.actual_current_13b, 0) + COALESCE(u.actual_current_14a, 0) + COALESCE(u.actual_current_14b, 0) + COALESCE(u.actual_current_15a, 0) + COALESCE(u.actual_current_15b, 0)
+                     + COALESCE(u.actual_current_16a, 0) + COALESCE(u.actual_current_16b, 0) + COALESCE(u.actual_current_17a, 0) + COALESCE(u.actual_current_17b, 0) + COALESCE(u.actual_current_18a, 0) + COALESCE(u.actual_current_18b, 0)) > 0
+                  GROUP BY u.equipment_id, v.num
+                )
+                SELECT
+                       equipment_id || ' · lot ' || COALESCE(jobkey, '-')
+                         || ' · pump ' || lpad(pump::text, 2, '0') AS metric,
+                       round((100.0 * off / NULLIF(rows, 0))::numeric, 1) AS value
+                FROM agg
+                WHERE off * 2 > rows
+                ORDER BY 2 DESC
+          - refId: C
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        annotations:
+          summary: '{{ $labels.metric }} is off its setpoint on {{ $values.A }}% of rows'
+          description: >-
+            actual_pump has differed from preset_pump on more than half the rows of a 15-minute window.
+            Direction is ignored: running under and running over both count.
+            A pump that reads 0 on every row while it has a setpoint is the clearest case; check both machine names of the line.
+            Open "Pump Deviation from Setpoint" to see which pump of which line.
+          __dashboardUid__: ims-vcp-overview
+          __panelId__: '22'
+        labels:
+          severity: warning
+          team: plating
+          category: recipe-compliance
+
+      - uid: vcp-qc-flag-004
+        title: 'VCP QC flags disagree: current_check and frequency_check'
+        condition: C
+        for: 5m
+        # a rule that lists breaches returns no rows when nothing breaches; that is
+        # the normal state, not a datasource failure (a silent feed has its own rule)
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: drilling-timescaledb
+            model:
+              format: table
+              intervalMs: 300000
+              maxDataPoints: 100
+              rawSql: |
+                SELECT
+                       equipment_id || ' · lot ' || COALESCE(max(jobkey), '-')
+                         || ' · current_check=' || COALESCE(max(current_check), '-')
+                         || ' frequency_check=' || COALESCE(max(frequency_check), '-') AS metric,
+                       count(*) AS value
+                FROM public.eap_api_vcp_upp
+                WHERE log_date >= NOW() - INTERVAL '15 minutes'
+                  AND (current_check IS DISTINCT FROM frequency_check
+                       OR current_check NOT IN ('0', '1'))
+                GROUP BY equipment_id
+                ORDER BY 2 DESC
+          - refId: C
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        annotations:
+          summary: '{{ $labels.metric }}: {{ $values.A }} rows'
+          description: >-
+            current_check and frequency_check disagree, or hold a value other than 0 and 1.
+            Normally only (0,0) and (1,1) appear, with a very rare (OK,PASS).
+            A new value means the source format changed; check the panels that read these columns.
+          __dashboardUid__: ims-vcp-overview
+          __panelId__: '27'
+        labels:
+          severity: warning
+          team: plating
+          category: data-quality
+
+      - uid: vcp-plating-bath-temp-005
+        title: 'VCP plating bath outside its measured envelope'
+        condition: C
+        for: 15m
+        # a rule that lists breaches returns no rows when nothing breaches; that is
+        # the normal state, not a datasource failure (a silent feed has its own rule)
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: drilling-timescaledb
+            model:
+              format: table
+              intervalMs: 300000
+              maxDataPoints: 100
+              rawSql: |
+                WITH agg AS (
+                  SELECT u.equipment_id,
+                         max(u.jobkey) AS jobkey,
+                         v.bath AS bath,
+                         avg(v.reading - v.setpoint) AS dev,
+                         avg(v.setpoint) AS setpoint
+                  FROM public.eap_api_vcp_upp u
+                  CROSS JOIN LATERAL (VALUES
+                    ('copperplating1', u.preset_copperplating1, u.actual_copperplating1),
+                    ('copperplating2', u.preset_copperplating2, u.actual_copperplating2),
+                    ('rectifier',      u.preset_rectifier,      u.actual_rectifier)
+                  ) AS v(bath, reading, setpoint)
+                  WHERE u.log_date >= NOW() - INTERVAL '15 minutes'
+                    AND v.reading > 0 AND v.setpoint > 0
+                  -- only while the bank is plating (any of the 36 cells draws current), the
+                  -- same rule as the panel this alert opens; a setpoint the line is not running
+                  -- to, or a bath cooling while the line stands, is not a deviation
+                    AND (COALESCE(u.actual_current_1a, 0) + COALESCE(u.actual_current_1b, 0) + COALESCE(u.actual_current_2a, 0) + COALESCE(u.actual_current_2b, 0) + COALESCE(u.actual_current_3a, 0) + COALESCE(u.actual_current_3b, 0)
+                     + COALESCE(u.actual_current_4a, 0) + COALESCE(u.actual_current_4b, 0) + COALESCE(u.actual_current_5a, 0) + COALESCE(u.actual_current_5b, 0) + COALESCE(u.actual_current_6a, 0) + COALESCE(u.actual_current_6b, 0)
+                     + COALESCE(u.actual_current_7a, 0) + COALESCE(u.actual_current_7b, 0) + COALESCE(u.actual_current_8a, 0) + COALESCE(u.actual_current_8b, 0) + COALESCE(u.actual_current_9a, 0) + COALESCE(u.actual_current_9b, 0)
+                     + COALESCE(u.actual_current_10a, 0) + COALESCE(u.actual_current_10b, 0) + COALESCE(u.actual_current_11a, 0) + COALESCE(u.actual_current_11b, 0) + COALESCE(u.actual_current_12a, 0) + COALESCE(u.actual_current_12b, 0)
+                     + COALESCE(u.actual_current_13a, 0) + COALESCE(u.actual_current_13b, 0) + COALESCE(u.actual_current_14a, 0) + COALESCE(u.actual_current_14b, 0) + COALESCE(u.actual_current_15a, 0) + COALESCE(u.actual_current_15b, 0)
+                     + COALESCE(u.actual_current_16a, 0) + COALESCE(u.actual_current_16b, 0) + COALESCE(u.actual_current_17a, 0) + COALESCE(u.actual_current_17b, 0) + COALESCE(u.actual_current_18a, 0) + COALESCE(u.actual_current_18b, 0)) > 0
+                  GROUP BY u.equipment_id, v.bath
+                )
+                SELECT
+                       equipment_id || ' · lot ' || COALESCE(jobkey, '-')
+                         || ' · bath ' || bath
+                         || ' · setpoint ' || round(setpoint::numeric, 1) || ' °C' AS metric,
+                       round(dev::numeric, 1) AS value
+                FROM agg
+                WHERE abs(dev) > 4
+                ORDER BY abs(dev) DESC
+          - refId: C
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        annotations:
+          summary: '{{ $labels.metric }} is {{ $values.A }} °C off its setpoint'
+          description: >-
+            A copper plating bath or the rectifier bath has read more than 4 °C from its setpoint, 15-minute mean, for 15 minutes.
+            These three baths are the tightest on the line and stay within a few degrees in normal running,
+            so 4 °C is above the normal behaviour of all three.
+            Open "Bath Deviation from Setpoint" to see which bath and since when.
+            Mind the swapped source names: preset_* is the reading and actual_* the setpoint.
+          __dashboardUid__: ims-vcp-overview
+          __panelId__: '21'
+        labels:
+          severity: critical
+          team: plating
+          category: process-quality
+
+      - uid: vcp-support-bath-temp-006
+        title: 'VCP support bath far off its setpoint'
+        condition: C
+        for: 30m
+        # a rule that lists breaches returns no rows when nothing breaches; that is
+        # the normal state, not a datasource failure (a silent feed has its own rule)
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 1800, to: 0 }
+            datasourceUid: drilling-timescaledb
+            model:
+              format: table
+              intervalMs: 300000
+              maxDataPoints: 100
+              rawSql: |
+                WITH agg AS (
+                  SELECT u.equipment_id,
+                         max(u.jobkey) AS jobkey,
+                         v.bath AS bath,
+                         avg(v.reading - v.setpoint) AS dev,
+                         avg(v.setpoint) AS setpoint
+                  FROM public.eap_api_vcp_upp u
+                  CROSS JOIN LATERAL (VALUES
+                    ('clean',    u.preset_clean,    u.actual_clean),
+                    ('ao',       u.preset_ao,       u.actual_ao),
+                    ('hotwater', u.preset_hotwater, u.actual_hotwater),
+                    ('dry',      u.preset_dry,      u.actual_dry),
+                    ('heating',  u.preset_heating,  u.actual_heating),
+                    ('peeloff',  u.preset_peeloff,  u.actual_peeloff)
+                  ) AS v(bath, reading, setpoint)
+                  WHERE u.log_date >= NOW() - INTERVAL '30 minutes'
+                    AND v.reading > 0 AND v.setpoint > 0
+                  -- only while the bank is plating (any of the 36 cells draws current), the
+                  -- same rule as the panel this alert opens; a setpoint the line is not running
+                  -- to, or a bath cooling while the line stands, is not a deviation
+                    AND (COALESCE(u.actual_current_1a, 0) + COALESCE(u.actual_current_1b, 0) + COALESCE(u.actual_current_2a, 0) + COALESCE(u.actual_current_2b, 0) + COALESCE(u.actual_current_3a, 0) + COALESCE(u.actual_current_3b, 0)
+                     + COALESCE(u.actual_current_4a, 0) + COALESCE(u.actual_current_4b, 0) + COALESCE(u.actual_current_5a, 0) + COALESCE(u.actual_current_5b, 0) + COALESCE(u.actual_current_6a, 0) + COALESCE(u.actual_current_6b, 0)
+                     + COALESCE(u.actual_current_7a, 0) + COALESCE(u.actual_current_7b, 0) + COALESCE(u.actual_current_8a, 0) + COALESCE(u.actual_current_8b, 0) + COALESCE(u.actual_current_9a, 0) + COALESCE(u.actual_current_9b, 0)
+                     + COALESCE(u.actual_current_10a, 0) + COALESCE(u.actual_current_10b, 0) + COALESCE(u.actual_current_11a, 0) + COALESCE(u.actual_current_11b, 0) + COALESCE(u.actual_current_12a, 0) + COALESCE(u.actual_current_12b, 0)
+                     + COALESCE(u.actual_current_13a, 0) + COALESCE(u.actual_current_13b, 0) + COALESCE(u.actual_current_14a, 0) + COALESCE(u.actual_current_14b, 0) + COALESCE(u.actual_current_15a, 0) + COALESCE(u.actual_current_15b, 0)
+                     + COALESCE(u.actual_current_16a, 0) + COALESCE(u.actual_current_16b, 0) + COALESCE(u.actual_current_17a, 0) + COALESCE(u.actual_current_17b, 0) + COALESCE(u.actual_current_18a, 0) + COALESCE(u.actual_current_18b, 0)) > 0
+                  GROUP BY u.equipment_id, v.bath
+                )
+                SELECT
+                       equipment_id || ' · lot ' || COALESCE(jobkey, '-')
+                         || ' · bath ' || bath
+                         || ' · setpoint ' || round(setpoint::numeric, 1) || ' °C' AS metric,
+                       round(dev::numeric, 1) AS value
+                FROM agg
+                WHERE abs(dev) > 10
+                ORDER BY abs(dev) DESC
+          - refId: C
+            relativeTimeRange: { from: 1800, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        annotations:
+          summary: '{{ $labels.metric }} is {{ $values.A }} °C off its setpoint'
+          description: >-
+            A preparation, rinse or drying bath has read more than 10 °C from its setpoint, 30-minute mean, for 30 minutes.
+            These six baths are much looser than the plating baths, so 10 °C sits above their normal spread.
+            It fires on a small share of bath windows, mostly a heating bath that routinely sits below setpoint
+            and a dryer that jumps when drying starts. An alert that stays on the same bath for a whole shift points to a heater or calibration,
+            not a passing event.
+            A preset_dry of 0 means no reading, so this rule skips zero readings.
+          __dashboardUid__: ims-vcp-overview
+          __panelId__: '21'
+        labels:
+          severity: warning
+          team: plating
+          category: process-quality
+
+      - uid: vcp-feed-silent-007
+        title: 'VCP line stopped sending telemetry'
+        condition: C
+        for: 10m
+        # the query itself decides silence, so no rows here is the healthy state
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: drilling-timescaledb
+            model:
+              format: table
+              intervalMs: 300000
+              maxDataPoints: 100
+              rawSql: |
+                -- newest row of each line from either of its two names; rows land
+                -- about once a minute, so 15 minutes without one is a stopped feed, not
+                -- jitter. Lines silent for more than 30 days drop out as retired.
+                SELECT
+                       'VCP' || right(split_part(equipment_id, '-', 1), 2) AS metric,
+                       round((extract(epoch FROM NOW() - max(log_date)) / 60)::numeric, 0) AS value
+                FROM public.eap_api_vcp_upp
+                WHERE equipment_id LIKE '%-VCP'
+                  AND log_date > NOW() - INTERVAL '30 days'
+                GROUP BY 1
+                HAVING NOW() - max(log_date) > INTERVAL '15 minutes'
+          - refId: C
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        annotations:
+          summary: '{{ $labels.metric }} has sent no data for {{ $values.A }} minutes'
+          description: >-
+            This line has had no new row in eap_api_vcp_upp for more than 15 minutes (rows normally land about once a minute).
+            Every panel of this line holds its last value, the live card turns stale, and the other alert rules of this line fall silent
+            because there is nothing to evaluate. Check the data sender at the machine before the dashboard.
+          __dashboardUid__: ims-vcp-operations-console
+          __panelId__: '1'
+        labels:
+          severity: warning
+          team: plating
+          category: data-feed

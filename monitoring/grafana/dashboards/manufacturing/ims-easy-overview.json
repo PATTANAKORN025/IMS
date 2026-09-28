@@ -738,7 +738,7 @@
   ],
   "id": null,
   "uid": "ims-easy-overview",
-  "title": "IMS Easy Overview",
+  "title": "LDI — 01 Fleet Executive Overview",
   "version": 1,
   "time": {
     "from": "now-6h",
@@ -747,12 +747,13 @@
   "timezone": "UTC",
   "refresh": "1m",
   "tags": [
-    "IMS",
-    "LDI",
-    "easy",
-    "overview",
-    "real-data",
-    "current-database",
-    "manufacturing"
+    "executive",
+    "ims",
+    "ldi",
+    "level-1-overview",
+    "lithography",
+    "management",
+    "manufacturing",
+    "overview"
   ]
 }

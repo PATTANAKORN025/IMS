@@ -11,7 +11,7 @@ apiVersion: 1
 groups:
   - orgId: 1
     name: LDI Quality Alerts
-    folder: IMS
+    folder: '02 · Lithography Operations (LDI PCB)'
     interval: 5m
     rules:
       - uid: ldi-quality-drift-001
@@ -68,6 +68,9 @@ groups:
           category: quality
 
       - uid: ldi-process-capability-002
+        # paused 2026-09-24: each evaluation of v_machine_spc_ranking ran 40-80 s and piled
+        # up on the shared database until it thrashed; unpause once the view is fixed
+        isPaused: true
         title: "LDI Process Capability — Cpk below 1.33"
         condition: C
         data:
@@ -162,6 +165,8 @@ groups:
           category: quality
 
       - uid: ldi-je-capability-004
+        # paused 2026-09-24: same view and same pile-up as ldi-process-capability-002
+        isPaused: true
         title: "LDI JE Process Capability — Cpk below 1.33"
         condition: C
         data:

@@ -98,7 +98,7 @@ Numbered, forward-only SQL files applied by the one-shot `db-migrate` container 
 
 ### Grafana (`monitoring/grafana/`)
 
-Dashboards are provisioned read-only from `dashboards/infrastructure/` and `dashboards/manufacturing/`. Edits are made to the JSON files in git, not in the UI. `tests/lint/dashboard-linter.js` enforces the grid and token rules from `AGENTS.md` section 4 (every row sums to 24 columns, canonical color tokens only, quoted template variables in SQL).
+Dashboards are provisioned read-only from `dashboards/drilling/`, `manufacturing/` (LDI), `infrastructure/` and `vcp/`, one Grafana folder each. The drilling and VCP dashboards use the `drilling-timescaledb` data source, which reads the separate `eap_backup` database (plant data, not in git; `docs/data/MOCK_DATA.md` builds a synthetic one). Edits are made to the JSON files in git, not in the UI. `tests/lint/dashboard-linter.js` enforces the grid and token rules from `AGENTS.md` section 4 (every row sums to 24 columns, canonical color tokens only, quoted template variables in SQL).
 
 ### Services (`services/`)
 

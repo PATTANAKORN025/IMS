@@ -1092,10 +1092,15 @@
   "refresh": "5m",
   "schemaVersion": 39,
   "tags": [
+    "health",
     "ims",
+    "infrastructure",
+    "level-4-analytics",
     "meta-monitoring",
+    "node-red",
+    "platform",
     "sre",
-    "infrastructure"
+    "timescaledb"
   ],
   "templating": {
     "list": [
@@ -1119,7 +1124,7 @@
     "from": "now-15m",
     "to": "now"
   },
-  "title": "IMS Pipeline Health & Meta-Monitoring",
+  "title": "Platform — 05 Pipeline Reliability & SRE Meta-Monitoring",
   "description": "The ingestion pipeline's own health: rows/sec insert rate, batch success rate, retry queue depth, circuit breaker state, and device poll rates. Watches the pipeline, not the fleet it monitors.",
   "uid": "ims-meta-monitoring",
   "version": 1,

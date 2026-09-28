@@ -28,8 +28,14 @@ const OUT_FILE = path.join(process.cwd(), 'docs', 'architecture', 'DASHBOARD_INV
 // allowlist for that one exception rather than a fragile substring guess.
 const LDI_UID_EXTRAS = new Set(['ims-easy-overview']);
 
-function category(uid) {
-  return uid.includes('ldi') || LDI_UID_EXTRAS.has(uid) ? 'LDI Manufacturing' : 'Infrastructure';
+function category(file, uid) {
+  const norm = file.replace(/\\/g, '/');
+  if (norm.startsWith('drilling/')) return 'Drilling Operations (CNC)';
+  if (norm.startsWith('manufacturing/')) return 'Lithography Operations (LDI PCB)';
+  if (norm.startsWith('infrastructure/')) return 'Platform Infrastructure & NOC';
+  if (norm.startsWith('vcp/')) return 'Plating Operations (VCP Line)';
+  if (uid.includes('ldi') || LDI_UID_EXTRAS.has(uid)) return 'Lithography Operations (LDI PCB)';
+  return 'Platform Infrastructure & NOC';
 }
 
 function firstSentence(desc) {
@@ -63,13 +69,15 @@ function generate() {
       uid: data.uid || '(no uid)',
       title: data.title || '(untitled)',
       panels: data.panels.length,
-      category: category(data.uid || ''),
+      category: category(f, data.uid || ''),
       description: firstSentence(data.description),
     };
   });
 
-  const infra = rows.filter((r) => r.category === 'Infrastructure');
-  const ldi = rows.filter((r) => r.category === 'LDI Manufacturing');
+  const drilling = rows.filter((r) => r.category === 'Drilling Operations (CNC)');
+  const ldi = rows.filter((r) => r.category === 'Lithography Operations (LDI PCB)');
+  const infra = rows.filter((r) => r.category === 'Platform Infrastructure & NOC');
+  const vcp = rows.filter((r) => r.category === 'Plating Operations (VCP Line)');
 
   const table = (list) =>
     [
@@ -85,7 +93,7 @@ function generate() {
 > **Generated file — do not hand-edit.** Regenerate with:
 > \`node scripts/generate-dashboard-inventory.js\`
 >
-> Source of truth: \`monitoring/grafana/dashboards/{infrastructure,manufacturing}/*.json\` (title, uid, panel
+> Source of truth: \`monitoring/grafana/dashboards/{drilling,infrastructure,manufacturing,vcp}/*.json\` (title, uid, panel
 > count, description — all read directly from the JSON, never hand-typed).
 > Panel counts use the identical computation as
 > \`tests/lint/dashboard-linter.js\` (\`data.panels.length\`), so this file and
@@ -95,13 +103,21 @@ function generate() {
 >
 > Last generated: ${now} | Total dashboards: ${rows.length} | Total panels: ${rows.reduce((s, r) => s + r.panels, 0)}
 
-## Infrastructure (${infra.length})
+## 01 · Drilling Operations (${drilling.length})
+
+${table(drilling)}
+
+## 02 · Lithography Operations / LDI Manufacturing (${ldi.length})
+
+${table(ldi)}
+
+## 03 · Platform Infrastructure & NOC (${infra.length})
 
 ${table(infra)}
 
-## LDI Manufacturing (${ldi.length})
+## 04 · Plating Operations / VCP Line (${vcp.length})
 
-${table(ldi)}
+${table(vcp)}
 `;
 }
 

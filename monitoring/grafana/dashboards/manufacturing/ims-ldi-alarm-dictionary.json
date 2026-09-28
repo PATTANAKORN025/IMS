@@ -330,12 +330,17 @@
   "graphTooltip": 0,
   "id": null,
   "uid": "ims-ldi-alarm-dictionary",
-  "title": "IMS LDI - Alarm Dictionary",
+  "title": "LDI — 09 Alarm Code Dictionary & Corrective Actions",
   "description": "Reference lookup dashboard: full vendor Alarm Master definition + recent live occurrences for any Alarm Code. Not part of the operator/engineering navigation flow -- opened via drill-down link from the Alarm Code column on other LDI dashboards.",
   "version": 1,
   "tags": [
-    "IMS",
-    "LDI",
+    "alarms",
+    "dictionary",
+    "ims",
+    "knowledge-base",
+    "ldi",
+    "lithography",
+    "maintenance",
     "manufacturing",
     "reference"
   ]

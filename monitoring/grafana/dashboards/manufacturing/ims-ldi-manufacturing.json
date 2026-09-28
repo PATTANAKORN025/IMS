@@ -2947,7 +2947,7 @@
   ],
   "id": null,
   "uid": "ims-ldi-manufacturing",
-  "title": "IMS LDI - Manufacturing Command Center",
+  "title": "LDI — 04 Manufacturing Fleet Command Center",
   "version": 4,
   "time": {
     "from": "now-6h",
@@ -2956,11 +2956,15 @@
   "timezone": "UTC",
   "refresh": "1m",
   "tags": [
-    "IMS",
-    "LDI",
-    "set-2",
-    "real-data",
-    "current-database",
-    "manufacturing"
+    "command-center",
+    "fleet",
+    "ims",
+    "ldi",
+    "level-2-operation",
+    "lithography",
+    "manufacturing",
+    "production",
+    "recipes",
+    "supervisor"
   ]
 }

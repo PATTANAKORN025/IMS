@@ -107,6 +107,7 @@ The blueprints for engineering, maintaining, and integrating with the system.
 - **[Architecture Decisions (ADRs)](architecture/decisions/)** - Historical technology choices.
 - **[Service Level Objectives (SLO)](sre/SLO_DEFINITIONS.md)** - Reliability, error budgets, and SLIs.
 - **[Telemetry Ontology](data/TELEMETRY_ONTOLOGY.md)** - Data dictionaries and payload standards.
+- **[Synthetic Drilling and VCP Data](data/MOCK_DATA.md)** - Run the drilling and VCP dashboards on generated data, with no factory data.
 
 ### 8. Governance
 

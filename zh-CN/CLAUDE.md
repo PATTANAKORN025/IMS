@@ -98,7 +98,7 @@ Grafana 本身**不对外**发布独立端口。当某服务在容器内直连�
 
 ### Grafana (`monitoring/grafana/`)
 
-仪表板以只读方式从 `dashboards/infrastructure/` 与 `dashboards/manufacturing/` 进行配置。所有修改应在 git 中的 JSON 文件进行，而非在 Web 界面中操作。`tests/lint/dashboard-linter.js` 会强制校验 `AGENTS.md` 第 4 节中的栅格与色彩 Token 规则（每行总宽恰好为 24 列，仅使用规范颜色 Token，SQL 中模板变量必须用引号包裹）。
+仪表板以只读方式从 `dashboards/drilling/`、`manufacturing/`（LDI）、`infrastructure/` 与 `vcp/` 进行配置，每个目录对应一个 Grafana 文件夹。钻孔与 VCP 仪表板使用数据源 `drilling-timescaledb`，读取独立的 `eap_backup` 数据库（工厂数据，不在 git 中；`docs/data/MOCK_DATA.md` 可构建合成数据库）。所有修改应在 git 中的 JSON 文件进行，而非在 Web 界面中操作。`tests/lint/dashboard-linter.js` 会强制校验 `AGENTS.md` 第 4 节中的栅格与色彩 Token 规则（每行总宽恰好为 24 列，仅使用规范颜色 Token，SQL 中模板变量必须用引号包裹）。
 
 ### 微服务 (`services/`)
 
