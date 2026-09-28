@@ -1,61 +1,134 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>主页</b></a> &nbsp;|&nbsp;
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
   <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
 </div>
 <br/>
 
-# LDI 告警严重级别指南 (LDI Alarm Severity Guide)
-
-> **目标受众：** 流程工程 (Process Engineering)、QA/审计、SRE/运营、工厂管理。
-> **目的：** 定义 4 级告警严重级别分类 (Taxonomy)、视觉色彩映射 (Visual Color Mapping) 以及对 ISA-18.2 合规性的界限。
-> **来源出处 (Provenance)：** 于 2026-08-10 直接对照实时数据库、`dashboard-linter.js` 和实际仪表板 JSON 值映射进行核对。
-
----
-
-## 4 级严重级别划分 (The 4-tier severity scale)
-
-`public.ldi_alarm_ms_code.severity` 被严格限制为 4 个值（通过 `CHECK` 约束）：
-
-| 严重级别 (Severity) | 颜色 Token (Color token) | 十六进制色值 (Hex) | 含义                                                                                                                                                                                          |
-| ------------------- | ------------------------ | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Critical**        | `critical`               | `#EF4444`          | 最高严重级别 — 需要立即响应。                                                                                                                                                                 |
-| **Major**           | `warning`                | `#F59E0B`          | 重大故障 — 需要及时处理。                                                                                                                                                                     |
-| **Minor**           | `severity-minor`         | `#EAB308`          | 影响较小的故障。刻意采用与 Major 琥珀色不同的色调，以便能一目了然地区分这 4 个级别 — 详见 `GRAFANA_DESIGN_SYSTEM.md` §2.1。                                                                   |
-| **Warning**         | `accent`                 | `#3B82F6`          | 4 个级别中最低的级别 — 仅供参考/建议。映射到蓝色 _accent_ Token，而不是具有语义名称的 `warning` 琥珀色 Token（该 Token 已被 Major 占用） — 这是真实且刻意的映射，并非不一致 (Inconsistency)。 |
-
-**19 个在模拟器中处于激活状态的告警代码的实时严重级别分布** (2026-08-10)：7 个 Major、11 个 Warning、1 个 Minor，**0 个 Critical**。目前模拟器没有生成 Critical 级别的代码 — 这是关于当前模拟器故障注入范围的事实，但这并不意味着 Critical 告警不可能发生（在 `ldi_alarm_ms_code` 中完整导入的告警代码目录远远超过模拟器激活的 19 个代码，包含尚未连接触发的 Critical 级别条目）。
-
-## ISA-18.2 适用范围 — 此处务必使用精准语言
-
-上述严重级别命名和颜色约定借用了 ISA-18.2 的词汇。**此系统是“ISA-18.2 风格 (ISA-18.2-style)”，而非“符合 ISA-18.2 标准 (ISA-18.2-compliant)”** — 于 2026-08-10 进行了核实，以回应先前声称完全符合标准的说法。真实实现的内容包括：
-
-- 4 级 Critical/Major/Minor/Warning 命名及其专用的颜色 Token。
-
-**未**实现的内容 — 即该标准的实际核心内容：
-
-- **告警状态 (Alarm states)：** ISA-18.2 定义了状态模型（未确认 (Unacknowledged)、已确认 (Acknowledged)、已搁置 (Shelved) 等）。`ldi_alarm_log` 中没有 ack/shelve/suppress 列。每个告警默认且永久处于单一隐式状态。
-- **合理化文档 (Rationalization documentation)：** 不存在针对每个告警的合理化记录（告警存在原因、后果、响应方式）。
-- **告警性能 KPI (Alarm performance KPIs)：** 未进行告警数量/操作员/10分钟、洪泛状态 (Flood) 时间百分比或“不良告警 (Bad actor)”等分析和跟踪。
-
-> [!NOTE]
-> 如果面向利益相关者的文档需要描述告警管理，请使用术语 **“ISA-18.2 风格的严重级别分类 (ISA-18.2-style severity taxonomy)”**，不要使用“符合 ISA-18.2 标准 (ISA-18.2 compliant)”。（注意：针对 HMI 设计的独立标准 ISA-101，在操作员安灯看板 (Operator Andon Board) 中_确实_得到了正确的实施）。
-
-## 严重级别的应用场景
-
-- **安灯看板 (Andon Board) / 告警表格** — LDI 仪表板中所有面向告警的面板 (Panel) 均使用上述色彩映射来呈现严重级别（在代码提交时，`dashboard-linter.js` 检查项 15 会强制要求 Token 合规）。
-- **RCA 相关性 (RCA correlation)** — 严重级别本身不是 Lift/Confidence 计算的因素（详见 `LDI_RCA_GUIDE.md`）；RCA 将告警的_类别_（按代码划分，通过 `v_ldi_alarm_category` 映射）与工艺参数关联起来，这与严重级别无关。
-
-## 告警代码目录 (The alarm code catalog)
-
-`public.ldi_alarm_ms_code`（列名：`alarm_id`, `alarm_type`, `alarm_code`, `alarm_msg`, `alarm_detail`, `severity`）保存了真实历史导出数据（超过 1,820 个代码）— 远多于当前模拟器主动生成的 19 个代码。请参阅 `docs/operations/ALARM_PLAYBOOK.md` 获取实际在模拟器中处于激活状态的子集及初始响应指南，以及 `tests/lint/alarm-sync-linter.js` 了解该 CI 门禁是如何保持模拟器可生成的代码与主目录同步的。
-
-## 相关文档
-
-- `docs/operations/ALARM_PLAYBOOK.md` — 针对实际触发的告警代码的实用第一响应手册 (Runbook)。
-- `docs/architecture/LDI_RCA_GUIDE.md` — 告警类别与工艺参数如何关联。
-- `docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1 — 完整的经过批准的颜色 Token 集。
+<div align="center">
+  <h1>IMS 工业告警严重度分级体系与生命周期架构规范</h1>
+  <p><b>4 级严重度分类、规范颜色令牌 (Canonical Color Tokens)、有限状态机 (OPEN → ACKNOWLEDGED → RESOLVED) 与 ISA-18.2 对齐准则</b></p>
+  <p>
+    <a href="../../../docs/architecture/ALARM_SEVERITY_GUIDE.md">English</a> |
+    <a href="../../../th/docs/architecture/ALARM_SEVERITY_GUIDE.md">ไทย</a> |
+    <a href="ALARM_SEVERITY_GUIDE.md">简体中文</a>
+  </p>
+</div>
 
 ---
 
-[⬅️ 返回 IMS 平台手册](IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> 主代码库](../../README.md)
+## 1. 概述与运维规范范围
+
+工业监控系统 (IMS) 贯彻确定性告警治理架构，旨在抑制操作员告警风暴 (Alarm Floods)、强化处置责任人闭环机制，并在车间安灯看板 (Andon) 与工程数据分析中提供切实可行的操作上下文。
+
+告警流转解耦为两大核心数据库实体：
+1. **纯追加事实表 (`public.ldi_alarm_log`)**: 高并发、不可变的底层时序超表，记录每一条告警触发事件。
+2. **可变生命周期状态表 (`public.ldi_alarm_lifecycle`)**: 专用于追踪责任归属、操作员认领及最终闭环归档的时间状态表。
+
+---
+
+## 2. 4 级严重度分级与规范颜色令牌 (Canonical Color Tokens)
+
+`public.ldi_alarm_ms_code` 中的每一个告警代码均受数据库 `CHECK` 约束保护，严格限定为以下 4 级严重度：
+
+| 严重度等级 | 规范颜色令牌 | 颜色十六进制 | 视觉呈现标识 | 运维处置响应优先级 |
+|:-----------|:-------------|:-------------|:-------------|:-------------------|
+| **Critical (致命)** | `critical` | `#EF4444` | 绯红警示 | 最高优先级 — 面临停机或报废风险。响应时限 $< 2\text{ 分钟}$。 |
+| **Major (严重)** | `warning` | `#F59E0B` | 琥珀橙黄 | 重大设备故障或参数严重漂移。需在 $< 15\text{ 分钟}$ 内介入。 |
+| **Minor (轻微)** | `severity-minor` | `#EAB308` | 金黄预警 | 影响较小的预警或预防性维护提示。在当班作业周期内响应。 |
+| **Warning (注意)** | `accent` | `#3B82F6` | 精度冷蓝 | 信息性提示或操作建议。映射至高亮蓝以避免与 Major 发生视觉混淆。 |
+
+> [!TIP]
+> **设计系统合规细节**: 最低层级的 **Warning** 有意映射至 `#3B82F6`（accent 蓝），而 **Major** 占用 `#F59E0B`（amber 琥珀色）。这种设计确保车间操作员仅需一瞥即可迅速区分常规操作建议与重大故障隐患。
+
+---
+
+## 3. 有限状态机生命周期设计 (Migration 077)
+
+告警生命周期的状态跃迁由 PostgreSQL 服务端触发器 `trg_ldi_alarm_lifecycle_guard` 进行强一致性保证：
+
+```mermaid
+stateDiagram-v2
+    [*] --> OPEN: 告警事件触发生成 (trg_ldi_alarm_lifecycle_init)
+    OPEN --> ACKNOWLEDGED: POST /api/v1/alarms/ack (操作员认领 + 时间戳)
+    OPEN --> RESOLVED: POST /api/v1/alarms/resolve (直接闭环修复)
+    ACKNOWLEDGED --> RESOLVED: POST /api/v1/alarms/resolve (处置人 + 修复备注)
+    RESOLVED --> [*]: 终态归档 (禁止任何后续 UPDATE 修改)
+```
+
+### 状态定义与触发器约束
+
+- **`OPEN`**: 初始状态。当事件写入 `public.ldi_alarm_log` 时自动创建，表明尚无操作人员介入。
+- **`ACKNOWLEDGED`**: 责任认领状态。强制要求传入 `acknowledged_by` 责任人标识，并由服务端自动记录 `acknowledged_at`。
+- **`RESOLVED`**: 终态归档。强制要求传入 `resolved_by` 处置人，并可附加 `resolution_note`。一旦标记为 `RESOLVED`，该记录即变为永久只读，任何后续 UPDATE 均会被数据库抛出异常拦截。
+
+---
+
+## 4. ISA-18.2 标准对齐与架构技术边界
+
+IMS 系统广泛吸收了 **ANSI/ISA-18.2-2016**（过程工业告警管理系统标准）的核心理念。在工程审计中，本系统准确定位为 **"ISA-18.2 风格 (ISA-18.2-style)"**：
+
+### 已实现的核心特性
+- **标准 4 级严重度梯队**: 具有清晰优先级的结构化告警分类法。
+- **操作员闭环生命周期状态机**: 追踪全生命周期变迁 (`OPEN` $\to$ `ACKNOWLEDGED` $\to$ `RESOLVED`)。
+- **可审计的认领确认机制**: 集成 REST API (`ims-alarm-api`)，全量留存处置人与时间戳。
+- **车间安灯可视化 (ISA-101)**: 面向生产现场终端高对比度态势感知展示。
+
+### 暂未纳入的特性 (经架构评估延后)
+- **告警抑制与挂起 (Shelving & Suppression)**: 目前通过设备手动维修模式实现，而非自动定时挂起。
+- **动态合理化配置库**: 告警合理化规则固化于关系型文档表中，而非运行时动态修改。
+
+---
+
+## 5. 实时 SQL 巡检查询与 API 交互示例
+
+### 查询当前未闭环活跃告警清单 (Andon 排队队列)
+
+```sql
+SELECT
+  l.logid,
+  l.logdate,
+  l.equipmentid,
+  m.alarm_code,
+  m.alarm_msg,
+  m.severity,
+  COALESCE(lc.status, 'OPEN') AS status,
+  lc.acknowledged_by,
+  ROUND(EXTRACT(EPOCH FROM (NOW() - l.logdate)) / 60.0, 1) AS elapsed_minutes
+FROM public.ldi_alarm_log l
+JOIN public.ldi_alarm_ms_code m ON l.errorcode = m.alarm_code
+LEFT JOIN public.ldi_alarm_lifecycle lc ON (l.logdate = lc.logdate AND l.logid = lc.logid)
+WHERE lc.status IS DISTINCT FROM 'RESOLVED'
+  AND l.logdate > NOW() - INTERVAL '24 hours'
+ORDER BY
+  CASE m.severity
+    WHEN 'Critical' THEN 1
+    WHEN 'Major'    THEN 2
+    WHEN 'Minor'    THEN 3
+    ELSE 4
+  END ASC,
+  l.logdate DESC;
+```
+
+### 使用 cURL 认领与解决告警
+
+```bash
+# 1. 车间技术员认领处于 OPEN 状态的告警
+curl -X POST "http://localhost:8080/api/v1/alarms/ack" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logid": "ALM-2026-0928-001",
+    "logdate": "2026-09-28T04:15:00Z",
+    "acknowledged_by": "OP-9842"
+  }'
+
+# 2. 维修工程师排除故障后提交闭环归档并附带维修备注
+curl -X POST "http://localhost:8080/api/v1/alarms/resolve" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "logid": "ALM-2026-0928-001",
+    "logdate": "2026-09-28T04:15:00Z",
+    "resolved_by": "TECH-104",
+    "resolution_note": "已更换曝光腔体真空密封圈，负压读数已恢复标称值。"
+  }'
+```

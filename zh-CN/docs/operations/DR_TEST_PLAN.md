@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# Disaster Recovery Test Plan (灾难恢复测试计划)
+<div align="center">
+  <h1>IMS 灾难恢复 (DR) 测试计划与容灾演练规范</h1>
+  <p><b>自动化恢复校验、备份数据一致性检验、单容器自愈与全栈重建实战演练</b></p>
+  <p>
+    <a href="../../../docs/operations/DR_TEST_PLAN.md">English</a> |
+    <a href="../../../th/docs/operations/DR_TEST_PLAN.md">ไทย</a> |
+    <a href="DR_TEST_PLAN.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > 根据 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §6。通过 `scripts/dr-test.sh` 运行三次演练，参照 `scripts/soak-test-report.sh` 的模式：在真实的运行堆栈上执行真实命令，记录真实时间，无模拟输出。
 

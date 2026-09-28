@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# Backup & Restore
+<div align="center">
+  <h1>IMS Database Backup, Restore & Verification Procedures</h1>
+  <p><b>Production pg_dump procedures, row-count bracketing validation, ephemeral restore verification, and disaster recovery boundaries</b></p>
+  <p>
+    <a href="BACKUP_RESTORE.md">English</a> |
+    <a href="../../th/docs/operations/BACKUP_RESTORE.md">ไทย</a> |
+    <a href="../../zh-CN/docs/operations/BACKUP_RESTORE.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > **Audience:** SRE/Operations, QA/Audit.
 > **Objective:** Provides verified procedures for backing up and restoring the database.

@@ -5,13 +5,23 @@
 </div>
 <br/>
 
-# Manufacturing Domain Architecture
+<div align="center">
+  <h1>IMS Manufacturing Domain Extensibility & Process Architecture</h1>
+  <p><b>Multi-process expansion patterns, LDI reference architecture, database schema separation, and onboarding checklist</b></p>
+  <p>
+    <a href="MANUFACTURING_DOMAIN.md">English</a> |
+    <a href="../../th/docs/architecture/MANUFACTURING_DOMAIN.md">ไทย</a> |
+    <a href="../../zh-CN/docs/architecture/MANUFACTURING_DOMAIN.md">简体中文</a>
+  </p>
+</div>
 
-> **Purpose:** document the generic pattern behind IMS's one existing manufacturing process (LDI) so the _next_ process type (AOI, plating, etching, or drilling) is additive — a new migration, a new alarm master, a new dashboard trio — rather than a rewrite of the schema or dashboards that already exist.
+---
+
+> **Purpose:** document the generic pattern behind IMS's manufacturing process integrations (LDI, CNC drilling, VCP plating) so the _next_ process type (e.g. AOI, etching) is additive — a new migration, a new alarm master, a new dashboard trio — rather than a rewrite of the schema or dashboards that already exist.
 >
-> **Provenance:** every pattern described below is the real, currently-working LDI implementation, checked against the live schema and dashboard JSON on 2026-08-10 — not a hypothetical target architecture. See `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §2 for the plan this doc fulfills.
+> **Provenance:** every pattern described below reflects the real, working implementation across LDI, CNC drilling, and VCP plating lines, checked against the live schema and dashboard inventory.
 >
-> **Non-goal:** this doc does not build AOI, plating, etching, or drilling support. No requirements exist for those yet; building them now would be speculative. It only makes the schema ready to _add_ one without disturbing LDI.
+> **Extensibility:** makes the platform schema and ingestion pipeline ready to add new manufacturing domains without disturbing existing production processes.
 
 ---
 

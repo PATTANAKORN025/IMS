@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# สิทธิ์ความเป็นเจ้าของ Repository (Repository Ownership)
+<div align="center">
+  <h1>ข้อกำหนดสิทธิ์ความเป็นเจ้าของ Repository และขอบเขตโดเมนระบบ IMS</h1>
+  <p><b>การแบ่งแยกโดเมน, การบังคับใช้ผ่าน CODEOWNERS, ขอบเขตโครงสร้างพื้นฐานกับการผลิต และเหตุผลทางสถาปัตยกรรมแบบ Single-repo</b></p>
+  <p>
+    <a href="../../../docs/architecture/OWNERSHIP.md">English</a> |
+    <a href="OWNERSHIP.md">ไทย</a> |
+    <a href="../../../zh-CN/docs/architecture/OWNERSHIP.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > อ้างอิงจาก `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` ส่วนที่ 4 (ยืนยันเมื่อ 2026-08-10): repository นี้**จะยังคงเป็นแบบ single-repo** — การแยกเป็นแบบ multi-repo ถูกปฏิเสธอย่างชัดเจนเนื่องจากไม่มีเหตุผลที่เหมาะสมสำหรับ repository ขนาดนี้ซึ่งมีเจ้าของเพียงคนเดียว เอกสารนี้ระบุถึงขอบเขตของไดเรกทอรี/โดเมนภายในที่ถูกบังคับใช้โดย `.github/CODEOWNERS` เพื่อที่เจ้าของคนที่สองในอนาคตจะมีขอบเขตการส่งมอบงานที่ชัดเจนแทนที่จะใช้เครื่องหมายดอกจัน (wildcard) แบบครอบคลุมทั้งหมด
 

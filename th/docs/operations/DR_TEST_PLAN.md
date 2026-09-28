@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# Disaster Recovery Test Plan (แผนการทดสอบการกู้คืนระบบจากภัยพิบัติ)
+<div align="center">
+  <h1>แผนการทดสอบการกู้คืนระบบจากภัยพิบัติและการซ้อมรับมือเหตุฉุกเฉิน IMS (DR Test Plan)</h1>
+  <p><b>การตรวจสอบการกู้คืนอัตโนมัติ, การตรวจสอบความถูกต้องของการสำรองข้อมูล, การฟื้นฟูคอนเทนเนอร์ และการสร้างสแต็กใหม่ทั้งหมด</b></p>
+  <p>
+    <a href="../../../docs/operations/DR_TEST_PLAN.md">English</a> |
+    <a href="DR_TEST_PLAN.md">ไทย</a> |
+    <a href="../../../zh-CN/docs/operations/DR_TEST_PLAN.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > ตาม `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §6. การซ้อม 3 ครั้ง จะดำเนินการผ่าน `scripts/dr-test.sh` โดยอิงตามรูปแบบของ `scripts/soak-test-report.sh`: เป็นการใช้คำสั่งจริงกับสแต็กที่กำลังทำงานอยู่จริง เวลาจริง และไม่มีเอาต์พุตจำลอง
 

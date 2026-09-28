@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# Disaster Recovery Test Plan
+<div align="center">
+  <h1>IMS Disaster Recovery (DR) Test Plan & Verification Drills</h1>
+  <p><b>Automated recovery verification, backup validation, container loss self-healing, and full-stack rebuild drills</b></p>
+  <p>
+    <a href="DR_TEST_PLAN.md">English</a> |
+    <a href="../../th/docs/operations/DR_TEST_PLAN.md">ไทย</a> |
+    <a href="../../zh-CN/docs/operations/DR_TEST_PLAN.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > Per `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §6. Three drills, run via `scripts/dr-test.sh`, modeled on `scripts/soak-test-report.sh`'s pattern: real commands against the real running stack, real timings, no simulated output.
 

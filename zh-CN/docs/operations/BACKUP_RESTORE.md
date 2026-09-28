@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# 备份与恢复
+<div align="center">
+  <h1>IMS 数据库备份、恢复与数据校验规范</h1>
+  <p><b>生产环境 pg_dump 备份流程、行数区间校验机制 (Row-count Bracketing)、瞬态恢复验证及灾难恢复技术边界</b></p>
+  <p>
+    <a href="../../../docs/operations/BACKUP_RESTORE.md">English</a> |
+    <a href="../../../th/docs/operations/BACKUP_RESTORE.md">ไทย</a> |
+    <a href="BACKUP_RESTORE.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > **受众：** SRE/运维团队、QA/审计团队。
 > **目标：** 提供经过验证的数据库备份与恢复流程。

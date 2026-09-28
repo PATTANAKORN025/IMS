@@ -5,13 +5,23 @@
 </div>
 <br/>
 
-# Manufacturing Domain Architecture
+<div align="center">
+  <h1>IMS 智能制造领域可扩展性与新工艺接入架构规范</h1>
+  <p><b>多工艺扩展范式、LDI/CNC/VCP 生产线参考架构、数据库 Schema 解耦及接入审查清单</b></p>
+  <p>
+    <a href="../../../docs/architecture/MANUFACTURING_DOMAIN.md">English</a> |
+    <a href="../../../th/docs/architecture/MANUFACTURING_DOMAIN.md">ไทย</a> |
+    <a href="MANUFACTURING_DOMAIN.md">简体中文</a>
+  </p>
+</div>
 
-> **目的 (Purpose)：** 记录 IMS 现有的单一制造流程 (LDI) 背后的通用模式，以便_下一个_流程类型（AOI、电镀 (plating)、蚀刻 (etching) 或钻孔 (drilling)）能够以增量形式添加——即新的迁移 (migration)、新的告警主表 (alarm master) 和新的仪表板三件套 (dashboard trio)——而不是重写现有的模式 (schema) 或仪表板。
+---
+
+> **目的 (Purpose)：** 记录 IMS 生产制造流程集成（LDI、数控钻孔 CNC、垂直连续电镀 VCP）背后的通用模式，以便_下一个_流程类型（例如 AOI、蚀刻）能够以纯增量形式添加——即新的迁移脚本、新的告警字典和新的仪表板三件套——而无需重构现有生产 Schema 或运行中仪表板。
 >
-> **出处 (Provenance)：** 以下描述的每一个模式都是真实存在且目前正在运行的 LDI 实现，已于 2026-08-10 针对生产环境的模式和仪表板 JSON 进行了核对——并非假设的目标架构。有关本文档所落实的计划，请参阅 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §2。
+> **出处 (Provenance)：** 以下描述的每一个模式均准确映射当前在生产环境稳定运行的 LDI、CNC 钻孔和 VCP 电镀线真实架构，并经过实时数据库与仪表板清单的一致性校验。
 >
-> **非目标 (Non-goal)：** 本文档不涉及构建 AOI、电镀、蚀刻或钻孔的支持。目前这些领域尚无需求；现在进行构建将纯属推测。本文档仅仅是为了让模式做好_添加_新流程的准备，而不会干扰现有的 LDI。
+> **可扩展性 (Extensibility)：** 使时序数据库底层架构与摄入管道具备原生可扩展性，可在不干扰现有制造作业的前提下快速接入新产线。
 
 ---
 

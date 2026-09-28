@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# 仓库所有权 (Repository Ownership)
+<div align="center">
+  <h1>IMS 代码仓库所有权与业务领域边界规范</h1>
+  <p><b>领域划分、CODEOWNERS 规则实施、基础设施与智能制造边界以及单代码库架构选型考量</b></p>
+  <p>
+    <a href="../../../docs/architecture/OWNERSHIP.md">English</a> |
+    <a href="../../../th/docs/architecture/OWNERSHIP.md">ไทย</a> |
+    <a href="OWNERSHIP.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > 根据 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` 第4节（于 2026-08-10 确认）：本仓库**保持为单一仓库（single-repo）**——已明确排除了多仓库拆分的方案，因为对于这种规模且只有一个所有者的仓库来说，这种拆分是不合理的。本文档提供了由 `.github/CODEOWNERS` 强制执行的内部目录/领域边界，以便未来的第二位所有者能拥有实际的交接边界，而不是一个宽泛的通配符。
 
