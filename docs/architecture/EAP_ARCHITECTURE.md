@@ -103,7 +103,7 @@ Every adapter's job is identical regardless of transport protocol: map telemetry
 * **Equipment Model:** Drilling machines (`drl001`–`drl010`) and VCP plating lines (`vcp001`–`vcp005`).
 * **Data Collection Plan:** Generates realistic physical machine cycles:
   - **Drilling:** Program start, spindle speed (RPM), feed rate, spindle masking, tool hit count degradation, and shift reports.
-  - **VCP:** Line movement (RUN, IDLE, DOWN), rectifier amperage, bath temperature thermodynamics, and flight-bar synchronization ($	ext{plating\_time} 	imes 	ext{line\_speed} = 54$).
+  - **VCP:** Line movement (RUN, IDLE, DOWN), rectifier amperage, bath temperature thermodynamics, and flight-bar synchronization ($\text{plating\_time} \times \text{line\_speed} = 54$).
 * **Mapping:** Inserts into `eap_backup` tables (`machine_event`, `vcp_upp`, `catalog.object_registry`) powering 4 drilling and 3 VCP Grafana dashboards.
 
 ### Adapter 4 — SECS/GEM (Future Physical Tool Integration)
@@ -121,8 +121,8 @@ No runtime code exists today for Adapter 4. When a physical SECS/GEM tool is con
 ## 3. Industrial Security Boundaries (IEC 62443)
 
 Connecting physical shopfloor machinery crosses the plant-floor operational technology boundary:
-* **Boundary 1 (External / DMZ):** Nginx reverse proxy front door, enforcing TLS termination and Grafana session cookie validation.
-* **Boundary 2 (Internal Microservices):** PgBouncer transaction pooling with strictly parameterized SQL (`AUTH_TYPE: plain`).
+* **Boundary 1 (front door):** the nginx reverse proxy. It serves **plain HTTP today; TLS termination is not configured**. `/alarm-api/` and `/factory-twin-3d/` require a valid Grafana session (`auth_request`); `/ldi-telemetry` and `/inject` require the `X-API-Key` header, which Node-RED checks, and are rate-limited.
+* **Boundary 2 (internal services):** services reach TimescaleDB through PgBouncer in transaction pooling mode on the internal Docker network, each with its own role (see `docs/data/DATA_GOVERNANCE.md`). `alarm-api` uses parameterised queries.
 * **Boundary 3 (Shopfloor Equipment Network):** Future Adapter 4 deployments require dedicated OT firewall isolation, mutual TLS / IP whitelisting, and read-only physical taps to ensure IMS cannot transmit write commands to production tools.
 
 ---

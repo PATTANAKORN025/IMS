@@ -49,9 +49,9 @@
 * **Affected Equipment Lines:** `[e.g., LDI Photolithography Lines 1–4, CNC Drilling Spindles 01–12]`
 * **SLO Error Budget Consumption:**
   - Ingestion Availability SLO ($99.9\%$ monthly): Consumed **XX.X%** of 30-day budget.
-  - Query Latency SLO ($p95 < 500	ext{ms}$): Consumed **YY.Y%** of budget.
+  - Query Latency SLO ($p95 < 500\text{ms}$): Consumed **YY.Y%** of budget.
 
-$$	ext{Error Budget Burn Rate} = rac{	ext{Observed Error Rate}}{	ext{Allowed Error Rate}} = rac{1 - 	ext{SLI}}{1 - 	ext{SLO}}$$
+$$\text{Error Budget Burn Rate} = \frac{\text{Observed Error Rate}}{\text{Allowed Error Rate}} = \frac{1 - \text{SLI}}{1 - \text{SLO}}$$
 
 ---
 
@@ -140,16 +140,14 @@ flowchart TD
 The following queries were utilized during active triage to diagnose the failure:
 
 ```promql
-# 1. End-to-End Ingestion Processing Latency (95th Percentile)
-histogram_quantile(0.95, sum(rate(ims_telemetry_ingest_duration_seconds_bucket[5m])) by (le))
+# 1. Pipeline freshness: seconds since the last successful flush
+time() - max(ims_pipeline_last_flush_timestamp_seconds)
 
-# 2. PgBouncer Active vs Waiting Client Connections
-pgbouncer_pools_client_active{database="factory_telemetry"} 
-/ 
-pgbouncer_pools_client_waiting{database="factory_telemetry"}
+# 2. Insert failure ratio (no PgBouncer exporter is deployed; use SHOW POOLS for pool state)
+sum(rate(ims_pipeline_inserts_failed_total[5m])) / clamp_min(sum(rate(ims_pipeline_inserts_total[5m])), 1e-9)
 
-# 3. Telemetry Pipeline Drop Rate
-sum(rate(ims_telemetry_dropped_records_total[5m])) by (device_type)
+# 3. Buffer overflows (records dropped before insert)
+sum(rate(ims_pipeline_buffer_overflows_total[5m]))
 ```
 
 ```sql

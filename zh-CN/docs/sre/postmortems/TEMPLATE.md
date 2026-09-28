@@ -49,9 +49,9 @@
 * **受波及生产车间线体:** `[例如：LDI 曝光机 1–4 号线, CNC 数控钻孔机 01–12 号主轴]`
 * **SLO 错误预算消耗情况 (Error Budget Consumption):**
   - 数据写入可用性 SLO (每月 $99.9\%$): 消耗了 30 天总预算的 **XX.X%**
-  - 查询响应耗时 SLO ($p95 < 500	ext{ms}$): 消耗了总预算的 **YY.Y%**
+  - 查询响应耗时 SLO ($p95 < 500\text{ms}$): 消耗了总预算的 **YY.Y%**
 
-$$	ext{错误预算消耗速率 (Burn Rate)} = rac{	ext{实际观测错误率}}{	ext{允许错误率上限}} = rac{1 - 	ext{SLI}}{1 - 	ext{SLO}}$$
+$$\text{错误预算消耗速率 (Burn Rate)} = \frac{\text{实际观测错误率}}{\text{允许错误率上限}} = \frac{1 - \text{SLI}}{1 - \text{SLO}}$$
 
 ---
 
@@ -140,16 +140,14 @@ flowchart TD
 事故排查处置过程中使用的高价值 PromQL 与 SQL 诊断指令：
 
 ```promql
-# 1. 端到端数据写入延迟 (第 95 百分位)
-histogram_quantile(0.95, sum(rate(ims_telemetry_ingest_duration_seconds_bucket[5m])) by (le))
+# 1. 管道新鲜度：距上次成功刷写的秒数
+time() - max(ims_pipeline_last_flush_timestamp_seconds)
 
-# 2. PgBouncer 处于活动状态 vs 排队等待的客户端连接比
-pgbouncer_pools_client_active{database="factory_telemetry"} 
-/ 
-pgbouncer_pools_client_waiting{database="factory_telemetry"}
+# 2. 写入失败比例（未部署 PgBouncer exporter，连接池状态请用 SHOW POOLS 查看）
+sum(rate(ims_pipeline_inserts_failed_total[5m])) / clamp_min(sum(rate(ims_pipeline_inserts_total[5m])), 1e-9)
 
-# 3. 遥测流丢弃丢包率监控
-sum(rate(ims_telemetry_dropped_records_total[5m])) by (device_type)
+# 3. 缓冲区溢出（写入前被丢弃的记录）
+sum(rate(ims_pipeline_buffer_overflows_total[5m]))
 ```
 
 ```sql

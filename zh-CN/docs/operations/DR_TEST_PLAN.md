@@ -76,9 +76,9 @@ sequenceDiagram
 ```
 
 ### 判定标准与通过准则 (Pass Criteria)
-1. **零生产干扰:** 生产主库 `factory_telemetry` 的遥测入库与大屏查询零延迟波动。
+1. **零生产干扰:** 生产主库 `ims` 的遥测入库与大屏查询零延迟波动。
 2. **行数区间包含断言 (Row-Count Bracketing):** 在持续写入的高并发监控平台上，静态的绝对行数匹配必定失败。脚本会在导出前后各执行一次 `SELECT count(*) FROM public.ldi_data;`，并校验：
-   $$	ext{Count}_{	ext{pre}} \le 	ext{Count}_{	ext{restored}} \le 	ext{Count}_{	ext{post}}$$
+   $$\text{Count}_{\text{pre}} \le \text{Count}_{\text{restored}} \le \text{Count}_{\text{post}}$$
 3. **自动环境清理:** 演练结束后，临时创建的 `ims_dr_test` 数据库必须被彻底销毁。
 
 ---
@@ -138,7 +138,7 @@ sequenceDiagram
 
 ## 6. 相关技术文档
 
-- `docs/operations/BACKUP_RESTORE.md` — 生产环境备份、AES-256 加密以及 PITR 时间点恢复完整手册
+- `docs/operations/BACKUP_RESTORE.md` — 备份脚本目前实际能做的事、如何验证恢复，以及尚未提供的加密与 PITR 步骤
 - `docs/operations/INCIDENT_RESPONSE.md` — 值班应急响应指南与事故升级流转机制
 - `docs/architecture/DATA_RETENTION.md` — 列式数据压缩周期与历史生命周期轮转策略
 - `docs/sre/SLO_DEFINITIONS.md` — 服务质量目标 (SLO) 与错误预算治理体系

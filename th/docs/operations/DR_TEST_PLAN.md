@@ -76,9 +76,9 @@ sequenceDiagram
 ```
 
 ### เกณฑ์การตัดสินผ่าน/ไม่ผ่าน (Pass/Fail Criteria)
-1. **ไม่กระทบฐานข้อมูลจริง:** ฐานข้อมูลหลัก `factory_telemetry` ต้องทำงานได้ตามปกติอย่างต่อเนื่อง
+1. **ไม่กระทบฐานข้อมูลจริง:** ฐานข้อมูลหลัก `ims` ต้องทำงานได้ตามปกติอย่างต่อเนื่อง
 2. **เงื่อนไข Row-Count Bracketing:** เนื่องจากระบบมีข้อมูลใหม่ส่งเข้ามาตลอดเวลา การตรวจเช็กแบบเท่ากันพอดีจึงใช้ไม่ได้ ระบบจึงทำการบันทึกจำนวนแถว `SELECT count(*) FROM public.ldi_data;` ก่อนและหลังการสำรอง:
-   $$	ext{Count}_{	ext{pre}} \le 	ext{Count}_{	ext{restored}} \le 	ext{Count}_{	ext{post}}$$
+   $$\text{Count}_{\text{pre}} \le \text{Count}_{\text{restored}} \le \text{Count}_{\text{post}}$$
 3. **การคืนทรัพยากร:** ฐานข้อมูลทดสอบ `ims_dr_test` จะต้องถูกลบทิ้งอย่างสมบูรณ์หลังการตรวจสอบเสร็จสิ้น
 
 ---
@@ -138,7 +138,7 @@ sequenceDiagram
 
 ## 6. เอกสารที่เกี่ยวข้อง
 
-- `docs/operations/BACKUP_RESTORE.md` — คำสั่งสำรองข้อมูล, การเข้ารหัส AES-256 และการตั้งค่า PITR อย่างละเอียด
+- `docs/operations/BACKUP_RESTORE.md` — สิ่งที่สคริปต์สำรองข้อมูลทำได้จริง วิธีพิสูจน์การกู้คืน และขั้นตอนการเข้ารหัสกับ PITR ที่ยังไม่มีในระบบ
 - `docs/operations/INCIDENT_RESPONSE.md` — แผนการรับมือเหตุการณ์วิกฤตและขั้นตอนการประสานงานเมื่อระบบล่ม
 - `docs/architecture/DATA_RETENTION.md` — นโยบายการบีบอัดข้อมูลแบบ Columnar และรอบระยะเวลาการหมุนเวียนข้อมูล
 - `docs/sre/SLO_DEFINITIONS.md` — ตัวชี้วัดระดับการให้บริการและการคำนวณงบประมาณข้อผิดพลาด

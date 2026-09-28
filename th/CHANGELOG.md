@@ -36,6 +36,26 @@
   - เพิ่มเส้นทาง nginx สำหรับการตรวจสุขภาพของ Grafana และ WebSocket ของ Grafana Live;
   - หยุดกฎแจ้งเตือน Cpk ของ LDI สองข้อไว้ชั่วคราวจนกว่าจะแก้ `v_machine_spc_ranking`
 
+### การแก้ไขด้านความปลอดภัยและความถูกต้อง
+- **การตรวจ role ของ alarm-api:**
+  - เดิมอ่าน role จาก `/api/user` ของ Grafana ซึ่งไม่มี `orgRole` ทำให้ทุกคำสั่ง acknowledge/resolve ได้ 403 แม้แต่ Admin ตอนนี้อ่านจาก `/api/user/orgs` ขององค์กรปัจจุบันของ session
+  - Viewer ยังได้ 403 ส่วน Grafana server admin เขียนได้
+  - ตรวจแบบ end to end ผ่าน nginx กับ Grafana 13.1.2 แล้ว และเทสต์รันใน pre-commit และ CI แล้ว (`scripts/run-alarm-api-tests.js`)
+- **header ของ nginx:**
+  - ตั้ง `X-XSS-Protection: 0` ตามแนวทางปัจจุบัน
+  - เพิ่ม `Permissions-Policy`
+  - ซ่อน header `X-Frame-Options` / `X-XSS-Protection` / `X-Content-Type-Options` ที่ Grafana ส่งซ้ำ ให้แต่ละ header ถึง browser เพียงค่าเดียว
+- **ตรึงเวอร์ชัน image:** `grafana-image-renderer` เป็น `v5.11.1` และ `pgadmin4` เป็น `9.18` จากเดิมที่เป็น `:latest` ทั้งสองเป็นเวอร์ชันที่พิสูจน์แล้วในระบบที่รันอยู่
+- **Dependabot:**
+  - ครอบคลุม Dockerfile ใน `nodered_data`, `pgbouncer` และ `services/*` รวมถึง image ใน `docker-compose.yaml` แล้ว ค่า `docker` ที่ `/` แบบเดิมไม่ครอบคลุมอะไรเลย
+  - รวมการอัปเดต minor/patch เป็นกลุ่มเดียว
+- **dependency ของ npm:** แก้ `express`, `qs`, `body-parser`, `fast-uri`, `js-yaml` และ `svgo` ภายในช่วงเวอร์ชันที่อนุญาต ตอนนี้ `npm audit` รายงาน 0 ทั้งที่ root, `alarm-api` และ `factory-twin-3d`
+- **แก้ไขเอกสาร (en/th/zh-CN):**
+  - ซ่อมสูตร LaTeX ใน 18 ไฟล์ที่บั๊ก escape ทำให้กลายเป็นอักขระ TAB/form-feed
+  - เขียน `BACKUP_RESTORE`, `DATA_GOVERNANCE` และ `SLO_DEFINITIONS` ใหม่ให้ตรงกับสคริปต์, role, retention policy ที่ใช้จริง และ metric ที่ส่งออกจริง เดิมเอกสารอธิบายการสำรองแบบ AES-256, ฐานข้อมูล `factory_telemetry`, role และ metric PromQL ที่ไม่มีอยู่จริง และการปฏิบัติตามมาตรฐานที่ไม่เคยได้รับการรับรอง
+  - แก้เอกสารอ้างอิง alarm-api: ผู้ดำเนินการมาจาก session, มี 401/403, ไม่มี port บนเครื่อง
+  - แก้ขอบเขตความปลอดภัยของ EAP: ปัจจุบันเป็น HTTP ธรรมดา
+
 ### เอกสารและการจัดระเบียบคลังโค้ด (Documentation & Repository Hygiene)
 - ตรวจทานเอกสารและรายการแสดงสถานะระบบทั้งหมดเทียบกับระบบจริง (`main`) ณ 2026-09-28 ครบทั้ง 3 ภาษา (EN/TH/ZH-CN)
 - ซิงค์ป้ายเวอร์ชันเป็น `v1.0.1` ครบทุกภาษา และนำเอกสารกฎเกณฑ์หลัก (`AGENTS.md`) ออกจาก `.gitignore`

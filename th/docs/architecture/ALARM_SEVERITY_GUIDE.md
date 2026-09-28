@@ -50,9 +50,9 @@
 ```mermaid
 stateDiagram-v2
     [*] --> OPEN: มีสัญญาณเตือนดังขึ้น (trg_ldi_alarm_lifecycle_init)
-    OPEN --> ACKNOWLEDGED: POST /api/v1/alarms/ack (ระบุผู้รับผิดชอบ + เวลา)
-    OPEN --> RESOLVED: POST /api/v1/alarms/resolve (แก้ไขเสร็จทันที)
-    ACKNOWLEDGED --> RESOLVED: POST /api/v1/alarms/resolve (ระบุผู้ปิดงาน + บันทึก)
+    OPEN --> ACKNOWLEDGED: POST /alarm-api/alarms/ack (ระบุผู้รับผิดชอบ + เวลา)
+    OPEN --> RESOLVED: POST /alarm-api/alarms/resolve (แก้ไขเสร็จทันที)
+    ACKNOWLEDGED --> RESOLVED: POST /alarm-api/alarms/resolve (ระบุผู้ปิดงาน + บันทึก)
     RESOLVED --> [*]: สถานะสิ้นสุด (ห้ามแก้ไขข้อมูลอีกต่อไป)
 ```
 
@@ -113,14 +113,14 @@ ORDER BY
 ### คำสั่ง cURL สำหรับรับทราบและปิดงานแจ้งเตือนผ่าน API
 
 ```bash
+# ผู้ดำเนินการที่บันทึกคือชื่อ login Grafana ของ session (Editor หรือ Admin) field acknowledged_by / resolved_by ใน body จะถูกละเลย
 # 1. ผู้ควบคุมเครื่องกดยอมรับการแจ้งเตือน (ผ่าน Nginx proxy front-door พร้อมเซสชัน Grafana)
 curl -X POST "http://localhost:3000/alarm-api/alarms/ack" \
   -H "Content-Type: application/json" \
   -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "acknowledged_by": "OP-9842"
+    "logid": "LOG-10001"
   }'
 
 # 2. ช่างเทคนิคบันทึกปิดงานพร้อมระบุสาเหตุการแก้ไข (Resolve)
@@ -130,7 +130,6 @@ curl -X POST "http://localhost:3000/alarm-api/alarms/resolve" \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",
-    "resolved_by": "TECH-104",
     "resolution_note": "เปลี่ยนปะเก็นซีลสุญญากาศห้องฉายแสงเรียบร้อย ระดับความดันกลับสู่ค่าปกติ"
   }'
 ```

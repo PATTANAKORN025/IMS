@@ -76,9 +76,9 @@ Verify that the production database can be fully dumped and restored into a sepa
 ```
 
 ### Verification Criteria & Pass Rules
-1. **Zero Impact on Production:** The live database `factory_telemetry` must remain completely unaffected.
+1. **Zero Impact on Production:** The live database `ims` must remain completely unaffected.
 2. **Row-Count Bracketing:** A naive exact equality check (`restored_count == live_count`) will fail in a live manufacturing monitoring platform because incoming telemetry packets continue landing during the snapshot. The drill queries `SELECT count(*) FROM public.ldi_data;` immediately before and immediately after the snapshot:
-   $$	ext{Count}_{	ext{pre}} \le 	ext{Count}_{	ext{restored}} \le 	ext{Count}_{	ext{post}}$$
+   $$\text{Count}_{\text{pre}} \le \text{Count}_{\text{restored}} \le \text{Count}_{\text{post}}$$
 3. **Automated Teardown:** The throwaway `ims_dr_test` database must be cleanly dropped after row counts are verified.
 
 ---
@@ -138,7 +138,7 @@ Simulate a catastrophic bare-metal failure requiring a 100% ground-up rebuild of
 
 ## 6. Related Documentation
 
-- `docs/operations/BACKUP_RESTORE.md` — Complete production backup commands, AES-256 encryption, and PITR setup.
+- `docs/operations/BACKUP_RESTORE.md` — What the backup scripts do today, how to verify a restore, and the encryption and PITR steps that are not shipped yet.
 - `docs/operations/INCIDENT_RESPONSE.md` — On-call escalation playbooks and incident response procedures.
 - `docs/architecture/DATA_RETENTION.md` — Columnar compression intervals and data retention policies.
 - `docs/sre/SLO_DEFINITIONS.md` — Service level objectives and error budget allocation.

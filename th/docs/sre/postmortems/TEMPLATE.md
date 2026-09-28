@@ -49,9 +49,9 @@
 * **สายการผลิตที่ได้รับผลกระทบ:** `[เช่น สายการผลิต LDI Photolithography 1–4, หัวเจาะ CNC Drilling 01–12]`
 * **การใช้นโยบายงบประมาณข้อผิดพลาด (SLO Error Budget):**
   - Ingestion Availability SLO ($99.9\%$ ต่อเดือน): ใช้งบประมาณไป **XX.X%** ของงบ 30 วัน
-  - Query Latency SLO ($p95 < 500	ext{ms}$): ใช้งบประมาณไป **YY.Y%**
+  - Query Latency SLO ($p95 < 500\text{ms}$): ใช้งบประมาณไป **YY.Y%**
 
-$$	ext{อัตราการเผาผลาญ Error Budget (Burn Rate)} = rac{	ext{อัตราข้อผิดพลาดที่เกิดขึ้นจริง}}{	ext{อัตราข้อผิดพลาดที่ยอมรับได้}} = rac{1 - 	ext{SLI}}{1 - 	ext{SLO}}$$
+$$\text{อัตราการเผาผลาญ Error Budget (Burn Rate)} = \frac{\text{อัตราข้อผิดพลาดที่เกิดขึ้นจริง}}{\text{อัตราข้อผิดพลาดที่ยอมรับได้}} = \frac{1 - \text{SLI}}{1 - \text{SLO}}$$
 
 ---
 
@@ -140,16 +140,14 @@ flowchart TD
 คิวรีที่ทีมวิศวกรใช้ในการวินิจฉัยปัญหาขณะเกิดเหตุการณ์จริง:
 
 ```promql
-# 1. ความล่าช้าในการประมวลผลข้อมูล Ingestion (เปอร์เซ็นไทล์ที่ 95)
-histogram_quantile(0.95, sum(rate(ims_telemetry_ingest_duration_seconds_bucket[5m])) by (le))
+# 1. ความสดของไปป์ไลน์: จำนวนวินาทีนับจากการ flush สำเร็จครั้งล่าสุด
+time() - max(ims_pipeline_last_flush_timestamp_seconds)
 
-# 2. จำนวนการเชื่อมต่อที่กำลังใช้งานเทียบกับที่กำลังรอใน PgBouncer
-pgbouncer_pools_client_active{database="factory_telemetry"} 
-/ 
-pgbouncer_pools_client_waiting{database="factory_telemetry"}
+# 2. สัดส่วน insert ที่ล้มเหลว (ไม่มี exporter ของ PgBouncer ให้ใช้ SHOW POOLS ดูสถานะ pool)
+sum(rate(ims_pipeline_inserts_failed_total[5m])) / clamp_min(sum(rate(ims_pipeline_inserts_total[5m])), 1e-9)
 
-# 3. อัตราการตกหล่นของข้อมูลโทรมาตรในไปป์ไลน์
-sum(rate(ims_telemetry_dropped_records_total[5m])) by (device_type)
+# 3. buffer ล้น (ข้อมูลที่ถูกทิ้งก่อน insert)
+sum(rate(ims_pipeline_buffer_overflows_total[5m]))
 ```
 
 ```sql

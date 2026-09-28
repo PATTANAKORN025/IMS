@@ -36,6 +36,26 @@
   - 新增 nginx 路径，用于 Grafana 健康检查与 Grafana Live WebSocket；
   - 两条 LDI Cpk 告警规则暂停，待 `v_machine_spc_ranking` 修复后恢复。
 
+### 安全与正确性修复
+- **alarm-api 角色检查：**
+  - 原先从 Grafana `/api/user` 读取角色，但该接口不含 `orgRole`，导致所有确认/解决请求都返回 403，连 Admin 也不例外。现改为从 `/api/user/orgs` 读取会话当前组织中的角色。
+  - Viewer 仍返回 403；Grafana 服务器管理员可以写入。
+  - 已通过 nginx 对 Grafana 13.1.2 做端到端验证，测试已接入 pre-commit 与 CI（`scripts/run-alarm-api-tests.js`）。
+- **nginx 响应头：**
+  - 按现行建议设置 `X-XSS-Protection: 0`。
+  - 新增 `Permissions-Policy`。
+  - 隐藏 Grafana 重复发送的 `X-Frame-Options` / `X-XSS-Protection` / `X-Content-Type-Options`，使每个头只到达浏览器一次。
+- **固定镜像版本：** `grafana-image-renderer` 改为 `v5.11.1`，`pgadmin4` 改为 `9.18`（原先都是 `:latest`），均为运行环境中已验证的版本。
+- **Dependabot：**
+  - 现已覆盖 `nodered_data`、`pgbouncer`、`services/*` 中的 Dockerfile 以及 `docker-compose.yaml` 中的镜像；原先 `/` 下的 `docker` 条目没有覆盖任何内容。
+  - minor/patch 更新合并为一组。
+- **npm 依赖：** 在允许的版本范围内修复了 `express`、`qs`、`body-parser`、`fast-uri`、`js-yaml` 和 `svgo`；根目录、`alarm-api` 与 `factory-twin-3d` 的 `npm audit` 现均为 0。
+- **文档更正（en/th/zh-CN）：**
+  - 修复 18 个文件中因转义错误变成 TAB/换页符的 LaTeX 公式。
+  - 按实际脚本、角色、生效的保留策略和已导出的指标重写 `BACKUP_RESTORE`、`DATA_GOVERNANCE` 和 `SLO_DEFINITIONS`。原文描述了并不存在的 AES-256 备份、`factory_telemetry` 数据库、角色和 PromQL 指标，以及从未获得认证的合规性。
+  - 更正 alarm-api 参考：操作人来自会话、存在 401/403、无主机端口。
+  - 更正 EAP 安全边界：目前为明文 HTTP。
+
 ### 文档与仓库规范化治理 (Documentation & Repository Hygiene)
 - 截至 2026-09-28 对照实时运行系统 (`main`) 在英、泰、简中三语下重新核实所有现行文档与系统清单。
 - 同步全语言 README 版本徽标至 `v1.0.1`，并从 `.gitignore` 中移除核心规则文档 (`AGENTS.md`)。

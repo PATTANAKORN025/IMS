@@ -7,7 +7,7 @@
 
 <div align="center">
   <h1>Synthetic Drilling & VCP Operational Data Architecture</h1>
-  <p><b>Isolated stand-in database generator, physics-based telemetry models, migration boundaries, and dashboard verification</b></p>
+  <p><b>Isolated stand-in database generator, rule-based synthetic telemetry, migration boundaries, and dashboard verification</b></p>
   <p>
     <a href="MOCK_DATA.md">English</a> |
     <a href="../../th/docs/data/MOCK_DATA.md">ไทย</a> |
@@ -30,7 +30,7 @@ flowchart TD
     SCHEMA["database/mock/eap_backup-schema.sql
 Creates tables, views, marker table"]
     MOCK_JS["scripts/mock/eap-mock-data.js
-Physics models: RPM, feed, tool wear, bath temp"]
+Synthetic models: RPM, feed, spindle mask, bath temp"]
     UNIT["tests/unit/eap-mock-data.test.js
 Pre-commit unit test suite"]
   end
@@ -47,7 +47,7 @@ Applied cleanly via psql"]
     DASH["Grafana Dashboards
 Drilling Operations (4)
 VCP Operations (3)"]
-    ALERTS["Prometheus / Alertmanager
+    ALERTS["Grafana Alerting
 7 VCP Alert Rules"]
     VERIFY["scripts/mock/verify-mock-dashboards.js
 34 panel queries + 7 alert queries verified"]
@@ -71,7 +71,7 @@ VCP Operations (3)"]
 | **Schema Definition** | `database/mock/eap_backup-schema.sql` | Instantiates tables and views required by drilling/VCP dashboards, alert rules, and migrations 084–086. |
 | **Data Generator** | `scripts/mock/eap-mock-data.js` | Generates realistic synthetic drilling cycle events and VCP plating telemetry. |
 | **Query Verifier** | `scripts/mock/verify-mock-dashboards.js` | Executes every drilling/VCP dashboard panel query and alert rule; validates returned row counts. |
-| **Unit Test Suite** | `tests/unit/eap-mock-data.test.js` | Validates generator logic and physics models in-memory without database dependency (runs in CI). |
+| **Unit Test Suite** | `tests/unit/eap-mock-data.test.js` | Validates generator logic and data shapes in memory without database dependency (runs in CI). |
 
 Every value is synthetic: machine counts, setpoints, recipes, panel sizes, lot codes, and alarm messages. None of it is derived from real factory operations.
 
@@ -79,7 +79,7 @@ The generator preserves the exact data shapes that the dashboards parse:
 - Event codes and message formats.
 - Equipment ID shapes (`-VCP` suffix for plating lines).
 - Swapped bath tags (`preset_<bath>` is the measured reading, `actual_<bath>` is the target setpoint).
-- Physics constraint: $	ext{plating\_time} 	imes 	ext{line\_speed} = 54$.
+- Recipe identity: $\text{plating\_time} \times \text{line\_speed} = 54$.
 - Triggered / Reset alarm pairs.
 
 ---

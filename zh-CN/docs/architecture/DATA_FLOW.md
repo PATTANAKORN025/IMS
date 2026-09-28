@@ -214,7 +214,7 @@ flowchart LR
 v_ldi_rca_truth_test"]
 ```
 
-报警事件实时写入 `public.ldi_alarm_log` 并通过外键关联合法报警字典 `public.ldi_alarm_ms_code`。下游视图 (`v_ldi_alarm_context`) 会以报警发生时间为中心，自动抓取机器前后 $\pm 5	ext{ 分钟}$ 的遥测窗口数据，为现场工程师提供统计学根因分析依据。
+报警事件实时写入 `public.ldi_alarm_log` 并通过外键关联合法报警字典 `public.ldi_alarm_ms_code`。下游视图 (`v_ldi_alarm_context`) 会以报警发生时间为中心，自动抓取机器前后 $\pm 5\text{ 分钟}$ 的遥测窗口数据，为现场工程师提供统计学根因分析依据。
 
 ---
 

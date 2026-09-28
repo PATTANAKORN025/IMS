@@ -50,9 +50,9 @@ Alarm lifecycle state transitions are enforced server-side inside PostgreSQL by 
 ```mermaid
 stateDiagram-v2
     [*] --> OPEN: Alarm Event Triggered (trg_ldi_alarm_lifecycle_init)
-    OPEN --> ACKNOWLEDGED: POST /api/v1/alarms/ack (Actor + Timestamp)
-    OPEN --> RESOLVED: POST /api/v1/alarms/resolve (Direct Resolution)
-    ACKNOWLEDGED --> RESOLVED: POST /api/v1/alarms/resolve (Actor + Note)
+    OPEN --> ACKNOWLEDGED: POST /alarm-api/alarms/ack (Actor + Timestamp)
+    OPEN --> RESOLVED: POST /alarm-api/alarms/resolve (Direct Resolution)
+    ACKNOWLEDGED --> RESOLVED: POST /alarm-api/alarms/resolve (Actor + Note)
     RESOLVED --> [*]: Terminal State (No further updates permitted)
 ```
 
@@ -113,14 +113,14 @@ ORDER BY
 ### API Acknowledgment & Resolution via cURL
 
 ```bash
+# The actor recorded is the Grafana login of the session (Editor or Admin); acknowledged_by / resolved_by in the body are ignored.
 # 1. Operator acknowledges an open alarm (via Nginx proxy front-door with active Grafana session)
 curl -X POST "http://localhost:3000/alarm-api/alarms/ack" \
   -H "Content-Type: application/json" \
   -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "acknowledged_by": "OP-9842"
+    "logid": "LOG-10001"
   }'
 
 # 2. Operator marks alarm resolved with maintenance note
@@ -130,7 +130,6 @@ curl -X POST "http://localhost:3000/alarm-api/alarms/resolve" \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",
-    "resolved_by": "TECH-104",
     "resolution_note": "Replaced exposure vacuum seal gasket; pressure normalized."
   }'
 ```

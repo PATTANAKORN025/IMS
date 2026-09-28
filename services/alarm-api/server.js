@@ -81,6 +81,13 @@ function createPool(overrides = {}) {
  * name into the alarm audit trail. This is now the only source of truth
  * for "who is making this request."
  *
+ * The role comes from a second call. Grafana's /api/user body
+ * (UserProfileDTO) carries login, orgId and isGrafanaAdmin but no org role,
+ * so reading `orgRole` from it always yielded null and denied every caller.
+ * /api/user/orgs lists the caller's organisations with their `role`; the
+ * entry whose orgId matches the session's current orgId is the role this
+ * session acts under.
+ *
  * Pure w.r.t. its inputs -- `fetchImpl` is injectable so tests never make a
  * real network call.
  */
@@ -89,18 +96,26 @@ async function resolveGrafanaIdentity(cookieHeader, { grafanaUrl = GRAFANA_INTER
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GRAFANA_IDENTITY_TIMEOUT_MS);
+  const get = (path) => fetchImpl(`${grafanaUrl}${path}`, {
+    headers: { Cookie: cookieHeader, Accept: 'application/json' },
+    signal: controller.signal,
+  });
   try {
-    const res = await fetchImpl(`${grafanaUrl}/api/user`, {
-      headers: { Cookie: cookieHeader },
-      signal: controller.signal,
-    });
-    if (!res.ok) return null;
-
-    const body = await res.json();
-    const actor = isNonEmptyString(body.login) ? body.login : (isNonEmptyString(body.email) ? body.email : null);
+    const userRes = await get('/api/user');
+    if (!userRes.ok) return null;
+    const user = await userRes.json();
+    const actor = isNonEmptyString(user.login) ? user.login : (isNonEmptyString(user.email) ? user.email : null);
     if (!actor) return null;
 
-    return { actor, orgRole: typeof body.orgRole === 'string' ? body.orgRole : null };
+    let orgRole = null;
+    const orgsRes = await get('/api/user/orgs');
+    if (orgsRes.ok) {
+      const orgs = await orgsRes.json();
+      const current = Array.isArray(orgs) ? orgs.find((o) => o && o.orgId === user.orgId) : null;
+      if (current && typeof current.role === 'string') orgRole = current.role;
+    }
+
+    return { actor, orgRole, isGrafanaAdmin: user.isGrafanaAdmin === true };
   } catch (err) {
     return null;
   } finally {
@@ -113,10 +128,11 @@ async function resolveGrafanaIdentity(cookieHeader, { grafanaUrl = GRAFANA_INTER
  * Viewer is read-only by Grafana's OWN role definition -- reusing that
  * existing line rather than inventing a second, parallel permission system
  * for this one write path. Phase 12A requirement: never silently grant
- * Viewer write access.
+ * Viewer write access. A Grafana server admin may also write: that account
+ * can already grant itself any org role, so refusing it here protects nothing.
  */
-function hasWritePermission(orgRole) {
-  return orgRole === 'Editor' || orgRole === 'Admin';
+function hasWritePermission(orgRole, isGrafanaAdmin = false) {
+  return orgRole === 'Editor' || orgRole === 'Admin' || isGrafanaAdmin === true;
 }
 
 /**
@@ -133,7 +149,7 @@ function requireActor({ resolveIdentity = resolveGrafanaIdentity } = {}) {
     if (!identity) {
       return res.status(401).json({ error: 'authentication required' });
     }
-    if (!hasWritePermission(identity.orgRole)) {
+    if (!hasWritePermission(identity.orgRole, identity.isGrafanaAdmin)) {
       return res.status(403).json({ error: 'insufficient permission (Viewer role cannot acknowledge/resolve alarms)' });
     }
     req.actor = identity.actor;

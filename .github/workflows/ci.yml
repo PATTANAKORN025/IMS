@@ -135,6 +135,11 @@ jobs:
       - name: Run Gate Decision Tests
         run: node tests/unit/gate.test.js
 
+      # alarm-api identity and role gate (the only operator write path).
+      # Installs the service's own dependencies from its lockfile first.
+      - name: Run Alarm API Identity & Authorization Tests
+        run: node scripts/run-alarm-api-tests.js
+
       # Factory Twin contract suites. These encode the system's REFUSALS --
       # that an observation cannot be promoted to a confirmation, that a
       # mapping cannot be inferred from proximity or a property lookup, that
