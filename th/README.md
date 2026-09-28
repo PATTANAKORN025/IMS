@@ -226,9 +226,10 @@ curl -X POST http://localhost:3000/ldi-telemetry \
 เรียกใช้งานเซอร์วิส `alarm-api` เพื่อเปลี่ยนสถานะของการแจ้งเตือนที่เกิดขึ้นในโรงงาน (`public.ldi_alarm_lifecycle`):
 
 ```bash
-# ขั้นตอนที่ 1: รับทราบการแจ้งเตือน (เปลี่ยนสถานะ OPEN -> ACKNOWLEDGED)
-curl -X POST http://localhost:3000/alarms/ack \
+# ขั้นตอนที่ 1: รับทราบการแจ้งเตือน (เปลี่ยนสถานะ OPEN -> ACKNOWLEDGED ผ่าน Nginx Proxy)
+curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
+  -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",
@@ -236,8 +237,9 @@ curl -X POST http://localhost:3000/alarms/ack \
   }'
 
 # ขั้นตอนที่ 2: ปิดจบและแก้ไขปัญหาการแจ้งเตือน (เปลี่ยนสถานะ ACKNOWLEDGED -> RESOLVED)
-curl -X POST http://localhost:3000/alarms/resolve \
+curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -H "Content-Type: application/json" \
+  -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",

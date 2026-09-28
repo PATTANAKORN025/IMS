@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# Incident Response
+<div align="center">
+  <h1>IMS SRE Incident Response Runbook & Severity Framework</h1>
+  <p><b>Severity definitions (SEV-1 to SEV-4), worked recovery examples, PgBouncer login-retry handling, and container watchdog diagnostics</b></p>
+  <p>
+    <a href="INCIDENT_RESPONSE.md">English</a> |
+    <a href="../../th/docs/operations/INCIDENT_RESPONSE.md">ไทย</a> |
+    <a href="../../zh-CN/docs/operations/INCIDENT_RESPONSE.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > **Audience:** SRE/Operations, On-call Engineers.
 > **Objective:** Provides a severity framework and specific worked examples for recovering from system incidents.

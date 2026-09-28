@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# การรับมือกับเหตุการณ์ (Incident Response)
+<div align="center">
+  <h1>คู่มือปฏิบัติการรับมือกับเหตุการณ์ขัดข้องและกรอบระดับความรุนแรง IMS (Incident Response)</h1>
+  <p><b>คำจำกัดความระดับความรุนแรง (SEV-1 ถึง SEV-4), กรณีศึกษาการกู้คืนระบบจริง, การจัดการข้อผิดพลาด PgBouncer และการวินิจฉัย Watchdog</b></p>
+  <p>
+    <a href="../../../docs/operations/INCIDENT_RESPONSE.md">English</a> |
+    <a href="INCIDENT_RESPONSE.md">ไทย</a> |
+    <a href="../../../zh-CN/docs/operations/INCIDENT_RESPONSE.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > **กลุ่มเป้าหมาย:** SRE/ฝ่ายปฏิบัติการ, วิศวกรที่เข้าเวรรับแจ้งเหตุ (On-call Engineers)
 > **วัตถุประสงค์:** จัดเตรียมกรอบการทำงานสำหรับระดับความรุนแรง (severity) และตัวอย่างสถานการณ์จริงที่ระบุวิธีการกู้คืนระบบจากเหตุการณ์ขัดข้อง

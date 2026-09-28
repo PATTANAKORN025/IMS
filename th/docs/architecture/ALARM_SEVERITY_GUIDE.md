@@ -113,21 +113,23 @@ ORDER BY
 ### คำสั่ง cURL สำหรับรับทราบและปิดงานแจ้งเตือนผ่าน API
 
 ```bash
-# 1. ผู้ควบคุมเครื่องกดยอมรับการแจ้งเตือน (Acknowledge)
-curl -X POST "http://localhost:8080/api/v1/alarms/ack" \
+# 1. ผู้ควบคุมเครื่องกดยอมรับการแจ้งเตือน (ผ่าน Nginx proxy front-door พร้อมเซสชัน Grafana)
+curl -X POST "http://localhost:3000/alarm-api/alarms/ack" \
   -H "Content-Type: application/json" \
+  -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
-    "logid": "ALM-2026-0928-001",
-    "logdate": "2026-09-28T04:15:00Z",
+    "logdate_ms": 1790568000000,
+    "logid": "LOG-10001",
     "acknowledged_by": "OP-9842"
   }'
 
 # 2. ช่างเทคนิคบันทึกปิดงานพร้อมระบุสาเหตุการแก้ไข (Resolve)
-curl -X POST "http://localhost:8080/api/v1/alarms/resolve" \
+curl -X POST "http://localhost:3000/alarm-api/alarms/resolve" \
   -H "Content-Type: application/json" \
+  -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
-    "logid": "ALM-2026-0928-001",
-    "logdate": "2026-09-28T04:15:00Z",
+    "logdate_ms": 1790568000000,
+    "logid": "LOG-10001",
     "resolved_by": "TECH-104",
     "resolution_note": "เปลี่ยนปะเก็นซีลสุญญากาศห้องฉายแสงเรียบร้อย ระดับความดันกลับสู่ค่าปกติ"
   }'

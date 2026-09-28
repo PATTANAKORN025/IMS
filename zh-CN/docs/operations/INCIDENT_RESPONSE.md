@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# 事件响应 (Incident Response)
+<div align="center">
+  <h1>IMS SRE 故障应急响应手册与严重度分级框架 (Incident Response)</h1>
+  <p><b>故障等级定义 (SEV-1 至 SEV-4)、生产真实故障恢复实战案例、PgBouncer 连接重试机制及容器 Watchdog 诊断</b></p>
+  <p>
+    <a href="../../../docs/operations/INCIDENT_RESPONSE.md">English</a> |
+    <a href="../../../th/docs/operations/INCIDENT_RESPONSE.md">ไทย</a> |
+    <a href="INCIDENT_RESPONSE.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > **受众：** 站点可靠性工程师 (SRE) / 运维人员、值班工程师 (On-call Engineers)。
 > **目标：** 提供严重性级别框架以及从系统故障中恢复的具体实战案例。

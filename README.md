@@ -226,9 +226,10 @@ curl -X POST http://localhost:3000/ldi-telemetry \
 Interact with the `alarm-api` service to change state on active factory alarms (`public.ldi_alarm_lifecycle`):
 
 ```bash
-# Step 1: Acknowledge an active alarm (Transition OPEN -> ACKNOWLEDGED)
-curl -X POST http://localhost:3000/alarms/ack \
+# Step 1: Acknowledge an active alarm (Transition OPEN -> ACKNOWLEDGED via Nginx proxy)
+curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
+  -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",
@@ -236,8 +237,9 @@ curl -X POST http://localhost:3000/alarms/ack \
   }'
 
 # Step 2: Permanently resolve an alarm (Transition ACKNOWLEDGED -> RESOLVED)
-curl -X POST http://localhost:3000/alarms/resolve \
+curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -H "Content-Type: application/json" \
+  -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",

@@ -226,9 +226,10 @@ curl -X POST http://localhost:3000/ldi-telemetry \
 调用 `alarm-api` 服务对车间当前活动的告警记录（`public.ldi_alarm_lifecycle`）执行状态变更：
 
 ```bash
-# 步骤 1：确认活动告警（状态由 OPEN 流转至 ACKNOWLEDGED）
-curl -X POST http://localhost:3000/alarms/ack \
+# 步骤 1：确认活动告警（通过 Nginx 代理前置入口流转 OPEN -> ACKNOWLEDGED）
+curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
+  -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",
@@ -236,8 +237,9 @@ curl -X POST http://localhost:3000/alarms/ack \
   }'
 
 # 步骤 2：彻底解决告警并记录根因（状态由 ACKNOWLEDGED 流转至 RESOLVED）
-curl -X POST http://localhost:3000/alarms/resolve \
+curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -H "Content-Type: application/json" \
+  -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",

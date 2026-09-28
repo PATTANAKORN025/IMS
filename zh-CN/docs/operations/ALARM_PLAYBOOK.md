@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# IMS 警报与告警处理手册
+<div align="center">
+  <h1>IMS 工业告警与报警处置操作手册 (Alarm Playbook)</h1>
+  <p><b>三层告警响应架构、机台故障码处置指南、Grafana 动态阈值告警与 Prometheus 平台自监控恢复策略</b></p>
+  <p>
+    <a href="../../../docs/operations/ALARM_PLAYBOOK.md">English</a> |
+    <a href="../../../th/docs/operations/ALARM_PLAYBOOK.md">ไทย</a> |
+    <a href="ALARM_PLAYBOOK.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > **受众:** SRE/运维人员、工厂车间操作员。
 > **目标:** 针对系统生成的特定告警和警报代码的第一响应者解决步骤。
