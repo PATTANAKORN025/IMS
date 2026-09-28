@@ -5,7 +5,7 @@
 -- `ADD COLUMN ... DEFAULT 'ldi'`. A column DEFAULT applies to every
 -- existing row at ADD COLUMN time, not just device_type='ldi' rows --
 -- caught live after applying 067: all 1002 device_type='server' rows
--- (the E2E-SERVER-* / ERP-MASTER-* synthetic/real infra devices) were
+-- (the E2E-SERVER-* / SRV-SIM-* synthetic/real infra devices) were
 -- also backfilled to process_type='ldi', which is wrong -- process_type
 -- has no defined meaning for non-'ldi' device_type rows yet (per
 -- docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md §2, it becomes

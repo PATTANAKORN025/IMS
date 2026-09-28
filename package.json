@@ -27,6 +27,6 @@
     "prepare": "husky",
     "validate:floor1-geometry": "node tests/lint/floor1-geometry-validator.js"
   },
-  "author": "MIS-G, Apex Circuit (Thailand) Co., Ltd.",
+  "author": "IMS Open Source Community",
   "license": "UNLICENSED"
 }

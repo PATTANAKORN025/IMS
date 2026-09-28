@@ -169,7 +169,7 @@ function main() {
     // Ignore the "Last generated: <date>" line when diffing -- that line
     // is expected to change every run even with zero schema drift, and
     // shouldn't fail CI on its own.
-    const strip = (s) => (s || '').replace(/Last generated: \d{4}-\d{2}-\d{2}/, 'Last generated: DATE');
+    const strip = (s) => (s || '').replace(/\r\n/g, '\n').replace(/Last generated: \d{4}-\d{2}-\d{2}/, 'Last generated: DATE').trim();
     if (strip(existing) === strip(content)) {
       console.log('Database schema inventory is up to date.');
       process.exit(0);

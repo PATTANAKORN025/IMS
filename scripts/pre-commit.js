@@ -75,6 +75,10 @@ run("EAP Map Wire Tests", "node tests/unit/eap-map-wire.test.js");
 run("EAP Node Model Contract", "node tests/lint/eap-node-model-contract.js");
 run("EAP Status-Colour Drift", "node tests/lint/eap-status-color-drift.js");
 run("CSS Design-Token Parity", "node tests/lint/css-token-parity.js");
+run("Factory Twin Predictive Analytics Tests", "node tests/unit/factory-twin-predictive.test.js");
+run("Factory Twin SPC Tests", "node tests/unit/factory-twin-spc.test.js");
+run("Floor 1 CAD Block Transformation Tests", "node tests/unit/floor1-cad-blocks.test.js");
+run("Floor 1 CAD Ring Boundary Tests", "node tests/unit/floor1-cad-rings.test.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

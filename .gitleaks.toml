@@ -19,6 +19,7 @@ paths = [
 regexes = [
   '''change-me-please''',
   '''your-line-notify-token-here''',
+  '''generate-a-random-webhook-secret-here''',
   '''YOUR/WEBHOOK/URL''',
   '''apex_mock''',
 ]

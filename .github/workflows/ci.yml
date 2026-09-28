@@ -106,7 +106,7 @@ jobs:
         run: |
           docker run --rm -v "${{ github.workspace }}:/repo" zricethezav/gitleaks:latest \
             detect --source=/repo --no-git --redact --verbose \
-            --config=/repo/.gitleaks.toml --exit-code 1 || true
+            --config=/repo/.gitleaks.toml --exit-code 1
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 2: Unit Tests
@@ -197,6 +197,18 @@ jobs:
       # shared stylesheet). This fails if the shared vocabulary drifts.
       - name: Run CSS Design-Token Parity Lint
         run: node tests/lint/css-token-parity.js
+
+      - name: Run Factory Twin Predictive Analytics Tests
+        run: node tests/unit/factory-twin-predictive.test.js
+
+      - name: Run Factory Twin SPC Tests
+        run: node tests/unit/factory-twin-spc.test.js
+
+      - name: Run Floor 1 CAD Block Transformation Tests
+        run: node tests/unit/floor1-cad-blocks.test.js
+
+      - name: Run Floor 1 CAD Ring Boundary Tests
+        run: node tests/unit/floor1-cad-rings.test.js
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
@@ -439,11 +451,29 @@ jobs:
         run: docker compose down -v
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Stage 4B: Architecture Validation Gate (Ruleset Status Check)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  validate-architecture:
+    name: validate-architecture
+    runs-on: ubuntu-latest
+    needs: [lint, unit-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Full Architecture & Pre-commit Gate
+        run: node scripts/pre-commit.js
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 5: Summary
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   summary:
     runs-on: ubuntu-latest
-    needs: [lint, unit-tests, integration-chaos, visual-regression]
+    needs: [lint, unit-tests, validate-architecture, integration-chaos, visual-regression]
     if: always()
     steps:
       - name: Pipeline Summary
@@ -454,6 +484,7 @@ jobs:
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Lint & Static Analysis | ${{ needs.lint.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | ${{ needs.unit-tests.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Architecture Gate (Required) | ${{ needs.validate-architecture.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Integration & Chaos | ${{ needs.integration-chaos.result == 'success' && '✅ Pass' || '⚠️ Partial' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| LDI Visual/Layout Regression | ${{ needs.visual-regression.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

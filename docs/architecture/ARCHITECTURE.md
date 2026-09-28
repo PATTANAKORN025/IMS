@@ -29,7 +29,7 @@ IMS is a Docker Compose stack with **two independent telemetry pipelines** feedi
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
  subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
-  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\nrate-limit & auth-check"]
+  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\nrate-limit & reverse-proxy"]
   PROXY --> ING["ldi_ingestion.json\nauth check -> INSERT"]
   ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
   ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]

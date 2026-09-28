@@ -2783,7 +2783,7 @@
   "style": "dark",
   "links": [
     {
-      "title": "Apex Circuit Fleet Command Center",
+      "title": "LDI Manufacturing Command Center",
       "url": "/d/ims-ldi-manufacturing?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",

@@ -29,7 +29,7 @@ IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
  subgraph LDI ["ไปป์ไลน์การผลิต LDI (หลัก, ใช้งานจริง)"]
-  SIM["ldi_simulator.json\nตัวจำลองสด Ornstein-Uhlenbeck\nทุก 2 วินาที, 10 เครื่อง"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\nจำกัดอัตราส่ง & ตรวจสอบสิทธิ์"]
+  SIM["ldi_simulator.json\nตัวจำลองสด Ornstein-Uhlenbeck\nทุก 2 วินาที, 10 เครื่อง"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\nจำกัดอัตราส่ง & รีเวิร์สพร็อกซี"]
   PROXY --> ING["ldi_ingestion.json\nตรวจสิทธิ์ -> INSERT"]
   ING --> LDIDATA[("public.ldi_data\nไฮเปอร์เทเบิล, ชิ้นละ 1 ชม.")]
   ALMSIM["ldi_alarm_simulator.json\nตามเงื่อนไข + สัญญาณรบกวน\nทุก 10 วินาที"] --> ALARMLOG[("public.ldi_alarm_log")]

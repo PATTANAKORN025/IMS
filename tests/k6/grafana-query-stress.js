@@ -46,7 +46,7 @@ const QUERIES = [
   },
   {
     name: 'Engineering_Detail',
-    sql: "SELECT s.\"time\", s.cpu_load_percent, s.ram_used_mb, s.disk_used_gb, s.temp_c, n.rx_mbps FROM public.sys_metrics s LEFT JOIN public.net_metrics n ON n.device_id = s.device_id AND n.\"time\" > NOW() - INTERVAL '1 hour' WHERE s.device_id = 'ERP-MASTER-UBUNTU' AND s.\"time\" > NOW() - INTERVAL '1 hour' ORDER BY s.\"time\" DESC LIMIT 100",
+    sql: "SELECT s.\"time\", s.cpu_load_percent, s.ram_used_mb, s.disk_used_gb, s.temp_c, n.rx_mbps FROM public.sys_metrics s LEFT JOIN public.net_metrics n ON n.device_id = s.device_id AND n.\"time\" > NOW() - INTERVAL '1 hour' WHERE s.device_id = 'SRV-SIM-UBUNTU' AND s.\"time\" > NOW() - INTERVAL '1 hour' ORDER BY s.\"time\" DESC LIMIT 100",
   },
   {
     name: 'Capacity_DiskTrend',

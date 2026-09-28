@@ -29,7 +29,7 @@ IMS 是一个 Docker Compose 栈，包含**两条相互独立的遥测流水线*
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
  subgraph LDI ["LDI 制造遥测流水线 (主要，生产级)"]
-  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck 实时模拟器\n2s 周期, 10 台机台"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\n限流与鉴权校验"]
+  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck 实时模拟器\n2s 周期, 10 台机台"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\n限流与反向代理"]
   PROXY --> ING["ldi_ingestion.json\n鉴权检查 -> INSERT"]
   ING --> LDIDATA[("public.ldi_data\n超表，1h 数据块")]
   ALMSIM["ldi_alarm_simulator.json\n条件驱动 + 噪声\n10s 周期"] --> ALARMLOG[("public.ldi_alarm_log")]
