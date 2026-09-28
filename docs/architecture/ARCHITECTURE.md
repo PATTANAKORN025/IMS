@@ -23,7 +23,7 @@
 
 ## System Context
 
-IMS is a Docker Compose stack with **two independent telemetry pipelines** feeding one shared TimescaleDB, visualized across **15 Grafana dashboards** with alerting through both Grafana's native alert engine and Prometheus/Alertmanager.
+IMS is a Docker Compose stack with **two independent telemetry pipelines** feeding one shared TimescaleDB, visualized across **22 Grafana dashboards** with alerting through both Grafana's native alert engine and Prometheus/Alertmanager.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%

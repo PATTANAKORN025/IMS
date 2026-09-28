@@ -23,7 +23,7 @@
 
 ## บริบทของระบบ
 
-IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์ telemetry 2 ชุดที่ทำงานแยกจากกัน** ส่งข้อมูลเข้า TimescaleDB ชุดเดียวที่ใช้ร่วมกัน แสดงผลผ่าน **แดชบอร์ด Grafana 15 ชุด** และแจ้งเตือนผ่านทั้งระบบแจ้งเตือนในตัวของ Grafana และ Prometheus/Alertmanager
+IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์ telemetry 2 ชุดที่ทำงานแยกจากกัน** ส่งข้อมูลเข้า TimescaleDB ชุดเดียวที่ใช้ร่วมกัน แสดงผลผ่าน **แดชบอร์ด Grafana 22 ชุด** และแจ้งเตือนผ่านทั้งระบบแจ้งเตือนในตัวของ Grafana และ Prometheus/Alertmanager
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%

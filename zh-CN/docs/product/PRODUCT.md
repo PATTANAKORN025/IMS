@@ -43,19 +43,31 @@ Secondary（次要用户）：
 
 ## Product Purpose
 
-提供一个涵盖两个领域（基础设施和制造）的单一控制面板（Single-pane-of-glass）监控系统，每个领域都有其自身的遥测流水线、仪表板集和警报机制。
+提供一个涵盖四个运营领域（基础设施、LDI 光刻制造、CNC 钻孔与 VCP 电镀）的单一控制面板（Single-pane-of-glass）监控系统，每个领域都有其自身的遥测流水线、仪表板集和警报机制。
 
-**Infrastructure Domain（基础设施领域）：**
+**Platform Infrastructure & NOC Domain（平台基础设施与 NOC 领域）：**
 
 - **Ingestion（数据接入）：** 来自服务器/网络设备的 SNMP 指标，通过 Node-RED 导入 TimescaleDB。
 - **Visualization（可视化）：** 5 个仪表板（NOC 概览、工程向下钻取、容量预测、元监控、接入延迟）。
 - **AIOps：** Z-Score 异常检测、断路器降级（Circuit breaker degradation）、预测性容量预测。
 
-**Manufacturing Domain（制造领域）：**
+**Lithography Operations / LDI Manufacturing Domain（LDI 光刻制造领域）：**
 
 - **Ingestion（数据接入）：** LDI 机器遥测（位置/判定误差、厚度、扫描速度、抗蚀剂剂量）通过 HTTP/JSON 接入。
 - **Visualization（可视化）：** 10 个仪表板（简易概览、制造指挥中心、操作员安灯看板、警报控制台、警报字典、工程分析与 SPC、机器快照、数据就绪度、工厂数字孪生、警报响应）。
 - **Analytics（分析）：** 真实的 SPC（Cpk 工艺能力）和 RCA（警报与参数关联）分析。
+
+**Drilling Operations / CNC Domain（CNC 钻孔作业领域）：**
+
+- **Ingestion（数据接入）：** 通过 EAP 接入 CNC 钻孔机遥测数据与事件日志。
+- **Visualization（可视化）：** 4 个仪表板（机群总览、班次产量、单机排查、异常与根因分析）。
+- **Analytics（分析）：** 主轴负载、周期时间偏差、断刀（Tool Breakage）与运行良率分析。
+
+**Plating Operations / VCP Line Domain（VCP 垂直连续电镀产线领域）：**
+
+- **Ingestion（数据接入）：** 通过 EAP 接入垂直连续电镀（VCP）产线遥测（整流器电流、槽液温度、产线速度）。
+- **Visualization（可视化）：** 3 个仪表板（产线总览、操作控制台、实时墙屏）。
+- **Analytics（分析）：** 飞靶追踪（Flight Bar Tracking）、安培分钟累积、槽液化学成分及镀层厚度分布。
 
 **Alerting & Success Criteria（警报与成功标准）：**
 

@@ -22,18 +22,25 @@ mindmap
       Easy Overview
       NOC Overview
       Mfg Command Center
+      Drilling Fleet Overview
+      VCP Overview
     Predictive(Tier 2: System Health)
       Factory Digital Twin
       Capacity Planning
       Meta-Monitoring
+      Drilling Shift Production
     Engineering(Tier 3: Deep Analytics)
       Engineering Drill-Down
       LDI Analytics
       Ingestion Latency
+      Drilling Anomaly Analysis
     Tactical(Tier 4: Ground Ops)
       Machine Snapshot
       Operator Andon
       Data Readiness
+      Drilling Machine Investigation
+      VCP Realtime Wall
+      VCP Operations Console
     Incident(Tier 5: Triaging)
       Alarm Console
       Alarm Response
@@ -41,7 +48,7 @@ mindmap
 ```
 
 > [!TIP]
-> **Performance Architecture:** None of these dashboards query raw telemetry for timeframes exceeding 24 hours. They are explicitly powered by **TimescaleDB Continuous Aggregates (CAGGs)**, guaranteeing sub-second load times regardless of query depth or user concurrency. All dashboards conform to the **Grid-24 Discipline**.
+> **Performance Architecture:** None of these dashboards query raw telemetry for timeframes exceeding 24 hours. They are explicitly powered by **TimescaleDB Continuous Aggregates (CAGGs)**, guaranteeing sub-second load times regardless of query depth or user concurrency. All dashboards conform to the **Grid-24 Discipline**. Full technical specifications and panel counts are documented in the **[Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md)**.
 
 ---
 
@@ -55,6 +62,8 @@ _**Goal**: Instant glance-value for business leaders. Focuses on holistic health
 | **IMS NOC Overview** | Unified Fleet Health Score (0-100), Top 10 critical node leaderboards, and anomaly timeline. | <img src="../../assets/noc-overview.png" width="250"/> |
 | **LDI Manufacturing** | Real-time Overall Equipment Effectiveness (OEE), physical yield rates, and production bottlenecks. | <img src="../../assets/ldi-manufacturing.png" width="250"/> |
 | **IMS Easy Overview** | Simplified business-level KPI tracking. Global system uptime and gross manufacturing output. | <img src="../../assets/ims-easy-overview.png" width="250"/> |
+| **Drilling Fleet Overview** | Fleet-wide CNC spindle utilization, tool usage, running states, and machine alarm distribution. | *(Synthetic EAP data source)* |
+| **VCP Overview** | Multi-line VCP plating overview, active flight bars, line speed, and bath parameter health. | *(Synthetic EAP data source)* |
 
 ---
 
@@ -68,6 +77,7 @@ _**Goal**: Predictive Operations (AIOps). Fixing problems days before they manif
 | **Capacity Planning** | Predictive forecasting. Linear regression lines calculating exact "days until 100% capacity". | <img src="../../assets/capacity-planning.png" width="250"/> |
 | **Meta-Monitoring** | "Monitoring the monitor." Ingestion pipeline throughput, SNMP states, and query budgets. | <img src="../../assets/meta-monitoring.png" width="250"/> |
 | **Factory Digital Twin** | Real-time physical proxy of the PCB production floor. Spatial mapping of machine states. | *(Requires specialized 3D plugin)* |
+| **Drilling Shift Production** | Production yield tracking across day/night shifts, total drilled panels, and run-time forecasting. | *(Synthetic EAP data source)* |
 
 ---
 
@@ -81,6 +91,7 @@ _**Goal**: Root cause correlation between IT infrastructure limits and OT manufa
 | **Engineering Drill-Down** | Context-switching micro-metrics. Z-Score Anomaly Detection against 24h rolling baselines. | <img src="../../assets/engineering-drilldown.png" width="250"/> |
 | **LDI Analytics** | Deep process engineering. Correlates OT factors (temperature fluctuations) against PCB yield defects. | <img src="../../assets/ldi-engineering.png" width="250"/> |
 | **Ingestion Latency** | Measures the exact propagation delay between a sensor ping and PostgreSQL commit (PgBouncer). | *(CAGG aggregation active)* |
+| **Drilling Anomaly Analysis** | Multi-dimensional correlation between tool breakage, spindle speed deviation, and machine alarms. | *(Synthetic EAP data source)* |
 
 ---
 
@@ -94,6 +105,9 @@ _**Goal**: Binary, zero-latency decision making for the personnel operating the 
 | **Operator Andon** | Ultra-simplified, high-contrast status board. Pure Red/Green visual cues. If red, stop the line. | <img src="../../assets/ldi-andon.png" width="250"/> |
 | **Machine Snapshot** | Live heartbeat of a single machine. Current recipe loaded, laser power, sensor readouts. | <img src="../../assets/ldi-machine.png" width="250"/> |
 | **Data Readiness** | Data integrity verification. Tracks null values, schema corruption, and sensor offline states. | <img src="../../assets/ldi-data-readiness.png" width="250"/> |
+| **Drilling Machine Investigation** | Single-spindle drill-down, XY table motion telemetry, tool wear life, and sensor events. | *(Synthetic EAP data source)* |
+| **VCP Realtime Wall** | Flight-deck real-time wall screen for VCP plating line, showing rectifier currents, amp-minutes, and bath temperatures. | *(Synthetic EAP data source)* |
+| **VCP Operations Console** | Plating cell rectifier control, flight bar progress, bath heating/dosing telemetry. | *(Synthetic EAP data source)* |
 
 ---
 

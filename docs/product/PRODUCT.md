@@ -43,19 +43,31 @@ Secondary:
 
 ## Product Purpose
 
-Provide a single-pane-of-glass monitoring system spanning two domains — infrastructure and manufacturing — each with its own telemetry pipeline, dashboard set, and alerting.
+Provide a single-pane-of-glass monitoring system spanning four operational domains — infrastructure, LDI lithography, CNC drilling, and VCP plating — each with its own telemetry pipeline, dashboard set, and alerting.
 
-**Infrastructure Domain:**
+**Platform Infrastructure & NOC Domain:**
 
 - **Ingestion:** SNMP metrics from servers/network devices via Node-RED into TimescaleDB.
 - **Visualization:** 5 Dashboards (NOC Overview, Engineering Drill-Down, Capacity Forecast, Meta-Monitoring, Ingestion Latency).
 - **AIOps:** Z-Score anomaly detection, circuit breaker degradation, predictive capacity forecasting.
 
-**Manufacturing Domain:**
+**Lithography Operations / LDI Manufacturing Domain:**
 
 - **Ingestion:** LDI machine telemetry (position/judgment error, thickness, scan speed, resist dosage) via HTTP/JSON.
 - **Visualization:** 10 Dashboards (Easy Overview, Manufacturing Command Center, Operator Andon Board, Alarm Console, Alarm Dictionary, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin, Alarm Response).
 - **Analytics:** Real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics.
+
+**Drilling Operations / CNC Domain:**
+
+- **Ingestion:** CNC drilling telemetry and machine event logs via EAP.
+- **Visualization:** 4 Dashboards (Fleet Overview, Shift Production, Machine Investigation, Anomaly & Root Cause Analysis).
+- **Analytics:** Spindle load, cycle time deviation, tool breakage, and run-time yield analytics.
+
+**Plating Operations / VCP Line Domain:**
+
+- **Ingestion:** Vertical Continuous Plating (VCP) line telemetry (rectifier current, bath temperature, line speed) via EAP.
+- **Visualization:** 3 Dashboards (VCP Overview, VCP Operations Console, VCP Realtime Wall).
+- **Analytics:** Flight bar tracking, ampere-minute accumulation, bath chemistry, and plating thickness distribution.
 
 **Alerting & Success Criteria:**
 

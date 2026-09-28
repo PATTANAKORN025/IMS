@@ -23,7 +23,7 @@
 
 ## 系统上下文
 
-IMS 是一个 Docker Compose 栈，包含**两条相互独立的遥测流水线**，共同写入同一个 TimescaleDB，通过 **15 个 Grafana 仪表板**进行可视化，并同时借助 Grafana 原生告警引擎与 Prometheus/Alertmanager 发出告警。
+IMS 是一个 Docker Compose 栈，包含**两条相互独立的遥测流水线**，共同写入同一个 TimescaleDB，通过 **22 个 Grafana 仪表板**进行可视化，并同时借助 Grafana 原生告警引擎与 Prometheus/Alertmanager 发出告警。
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%

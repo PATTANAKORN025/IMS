@@ -43,19 +43,31 @@ Secondary (ผู้ใช้งานรอง):
 
 ## Product Purpose
 
-จัดเตรียมระบบตรวจสอบแบบศูนย์รวมหน้าจอเดียว (Single-pane-of-glass) ที่ครอบคลุมทั้งสองโดเมน — โครงสร้างพื้นฐานและการผลิต — โดยแต่ละโดเมนมีไปป์ไลน์ระบบมาตรวัดระยะไกล ชุดแดชบอร์ด และระบบการแจ้งเตือนของตนเอง
+จัดเตรียมระบบตรวจสอบแบบศูนย์รวมหน้าจอเดียว (Single-pane-of-glass) ที่ครอบคลุมทั้งสี่โดเมนปฏิบัติการ — โครงสร้างพื้นฐาน, การผลิต LDI Lithography, งานเจาะ CNC Drilling และงานชุบ VCP Plating — โดยแต่ละโดเมนมีไปป์ไลน์ระบบมาตรวัดระยะไกล ชุดแดชบอร์ด และระบบการแจ้งเตือนของตนเอง
 
-**Infrastructure Domain (โดเมนโครงสร้างพื้นฐาน):**
+**Platform Infrastructure & NOC Domain (โดเมนโครงสร้างพื้นฐานและ NOC):**
 
 - **Ingestion (การนำเข้าข้อมูล):** ตัวชี้วัด SNMP จากเซิร์ฟเวอร์/อุปกรณ์เครือข่ายผ่าน Node-RED เข้าสู่ TimescaleDB
 - **Visualization (การแสดงผลข้อมูล):** 5 แดชบอร์ด (NOC Overview, Engineering Drill-Down, Capacity Forecast, Meta-Monitoring, Ingestion Latency)
 - **AIOps:** การตรวจจับความผิดปกติด้วย Z-Score, การเสื่อมสภาพของเซอร์กิตเบรกเกอร์ (Circuit breaker degradation), การคาดการณ์ความจุล่วงหน้า
 
-**Manufacturing Domain (โดเมนการผลิต):**
+**Lithography Operations / LDI Manufacturing Domain (โดเมนการผลิต LDI):**
 
 - **Ingestion (การนำเข้าข้อมูล):** ระบบมาตรวัดระยะไกลของเครื่องจักร LDI (ข้อผิดพลาดของตำแหน่ง/การตัดสินใจ, ความหนา, ความเร็วในการสแกน, ปริมาณสารต้านทาน) ผ่าน HTTP/JSON
 - **Visualization (การแสดงผลข้อมูล):** 10 แดชบอร์ด (Easy Overview, Manufacturing Command Center, Operator Andon Board, Alarm Console, Alarm Dictionary, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin, Alarm Response)
 - **Analytics (การวิเคราะห์เชิงลึก):** การวิเคราะห์ SPC เชิงลึกแบบเรียลไทม์ (ความสามารถของกระบวนการ Cpk) และ RCA (ความสัมพันธ์ระหว่างการแจ้งเตือนและพารามิเตอร์)
+
+**Drilling Operations / CNC Domain (โดเมนงานเจาะ CNC):**
+
+- **Ingestion (การนำเข้าข้อมูล):** ข้อมูล Telemetry และ Event Log ของเครื่องเจาะ CNC ผ่านระบบ EAP
+- **Visualization (การแสดงผลข้อมูล):** 4 แดชบอร์ด (Fleet Overview, Shift Production, Machine Investigation, Anomaly & Root Cause Analysis)
+- **Analytics (การวิเคราะห์เชิงลึก):** ภาระโหลดของ Spindle, ค่าเบี่ยงเบนเวลาต่อรอบ (Cycle Time Deviation), การหักของดอกเจาะ (Tool Breakage) และผลผลิตระหว่างรอบการทำงาน
+
+**Plating Operations / VCP Line Domain (โดเมนสายการผลิตงานชุบ VCP):**
+
+- **Ingestion (การนำเข้าข้อมูล):** ระบบมาตรวัดระยะไกลของสายงานชุบแนวตั้งแบบต่อเนื่อง (VCP) (กระแส Rectifier, อุณหภูมิบ่อชุบ, ความเร็วสายพาน) ผ่านระบบ EAP
+- **Visualization (การแสดงผลข้อมูล):** 3 แดชบอร์ด (VCP Overview, VCP Operations Console, VCP Realtime Wall)
+- **Analytics (การวิเคราะห์เชิงลึก):** การติดตามบาร์จับชิ้นงาน (Flight Bar Tracking), ปริมาณประจุสะสม (Ampere-Minute Accumulation), สภาพเคมีในบ่อชุบ และการกระจายความหนาชั้นชุบ
 
 **Alerting & Success Criteria (หลักเกณฑ์การแจ้งเตือนและความสำเร็จ):**
 

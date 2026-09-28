@@ -39,7 +39,7 @@
 ### 文档与仓库规范化治理 (Documentation & Repository Hygiene)
 - 截至 2026-09-28 对照实时运行系统 (`main`) 在英、泰、简中三语下重新核实所有现行文档与系统清单。
 - 同步全语言 README 版本徽标至 `v1.0.1`，并从 `.gitignore` 中移除核心规则文档 (`AGENTS.md`)。
-- 重新生成并核实 `DASHBOARD_INVENTORY.md`（22 个仪表板，288 个面板）与 `DATABASE_SCHEMA.md`（61 项迁移，013–086），确保零漂移。
+- 重新生成并核实 `DASHBOARD_INVENTORY.md`（22 个仪表板，225 个面板）与 `DATABASE_SCHEMA.md`（61 项迁移，013–086），确保零漂移。
 - 加固 `.gitignore`，增加全局压缩归档与临时备份文件忽略规则（`*.zip`、`*.tar.gz`、`*.tgz`）。
 - 现行文档已对照 `main` 以英文、泰文与简体中文重新核实：README、`CLAUDE.md`、文档索引、管理员与用户手册、运维手册、架构、安全策略、贡献指南。
 - 公开文档不再披露一楼建筑尺寸；删除真实服务器主机名以及被镜像的个人文件。

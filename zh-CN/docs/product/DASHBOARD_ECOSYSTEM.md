@@ -22,18 +22,25 @@ mindmap
       Easy Overview
       NOC Overview
       Mfg Command Center
+      Drilling Fleet Overview
+      VCP Overview
     Predictive(第二层：系统健康)
       Factory Digital Twin
       Capacity Planning
       Meta-Monitoring
+      Drilling Shift Production
     Engineering(第三层：工程与深度分析)
       Engineering Drill-Down
       LDI Analytics
       Ingestion Latency
+      Drilling Anomaly Analysis
     Tactical(第四层：战术行动)
       Machine Snapshot
       Operator Andon
       Data Readiness
+      Drilling Machine Investigation
+      VCP Realtime Wall
+      VCP Operations Console
     Incident(第五层：事件管理)
       Alarm Console
       Alarm Response
@@ -41,7 +48,7 @@ mindmap
 ```
 
 > [!TIP]
-> **性能架构：** 这些仪表板中没有一个会查询超过 24 小时的时间范围的原始遥测数据。它们完全由 **TimescaleDB Continuous Aggregates (CAGGs)** 驱动，确保亚秒级加载时间。所有仪表板都遵循 **Grid-24** 纪律。
+> **性能架构：** 这些仪表板中没有一个会查询超过 24 小时的时间范围的原始遥测数据。它们完全由 **TimescaleDB Continuous Aggregates (CAGGs)** 驱动，确保亚秒级加载时间。所有仪表板都遵循 **Grid-24** 纪律。完整的技术规范与面板数量见 **[Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md)**。
 
 ---
 
@@ -55,6 +62,8 @@ _**目标**：为商业领袖提供即时的扫视价值。专注于整体健康
 | **IMS NOC Overview** | 统一车队健康评分 (0-100)，排名前10的关键节点排行榜，以及异常时间线。 | <img src="../../../assets/noc-overview.png" width="250"/> |
 | **LDI Manufacturing** | 实时整体设备效率 (OEE)、物理良率和生产瓶颈。 | <img src="../../../assets/ldi-manufacturing.png" width="250"/> |
 | **IMS Easy Overview** | 简化的业务级 KPI 跟踪。全球系统正常运行时间和总体制造产量。 | <img src="../../../assets/ims-easy-overview.png" width="250"/> |
+| **Drilling Fleet Overview** | 全机群 CNC 主轴利用率、刀具寿命消耗、运行状态与机台告警分布。 | *(合成 EAP 数据源)* |
+| **VCP Overview** | 多线 VCP 电镀产线总览、运行中的飞靶、产线速度与槽液关键参数健康度。 | *(合成 EAP 数据源)* |
 
 ---
 
@@ -68,6 +77,7 @@ _**目标**：预测性操作 (AIOps)。在问题表现为中断的前几天就�
 | **Capacity Planning** | 预测性预测。线性回归趋势线计算“达到 100% 容量的准确天数”。 | <img src="../../../assets/capacity-planning.png" width="250"/> |
 | **Meta-Monitoring** | “监控监控器”。摄取管道吞吐量、SNMP 状态和查询预算。 | <img src="../../../assets/meta-monitoring.png" width="250"/> |
 | **Factory Digital Twin** | PCB 生产车间的实时物理代理。机器状态的空间映射。 | *(Requires specialized 3D plugin)* |
+| **Drilling Shift Production** | 按白班/夜班跟踪钻孔良率与加工产出，已完成板件计数及运行时间预测。 | *(合成 EAP 数据源)* |
 
 ---
 
@@ -81,6 +91,7 @@ _**目标**：IT 基础设施限制与 OT 制造良率之间的根本原因关�
 | **Engineering Drill-Down** | 切换上下文的微观指标。针对 24 小时滚动基线的 Z-Score 异常检测。 | <img src="../../../assets/engineering-drilldown.png" width="250"/> |
 | **LDI Analytics** | 深度流程工程数据科学。将 OT 因素与结构性 PCB 良率缺陷关联起来。 | <img src="../../../assets/ldi-engineering.png" width="250"/> |
 | **Ingestion Latency** | 测量工厂车间传感器发出信号与成功提交到 PostgreSQL 之间的确切传播延迟。 | *(CAGG aggregation active)* |
+| **Drilling Anomaly Analysis** | 钻孔多维关联分析：断刀（Tool Breakage）、主轴转速偏差与告警根因定位。 | *(合成 EAP 数据源)* |
 
 ---
 
@@ -94,6 +105,9 @@ _**目标**：为操作物理硬件的人员提供二进制的、零延迟的决
 | **Operator Andon** | 超简化的、高对比度的状态板。纯红色/绿色视觉提示。如果是红色的，请停止。 | <img src="../../../assets/ldi-andon.png" width="250"/> |
 | **Machine Snapshot** | 机器的实时心跳。加载的配方、激光功率、传感器读数。 | <img src="../../../assets/ldi-machine.png" width="250"/> |
 | **Data Readiness** | 数据完整性验证。跟踪空值、模式损坏和传感器离线状态。 | <img src="../../../assets/ldi-data-readiness.png" width="250"/> |
+| **Drilling Machine Investigation** | 单主轴精细下钻、XY 工作台运动遥测、刀具磨损寿命与传感器事件。 | *(合成 EAP 数据源)* |
+| **VCP Realtime Wall** | VCP 电镀线飞行甲板级大屏实时墙，展示整流器电流、安培-分钟与槽液温度。 | *(合成 EAP 数据源)* |
+| **VCP Operations Console** | 电镀槽整流器控制、飞靶进度跟踪、槽液加热与添加剂计量控制台。 | *(合成 EAP 数据源)* |
 
 ---
 

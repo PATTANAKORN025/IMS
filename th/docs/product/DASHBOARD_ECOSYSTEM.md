@@ -22,18 +22,25 @@ mindmap
       Easy Overview
       NOC Overview
       Mfg Command Center
+      Drilling Fleet Overview
+      VCP Overview
     Predictive(ระดับที่ 2: สุขภาพระบบ)
       Factory Digital Twin
       Capacity Planning
       Meta-Monitoring
+      Drilling Shift Production
     Engineering(ระดับที่ 3: วิเคราะห์เชิงลึก)
       Engineering Drill-Down
       LDI Analytics
       Ingestion Latency
+      Drilling Anomaly Analysis
     Tactical(ระดับที่ 4: ปฏิบัติการหน้างาน)
       Machine Snapshot
       Operator Andon
       Data Readiness
+      Drilling Machine Investigation
+      VCP Realtime Wall
+      VCP Operations Console
     Incident(ระดับที่ 5: จัดการอุบัติการณ์)
       Alarm Console
       Alarm Response
@@ -41,7 +48,7 @@ mindmap
 ```
 
 > [!TIP]
-> **สถาปัตยกรรมประสิทธิภาพ:** ไม่มีแดชบอร์ดใดที่ดึงข้อมูล Telemetry ดิบสำหรับกรอบเวลาเกิน 24 ชั่วโมง แดชบอร์ดทั้งหมดใช้พลังจาก **TimescaleDB Continuous Aggregates (CAGGs)** รับประกันเวลาโหลดต่ำกว่าหนึ่งวินาที ไม่ว่าจะสืบค้นลึกแค่ไหน หรือมีผู้ใช้พร้อมกันเท่าใด ทุกแดชบอร์ดยึดมั่นในวินัย **Grid-24**
+> **สถาปัตยกรรมประสิทธิภาพ:** ไม่มีแดชบอร์ดใดที่ดึงข้อมูล Telemetry ดิบสำหรับกรอบเวลาเกิน 24 ชั่วโมง แดชบอร์ดทั้งหมดใช้พลังจาก **TimescaleDB Continuous Aggregates (CAGGs)** รับประกันเวลาโหลดต่ำกว่าหนึ่งวินาที ไม่ว่าจะสืบค้นลึกแค่ไหน หรือมีผู้ใช้พร้อมกันเท่าใด ทุกแดชบอร์ดยึดมั่นในวินัย **Grid-24** ข้อมูลจำเพาะทางเทคนิคและจำนวน panel ครบถ้วนสามารถดูได้ที่ **[Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md)**
 
 ---
 
@@ -55,6 +62,8 @@ _**เป้าหมาย**: มองเห็นภาพรวมได้�
 | **IMS NOC Overview** | คะแนนสุขภาพ (0-100), กระดานผู้นำโหนดวิกฤต 10 อันดับแรก และไทม์ไลน์ความผิดปกติ | <img src="../../../assets/noc-overview.png" width="250"/> |
 | **LDI Manufacturing** | ประสิทธิผลโดยรวมของเครื่องจักรอุปกรณ์ (OEE) แบบเรียลไทม์, อัตราผลตอบแทน, และคอขวดการผลิต | <img src="../../../assets/ldi-manufacturing.png" width="250"/> |
 | **IMS Easy Overview** | การติดตาม KPI ระดับธุรกิจที่เรียบง่าย เวลาทำงาน (Uptime) โดยรวมของระบบและผลผลิตขั้นต้น | <img src="../../../assets/ims-easy-overview.png" width="250"/> |
+| **Drilling Fleet Overview** | การใช้งาน Spindle เครื่องเจาะ CNC ทั้งฝูง, สถานะการทำงาน และการกระจายตัวของ Alarm | *(แหล่งข้อมูล Synthetic EAP)* |
+| **VCP Overview** | ภาพรวมสายการผลิตงานชุบ VCP หลายสาย, บาร์จับชิ้นงานที่กำลังทำงาน, ความเร็วสายพาน และค่าพารามิเตอร์เคมี | *(แหล่งข้อมูล Synthetic EAP)* |
 
 ---
 
@@ -68,6 +77,7 @@ _**เป้าหมาย**: ปฏิบัติการเชิงคา�
 | **Capacity Planning** | การพยากรณ์ล่วงหน้าด้วย Linear regression คำนวณ "จำนวนวันจนกว่าความจุจะถึง 100%" | <img src="../../../assets/capacity-planning.png" width="250"/> |
 | **Meta-Monitoring** | "การตรวจสอบผู้ตรวจสอบ" ปริมาณงานในไปป์ไลน์, สถานะ SNMP และโควต้าคิวรี | <img src="../../../assets/meta-monitoring.png" width="250"/> |
 | **Factory Digital Twin** | ตัวแทนทางกายภาพแบบเรียลไทม์ของพื้นที่การผลิต แผนที่เชิงพื้นที่ของสถานะเครื่องจักร | *(Requires specialized 3D plugin)* |
+| **Drilling Shift Production** | ติดตามผลผลิตงานเจาะแยกตามกะกลางวัน/กลางคืน, จำนวนแผ่นงานที่เจาะเสร็จ และการคาดการณ์เวลารัน | *(แหล่งข้อมูล Synthetic EAP)* |
 
 ---
 
@@ -81,6 +91,7 @@ _**เป้าหมาย**: สหสัมพันธ์ของสาเ�
 | **Engineering Drill-Down** | เมตริกระดับจุลภาค การตรวจจับความผิดปกติแบบ Z-Score เทียบกับเส้นฐานตลอด 24 ชั่วโมง | <img src="../../../assets/engineering-drilldown.png" width="250"/> |
 | **LDI Analytics** | วิทยาการข้อมูลวิศวกรรมกระบวนการเชิงลึก หาความสัมพันธ์ของปัจจัย OT กับข้อบกพร่อง | <img src="../../../assets/ldi-engineering.png" width="250"/> |
 | **Ingestion Latency** | วัดความล่าช้าการแพร่กระจายระหว่างเซ็นเซอร์ที่โรงงานกับ PostgreSQL (PgBouncer) | *(CAGG aggregation active)* |
+| **Drilling Anomaly Analysis** | วิเคราะห์หาสหสัมพันธ์หลายมิติระหว่างการหักของดอกเจาะ, ค่าเบี่ยงเบนความเร็ว Spindle และ Alarm | *(แหล่งข้อมูล Synthetic EAP)* |
 
 ---
 
@@ -94,6 +105,9 @@ _**เป้าหมาย**: การตัดสินใจแบบไบ�
 | **Operator Andon** | กระดานสถานะความคมชัดสูง เรียบง่าย ไฟแดง/เขียว ถ้าไฟแดงให้หยุดสายการผลิตทันที | <img src="../../../assets/ldi-andon.png" width="250"/> |
 | **Machine Snapshot** | สัญญาณชีพสดของเครื่องจักร สูตร (Recipe) ปัจจุบัน, เลเซอร์, ค่าเซ็นเซอร์ | <img src="../../../assets/ldi-machine.png" width="250"/> |
 | **Data Readiness** | การตรวจสอบความสมบูรณ์ของข้อมูล การทุจริตของโครงสร้าง (Schema) และสถานะออฟไลน์ | <img src="../../../assets/ldi-data-readiness.png" width="250"/> |
+| **Drilling Machine Investigation** | เจาะลึกราย Spindle ของเครื่องเจาะ, Telemetry การเคลื่อนที่แกน XY, อายุการใช้งานดอกเจาะ และ Event เซ็นเซอร์ | *(แหล่งข้อมูล Synthetic EAP)* |
+| **VCP Realtime Wall** | จอมอนิเตอร์แบบ Flight-deck แสดงผลเรียลไทม์ของสายชุบ VCP, กระแส Rectifier, แอมแปร์-นาที และอุณหภูมิบ่อชุบ | *(แหล่งข้อมูล Synthetic EAP)* |
+| **VCP Operations Console** | คอนโซลควบคุมเซลล์ชุบ Rectifier, ความคืบหน้า Flight Bar, และการปรับอุณหภูมิ/การเติมสารเคมี | *(แหล่งข้อมูล Synthetic EAP)* |
 
 ---
 
