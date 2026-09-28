@@ -15,7 +15,7 @@
 
 ## 执行摘要
 
-IMS 是一个跨越两个领域的监控平台 —— **基础设施**（服务器，网络设备）和 **LDI 制造**（PCB 激光直接成像生产线）—— 共享一个 TimescaleDB、一个 Grafana 实例（15 个仪表板，划分到 `Infrastructure`/`Manufacturing` 文件夹中），并通过 Grafana 原生规则和 Prometheus/Alertmanager 进行告警。制造方面包括真实的 SPC（Cpk 过程能力）和 RCA（告警与参数相关性）分析，而不仅仅是遥测展示。这两个领域在逻辑上是分离的（文件夹、标签、`CODEOWNERS`），但共享基础设施 —— 请参阅 `docs/architecture/OWNERSHIP.md` 以了解在当前系统规模下为什么物理拆分是不合理的原因。
+IMS 是一个跨越两个领域的监控平台 —— **基础设施**（服务器，网络设备）和 **LDI 制造**（PCB 激光直接成像生产线）—— 共享一个 TimescaleDB、一个 Grafana 实例（22 个仪表板，分布在钻孔、LDI、平台、VCP 四个文件夹中），并通过 Grafana 原生规则和 Prometheus/Alertmanager 进行告警。制造方面包括真实的 SPC（Cpk 过程能力）和 RCA（告警与参数相关性）分析，而不仅仅是遥测展示。这两个领域在逻辑上是分离的（文件夹、标签、`CODEOWNERS`），但共享基础设施 —— 请参阅 `docs/architecture/OWNERSHIP.md` 以了解在当前系统规模下为什么物理拆分是不合理的原因。
 
 ---
 

@@ -152,7 +152,7 @@
   "links": [],
   "id": null,
   "uid": "ims-ldi-alarm-console",
-  "title": "IMS LDI - Alarm Console",
+  "title": "LDI — 07 Live Alarm Management Console",
   "version": 1,
   "time": {
     "from": "now-2h",
@@ -161,11 +161,15 @@
   "timezone": "UTC",
   "refresh": "5s",
   "tags": [
-    "IMS",
-    "LDI",
-    "real-data",
-    "current-database",
+    "alarms",
+    "console",
+    "ims",
+    "incident-response",
+    "ldi",
+    "level-2-operation",
+    "lithography",
+    "maintenance",
     "manufacturing",
-    "interactive"
+    "operator"
   ]
 }

@@ -98,7 +98,7 @@ Secrets มาจาก `.env` ด้วยรูปแบบ `${VAR:?message}` 
 
 ### Grafana (`monitoring/grafana/`)
 
-แดชบอร์ดถูก provision แบบอ่านอย่างเดียวจาก `dashboards/infrastructure/` และ `dashboards/manufacturing/` การแก้ไขทำในไฟล์ JSON ผ่าน git ไม่ใช่ผ่านหน้า UI `tests/lint/dashboard-linter.js` บังคับใช้กฎ grid และ token จาก `AGENTS.md` ส่วนที่ 4 (ทุกแถวรวมได้ 24 คอลัมน์พอดี, ใช้เฉพาะ token สีมาตรฐาน, ครอบตัวแปร template ด้วย quote ใน SQL เสมอ)
+แดชบอร์ดถูก provision แบบอ่านอย่างเดียวจาก `dashboards/drilling/`, `manufacturing/` (LDI), `infrastructure/` และ `vcp/` โดยแยกเป็นหนึ่งโฟลเดอร์ Grafana ต่อหนึ่งไดเรกทอรี แดชบอร์ดงานเจาะและ VCP ใช้ data source `drilling-timescaledb` ซึ่งอ่านฐานข้อมูล `eap_backup` ที่แยกต่างหาก (ข้อมูลโรงงาน ไม่อยู่ใน git; `docs/data/MOCK_DATA.md` สร้างฐานข้อมูลสังเคราะห์แทนได้) การแก้ไขทำในไฟล์ JSON ผ่าน git ไม่ใช่ผ่านหน้า UI `tests/lint/dashboard-linter.js` บังคับใช้กฎ grid และ token จาก `AGENTS.md` ส่วนที่ 4 (ทุกแถวรวมได้ 24 คอลัมน์พอดี, ใช้เฉพาะ token สีมาตรฐาน, ครอบตัวแปร template ด้วย quote ใน SQL เสมอ)
 
 ### บริการ (`services/`)
 

@@ -278,7 +278,7 @@ flowchart LR
 3. **Parsing** — `sre_parser` maintains per-device state in flow context (`dev_state_<deviceId>`), buffers rows in `batch_buf_<deviceId>`. Offline heartbeat (`_walker: "offline"`) immediately zeros all metrics on device failure.
 4. **Storage** — Timer-gated independent flushing: each table type (sys/net/ldi) inserts only if its buffer has rows. Partial walker failures don't block unrelated data writes.
 5. **Continuous Aggregation** — TimescaleDB refresh policies run from every minute (`ldi_data_1m`, `ldi_oee_1m`) to every 6 hours (weekly rollups); daily and weekly infrastructure CAGGs aggregate from the hourly ones (see [Data Flow](docs/architecture/DATA_FLOW.md)). Live retention (verified against the running database, not migration history -- see `docs/architecture/DATA_RETENTION.md` for a documented drift between the two): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30d, `ldi_data` 180d, hourly rollups 2yr.
-6. **Visualization** — 15 dashboards across 2 domains: 5 infrastructure (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring, Ingestion Latency) + 10 manufacturing (Easy Overview, LDI Manufacturing, Operator Andon, Alarm Console, Alarm Dictionary, Alarm Response (MTTA/MTTR), Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin).
+6. **Visualization** — 22 dashboards in four Grafana folders: 01 Drilling (4: fleet overview, shift production, machine investigation, anomaly & root cause), 02 LDI (10: executive overview, operator Andon, factory digital twin, fleet command center, machine snapshot, engineering analytics & SPC, alarm console, alarm response MTTA/MTTR, alarm dictionary, data readiness), 03 Platform & NOC (5: NOC overview, engineering drill-down, AIOps capacity, ingestion latency, meta-monitoring), 04 VCP plating (3: fleet overview, operations console, real-time wall).
 7. **Alerting** — Prometheus scrapes `/metrics`, Alertmanager routes to LINE Messaging API + MS Teams with runbook links (real delivery requires operator-configured credentials, absent by design). Z-Score anomalies via Grafana SQL over TimescaleDB.
 
 </details>
@@ -286,7 +286,7 @@ flowchart LR
 <details>
 <summary><b>Dashboard Architecture</b></summary>
 
-15 dashboards — 5 infrastructure, 10 manufacturing (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, provisioned into separate Grafana folders — see **[Ownership](docs/architecture/OWNERSHIP.md)** for the domain boundary). Full table with panel counts and descriptions: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — auto-generated from the dashboard JSON itself (`node scripts/generate-dashboard-inventory.js`), CI-checked so it can't silently drift from the real dashboards the way a hand-typed table can.
+22 dashboards — 4 drilling, 10 LDI manufacturing, 5 infrastructure, 3 VCP plating (`monitoring/grafana/dashboards/{drilling,manufacturing,infrastructure,vcp}/`, one Grafana folder each — see **[Ownership](docs/architecture/OWNERSHIP.md)** for the domain boundary). The drilling and VCP dashboards read the `eap_backup` database through the `drilling-timescaledb` data source; without plant data, load **[synthetic data](docs/data/MOCK_DATA.md)**. Full table with panel counts and descriptions: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — auto-generated from the dashboard JSON itself (`node scripts/generate-dashboard-inventory.js`), CI-checked so it can't silently drift from the real dashboards the way a hand-typed table can.
 
 **Design System:** Cyberpunk HUD — `#030407` background, Tailwind palette (`#22C55E` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#00F2FE` Info, `#3B82F6` Accent — the approved tokens in [GRAFANA_DESIGN_SYSTEM.md](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) §2.1), Roboto Mono for stat values, glassmorphism panels, Grid-24 overlap-free layout.
 
@@ -316,7 +316,7 @@ Use `kiosk`: the older `kiosk=tv` TV mode is not one of Grafana 13's kiosk optio
 | **Orchestration** | Docker Compose            | 15-service stack (`docker-compose.yaml`) + production resource overlay       |
 | **Collection**    | Node-RED + net-snmp       | Sequential async bulk SNMP walks, 5-thread parallel walker                    |
 | **Database**      | TimescaleDB 2.29 (PostgreSQL 16) + PgBouncer 1.25 | Hypertables, CAGG rollups, native compression, retention policies |
-| **Visualization** | Grafana 13.1.2 + image renderer | 15 dashboards (5 infrastructure + 10 manufacturing)                    |
+| **Visualization** | Grafana 13.1.2 + image renderer | 22 dashboards (4 drilling + 10 LDI + 5 infrastructure + 3 VCP)         |
 | **Alerting**      | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks     |
 | **Load Testing**  | K6                        | Pipeline stress, thresholds success > 95 %, e2e p95 < 10 s                    |
 | **Services**      | Node.js 22 (Express)      | `alarm-api` (acknowledge/resolve write path), `factory-twin-3d` (Floor 1 twin) |
@@ -348,7 +348,7 @@ IMS/
 ├── proxy/nginx.conf            # the single front door (Grafana, alarm-api, twin, LDI ingest)
 ├── monitoring/
 │  ├── grafana/
-│  │  ├── dashboards/{infrastructure,manufacturing}/  # 5 + 10 provisioned dashboards (source of truth)
+│  │  ├── dashboards/{drilling,manufacturing,infrastructure,vcp}/  # 4 + 10 + 5 + 3 provisioned dashboards (source of truth)
 │  │  ├── library-panels/        # shared library panel (Fleet Health Score)
 │  │  └── provisioning/, grafana.ini
 │  ├── prometheus/, alertmanager/, blackbox/, snmpsim/
@@ -357,7 +357,7 @@ IMS/
 │  ├── lib/                    # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
 │  └── settings.js
 ├── postgres/init/              # first-boot bootstrap SQL + grafana password script
-├── database/migrations/        # numbered forward-only migrations (max 082), applied by db-migrate
+├── database/migrations/        # numbered forward-only migrations (max 086), applied by db-migrate
 ├── services/
 │  ├── alarm-api/              # acknowledge/resolve write path (Express + pg)
 │  └── factory-twin-3d/        # Floor 1 digital twin (Express, lib/*.js + public/ viewer)

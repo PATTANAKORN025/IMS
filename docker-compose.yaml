@@ -35,6 +35,8 @@ services:
   timescaledb:
     image: timescale/timescaledb:2.29.2-pg16
     container_name: ims-timescaledb
+    # parallel query uses /dev/shm; the Docker default of 64 MB is too small for it
+    shm_size: 256mb
     <<: *default-restart
     init: true
     environment:
@@ -71,7 +73,25 @@ services:
       - -c
       - timezone=${TZ:-UTC}
       - -c
-      - timescaledb.max_background_workers=32
+      # worker slots: TimescaleDB jobs and parallel query share max_worker_processes. At 8
+      # (with 32 asked for TimescaleDB) jobs logged "failed to start" after every restart.
+      - timescaledb.max_background_workers=8
+      - -c
+      - max_worker_processes=16
+      - -c
+      - max_parallel_workers=2
+      # JIT compiled thousands of functions for a 0-row SPC query and took it from under a second to 45 s;
+      # dashboard queries here are short, so compilation only costs CPU (migration 083)
+      - -c
+      - jit=off
+      # an abandoned transaction may not hold locks and snapshots for more than 5 minutes
+      - -c
+      - idle_in_transaction_session_timeout=5min
+      # log anything slower than 5 s, and lock waits, so a pile-up is visible early
+      - -c
+      - log_min_duration_statement=5s
+      - -c
+      - log_lock_waits=on
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
@@ -108,7 +128,7 @@ services:
       retries: 5
       start_period: 15s
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
+      DATABASE_URLS: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB},postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/eap_backup
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
       ALARM_API_DB_PASSWORD: ${ALARM_API_DB_PASSWORD:?ALARM_API_DB_PASSWORD required in .env}
       POOL_MODE: transaction
@@ -121,6 +141,7 @@ services:
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
       AUTH_TYPE: plain
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits,statement_timeout
     volumes:
       - ./pgbouncer/entrypoint-wrapper.sh:/etc/pgbouncer/entrypoint-wrapper.sh:ro
     deploy:
@@ -234,10 +255,10 @@ services:
     # same-origin front door and can carry Grafana's session cookie.
     deploy:
       resources:
-        limits: *resource-medium
+        limits: *resource-large
         reservations:
-          cpus: '0.25'
-          memory: 128M
+          cpus: '0.5'
+          memory: 256M
     depends_on:
       timescaledb:
         condition: service_healthy
@@ -564,8 +585,23 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?set in .env}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set in .env}
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+      GUNICORN_THREADS: 4
+      PGADMIN_CONFIG_MAX_QUERY_HIST_STORED: 50
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 20
+      PGADMIN_CONFIG_UPGRADE_CHECK_ENABLED: 'False'
     ports:
-      - "5050:80"
+      - "127.0.0.1:5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./database/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          memory: 128M
     networks:
       - ims-internal
     depends_on:
@@ -580,6 +616,8 @@ volumes:
   alertmanager_data:
     driver: local
   grafana_data:
+    driver: local
+  pgadmin_data:
     driver: local
 
 networks:

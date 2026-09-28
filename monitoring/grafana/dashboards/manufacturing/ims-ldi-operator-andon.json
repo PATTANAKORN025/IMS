@@ -1129,7 +1129,7 @@
   "links": [],
   "id": null,
   "uid": "ims-ldi-operator-andon",
-  "title": "IMS LDI - Operator Andon Board",
+  "title": "LDI — 02 Operator Andon Board (Shopfloor Kiosk)",
   "version": 5,
   "time": {
     "from": "now-2h",
@@ -1138,11 +1138,15 @@
   "timezone": "UTC",
   "refresh": "5s",
   "tags": [
-    "IMS",
-    "LDI",
-    "set-2",
-    "real-data",
-    "current-database",
-    "manufacturing"
+    "alarms",
+    "andon",
+    "ims",
+    "kiosk",
+    "ldi",
+    "level-1-overview",
+    "lithography",
+    "manufacturing",
+    "operator",
+    "shopfloor"
   ]
 }

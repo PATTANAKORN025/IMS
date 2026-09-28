@@ -278,7 +278,7 @@ flowchart LR
 3. **การแยกวิเคราะห์ (parsing)** — `sre_parser` เก็บสถานะรายอุปกรณ์ไว้ใน flow context (`dev_state_<deviceId>`) และพักแถวข้อมูลไว้ใน `batch_buf_<deviceId>` heartbeat สถานะออฟไลน์ (`_walker: "offline"`) จะตั้งค่าตัวชี้วัดทั้งหมดเป็นศูนย์ทันทีเมื่ออุปกรณ์ล้มเหลว
 4. **การจัดเก็บ** — flush แยกอิสระตามตัวจับเวลา: ตารางแต่ละประเภท (sys/net/ldi) จะ insert ก็ต่อเมื่อบัฟเฟอร์ของตัวเองมีข้อมูล walker ที่ล้มเหลวบางตัวจึงไม่ขวางการเขียนข้อมูลส่วนอื่น
 5. **Continuous Aggregation** — นโยบาย refresh ของ TimescaleDB ทำงานตั้งแต่ทุกนาที (`ldi_data_1m`, `ldi_oee_1m`) ไปจนถึงทุก 6 ชั่วโมง (rollup รายสัปดาห์) CAGG รายวันและรายสัปดาห์ของฝั่งโครงสร้างพื้นฐานสรุปต่อจาก CAGG รายชั่วโมง (ดู [Data Flow](docs/architecture/DATA_FLOW.md)) ระยะเก็บข้อมูลจริง (ตรวจกับฐานข้อมูลที่รันอยู่ ไม่ได้อิงประวัติ migration — ดู `docs/architecture/DATA_RETENTION.md` ซึ่งบันทึกความคลาดเคลื่อนระหว่างสองแหล่งไว้): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30 วัน, `ldi_data` 180 วัน, rollup รายชั่วโมง 2 ปี
-6. **การแสดงผล** — 15 แดชบอร์ดใน 2 โดเมน: โครงสร้างพื้นฐาน 5 ชุด (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring, Ingestion Latency) + การผลิต 10 ชุด (Easy Overview, LDI Manufacturing, Operator Andon, Alarm Console, Alarm Dictionary, Alarm Response (MTTA/MTTR), Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin)
+6. **การแสดงผล** — 22 แดชบอร์ดในสี่โฟลเดอร์ของ Grafana: 01 งานเจาะ (4 ชุด: ภาพรวมกลุ่มเครื่อง, ผลผลิตรายกะ, การตรวจสอบรายเครื่อง, ความผิดปกติและสาเหตุราก), 02 LDI (10 ชุด: ภาพรวมผู้บริหาร, Andon สำหรับผู้ปฏิบัติงาน, Digital Twin ของโรงงาน, ศูนย์บัญชาการกลุ่มเครื่อง, Snapshot รายเครื่อง, วิเคราะห์วิศวกรรมและ SPC, คอนโซลแจ้งเตือน, การตอบสนองแจ้งเตือน MTTA/MTTR, พจนานุกรมแจ้งเตือน, ความพร้อมของข้อมูล), 03 แพลตฟอร์มและ NOC (5 ชุด: ภาพรวม NOC, Engineering Drill-Down, AIOps Capacity, Ingestion Latency, Meta-Monitoring), 04 งานชุบ VCP (3 ชุด: ภาพรวมกลุ่มสาย, คอนโซลปฏิบัติการ, จอแสดงผลเรียลไทม์)
 7. **การแจ้งเตือน** — Prometheus scrape `/metrics` แล้ว Alertmanager ส่งต่อไป LINE Messaging API และ MS Teams พร้อมลิงก์ runbook (การส่งจริงต้องให้ผู้ดูแลกำหนด credential เอง โดยตั้งใจไม่ใส่มาให้) ความผิดปกติแบบ Z-Score คำนวณด้วย SQL ของ Grafana บน TimescaleDB
 
 </details>
@@ -286,7 +286,7 @@ flowchart LR
 <details>
 <summary><b>สถาปัตยกรรมแดชบอร์ด</b></summary>
 
-15 แดชบอร์ด — โครงสร้างพื้นฐาน 5 ชุด และการผลิต 10 ชุด (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/` provision แยกโฟลเดอร์ใน Grafana — ขอบเขตโดเมนดูที่ **[Ownership](docs/architecture/OWNERSHIP.md)**) ตารางเต็มพร้อมจำนวน panel และคำอธิบายอยู่ที่ **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** ซึ่งสร้างอัตโนมัติจาก JSON ของแดชบอร์ด (`node scripts/generate-dashboard-inventory.js`) และตรวจใน CI จึงไม่คลาดจากแดชบอร์ดจริงแบบตารางที่พิมพ์เอง
+22 แดชบอร์ด — งานเจาะ 4 ชุด การผลิต LDI 10 ชุด โครงสร้างพื้นฐาน 5 ชุด และงานชุบ VCP 3 ชุด (`monitoring/grafana/dashboards/{drilling,manufacturing,infrastructure,vcp}/` provision แยกโฟลเดอร์ละหนึ่งโดเมนใน Grafana — ขอบเขตโดเมนดูที่ **[Ownership](docs/architecture/OWNERSHIP.md)**) แดชบอร์ดงานเจาะและ VCP อ่านฐานข้อมูล `eap_backup` ผ่าน data source `drilling-timescaledb` หากไม่มีข้อมูลโรงงาน ให้โหลด **[ข้อมูลสังเคราะห์](docs/data/MOCK_DATA.md)** ตารางเต็มพร้อมจำนวน panel และคำอธิบายอยู่ที่ **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** ซึ่งสร้างอัตโนมัติจาก JSON ของแดชบอร์ด (`node scripts/generate-dashboard-inventory.js`) และตรวจใน CI จึงไม่คลาดจากแดชบอร์ดจริงแบบตารางที่พิมพ์เอง
 
 **Design System:** Cyberpunk HUD — พื้นหลัง `#030407`, จานสี Tailwind (`#22C55E` ปกติ, `#F59E0B` เตือน, `#EF4444` วิกฤต, `#00F2FE` ข้อมูลทั่วไป, `#3B82F6` สีเน้น — token ที่อนุมัติใน [GRAFANA_DESIGN_SYSTEM.md](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) §2.1), ตัวเลขสถิติใช้ Roboto Mono, panel แบบ glassmorphism, layout Grid-24 ไม่ซ้อนทับกัน
 
@@ -316,7 +316,7 @@ flowchart LR
 | **Orchestration** | Docker Compose | stack 15 service (`docker-compose.yaml`) + overlay ทรัพยากรสำหรับ production |
 | **การเก็บข้อมูล** | Node-RED + net-snmp | walk SNMP แบบ bulk อะซิงโครนัสทีละขั้น, walker ขนาน 5 เธรด |
 | **ฐานข้อมูล** | TimescaleDB 2.29 (PostgreSQL 16) + PgBouncer 1.25 | Hypertables, rollup แบบ CAGG, การบีบอัดแบบ native, นโยบายระยะเก็บข้อมูล |
-| **การแสดงผล** | Grafana 13.1.2 + image renderer | 15 แดชบอร์ด (โครงสร้างพื้นฐาน 5 + การผลิต 10) |
+| **การแสดงผล** | Grafana 13.1.2 + image renderer | 22 แดชบอร์ด (งานเจาะ 4 + LDI 10 + โครงสร้างพื้นฐาน 5 + VCP 3) |
 | **การแจ้งเตือน** | Prometheus + Alertmanager | scrape ตัวชี้วัด, inhibition rules, LINE Messaging API + MS Teams webhooks |
 | **ทดสอบโหลด** | K6 | stress test ไปป์ไลน์, เกณฑ์ success > 95 %, e2e p95 < 10 วินาที |
 | **Services** | Node.js 22 (Express) | `alarm-api` (เส้นทางเขียน acknowledge/resolve), `factory-twin-3d` (ดิจิทัลทวินชั้น 1) |
@@ -348,7 +348,7 @@ IMS/
 ├── proxy/nginx.conf            # ประตูหน้าเพียงทางเดียว (Grafana, alarm-api, twin, ช่องรับข้อมูล LDI)
 ├── monitoring/
 │  ├── grafana/
-│  │  ├── dashboards/{infrastructure,manufacturing}/  # แดชบอร์ดที่ provision 5 + 10 ชุด (ต้นฉบับจริง)
+│  │  ├── dashboards/{drilling,manufacturing,infrastructure,vcp}/  # แดชบอร์ดที่ provision 4 + 10 + 5 + 3 ชุด (ต้นฉบับจริง)
 │  │  ├── library-panels/        # library panel ที่ใช้ร่วมกัน (Fleet Health Score)
 │  │  └── provisioning/, grafana.ini
 │  ├── prometheus/, alertmanager/, blackbox/, snmpsim/
@@ -357,7 +357,7 @@ IMS/
 │  ├── lib/                    # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
 │  └── settings.js
 ├── postgres/init/              # SQL bootstrap ตอนบูตครั้งแรก + สคริปต์รหัสผ่าน grafana
-├── database/migrations/        # migration แบบเดินหน้าอย่างเดียวตามลำดับเลข (สูงสุด 082) apply โดย db-migrate
+├── database/migrations/        # migration แบบเดินหน้าอย่างเดียวตามลำดับเลข (สูงสุด 086) apply โดย db-migrate
 ├── services/
 │  ├── alarm-api/              # เส้นทางเขียน acknowledge/resolve (Express + pg)
 │  └── factory-twin-3d/        # ดิจิทัลทวินชั้น 1 (Express, lib/*.js + ตัวแสดงผลใน public/)

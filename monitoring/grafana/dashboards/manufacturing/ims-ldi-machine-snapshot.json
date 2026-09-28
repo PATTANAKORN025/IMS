@@ -2812,7 +2812,7 @@
   ],
   "id": null,
   "uid": "ims-ldi-machine-snapshot",
-  "title": "IMS LDI - Machine Snapshot",
+  "title": "LDI — 05 Machine Deep-Dive Snapshot",
   "version": 4,
   "time": {
     "from": "now-6h",
@@ -2821,11 +2821,15 @@
   "timezone": "UTC",
   "refresh": "1m",
   "tags": [
-    "IMS",
-    "LDI",
-    "set-2",
-    "real-data",
-    "current-database",
-    "manufacturing"
+    "diagnostics",
+    "engineer",
+    "exposure",
+    "ims",
+    "ldi",
+    "level-3-diagnostic",
+    "lithography",
+    "machine-detail",
+    "manufacturing",
+    "telemetry"
   ]
 }

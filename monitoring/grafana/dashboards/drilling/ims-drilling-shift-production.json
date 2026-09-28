@@ -1,0 +1,303 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "01 · Fleet Overview",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/001/ims-drilling",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "02 · Shift Production",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-history",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "03 · Machine Investigation",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-detail",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "04 · Anomaly Analysis",
+      "type": "link",
+      "icon": "shield",
+      "url": "/d/ims-drilling-5-anomaly",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 9000,
+      "title": "",
+      "description": "Drilling shift production header and quick navigation",
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# IMS DRILLING · 3 Shift Production History\n",
+        "mode": "markdown"
+      },
+      "targets": [],
+      "transformations": []
+    },
+    {
+      "id": 101,
+      "title": "Production Information - ${focus_machine}",
+      "description": "7-day Day & Night shift performance replicating the shift screen on the CNC controller, with CSV export",
+      "type": "marcusolsson-dynamictext-panel",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 24,
+        "h": 14
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "afterRender": "window.exportCncCsv = function() {\n  const table = document.querySelector('.cnc-table');\n  if (!table) return;\n  const rows = table.querySelectorAll('tr');\n  const csvLines = [];\n  rows.forEach(tr => {\n    const cells = tr.querySelectorAll('th, td');\n    const rowValues = [];\n    cells.forEach(cell => {\n      let val = cell.innerText.trim();\n      val = val.replace(/\"/g, '\"\"');\n      if (val.includes(',') || val.includes('\"') || val.includes('\\n')) {\n        val = '\"' + val + '\"';\n      }\n      rowValues.push(val);\n    });\n    csvLines.push(rowValues.join(','));\n  });\n  \n  const csvContent = \"\\uFEFF\" + csvLines.join('\\r\\n');\n  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });\n  const url = URL.createObjectURL(blob);\n  const link = document.createElement('a');\n  \n  const titleEl = document.querySelector('.cnc-title-text');\n  const mName = titleEl ? titleEl.innerText.replace('Production Information-', '').trim() : 'Machine';\n  const today = new Date().toISOString().slice(0, 10);\n  \n  link.setAttribute('href', url);\n  link.setAttribute('download', 'Production_Information_' + mName + '_' + today + '.csv');\n  document.body.appendChild(link);\n  link.click();\n  document.body.removeChild(link);\n  URL.revokeObjectURL(url);\n};",
+        "content": "<div class=\"cnc-window\">\n<div class=\"cnc-title-bar\">\n<div class=\"cnc-title-text\">Production Information {{data.[0].Machine}}</div>\n<div class=\"cnc-close-btn\">&#x2715;</div>\n</div>\n<div class=\"cnc-body\">\n<table class=\"cnc-table\">\n<thead>\n<tr class=\"cnc-row-date\">\n<th class=\"cnc-lbl\">Date</th>\n{{#each data}}\n<th class=\"cnc-val-date\">{{#if this.ShortDate}}{{this.ShortDate}}{{else}}{{this.Date}}{{/if}}</th>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-day\">\n<td class=\"cnc-lbl\">Day</td>\n{{#each data}}\n<td class=\"cnc-val-day\">{{this.Day}}</td>\n{{/each}}\n</tr>\n</thead>\n<tbody>\n<tr class=\"cnc-row-time1\">\n<td class=\"cnc-lbl\">Time1</td>\n{{#each data}}\n<td class=\"cnc-val-time\">{{this.Time1}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-hits1\">\n<td class=\"cnc-lbl\">Hits1</td>\n{{#each data}}\n<td class=\"cnc-val-hits\">{{this.Hits1}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-online1\">\n<td class=\"cnc-lbl\">Online1</td>\n{{#each data}}\n<td class=\"cnc-val-online\">{{this.Online1}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-stop1\">\n<td class=\"cnc-lbl\">Stop1</td>\n{{#each data}}\n<td class=\"cnc-val-stop\">{{this.Stop1}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-rate1\">\n<td class=\"cnc-lbl\">Rate1</td>\n{{#each data}}\n<td class=\"cnc-val-rate\">{{this.Rate1}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-time2\">\n<td class=\"cnc-lbl\">Time2</td>\n{{#each data}}\n<td class=\"cnc-val-time\">{{this.Time2}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-hits2\">\n<td class=\"cnc-lbl\">Hits2</td>\n{{#each data}}\n<td class=\"cnc-val-hits\">{{this.Hits2}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-online2\">\n<td class=\"cnc-lbl\">Online2</td>\n{{#each data}}\n<td class=\"cnc-val-online\">{{this.Online2}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-stop2\">\n<td class=\"cnc-lbl\">Stop2</td>\n{{#each data}}\n<td class=\"cnc-val-stop\">{{this.Stop2}}</td>\n{{/each}}\n</tr>\n<tr class=\"cnc-row-rate2\">\n<td class=\"cnc-lbl\">Rate2</td>\n{{#each data}}\n<td class=\"cnc-val-rate\">{{this.Rate2}}</td>\n{{/each}}\n</tr>\n</tbody>\n</table>\n<div class=\"cnc-footer\">\n<label class=\"cnc-checkbox-label\">\n<input type=\"checkbox\" disabled checked> Day information\n</label>\n<button class=\"cnc-export-btn\" onclick=\"window.exportCncCsv && window.exportCncCsv(); return false;\" title=\"Download 7-day shift CSV for this machine\">📥 Export .CSV</button>\n</div>\n</div>\n</div>",
+        "contentPartials": [],
+        "defaultContent": "No shift production events found for selected machine.",
+        "editor": {
+          "format": "auto",
+          "language": "markdown"
+        },
+        "editors": [
+          "renderMode",
+          "content",
+          "styles"
+        ],
+        "externalStyles": [],
+        "helpers": "",
+        "renderMode": "allRows",
+        "styles": ".cnc-window { font-family: 'JetBrains Mono', monospace; background: #C4C8B8; border: 2px solid #5A6268; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); margin: 0 auto; overflow: hidden; max-width: 100%; } .cnc-title-bar { background: #D5D8CB; border-bottom: 2px solid #7D858A; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: #1F2937; letter-spacing: 0.5px; } .cnc-close-btn { font-size: 14px; font-weight: 700; color: #374151; cursor: pointer; padding: 0 4px; } .cnc-body { padding: 8px; background: #D8DCCF; overflow-x: auto; } .cnc-table { width: 100%; border-collapse: collapse; border: 2px solid #555E64; font-size: 12.5px; font-weight: 700; text-align: center; background: #C8CEC0; } .cnc-table th, .cnc-table td { border: 1px solid #717A80; padding: 4px 6px; white-space: nowrap; } .cnc-lbl { background: #B4BCA8 !important; color: #111827 !important; font-weight: 800 !important; text-align: center; min-width: 70px; font-size: 13px; } .cnc-val-date { background: #A5C4A5 !important; color: #064E3B !important; font-weight: 800 !important; font-size: 13.5px; } .cnc-val-day { background: #B6D4B6 !important; color: #065F46 !important; font-weight: 800 !important; font-size: 12.5px; } .cnc-val-time { background: #B0CEE6 !important; color: #0F172A !important; font-weight: 700 !important; } .cnc-val-hits { background: #B0CEE6 !important; color: #0000FF !important; font-weight: 800 !important; font-size: 13px; } .cnc-val-online { background: #505A58 !important; color: #00FF33 !important; font-weight: 700 !important; letter-spacing: 0.5px; } .cnc-val-stop { background: #505A58 !important; color: #FF2222 !important; font-weight: 700 !important; letter-spacing: 0.5px; } .cnc-val-rate { background: #C4C8B8 !important; color: #111827 !important; font-weight: 800 !important; font-size: 13px; } .cnc-footer { margin-top: 6px; padding: 2px 4px 0 4px; font-size: 11.5px; color: #374151; font-weight: 600; display: flex; justify-content: space-between; align-items: center; } .cnc-export-btn { background: #B4BCA8; color: #111827; border: 1px solid #555E64; border-radius: 3px; padding: 2px 10px; font-size: 11.5px; font-weight: 700; font-family: 'JetBrains Mono', monospace; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease; } .cnc-export-btn:hover { background: #9EAB94; border-color: #2F3542; color: #000000; } .cnc-export-btn:active { transform: translateY(1px); background: #8E9B84; }",
+        "wrap": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH machine_target AS (\n  SELECT COALESCE(\n    NULLIF(${focus_machine:singlequote}, ''),\n    (SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1)\n  ) AS eqp_id\n),\nbase_date AS (\n  SELECT \n    m.eqp_id,\n    LEAST($__timeTo()::date, CURRENT_DATE) AS ref_date\n  FROM machine_target m\n),\ndates AS (\n  SELECT \n    b.eqp_id,\n    (b.ref_date - (i || ' days')::interval)::date AS prod_date\n  FROM base_date b\n  CROSS JOIN generate_series(0, 6) AS i\n),\nshift_agg AS (\n  SELECT \n    m.eqp_id,\n    CASE \n      WHEN e.event_code = '0209' THEN e.event_time::date\n      WHEN e.event_code = '0201' THEN (e.event_time + INTERVAL '4 hours')::date\n    END AS prod_date,\n    CASE \n      WHEN e.event_code = '0209' THEN (CASE WHEN EXTRACT(HOUR FROM e.event_time) BETWEEN 5 AND 11 THEN 1 ELSE 2 END)\n      WHEN e.event_code = '0201' THEN (CASE WHEN EXTRACT(HOUR FROM (e.event_time + INTERVAL '4 hours')) < 12 THEN 1 ELSE 2 END)\n    END AS shift_num,\n    SUM((regexp_match(e.event_message, 'Run Hits:\\s*([0-9]+)'))[1]::bigint) FILTER (WHERE e.event_code = '0201') AS hits,\n    MAX(EXTRACT(EPOCH FROM substring(e.event_message FROM 'Online:\\s*([0-9]{2}:[0-9]{2}:[0-9]{2})')::interval)::int) FILTER (WHERE e.event_code = '0209') AS online_sec,\n    MAX(EXTRACT(EPOCH FROM substring(e.event_message FROM 'Stop:\\s*([0-9]{2}:[0-9]{2}:[0-9]{2})')::interval)::int) FILTER (WHERE e.event_code = '0209') AS stop_sec\n  FROM machine_target m\n  JOIN public.machine_event e \n    ON e.equipment_id = m.eqp_id \n   AND e.event_code IN ('0209', '0201')\n   AND e.event_time >= (SELECT MIN(prod_date) FROM dates) - INTERVAL '1 day'\n   AND e.event_time < (SELECT MAX(prod_date) FROM dates) + INTERVAL '2 days'\n  GROUP BY 1, 2, 3\n)\nSELECT \n  to_char(d.prod_date, 'MM/DD') AS \"ShortDate\",\n  to_char(d.prod_date, 'YYYY-MM-DD') AS \"FullDate\",\n  to_char(d.prod_date, 'MM/DD') AS \"Date\",\n  UPPER(to_char(d.prod_date, 'Dy')) AS \"Day\",\n  d.eqp_id AS \"Machine\",\n  '08:00' AS \"Time1\",\n  COALESCE(to_char(MAX(s.hits) FILTER (WHERE s.shift_num = 1), 'FM999,999,999'), '0') AS \"Hits1\",\n  COALESCE(to_char((MAX(s.online_sec) FILTER (WHERE s.shift_num = 1) || ' seconds')::interval, 'HH24:MI:SS'), '00:00:00') AS \"Online1\",\n  COALESCE(to_char((MAX(s.stop_sec) FILTER (WHERE s.shift_num = 1) || ' seconds')::interval, 'HH24:MI:SS'), '00:00:00') AS \"Stop1\",\n  COALESCE(ROUND((MAX(s.online_sec - s.stop_sec) FILTER (WHERE s.shift_num = 1)::numeric / NULLIF(MAX(s.online_sec) FILTER (WHERE s.shift_num = 1), 0) * 100.0), 1)::text || '%', '0.0%') AS \"Rate1\",\n  '20:00' AS \"Time2\",\n  COALESCE(to_char(MAX(s.hits) FILTER (WHERE s.shift_num = 2), 'FM999,999,999'), '****') AS \"Hits2\",\n  COALESCE(to_char((MAX(s.online_sec) FILTER (WHERE s.shift_num = 2) || ' seconds')::interval, 'HH24:MI:SS'), '****') AS \"Online2\",\n  COALESCE(to_char((MAX(s.stop_sec) FILTER (WHERE s.shift_num = 2) || ' seconds')::interval, 'HH24:MI:SS'), '****') AS \"Stop2\",\n  COALESCE(ROUND((MAX(s.online_sec - s.stop_sec) FILTER (WHERE s.shift_num = 2)::numeric / NULLIF(MAX(s.online_sec) FILTER (WHERE s.shift_num = 2), 0) * 100.0), 1)::text || '%', '****') AS \"Rate2\"\nFROM dates d\nLEFT JOIN shift_agg s \n  ON s.eqp_id = d.eqp_id \n AND s.prod_date = d.prod_date\nGROUP BY d.eqp_id, d.prod_date\nORDER BY d.prod_date DESC;",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    },
+    {
+      "id": 103,
+      "title": "7-Day Shift Production — Standard Table",
+      "description": "Standard Grafana native table showing 7-day Day & Night shift performance without external plugins",
+      "type": "table",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 24,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "#64748B"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": false,
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "drilling-timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH machine_target AS (\n  SELECT COALESCE(\n    NULLIF(${focus_machine:singlequote}, ''),\n    (SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1)\n  ) AS eqp_id\n),\nbase_date AS (\n  SELECT \n    m.eqp_id,\n    LEAST($__timeTo()::date, CURRENT_DATE) AS ref_date\n  FROM machine_target m\n),\ndates AS (\n  SELECT \n    b.eqp_id,\n    (b.ref_date - (i || ' days')::interval)::date AS prod_date\n  FROM base_date b\n  CROSS JOIN generate_series(0, 6) AS i\n),\nshift_agg AS (\n  SELECT \n    m.eqp_id,\n    CASE \n      WHEN e.event_code = '0209' THEN e.event_time::date\n      WHEN e.event_code = '0201' THEN (e.event_time + INTERVAL '4 hours')::date\n    END AS prod_date,\n    CASE \n      WHEN e.event_code = '0209' THEN (CASE WHEN EXTRACT(HOUR FROM e.event_time) BETWEEN 5 AND 11 THEN 1 ELSE 2 END)\n      WHEN e.event_code = '0201' THEN (CASE WHEN EXTRACT(HOUR FROM (e.event_time + INTERVAL '4 hours')) < 12 THEN 1 ELSE 2 END)\n    END AS shift_num,\n    SUM((regexp_match(e.event_message, 'Run Hits:\\s*([0-9]+)'))[1]::bigint) FILTER (WHERE e.event_code = '0201') AS hits,\n    MAX(EXTRACT(EPOCH FROM substring(e.event_message FROM 'Online:\\s*([0-9]{2}:[0-9]{2}:[0-9]{2})')::interval)::int) FILTER (WHERE e.event_code = '0209') AS online_sec,\n    MAX(EXTRACT(EPOCH FROM substring(e.event_message FROM 'Stop:\\s*([0-9]{2}:[0-9]{2}:[0-9]{2})')::interval)::int) FILTER (WHERE e.event_code = '0209') AS stop_sec\n  FROM machine_target m\n  JOIN public.machine_event e \n    ON e.equipment_id = m.eqp_id \n   AND e.event_code IN ('0209', '0201')\n   AND e.event_time >= (SELECT MIN(prod_date) FROM dates) - INTERVAL '1 day'\n   AND e.event_time < (SELECT MAX(prod_date) FROM dates) + INTERVAL '2 days'\n  GROUP BY 1, 2, 3\n)\nSELECT \n  to_char(d.prod_date, 'MM/DD') AS \"ShortDate\",\n  to_char(d.prod_date, 'YYYY-MM-DD') AS \"FullDate\",\n  to_char(d.prod_date, 'MM/DD') AS \"Date\",\n  UPPER(to_char(d.prod_date, 'Dy')) AS \"Day\",\n  d.eqp_id AS \"Machine\",\n  '08:00' AS \"Time1\",\n  COALESCE(to_char(MAX(s.hits) FILTER (WHERE s.shift_num = 1), 'FM999,999,999'), '0') AS \"Hits1\",\n  COALESCE(to_char((MAX(s.online_sec) FILTER (WHERE s.shift_num = 1) || ' seconds')::interval, 'HH24:MI:SS'), '00:00:00') AS \"Online1\",\n  COALESCE(to_char((MAX(s.stop_sec) FILTER (WHERE s.shift_num = 1) || ' seconds')::interval, 'HH24:MI:SS'), '00:00:00') AS \"Stop1\",\n  COALESCE(ROUND((MAX(s.online_sec - s.stop_sec) FILTER (WHERE s.shift_num = 1)::numeric / NULLIF(MAX(s.online_sec) FILTER (WHERE s.shift_num = 1), 0) * 100.0), 1)::text || '%', '0.0%') AS \"Rate1\",\n  '20:00' AS \"Time2\",\n  COALESCE(to_char(MAX(s.hits) FILTER (WHERE s.shift_num = 2), 'FM999,999,999'), '****') AS \"Hits2\",\n  COALESCE(to_char((MAX(s.online_sec) FILTER (WHERE s.shift_num = 2) || ' seconds')::interval, 'HH24:MI:SS'), '****') AS \"Online2\",\n  COALESCE(to_char((MAX(s.stop_sec) FILTER (WHERE s.shift_num = 2) || ' seconds')::interval, 'HH24:MI:SS'), '****') AS \"Stop2\",\n  COALESCE(ROUND((MAX(s.online_sec - s.stop_sec) FILTER (WHERE s.shift_num = 2)::numeric / NULLIF(MAX(s.online_sec) FILTER (WHERE s.shift_num = 2), 0) * 100.0), 1)::text || '%', '****') AS \"Rate2\"\nFROM dates d\nLEFT JOIN shift_agg s \n  ON s.eqp_id = d.eqp_id \n AND s.prod_date = d.prod_date\nGROUP BY d.eqp_id, d.prod_date\nORDER BY d.prod_date DESC;",
+          "refId": "A"
+        }
+      ],
+      "transformations": [],
+      "datasource": {
+        "type": "postgres",
+        "uid": "drilling-timescaledb"
+      }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "cnc",
+    "drilling",
+    "ims",
+    "level-2-operation",
+    "management",
+    "oee",
+    "production",
+    "shift-history",
+    "supervisor"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "focus_machine",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "query": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL;",
+        "definition": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL;",
+        "current": {},
+        "multi": false,
+        "includeAll": false,
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "options": [],
+        "skipUrlSync": false
+      },
+      {
+        "name": "factory",
+        "label": "Factory",
+        "type": "custom",
+        "query": "All, 1, 2, 3",
+        "current": {
+          "text": [
+            "2"
+          ],
+          "value": [
+            "2"
+          ]
+        },
+        "multi": true,
+        "includeAll": false,
+        "hide": 0,
+        "options": [],
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "Drilling — 02 Shift Production & OEE Tracking",
+  "description": "Shift-by-shift production throughput, hit count, panel output, and overall equipment effectiveness (OEE) tracking for drilling operations.",
+  "uid": "ims-drilling-history"
+}

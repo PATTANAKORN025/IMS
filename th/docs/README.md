@@ -107,6 +107,7 @@
 - **[บันทึกการตัดสินใจเชิงสถาปัตยกรรม (ADR)](architecture/decisions/)** - ที่มาของการเลือกเทคโนโลยี
 - **[Service Level Objectives (SLO)](sre/SLO_DEFINITIONS.md)** - ความน่าเชื่อถือ error budget และ SLI
 - **[Telemetry Ontology](data/TELEMETRY_ONTOLOGY.md)** - พจนานุกรมข้อมูลและมาตรฐาน payload
+- **[ข้อมูลสังเคราะห์งานเจาะและ VCP](data/MOCK_DATA.md)** - รันแดชบอร์ดงานเจาะและ VCP ด้วยข้อมูลที่สร้างขึ้น โดยไม่ใช้ข้อมูลโรงงาน
 
 ### 8. ธรรมาภิบาล
 

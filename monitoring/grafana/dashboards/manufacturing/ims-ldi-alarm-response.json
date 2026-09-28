@@ -1,14 +1,20 @@
 {
   "id": null,
   "uid": "ims-ldi-alarm-response",
-  "title": "IMS LDI - Alarm Response (MTTA/MTTR)",
+  "title": "LDI — 08 Alarm Response Metrics & MTTA/MTTR",
   "description": "Is the team responding to alarms fast enough? Real MTTA/MTTR from public.ldi_alarm_lifecycle -- no simulated data. Shift lead / manufacturing owner audience, same as Manufacturing Command Center.",
   "tags": [
-    "LDI",
     "alarms",
-    "MTTA",
-    "MTTR",
-    "manufacturing"
+    "ims",
+    "kpi",
+    "ldi",
+    "level-4-analytics",
+    "lithography",
+    "manufacturing",
+    "mtta",
+    "mttr",
+    "reliability",
+    "supervisor"
   ],
   "timezone": "UTC",
   "schemaVersion": 39,

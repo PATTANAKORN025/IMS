@@ -50,28 +50,39 @@ Users reach everything through the nginx front door on port 3000 of the IMS host
 
 ### Dashboard Overview
 
-Grafana provisions 15 dashboards in two folders:
+Grafana provisions 22 dashboards in four folders:
 
 ```text
  IMS Dashboards
-├── Infrastructure (servers/network)
+├── 01 · Drilling Operations (CNC drilling fleet)
+│ ├── Fleet Digital Twin & Overview — Live state of every drilling machine: run, stop, tool change, alarm, offline
+│ ├── Shift Production & OEE — Day and night shift hits, online and stop time per machine, 7 days
+│ ├── Machine Investigation — One machine's live status, event mix, event timeline and tool alarms
+│ └── Fleet Anomaly & Root Cause — Alarm categories, top offenders, bit breakage and spindle overload trends
+├── 02 · Lithography Operations — LDI (PCB laser direct imaging fleet)
+│ ├── Easy Overview        — Zero-config whole-fleet glance, no filters to set
+│ ├── LDI Manufacturing    — Command Center: executive KPIs + machine telemetry + alarm stream
+│ ├── LDI Operator Andon   — Factory-floor kiosk, read-only, zero-scroll at 1920×1080 and above
+│ ├── LDI Alarm Console    — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
+│ ├── LDI Alarm Response   — MTTA/MTTR from the real alarm lifecycle
+│ ├── LDI Alarm Dictionary — Reference lookup: vendor alarm definitions + recent occurrences
+│ ├── LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
+│ ├── LDI Machine Snapshot — Click any alarm/log to inspect the exact millisecond
+│ ├── LDI Factory Digital Twin — Canvas floor view of the reporting LDI machines by zone
+│ └── LDI Data Readiness   — Self-auditing data-quality dashboard (coverage %, gaps)
+├── 03 · Platform Infrastructure & NOC (servers/network)
 │ ├── NOC Overview        — Fleet envelope for servers (infrastructure only; LDI lives below)
 │ ├── Engineering Drill-Down — Per-server deep dive: CPU/RAM/disk/temperature/network, plus LDI quality scatter
 │ ├── AIOps & Capacity    — Days-until-full forecasts and Z-Score anomaly detection
 │ ├── Meta-Monitoring     — The pipeline's own health (rows/sec, batch success, retry queue, circuit breakers)
 │ └── Ingestion Latency   — Real source-to-database latency, read-only
-└── LDI Manufacturing (PCB laser direct imaging fleet)
- ├── Easy Overview        — Zero-config whole-fleet glance, no filters to set
- ├── LDI Manufacturing    — Command Center: executive KPIs + machine telemetry + alarm stream
- ├── LDI Operator Andon   — Factory-floor kiosk, read-only, zero-scroll at 1920×1080 and above
- ├── LDI Alarm Console    — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
- ├── LDI Alarm Response   — MTTA/MTTR from the real alarm lifecycle
- ├── LDI Alarm Dictionary — Reference lookup: vendor alarm definitions + recent occurrences
- ├── LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
- ├── LDI Machine Snapshot — Click any alarm/log to inspect the exact millisecond
- ├── LDI Factory Digital Twin — Canvas floor view of the reporting LDI machines by zone
- └── LDI Data Readiness   — Self-auditing data-quality dashboard (coverage %, gaps)
+└── 04 · Plating Operations (VCP plating lines)
+ ├── Fleet Overview & Process Analytics — State hours, bath and current deviation, recipe compliance per lot
+ ├── Operations Console — Live line status, current and voltage per station, bath temperatures, alarm log
+ └── Real-Time Wall — Full-screen live status of every line for the plating floor
 ```
+
+The drilling and VCP dashboards read the `eap_backup` database. Without plant data they are empty; see [Synthetic Drilling and VCP Data](../data/MOCK_DATA.md).
 
 The complete, generated list with panel counts is the [Dashboard Inventory](../architecture/DASHBOARD_INVENTORY.md).
 

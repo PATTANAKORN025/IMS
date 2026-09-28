@@ -2482,7 +2482,7 @@
   ],
   "id": null,
   "uid": "ims-ldi-engineering-analytics",
-  "title": "IMS LDI - Engineering Analytics & SPC",
+  "title": "LDI — 06 Process Engineering Analytics & SPC",
   "version": 5,
   "time": {
     "from": "now-6h",
@@ -2491,11 +2491,15 @@
   "timezone": "UTC",
   "refresh": "1m",
   "tags": [
-    "IMS",
-    "LDI",
-    "set-2",
-    "real-data",
-    "current-database",
-    "manufacturing"
+    "engineer",
+    "engineering",
+    "ims",
+    "ldi",
+    "level-4-analytics",
+    "lithography",
+    "manufacturing",
+    "process-control",
+    "quality",
+    "spc"
   ]
 }

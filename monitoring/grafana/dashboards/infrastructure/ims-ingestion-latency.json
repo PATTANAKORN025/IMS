@@ -51,13 +51,13 @@
         "y": 3
       },
       "id": 100,
-      "title": "\u25c8 SOURCE \u2192 COMMIT LATENCY (P95, last 15m)",
+      "title": "◈ SOURCE → COMMIT LATENCY (P95, last 15m)",
       "type": "row",
       "panels": []
     },
     {
       "id": 1,
-      "title": "\u25c9 ldi_data",
+      "title": "◉ ldi_data",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -121,7 +121,7 @@
     },
     {
       "id": 2,
-      "title": "\u25c9 ldi_alarm_log (causal)",
+      "title": "◉ ldi_alarm_log (causal)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -185,7 +185,7 @@
     },
     {
       "id": 6,
-      "title": "\u25c9 ldi_alarm_log (nearest)",
+      "title": "◉ ldi_alarm_log (nearest)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -241,7 +241,7 @@
     },
     {
       "id": 3,
-      "title": "\u25c9 sys_metrics",
+      "title": "◉ sys_metrics",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -305,7 +305,7 @@
     },
     {
       "id": 4,
-      "title": "\u25c9 net_metrics",
+      "title": "◉ net_metrics",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -369,7 +369,7 @@
     },
     {
       "id": 5,
-      "title": "\u25c9 ldi_metrics",
+      "title": "◉ ldi_metrics",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -440,13 +440,13 @@
         "y": 10
       },
       "id": 200,
-      "title": "\u25c8 LDI DATA LATENCY TREND (P50/P95/P99)",
+      "title": "◈ LDI DATA LATENCY TREND (P50/P95/P99)",
       "type": "row",
       "panels": []
     },
     {
       "id": 10,
-      "title": "\u25c8 ldi_data: source \u2192 commit latency over time",
+      "title": "◈ ldi_data: source → commit latency over time",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -523,13 +523,13 @@
         "y": 20
       },
       "id": 300,
-      "title": "\u25c8 INFRA TELEMETRY LATENCY TREND (P95, all 3 SNMP tables)",
+      "title": "◈ INFRA TELEMETRY LATENCY TREND (P95, all 3 SNMP tables)",
       "type": "row",
       "panels": []
     },
     {
       "id": 11,
-      "title": "\u25c8 sys/net/ldi_metrics: P95 source \u2192 commit latency over time",
+      "title": "◈ sys/net/ldi_metrics: P95 source → commit latency over time",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -602,10 +602,14 @@
   "schemaVersion": 39,
   "tags": [
     "ims",
-    "latency",
-    "ingestion",
     "infrastructure",
-    "evidence"
+    "ingestion",
+    "latency",
+    "level-4-analytics",
+    "pipeline",
+    "platform",
+    "slo",
+    "sre"
   ],
   "templating": {
     "list": []
@@ -614,7 +618,7 @@
     "from": "now-1h",
     "to": "now"
   },
-  "title": "IMS Ingestion Latency",
+  "title": "Platform — 04 Ingestion Pipeline Latency & Telemetry SLO",
   "description": "Read-only. Real source_ts -> ingest_ts latency evidence from migration 081's ingest_ts columns -- no simulated data, no interactive write actions. Companion to tests/e2e/ingestion-latency-check.js.",
   "uid": "ims-ingestion-latency",
   "version": 1,

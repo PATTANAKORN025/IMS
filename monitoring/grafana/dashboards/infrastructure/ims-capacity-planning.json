@@ -1,12 +1,18 @@
 {
   "uid": "ims-capacity",
-  "title": "IMS AIOps & Capacity Forecast",
+  "title": "Platform — 03 AIOps Predictive Capacity & Resource Forecasting",
   "description": "Days-until-full/saturation forecasts for CPU, RAM, and disk via 30-day linear regression, plus Z-Score (>3sigma) anomaly detection. Infrastructure-focused.",
   "tags": [
-    "ims",
-    "capacity",
     "aiops",
-    "infrastructure"
+    "capacity",
+    "forecasting",
+    "ims",
+    "infrastructure",
+    "level-4-analytics",
+    "management",
+    "platform",
+    "predictive",
+    "sre"
   ],
   "timezone": "UTC",
   "schemaVersion": 39,
@@ -130,7 +136,7 @@
     },
     {
       "id": 50,
-      "title": "\u25c8 Days Until Full (Resource Battery)",
+      "title": "◈ Days Until Full (Resource Battery)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
@@ -223,7 +229,7 @@
     },
     {
       "id": 1,
-      "title": "\u25c9 Disk: Days Until Full",
+      "title": "◉ Disk: Days Until Full",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -273,7 +279,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "#22C55E",
                   "index": 0
                 }
@@ -352,7 +358,7 @@
       "description": "Days until disk saturation based on 30-day linear regression. Red < 30d, Orange < 90d, Green > 180d.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -360,7 +366,7 @@
     },
     {
       "id": 2,
-      "title": "\u25c9 RAM: Days Until Full",
+      "title": "◉ RAM: Days Until Full",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -410,7 +416,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "#22C55E",
                   "index": 0
                 }
@@ -489,7 +495,7 @@
       "description": "Days until RAM saturation based on 30-day linear regression trend.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -497,7 +503,7 @@
     },
     {
       "id": 3,
-      "title": "\u25c9 CPU: Days Until Saturation",
+      "title": "◉ CPU: Days Until Saturation",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -547,7 +553,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "#22C55E",
                   "index": 0
                 }
@@ -625,7 +631,7 @@
       "description": "Days until CPU reaches 100% saturation based on 30-day linear regression.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -640,7 +646,7 @@
         "h": 10
       },
       "type": "stat",
-      "title": "\u25c9 Fleet Health Score",
+      "title": "◉ Fleet Health Score",
       "description": "Was a Grafana library panel (ims-lib-fleet-health-score) -- library panels live in Grafana's own DB, not in this repo's provisioned files, so a `docker compose down -v` (DR Drill 3, 2026-08-13) wiped it while this reference survived. Restored inline so it can't recur.",
       "datasource": {
         "uid": "timescaledb"
@@ -716,7 +722,7 @@
     },
     {
       "id": 10,
-      "title": "\u25c8 Disk Usage Trend + Linear Regression Forecast",
+      "title": "◈ Disk Usage Trend + Linear Regression Forecast",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1001,7 +1007,7 @@
       "targets": [
         {
           "refId": "A",
-          "legendFormat": "{{ machine_id }} \u2014 Used",
+          "legendFormat": "{{ machine_id }} — Used",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -1019,7 +1025,7 @@
         },
         {
           "refId": "C",
-          "legendFormat": "Forecast \u2014 {{ machine_id }}",
+          "legendFormat": "Forecast — {{ machine_id }}",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -1031,7 +1037,7 @@
       "description": "Hourly disk usage trend with linear regression forecast (dashed #F59E0B, 30-day projection).",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1057,7 +1063,7 @@
     },
     {
       "id": 20,
-      "title": "\u25c8 CPU Load Trend (30-Day Average)",
+      "title": "◈ CPU Load Trend (30-Day Average)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1329,7 +1335,7 @@
       "description": "30-day daily average CPU utilization per machine. Used for long-term capacity forecasting.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1337,7 +1343,7 @@
     },
     {
       "id": 21,
-      "title": "\u25c8 RAM Usage Trend (30-Day Average)",
+      "title": "◈ RAM Usage Trend (30-Day Average)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1609,7 +1615,7 @@
       "description": "30-day daily average RAM utilization per machine. Used for long-term capacity forecasting.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1618,7 +1624,7 @@
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps \u2014 ANOMALY DETECTION",
+      "title": "AIOps — ANOMALY DETECTION",
       "gridPos": {
         "x": 0,
         "y": 73,
@@ -1635,7 +1641,7 @@
     },
     {
       "id": 601,
-      "title": "\u25c8 CPU Z-Score Anomaly (3\u03c3)",
+      "title": "◈ CPU Z-Score Anomaly (3σ)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1915,10 +1921,10 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies.",
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1926,7 +1932,7 @@
     },
     {
       "id": 602,
-      "title": "\u25c8 Temperature Z-Score Anomaly (3\u03c3)",
+      "title": "◈ Temperature Z-Score Anomaly (3σ)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -2206,10 +2212,10 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations.",
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
