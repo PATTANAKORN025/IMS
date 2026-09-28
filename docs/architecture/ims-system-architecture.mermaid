@@ -1,0 +1,87 @@
+%% Industrial Monitoring System (IMS) - Complete System Architecture Topology
+%% File: docs/architecture/ims-system-architecture.mermaid
+
+flowchart TD
+  subgraph EdgeLayer ["Edge Layer: Physical Machines, Sensors & Compute"]
+    LDI["LDI Manufacturing Machines\n(HTTP/JSON Telemetry)"]
+    CNC["CNC Drilling Machines\n(eap_backup Event Logs)"]
+    VCP["VCP Plating Lines\n(eap_backup Sensor & Bath Logs)"]
+    SRV["Linux Server Fleet\n(SNMP v2c Compute Metrics)"]
+    SW["Juniper EX Switches\n(SNMP v2c Interface Counters)"]
+    SIM["SNMP Simulator (ims-snmpsim)\n(Local Development Agent)"]
+  end
+
+  subgraph GatewayLayer ["Gateway & Security Layer: Port 3000 / 80"]
+    PROXY["Nginx Reverse Proxy (ims-proxy)\nRate Limit: 100r/s | Burst: 2500\nClient Header Buffers: 4 16k"]
+  end
+
+  subgraph IngestionLayer ["Ingestion & Transformation Pipeline"]
+    NR["Node-RED Pipeline (ims-node-red :1880)\n01-snmp-poller | 02-ldi-ingest\n03-alarm-engine | 04-storage-writer"]
+    BBOX["Blackbox Exporter (ims-blackbox :9115)\nSLA & HTTP/TCP Probes"]
+  end
+
+  subgraph PersistenceLayer ["Persistence Tier"]
+    PGB["PgBouncer Pooler (ims-pgbouncer :6432)\nTransaction Pooling | AUTH: plain"]
+    TSDB[("TimescaleDB (ims-timescaledb :5432)\nHypertables: ldi_data, sys_metrics, ldi_alarm_log\nCAGGs: 1m, 15m, 1h, 1d, 1w\nSecondary DB: eap_backup")]
+    DBMIG["Migration Runner (ims-db-migrate)\nMigrations 001 - 086"]
+    ARCH["Observability Archiver\n(ims-observability-archiver)"]
+    PGADMIN["PgAdmin 4 (ims-pgadmin4 :5050)\nDatabase Web Management"]
+  end
+
+  subgraph VisualizationLayer ["Visualization & Application Tier"]
+    GRAFANA["Grafana 13 (ims-grafana :3000)\n22 Dashboards across 4 Domains\nCyberpunk HUD | Grid-24 Layout"]
+    ALARM_API["Alarm API (ims-alarm-api :4000)\nLeast-Privilege: alarm_api_writer\nLifecycle State: OPEN -> ACK -> RESOLVED"]
+    TWIN["Factory Twin 3D (ims-factory-twin-3d :4100)\nFloor 1 Digital Twin POC"]
+    RENDERER["Image Renderer (ims-grafana-renderer :8081)\nChromium Headless PNG Snapshots"]
+  end
+
+  subgraph AlertingLayer ["Observability & Incident Dispatch"]
+    PROM["Prometheus (ims-prometheus :9090)\nMetrics Scraping & Rule Evaluation"]
+    AM["Alertmanager (ims-alertmanager :9093)\nDeduplication, Grouping & Inhibition"]
+    LINE["LINE Messaging API\nExternal Operator Alerts"]
+    TEAMS["Microsoft Teams\nIncoming Webhook Adaptive Cards"]
+  end
+
+  %% Ingress Routing
+  LDI -->|POST /ldi-telemetry| PROXY
+  PROXY -->|Forward /ldi-telemetry| NR
+  PROXY -->|Forward /inject| NR
+  SRV -->|UDP 161 Poll| NR
+  SW -->|UDP 161 Poll| NR
+  SIM -->|UDP 161 Poll| NR
+
+  %% Gateway Auth Sub-requests & Proxied Routes
+  PROXY -->|Forward UI & API| GRAFANA
+  PROXY -->|Forward /alarm-api/* (Auth Checked)| ALARM_API
+  PROXY -->|Forward /factory-twin-3d/* (Auth Checked)| TWIN
+  PROXY -.->|Internal /auth-check sub-request| GRAFANA
+
+  %% Persistence Connections
+  NR -->|Batched INSERTs (10s)| PGB
+  ALARM_API -->|UPDATE ldi_alarm_lifecycle| PGB
+  GRAFANA -->|CAGG Analytical Queries| PGB
+  PGB --> TSDB
+  CNC -.->|Log Sync| TSDB
+  VCP -.->|Sensor Sync| TSDB
+
+  %% Support & Admin
+  DBMIG -->|Initial Migrations| TSDB
+  ARCH -.->|Snapshot Logging| TSDB
+  PGADMIN -.->|Admin Query| TSDB
+  GRAFANA -->|Render Request| RENDERER
+
+  %% Alerting Flow
+  TSDB -->|Metrics Scrape| PROM
+  PROM -->|Fire Alerts| AM
+  AM -->|POST /alert-webhook| NR
+  GRAFANA -->|Native Alerts /alert-webhook| NR
+  NR -->|HTTPS API Push| LINE
+  NR -->|HTTPS Webhook POST| TEAMS
+
+  %% Styling
+  style EdgeLayer fill:#111827,stroke:#3B82F6,color:#F3F4F6
+  style GatewayLayer fill:#1e1e38,stroke:#00F2FE,color:#F3F4F6
+  style IngestionLayer fill:#1a1f2e,stroke:#F59E0B,color:#F3F4F6
+  style PersistenceLayer fill:#13221d,stroke:#10B981,color:#F3F4F6
+  style VisualizationLayer fill:#1f132e,stroke:#8B5CF6,color:#F3F4F6
+  style AlertingLayer fill:#2a1419,stroke:#EF4444,color:#F3F4F6

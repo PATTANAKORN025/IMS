@@ -28,28 +28,37 @@ IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
- subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
-  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\nauth check -> INSERT"]
-  ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
-  ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]
+ subgraph LDI ["ไปป์ไลน์การผลิต LDI (หลัก, ใช้งานจริง)"]
+  SIM["ldi_simulator.json\nตัวจำลองสด Ornstein-Uhlenbeck\nทุก 2 วินาที, 10 เครื่อง"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\nจำกัดอัตราส่ง & ตรวจสอบสิทธิ์"]
+  PROXY --> ING["ldi_ingestion.json\nตรวจสิทธิ์ -> INSERT"]
+  ING --> LDIDATA[("public.ldi_data\nไฮเปอร์เทเบิล, ชิ้นละ 1 ชม.")]
+  ALMSIM["ldi_alarm_simulator.json\nตามเงื่อนไข + สัญญาณรบกวน\nทุก 10 วินาที"] --> ALARMLOG[("public.ldi_alarm_log")]
+  ALARMAPI["ims-alarm-api :4000\nเปลี่ยนสถานะ ack/resolve"] --> ALARMLC[("public.ldi_alarm_lifecycle")]
  end
 
- subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
-  DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
+ subgraph LEGACY ["ไปป์ไลน์เดิม SNMP / โครงสร้างพื้นฐาน"]
+  DEV["เซิร์ฟเวอร์จริง 2 เครื่อง\n+ ตัวจำลอง SNMP"] -->|"SNMP v2c, โพลทุก 30 วินาที"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
   NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
  end
 
- LDIDATA --> GRAFANA["Grafana\n22 dashboards"]
+ subgraph EAP ["การเชื่อมต่อเครื่องจักร (งานเจาะ CNC & ชุบ VCP)"]
+  MOCK["eap-mock-data.js\nตัวสร้างข้อมูลจำลอง"] --> EAPDB[("eap_backup DB\nmachine_event, vcp_upp")]
+ end
+
+ LDIDATA --> GRAFANA["Grafana 13\n22 แดชบอร์ดใน 4 แผนก"]
  ALARMLOG --> GRAFANA
+ ALARMLC --> GRAFANA
  SYSMETRICS --> GRAFANA
+ EAPDB --> GRAFANA
  SYSMETRICS --> PROM["Prometheus"]
- GRAFANA -->|"native alert rules"| NRWEBHOOK["Node-RED /alert-webhook"]
+ GRAFANA -->|"กฎแจ้งเตือนในตัว"| NRWEBHOOK["Node-RED /alert-webhook"]
  PROM --> AM["Alertmanager"] --> NRWEBHOOK
  NRWEBHOOK --> LINE["LINE Messaging API"]
  NRWEBHOOK --> TEAMS["MS Teams webhook"]
 
  style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
+ style EAP fill:#1e293b,stroke:#3B82F6,color:#e2e8f0
 ```
 
 **เหตุผลที่มีไปป์ไลน์สองชุด:**
@@ -163,25 +172,32 @@ Migration 064 แปลง `v_machine_spc_fleet` และ `v_ldi_rca_recent_win
 
 > จำนวน panel และคำอธิบายสร้างอัตโนมัติใน **[DASHBOARD_INVENTORY.md](DASHBOARD_INVENTORY.md)** (`node scripts/generate-dashboard-inventory.js` ตรวจใน CI) ตารางนี้เพิ่ม "เหตุผล" เชิงสถาปัตยกรรม — ขอบเขตและการอ้างอิงข้ามกัน — ที่ตัวสร้างอนุมานจาก JSON ไม่ได้ เมื่อเพิ่มหรือเปลี่ยนชื่อแดชบอร์ด ให้ปรับคอลัมน์ UID/Title ที่นี่ให้ตรงกับไฟล์ที่สร้างอัตโนมัติ
 
-| UID | Title | ขอบเขต |
-| --- | --- | --- |
-| `ims-noc-overview` | IMS NOC Overview | เฉพาะโครงสร้างพื้นฐาน (เซิร์ฟเวอร์ + เครือข่าย) — เนื้อหากระบวนการ LDI อยู่ที่อื่น ดูด้านล่าง |
-| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | แดชบอร์ด RCA 4 ชั้นเต็มรูปแบบ: KPI ผู้บริหาร, telemetry เครื่อง, บริบทการผลิต, สตรีม alarm |
-| `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | จอ kiosk หน้าไลน์ อ่านอย่างเดียว; ไม่ต้องเลื่อนที่ 1920x1080 และ 3840x2160 (ไม่รองรับ 1280x720 ตั้งแต่ PR #22) |
-| `ims-ldi-alarm-console` | IMS LDI - Alarm Console | แดชบอร์ดเดียวที่โต้ตอบได้: Acknowledge/Resolve ผ่าน `alarm-api` ลง `public.ldi_alarm_lifecycle` |
-| `ims-ldi-alarm-response` | IMS LDI - Alarm Response (MTTA/MTTR) | KPI เวลาตอบสนองที่คำนวณจากวงจรชีวิต alarm จริง |
-| `ims-ldi-alarm-dictionary` | IMS LDI - Alarm Dictionary | ค้นรหัส alarm ของผู้ผลิตพร้อมเหตุการณ์ล่าสุด เข้าถึงผ่านลิงก์เจาะลึก |
-| `ims-ldi-factory-digital-twin` | IMS LDI - Factory Digital Twin | แผนผัง Canvas ของเครื่อง LDI ที่ส่งข้อมูล จัดกลุ่มตามโซน (`public.devices.location`) |
-| `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | จัดอันดับ Cpk/SPC, RCA Truth Test, การกระจายของ PE/JE |
-| `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | เจาะลึกรายเหตุการณ์ (คลิก alarm/log เพื่อตรวจสอบ) |
-| `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | แดชบอร์ดตรวจคุณภาพข้อมูลด้วยตัวเอง (board key ซ้ำ, % ความครอบคลุม, อัตราจับคู่กับ alarm master) |
-| `ims-easy-overview` | IMS Easy Overview | ดูภาพรวมทั้งกลุ่มเครื่องโดยไม่ต้องตั้งค่า สร้างจาก view/ฟังก์ชันที่ใช้ร่วมกันทั้งหมด (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) — ไม่มี template variable ให้ตั้ง |
-| `ims-engineering` | IMS Engineering Drill-Down | เน้นโครงสร้างพื้นฐาน: CPU/RAM/storage/เครือข่ายรายเซิร์ฟเวอร์, throughput/คุณภาพของ LDI (ไปป์ไลน์แบบเดิม) |
-| `ims-capacity` | IMS AIOps & Capacity Forecast | พยากรณ์จำนวนวันจนเต็ม/อิ่มตัวด้วย regression (โครงสร้างพื้นฐาน) |
-| `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | สุขภาพของไปป์ไลน์รับข้อมูลเอง (แถว/วินาที, อัตรา batch สำเร็จ, ความลึกของคิว retry) |
-| `ims-ingestion-latency` | IMS Ingestion Latency | หลักฐานความหน่วง source_ts → ingest_ts แบบอ่านอย่างเดียว จากคอลัมน์ `ingest_ts` ของ migration 081 |
+| แผนกงาน | UID | Title | ขอบเขต |
+| :--- | :--- | :--- | :--- |
+| **01 Drilling** | `ims-drilling-fleet-overview` | IMS Drilling - Fleet Overview | ภาพรวมกลุ่มเครื่องเจาะ, รอบหมุน Spindle, อัตราป้อน, และประวัติเหตุการณ์เครื่องจักร |
+| **01 Drilling** | `ims-drilling-shift-production` | IMS Drilling - Shift Production | ยอดการเจาะรายกะ, ปริมาณชิ้นงานที่ผลิตได้ และประสิทธิภาพเชิงปฏิบัติการ |
+| **01 Drilling** | `ims-drilling-machine-investigation` | IMS Drilling - Machine Investigation | เจาะลึกความสั่นสะเทือนของแต่ละ Spindle, จำนวนการเจาะของดอกสว่าน และภาระมอเตอร์ |
+| **01 Drilling** | `ims-drilling-anomaly-analysis` | IMS Drilling - Anomaly & Root Cause | ค่าความสั่นสะเทือนผิดปกติ, การตรวจจับดอกสว่านหัก และความสัมพันธ์ของสัญญาณเตือน |
+| **02 LDI** | `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | แดชบอร์ด RCA 4 ชั้นเต็มรูปแบบ: KPI ผู้บริหาร, telemetry เครื่อง, บริบทการผลิต, สตรีม alarm |
+| **02 LDI** | `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | จอ kiosk หน้าไลน์ อ่านอย่างเดียว; ไม่ต้องเลื่อนที่ 1920x1080 และ 3840x2160 (ไม่รองรับ 1280x720 ตั้งแต่ PR #22) |
+| **02 LDI** | `ims-ldi-alarm-console` | IMS LDI - Alarm Console | แดชบอร์ดเดียวที่โต้ตอบได้: Acknowledge/Resolve ผ่าน `alarm-api` ลง `public.ldi_alarm_lifecycle` |
+| **02 LDI** | `ims-ldi-alarm-response` | IMS LDI - Alarm Response (MTTA/MTTR) | KPI เวลาตอบสนองที่คำนวณจากวงจรชีวิต alarm จริง |
+| **02 LDI** | `ims-ldi-alarm-dictionary` | IMS LDI - Alarm Dictionary | ค้นรหัส alarm ของผู้ผลิตพร้อมเหตุการณ์ล่าสุด เข้าถึงผ่านลิงก์เจาะลึก |
+| **02 LDI** | `ims-ldi-factory-digital-twin` | IMS LDI - Factory Digital Twin | แผนผัง Canvas ของเครื่อง LDI ที่ส่งข้อมูล จัดกลุ่มตามโซน (`public.devices.location`) |
+| **02 LDI** | `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | จัดอันดับ Cpk/SPC, RCA Truth Test, การกระจายของ PE/JE |
+| **02 LDI** | `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | เจาะลึกรายเหตุการณ์ (คลิก alarm/log เพื่อตรวจสอบ) |
+| **02 LDI** | `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | แดชบอร์ดตรวจคุณภาพข้อมูลด้วยตัวเอง (board key ซ้ำ, % ความครอบคลุม, อัตราจับคู่กับ alarm master) |
+| **02 LDI** | `ims-easy-overview` | IMS Easy Overview | ดูภาพรวมทั้งกลุ่มเครื่องโดยไม่ต้องตั้งค่า สร้างจาก view/ฟังก์ชันที่ใช้ร่วมกันทั้งหมด (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) -- ไม่มี template variable ให้ตั้ง |
+| **03 Platform** | `ims-noc-overview` | IMS NOC Overview | เฉพาะโครงสร้างพื้นฐาน (เซิร์ฟเวอร์ + เครือข่าย) — เนื้อหากระบวนการ LDI อยู่ที่อื่น ดูด้านล่าง |
+| **03 Platform** | `ims-engineering` | IMS Engineering Drill-Down | เน้นโครงสร้างพื้นฐาน: CPU/RAM/storage/เครือข่ายรายเซิร์ฟเวอร์, throughput/คุณภาพของ LDI (ไปป์ไลน์แบบเดิม) |
+| **03 Platform** | `ims-capacity` | IMS AIOps & Capacity Forecast | พยากรณ์จำนวนวันจนเต็ม/อิ่มตัวด้วย regression (โครงสร้างพื้นฐาน) |
+| **03 Platform** | `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | สุขภาพของไปป์ไลน์รับข้อมูลเอง (แถว/วินาที, อัตรา batch สำเร็จ, ความลึกของคิว retry) |
+| **03 Platform** | `ims-ingestion-latency` | IMS Ingestion Latency | หลักฐานความหน่วง source_ts → ingest_ts แบบอ่านอย่างเดียว จากคอลัมน์ `ingest_ts` ของ migration 081 |
+| **04 VCP** | `ims-vcp-overview` | IMS VCP - Fleet Overview | ภาพรวมสายการผลิตชุบแผ่น: รอบเวลาเคลื่อนที่, ความเร็วสายชุบ, พื้นที่ผิวที่ชุบแล้วทั้งหมด |
+| **04 VCP** | `ims-vcp-operations-console` | IMS VCP - Operations Console | กระแสไฟฟ้า Rectifier แบบเรียลไทม์, อุณหภูมิบ่อชุบจริงเทียบกับค่าตั้ง, สถานะปั๊มเคมี |
+| **04 VCP** | `ims-vcp-realtime-wall` | IMS VCP - Real-Time Wall | หน้าจอ Kiosk ติดผนังสำหรับช่างเทคนิคประจำไลน์; แจ้งเตือนบ่อชุบที่หลุดเกณฑ์ควบคุม |
 
-NOC Overview ถูกแยกออกจากเนื้อหา LDI/การผลิตในรอบนั้น (เดิมแสดง panel Yield ซ้ำกับ Manufacturing) — เรื่องโครงสร้างพื้นฐานและการผลิตจึงตั้งใจแยกไว้คนละแดชบอร์ด ไม่ผสมในหน้า "overview" เดียว
+NOC Overview ถูกแยกออกจากเนื้อหา LDI/การผลิตในรอบนั้น (เดิมแสดง panel Yield ซ้ำกับ Manufacturing) — เรื่องโครงสร้างพื้นฐานและการผลิตจึงตั้งใจแยกไว้คนละแดชบอร์ด ไม่ผสมในหน้า "overview" เดียว แดชบอร์ดงานเจาะและงานชุบ VCP แยกเก็บข้อมูลในฐานข้อมูล `eap_backup` อย่างปลอดภัย
 
 ---
 

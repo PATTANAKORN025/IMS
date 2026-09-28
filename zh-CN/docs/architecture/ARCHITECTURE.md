@@ -28,28 +28,37 @@ IMS 是一个 Docker Compose 栈，包含**两条相互独立的遥测流水线*
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
- subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
-  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\nauth check -> INSERT"]
-  ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
-  ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]
+ subgraph LDI ["LDI 制造遥测流水线 (主要，生产级)"]
+  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck 实时模拟器\n2s 周期, 10 台机台"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\n限流与鉴权校验"]
+  PROXY --> ING["ldi_ingestion.json\n鉴权检查 -> INSERT"]
+  ING --> LDIDATA[("public.ldi_data\n超表，1h 数据块")]
+  ALMSIM["ldi_alarm_simulator.json\n条件驱动 + 噪声\n10s 周期"] --> ALARMLOG[("public.ldi_alarm_log")]
+  ALARMAPI["ims-alarm-api :4000\n确认与解决状态流转"] --> ALARMLC[("public.ldi_alarm_lifecycle")]
  end
 
- subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
-  DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
+ subgraph LEGACY ["传统 SNMP / 基础设施流水线"]
+  DEV["2 台真实服务器\n+ SNMP 模拟器"] -->|"SNMP v2c, 30s 轮询"| NR["ingestion.json\nfork_5_ways 采集器 -> sre_parser"]
   NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
  end
 
- LDIDATA --> GRAFANA["Grafana\n22 dashboards"]
+ subgraph EAP ["设备集成 (数控钻孔与 VCP 电镀)"]
+  MOCK["eap-mock-data.js\n合成数据生成器"] --> EAPDB[("eap_backup DB\nmachine_event, vcp_upp")]
+ end
+
+ LDIDATA --> GRAFANA["Grafana 13\n覆盖 4 大业务领域的 22 个仪表板"]
  ALARMLOG --> GRAFANA
+ ALARMLC --> GRAFANA
  SYSMETRICS --> GRAFANA
+ EAPDB --> GRAFANA
  SYSMETRICS --> PROM["Prometheus"]
- GRAFANA -->|"native alert rules"| NRWEBHOOK["Node-RED /alert-webhook"]
+ GRAFANA -->|"原生告警规则"| NRWEBHOOK["Node-RED /alert-webhook"]
  PROM --> AM["Alertmanager"] --> NRWEBHOOK
  NRWEBHOOK --> LINE["LINE Messaging API"]
  NRWEBHOOK --> TEAMS["MS Teams webhook"]
 
  style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
+ style EAP fill:#1e293b,stroke:#3B82F6,color:#e2e8f0
 ```
 
 **为何存在两条流水线：**
@@ -163,25 +172,32 @@ flowchart TB
 
 > 面板数量与说明由 **[DASHBOARD_INVENTORY.md](DASHBOARD_INVENTORY.md)** 自动生成（`node scripts/generate-dashboard-inventory.js`，经 CI 检查）。本表补充生成器无法从 JSON 推断的架构层面的"为什么"——范围边界与相互引用；新增或重命名仪表板时，请保持此处 UID/Title 列与生成文件一致。
 
-| UID | Title | 范围 |
-| --- | --- | --- |
-| `ims-noc-overview` | IMS NOC Overview | 仅基础设施（服务器 + 网络）——LDI 工艺内容位于其他仪表板，见下文 |
-| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | 完整的 4 层 RCA 仪表板：管理层 KPI、设备遥测、生产上下文、告警流 |
-| `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | 产线 kiosk 看板，只读；在 1920x1080 与 3840x2160 下无需滚动（自 PR #22 起不支持 1280x720） |
-| `ims-ldi-alarm-console` | IMS LDI - Alarm Console | 唯一可交互的仪表板：经 `alarm-api` 将确认/解决写入 `public.ldi_alarm_lifecycle` |
-| `ims-ldi-alarm-response` | IMS LDI - Alarm Response (MTTA/MTTR) | 基于真实告警生命周期计算的响应时间 KPI |
-| `ims-ldi-alarm-dictionary` | IMS LDI - Alarm Dictionary | 查询厂商告警代码及其最近发生记录；通过下钻链接进入 |
-| `ims-ldi-factory-digital-twin` | IMS LDI - Factory Digital Twin | 按区域（`public.devices.location`）分组的上报 LDI 设备 Canvas 平面图 |
-| `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | Cpk/SPC 排名、RCA Truth Test、PE/JE 分布 |
-| `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | 逐事件下钻（点击告警/日志进行检查） |
-| `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | 自检式数据质量仪表板（板件键重复、覆盖率 %、告警主数据匹配率） |
-| `ims-easy-overview` | IMS Easy Overview | 零配置全设备群一览，完全基于共享视图/函数构建（`v_ldi_machine_latest_full`、`v_ldi_alarm_context`、`f_ldi_yield_pct`、`v_machine_spc_fleet`）——无需设置模板变量 |
-| `ims-engineering` | IMS Engineering Drill-Down | 侧重基础设施：各服务器的 CPU/内存/存储/网络，以及 LDI 吞吐量/质量（传统流水线） |
-| `ims-capacity` | IMS AIOps & Capacity Forecast | 距离耗尽/饱和天数的回归预测（基础设施） |
-| `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | 接入流水线自身的健康状况（行/秒、批次成功率、重试队列深度） |
-| `ims-ingestion-latency` | IMS Ingestion Latency | 基于迁移 081 的 `ingest_ts` 列、只读的 source_ts → ingest_ts 延迟证据 |
+| 领域 | UID | Title | 范围 |
+| :--- | :--- | :--- | :--- |
+| **01 钻孔领域** | `ims-drilling-fleet-overview` | IMS Drilling - Fleet Overview | 机群运行状态、主轴转速、进给速率及活动机台事件 |
+| **01 钻孔领域** | `ims-drilling-shift-production` | IMS Drilling - Shift Production | 班次钻孔板件命中计数、批次产量及生产综合效率 |
+| **01 钻孔领域** | `ims-drilling-machine-investigation` | IMS Drilling - Machine Investigation | 单台主轴振动状态、刀具命中寿命及主轴电机负载深度诊断 |
+| **01 钻孔领域** | `ims-drilling-anomaly-analysis` | IMS Drilling - Anomaly & Root Cause | 振动异常突变、断刀检测判定及告警相关性分析 |
+| **02 LDI 领域** | `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | 完整的 4 层 RCA 仪表板：管理层 KPI、设备遥测、生产上下文、告警流 |
+| **02 LDI 领域** | `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | 产线 kiosk 看板，只读；在 1920x1080 与 3840x2160 下无需滚动（自 PR #22 起不支持 1280x720） |
+| **02 LDI 领域** | `ims-ldi-alarm-console` | IMS LDI - Alarm Console | 唯一可交互的仪表板：经 `alarm-api` 将确认/解决写入 `public.ldi_alarm_lifecycle` |
+| **02 LDI 领域** | `ims-ldi-alarm-response` | IMS LDI - Alarm Response (MTTA/MTTR) | 基于真实告警生命周期计算的响应时间 KPI |
+| **02 LDI 领域** | `ims-ldi-alarm-dictionary` | IMS LDI - Alarm Dictionary | 查询厂商告警代码及其最近发生记录；通过下钻链接进入 |
+| **02 LDI 领域** | `ims-ldi-factory-digital-twin` | IMS LDI - Factory Digital Twin | 按区域（`public.devices.location`）分组的上报 LDI 设备 Canvas 平面图 |
+| **02 LDI 领域** | `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | Cpk/SPC 排名、RCA Truth Test、PE/JE 分布 |
+| **02 LDI 领域** | `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | 逐事件下钻（点击告警/日志进行检查） |
+| **02 LDI 领域** | `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | 自检式数据质量仪表板（板件键重复、覆盖率 %、告警主数据匹配率） |
+| **02 LDI 领域** | `ims-easy-overview` | IMS Easy Overview | 零配置全设备群一览，完全基于共享视图/函数构建（`v_ldi_machine_latest_full`、`v_ldi_alarm_context`、`f_ldi_yield_pct`、`v_machine_spc_fleet`）——无需设置模板变量 |
+| **03 平台领域** | `ims-noc-overview` | IMS NOC Overview | 仅基础设施（服务器 + 网络）——LDI 工艺内容位于其他仪表板 |
+| **03 平台领域** | `ims-engineering` | IMS Engineering Drill-Down | 侧重基础设施：各服务器的 CPU/内存/存储/网络，以及 LDI 吞吐量/质量（传统流水线） |
+| **03 平台领域** | `ims-capacity` | IMS AIOps & Capacity Forecast | 距离耗尽/饱和天数的回归预测（基础设施） |
+| **03 平台领域** | `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | 接入流水线自身的健康状况（行/秒、批次成功率、重试队列深度） |
+| **03 平台领域** | `ims-ingestion-latency` | IMS Ingestion Latency | 基于迁移 081 的 `ingest_ts` 列、只读的 source_ts → ingest_ts 延迟证据 |
+| **04 VCP 领域** | `ims-vcp-overview` | IMS VCP - Fleet Overview | 电镀产线总览：行车节拍周期、产线线速、累计电镀加工面积 |
+| **04 VCP 领域** | `ims-vcp-operations-console` | IMS VCP - Operations Console | 实时整流器电流密度、化学药水槽实测与设定温度比对、加药泵运行状态 |
+| **04 VCP 领域** | `ims-vcp-realtime-wall` | IMS VCP - Real-Time Wall | 车间电镀操作员专用高可见度悬挂大屏；药水槽超限预警指示 |
 
-NOC Overview 在当时已与 LDI/制造内容拆分（此前它重复展示了 Manufacturing 的良率面板）——基础设施与制造的关注点现在有意分放在不同仪表板上，而不是混在同一个"总览"页面。
+NOC Overview 在当时已与 LDI/制造内容拆分（此前它重复展示了 Manufacturing 的良率面板）——基础设施与制造的关注点现在有意分放在不同仪表板上，而不是混在同一个"总览"页面。钻孔与 VCP 仪表板完全隔离在 `eap_backup` 数据层中。
 
 ---
 
