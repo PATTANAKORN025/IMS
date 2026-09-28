@@ -114,7 +114,7 @@
 </tr>
 </table>
 
-> <img src="docs/assets/icons/aperture.svg" width="18" align="center" /> **Explore the Ecosystem:** View the full [15-Dashboard Macro-to-Micro Architecture Guide](docs/product/DASHBOARD_ECOSYSTEM.md) for a deep dive into how IMS scales from C-Level business metrics down to sensor-level diagnostic data.
+> <img src="docs/assets/icons/aperture.svg" width="18" align="center" /> **Explore the Ecosystem:** View the full [22-Dashboard Macro-to-Micro Architecture Guide](docs/product/DASHBOARD_ECOSYSTEM.md) for a deep dive into how IMS scales from C-Level business metrics down to sensor-level diagnostic data across 4 operational domains (Infrastructure, LDI, Drilling, VCP).
 
 <br/>
 
@@ -254,6 +254,8 @@ flowchart LR
   subgraph Visualization ["Visualization"]
     T --> G1["Grafana 13\n5 infrastructure dashboards"]
     T --> G2["Grafana 13\n10 manufacturing dashboards"]
+    T --> G3["Grafana 13\n4 CNC drilling dashboards"]
+    T --> G4["Grafana 13\n3 VCP plating dashboards"]
     T --> FT["Factory Twin 3D\n+ Alarm API"]
   end
 
@@ -408,6 +410,7 @@ IMS/
 |             [**Ownership**](docs/architecture/OWNERSHIP.md)              | Domain boundaries enforced via `CODEOWNERS`                 |
 |     [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | Semantic color palette, typography, threshold contracts     |
 |   [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md)    | Auto-generated dashboard/panel-count table (CI-checked)     |
+|       [**Synthetic Mock Data**](docs/data/MOCK_DATA.md)          | Stand-in data generator for drilling and VCP verification   |
 
 ### Operations & SRE Playbooks
 

@@ -114,7 +114,7 @@
 </tr>
 </table>
 
-> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **了解整体生态：** 阅读 [仪表板从宏观到微观的架构指南](docs/product/DASHBOARD_ECOSYSTEM.md)，了解 IMS 如何从管理层业务指标一路下钻到传感器级诊断数据。
+> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **了解整体生态：** 阅读 [22 个仪表板从宏观到微观的架构指南](docs/product/DASHBOARD_ECOSYSTEM.md)，了解 IMS 如何在 4 个运营领域（基础设施、LDI、钻孔、VCP）从管理层业务指标一路下钻到传感器级诊断数据。
 
 <br/>
 
@@ -254,6 +254,8 @@ flowchart LR
   subgraph Visualization ["可视化"]
     T --> G1["Grafana 13\n5 个基础设施仪表板"]
     T --> G2["Grafana 13\n10 个制造仪表板"]
+    T --> G3["Grafana 13\n4 个 CNC 钻孔仪表板"]
+    T --> G4["Grafana 13\n3 个 VCP 电镀仪表板"]
     T --> FT["Factory Twin 3D\n+ Alarm API"]
   end
 
@@ -408,6 +410,7 @@ IMS/
 | [**归属**](docs/architecture/OWNERSHIP.md) | 通过 `CODEOWNERS` 强制执行的领域边界 |
 | [**设计系统**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | 语义化配色、排版与阈值约定 |
 | [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | 自动生成的仪表板/面板数量表（经 CI 检查） |
+| [**合成模拟数据 (Mock Data)**](docs/data/MOCK_DATA.md) | 用于钻孔和 VCP 仪表板验证的替代数据生成器 |
 
 ### 运维与 SRE 手册
 

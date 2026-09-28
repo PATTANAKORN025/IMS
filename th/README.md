@@ -114,7 +114,7 @@
 </tr>
 </table>
 
-> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **สำรวจภาพรวมทั้งระบบ:** อ่าน [คู่มือสถาปัตยกรรมแดชบอร์ด 15 ชุด ตั้งแต่ระดับภาพรวมถึงระดับรายละเอียด](docs/product/DASHBOARD_ECOSYSTEM.md) เพื่อดูว่า IMS ไล่จากตัวชี้วัดธุรกิจระดับผู้บริหารลงไปถึงข้อมูลวินิจฉัยระดับเซนเซอร์อย่างไร
+> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **สำรวจภาพรวมทั้งระบบ:** อ่าน [คู่มือสถาปัตยกรรมแดชบอร์ด 22 ชุด ตั้งแต่ระดับภาพรวมถึงระดับรายละเอียด](docs/product/DASHBOARD_ECOSYSTEM.md) เพื่อดูว่า IMS ไล่จากตัวชี้วัดธุรกิจระดับผู้บริหารลงไปถึงข้อมูลวินิจฉัยระดับเซนเซอร์ครอบคลุม 4 โดเมนปฏิบัติการ (โครงสร้างพื้นฐาน, LDI, งานเจาะ CNC, งานชุบ VCP) อย่างไร
 
 <br/>
 
@@ -254,6 +254,8 @@ flowchart LR
   subgraph Visualization ["การแสดงผล"]
     T --> G1["Grafana 13\nแดชบอร์ดโครงสร้างพื้นฐาน 5 ชุด"]
     T --> G2["Grafana 13\nแดชบอร์ดการผลิต 10 ชุด"]
+    T --> G3["Grafana 13\nแดชบอร์ดงานเจาะ CNC 4 ชุด"]
+    T --> G4["Grafana 13\nแดชบอร์ดงานชุบ VCP 3 ชุด"]
     T --> FT["Factory Twin 3D\n+ Alarm API"]
   end
 
@@ -408,6 +410,7 @@ IMS/
 | [**ความเป็นเจ้าของ**](docs/architecture/OWNERSHIP.md) | ขอบเขตโดเมนที่บังคับผ่าน `CODEOWNERS` |
 | [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | จานสีตามความหมาย ตัวอักษร และสัญญาเรื่อง threshold |
 | [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | ตารางแดชบอร์ด/จำนวน panel ที่สร้างอัตโนมัติ (ตรวจใน CI) |
+| [**ข้อมูลสังเคราะห์ (Mock Data)**](docs/data/MOCK_DATA.md) | ชุดตัวสร้างข้อมูลสังเคราะห์สำหรับการตรวจสอบงานเจาะและ VCP |
 
 ### Playbook สำหรับงานปฏิบัติการและ SRE
 
