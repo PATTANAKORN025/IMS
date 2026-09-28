@@ -5,11 +5,21 @@
 </div>
 <br/>
 
-# Data Retention Policy
+<div align="center">
+  <h1>IMS TimescaleDB 数据保留与压缩策略规范 (Data Retention)</h1>
+  <p><b>超表保留周期调度计划、持续聚合汇总生命周期、实时配置漂移审计及合规边界说明</b></p>
+  <p>
+    <a href="../../../docs/architecture/DATA_RETENTION.md">English</a> |
+    <a href="../../../th/docs/architecture/DATA_RETENTION.md">ไทย</a> |
+    <a href="DATA_RETENTION.md">简体中文</a>
+  </p>
+</div>
 
-> **Audience:** SRE/运维、QA/审计、合规。
+---
+
+> **受众:** SRE/运维、QA/审计、合规。
 >
-> **Provenance:** 下表是针对运行中数据库（`timescaledb_information.jobs`）的**实时查询结果**，而不是源于迁移（migration）文件历史记录——请参阅 Governance Gap 部分以了解为什么这一区别在这里特别重要。查询时间：2026-08-10。
+> **出处:** 下表是针对运行中数据库（`timescaledb_information.jobs`）的**实时查询结果**，而不是源于迁移（migration）文件历史记录——请参阅 Governance Gap 部分以了解为什么这一区别在这里特别重要。查询时间：2026-08-10。
 
 ---
 

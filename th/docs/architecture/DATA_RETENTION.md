@@ -5,11 +5,21 @@
 </div>
 <br/>
 
-# Data Retention Policy
+<div align="center">
+  <h1>นโยบายการเก็บรักษาและการบีบอัดข้อมูล TimescaleDB ของระบบ IMS (Data Retention)</h1>
+  <p><b>ตารางกำหนดระยะเวลาเก็บข้อมูล Hypertable, วงจรอายุการสรุปรวมข้อมูล Continuous Aggregate, การตรวจสอบความคลาดเคลื่อนของการตั้งค่า และขอบเขตการกำกับดูแล</b></p>
+  <p>
+    <a href="../../../docs/architecture/DATA_RETENTION.md">English</a> |
+    <a href="DATA_RETENTION.md">ไทย</a> |
+    <a href="../../../zh-CN/docs/architecture/DATA_RETENTION.md">简体中文</a>
+  </p>
+</div>
 
-> **Audience:** SRE/ฝ่ายปฏิบัติการ, QA/การตรวจสอบ, ฝ่ายกำกับดูแลการปฏิบัติตามกฎระเบียบ (compliance)
+---
+
+> **กลุ่มเป้าหมาย:** SRE/ฝ่ายปฏิบัติการ, QA/การตรวจสอบ, ฝ่ายกำกับดูแลการปฏิบัติตามกฎระเบียบ (compliance)
 >
-> **Provenance:** ตารางด้านล่างเป็น **ผลลัพธ์การคิวรีแบบสด (live query)** จากฐานข้อมูลที่กำลังทำงานอยู่ (`timescaledb_information.jobs`) ไม่ได้มาจากการอ้างอิงประวัติไฟล์ migration — โปรดดูเหตุผลว่าทำไมความแตกต่างนี้จึงสำคัญในส่วน Governance Gap ดึงข้อมูลเมื่อวันที่ 2026-08-10
+> **ที่มา:** ตารางด้านล่างเป็น **ผลลัพธ์การคิวรีแบบสด (live query)** จากฐานข้อมูลที่กำลังทำงานอยู่ (`timescaledb_information.jobs`) ไม่ได้มาจากการอ้างอิงประวัติไฟล์ migration — โปรดดูเหตุผลว่าทำไมความแตกต่างนี้จึงสำคัญในส่วน Governance Gap ดึงข้อมูลเมื่อวันที่ 2026-08-10
 
 ---
 

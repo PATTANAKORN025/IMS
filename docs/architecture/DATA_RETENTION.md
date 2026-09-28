@@ -5,7 +5,17 @@
 </div>
 <br/>
 
-# Data Retention Policy
+<div align="center">
+  <h1>IMS TimescaleDB Data Retention & Compression Policy</h1>
+  <p><b>Hypertable retention schedules, continuous aggregate rollup lifecycle, live configuration audits, and compliance boundaries</b></p>
+  <p>
+    <a href="DATA_RETENTION.md">English</a> |
+    <a href="../../th/docs/architecture/DATA_RETENTION.md">ไทย</a> |
+    <a href="../../zh-CN/docs/architecture/DATA_RETENTION.md">简体中文</a>
+  </p>
+</div>
+
+---
 
 > **Audience:** SRE/operations, QA/audit, compliance.
 >
