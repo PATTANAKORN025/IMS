@@ -103,7 +103,7 @@ eap_backup 演练数据库")]
 * **设备元数据模型:** 覆盖钻孔机群 (`drl001`–`drl010`) 与连续电镀线 (`vcp001`–`vcp005`)。
 * **数据采集方案:** 精准仿真物理机台的实际加工周期：
   - **钻孔 (Drilling):** 加工程序启动、主轴转速 (RPM)、进给速度 (Feed Rate)、刀具物理寿命损耗计数及班次生产报表。
-  - **电镀 (VCP):** 线体运行态切换 (RUN, IDLE, DOWN)、整流器输出电流、化学药水槽体热力学温度以及飞靶传送物理守恒公式 ($	ext{plating\_time} 	imes 	ext{line\_speed} = 54$)。
+  - **电镀 (VCP):** 线体运行态切换 (RUN, IDLE, DOWN)、整流器输出电流、化学药水槽体热力学温度以及飞靶传送物理守恒公式 ($\text{plating\_time} \times \text{line\_speed} = 54$)。
 * **数据映射入库:** 写入 `eap_backup` 数据库中的 `machine_event`、`vcp_upp` 及 `catalog.object_registry`，驱动 4 块钻孔车间大屏和 3 块电镀线大屏。
 
 ### 适配器 4 — SECS/GEM 接口契约 (未来物理新机台)
@@ -121,8 +121,8 @@ eap_backup 演练数据库")]
 ## 3. 工业安全合规边界 (IEC 62443 Security Boundaries)
 
 将物理车间下位机接入监控系统涉及跨越运营技术 (OT) 网络安全边界：
-* **边界 1 (外部 / DMZ 区):** Nginx 反向代理前置入口，强制 TLS 终止加密并校验 Grafana 用户 Session Cookie。
-* **边界 2 (内部微服务容器网):** PgBouncer 事务连接池代理，严禁使用非参数化拼接 SQL，强制 `AUTH_TYPE: plain`。
+* **边界 1（入口）：** nginx 反向代理。**目前以明文 HTTP 提供服务，尚未配置 TLS 终止。** `/alarm-api/` 和 `/factory-twin-3d/` 需要有效的 Grafana 会话（`auth_request`）；`/ldi-telemetry` 和 `/inject` 需要 `X-API-Key` 请求头（由 Node-RED 校验），并有速率限制。
+* **边界 2（内部服务）：** 各服务在 Docker 内部网络中通过事务池模式的 PgBouncer 访问 TimescaleDB，并各自使用独立角色（见 `docs/data/DATA_GOVERNANCE.md`）；`alarm-api` 使用参数化查询。
 * **边界 3 (车间物理设备网):** 未来部署适配器 4 时，必须配置工业级 OT 防火墙物理隔离、启用 mTLS 双向认证及 IP 白名单，并采用单向只读物理分流 (Read-only network tap)，杜绝监控系统向现场生产机台回传下发写入指令的潜在隐患。
 
 ---

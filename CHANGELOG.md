@@ -36,6 +36,26 @@
   - nginx paths for Grafana health checks and Grafana Live WebSocket;
   - two LDI Cpk alert rules paused until `v_machine_spc_ranking` is fixed.
 
+### Security & Correctness Fixes
+- **alarm-api role check:**
+  - The role was read from Grafana `/api/user`, which carries no `orgRole`, so every acknowledge/resolve returned 403, even for Admin. It is now read from `/api/user/orgs` for the session's current organisation.
+  - Viewer still gets 403. A Grafana server admin may write.
+  - Verified end to end through nginx against Grafana 13.1.2, and the test now runs in pre-commit and CI (`scripts/run-alarm-api-tests.js`).
+- **nginx headers:**
+  - `X-XSS-Protection: 0`, following current guidance.
+  - Added `Permissions-Policy`.
+  - Grafana's duplicate `X-Frame-Options` / `X-XSS-Protection` / `X-Content-Type-Options` are hidden, so each header reaches the browser once.
+- **Pinned images:** `grafana-image-renderer` is now `v5.11.1` and `pgadmin4` is `9.18`, where both were `:latest`. These are the versions proven in the running stack.
+- **Dependabot:**
+  - Now covers the Dockerfiles in `nodered_data`, `pgbouncer` and `services/*`, and the images in `docker-compose.yaml`; the old `docker` entry at `/` covered nothing.
+  - Minor and patch updates are grouped.
+- **npm dependencies:** in-range fixes for `express`, `qs`, `body-parser`, `fast-uri`, `js-yaml` and `svgo`. `npm audit` now reports 0 across the root, `alarm-api` and `factory-twin-3d`.
+- **Documentation corrections (en/th/zh-CN):**
+  - Repaired LaTeX that an escaping bug had turned into TAB/form-feed characters in 18 files.
+  - Rewrote `BACKUP_RESTORE`, `DATA_GOVERNANCE` and `SLO_DEFINITIONS` to match the shipped scripts, roles, live retention policies and exported metrics. They had described AES-256 backups, a `factory_telemetry` database, roles and PromQL metrics that do not exist, and compliance that was never certified.
+  - Corrected the alarm-api reference: session-derived actor, 401/403, no host port.
+  - Corrected the EAP security boundaries: plain HTTP today.
+
 ### Documentation & Repository Hygiene
 - Re-verified all living documentation and inventories against live runtime (`main`) as of 2026-09-28 across EN, TH, and ZH-CN.
 - Synchronized release badge to `v1.0.1` and removed living rule files (`AGENTS.md`) from `.gitignore`.

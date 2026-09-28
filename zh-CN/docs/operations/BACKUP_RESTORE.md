@@ -6,8 +6,8 @@
 <br/>
 
 <div align="center">
-  <h1>IMS 数据库备份、恢复与有效性验证流程规范</h1>
-  <p><b>企业级 pg_dump 流水线、AES-256 加密存储、临时数据库行数区间验证机制 (Row-Count Bracketing) 及时间点恢复 (PITR)</b></p>
+  <h1>IMS 数据库备份、恢复与有效性验证流程</h1>
+  <p><b>仓库目前实际提供的功能、如何验证恢复结果，以及备份离开本机前需要补充的措施</b></p>
   <p>
     <a href="../../../docs/operations/BACKUP_RESTORE.md">English</a> |
     <a href="../../../th/docs/operations/BACKUP_RESTORE.md">ไทย</a> |
@@ -17,216 +17,85 @@
 
 ---
 
-> **受众对象:** SRE / 运维工程师、数据库管理员 (DBA)、信息安全审计员  
-> **灾备恢复目标:** 恢复时间目标 (RTO) < 15 分钟 \| 恢复点目标 (RPO) < 1 小时  
-> **合规遵循标准:** ISO 27001 A.12.3 (信息备份规范), IEC 62443-4-2 (数据完整性保障)  
-> **数据源出处:** 基于生产技术栈在高频连续写入状态下运行 `scripts/dr-test.sh` 脚本所得实测数据。
+> **读者：** SRE / 运维工程师、数据库工程师
+> **范围：** `ims-timescaledb` 中的 `ims` 数据库。独立的 `eap_backup` 数据库是还原的工厂数据副本，不在这些脚本的覆盖范围内。
+> **恢复目标：** RTO 低于 15 分钟、RPO 低于 1 小时只是**目标**，并非实测保证。使用仓库自带的 `pg_dump`（每日或手动执行）时，实际 RPO 等于距上次备份的时间。
 
 ---
 
-## 1. 灾备与备份恢复体系架构
+## 1. 目前提供的功能
 
-```mermaid
-flowchart TD
-  subgraph PROD["1. 生产运行环境 (Live Production Tier)"]
-    DB[("TimescaleDB (PostgreSQL 16)
-数据库: factory_telemetry
-命名空间: 仅限 public")]
-    PRE["记录导出前快照行数
-SELECT count(*) FROM ldi_data"]
-    POST["记录导出后快照行数
-SELECT count(*) FROM ldi_data"]
-    DB -.->|导出前查询| PRE
-    DB -.->|导出后查询| POST
-  end
+| 命令 | 脚本 | 作用 |
+| --- | --- | --- |
+| `make backup` | `scripts/backup-db.sh` | 以 `ims_admin` 身份对 `ims` 执行 `pg_dump`，输出到 `./backups/ims_backup_<timestamp>.sql` 后用 `gzip` 压缩；删除 `./backups` 中超过 30 天的 `*.sql.gz`。 |
+| `make restore FILE=<path>` | `scripts/restore-db.sh` | 先要求确认，然后把解压后的转储通过 `psql` 导入**正在使用的** `ims` 数据库。 |
+| `./scripts/dr-test.sh backup-restore` | `scripts/dr-test.sh` | 备份 `ims`，恢复到一次性数据库 `ims_dr_test` 并进行比对，从不触及生产数据库。 |
+| `./scripts/dr-verify-restore.sh …` | `scripts/dr-verify-restore.sh` | 比对两个数据库的表、列、索引、约束、触发器、扩展、连续聚合和策略，并检查行数区间；有任何差异时以非零状态退出。 |
+| `node scripts/production-assurance.js --profile=dr` | `scripts/production-assurance.js` | 运行 DR 演练，并把结果写成一个 JSON 文件到 `docs/evidence/runtime/`。 |
 
-  subgraph PIPELINE["2. 自动化备份与高强度加密流水线"]
-    DUMP["pg_dump 逻辑导出
-(纯净架构定义 + 原始超表切片)"]
-    GZIP["Gzip 数据流压缩
-(级别 -9, 体积压缩达 ~85%)"]
-    ENC["OpenSSL AES-256-CBC 加密
-(-salt -pbkdf2 -iter 100000)"]
-    HASH["生成 SHA-256 校验清单
-(完整性比对防篡改)"]
-    
-    DB -->|逻辑数据流| DUMP
-    DUMP --> GZIP --> ENC --> HASH
-  end
-
-  subgraph STORAGE["3. 异地密文冷存储介质"]
-    VAULT[("离线安全对象存储 / S3
-WORM 防篡改安全合规策略")]
-    HASH --> VAULT
-  end
-
-  subgraph VERIFY["4. 临时验证环境灾备演练 (Ephemeral DR)"]
-    EPHEM[("临时校验数据库
-(ims_dr_test)")]
-    DEC["流式解密与解压缩"]
-    BRACKET{"行数区间包含断言校验
-Count(Pre) <= Restored <= Count(Post)"}
-    DROP["销毁临时库 DROP DATABASE
-写入审计存证报告日志"]
-    ALERT["触发 P0 级严重灾备警报
-直连通知值班 SRE 团队"]
-
-    VAULT --> DEC --> EPHEM
-    EPHEM --> BRACKET
-    PRE -.->|区间下限| BRACKET
-    POST -.->|区间上限| BRACKET
-    BRACKET -->|验证通过| DROP
-    BRACKET -->|异常失败| ALERT
-  end
-
-  style PROD fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style PIPELINE fill:#1e293b,stroke:#3b82f6,color:#f8fafc
-  style STORAGE fill:#1e293b,stroke:#8b5cf6,color:#f8fafc
-  style VERIFY fill:#1e293b,stroke:#10B981,color:#f8fafc
-```
+**尚未提供：** 备份**未加密**、**未复制到本机以外**，也**没有 WAL 归档或时间点恢复 (PITR)**。`./backups/` 已列入 `.gitignore`；能读取本机文件的人都能读取转储文件。需要补充的措施见第 4 节。
 
 ---
 
-## 2. 生产环境标准备份操作流程
-
-标准生产备份流水线完整导出关系元数据与全部时序超表数据行。通过流式管道执行高压缩与工业级对称加密 (AES-256-CBC)，杜绝备份数据在传输与存储介质中的泄密风险。
-
-### 自动化备份脚本 (`scripts/backup-production.sh`)
+## 2. 执行备份
 
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# 环境参数配置
-BACKUP_DIR="/var/backups/ims"
-TIMESTAMP=$(date -u +"%Y%m%d_%H%M%SZ")
-BACKUP_FILE="${BACKUP_DIR}/ims_backup_${TIMESTAMP}.sql.gz.enc"
-CHECKSUM_FILE="${BACKUP_FILE}.sha256"
-CONTAINER_NAME="ims-timescaledb"
-DB_NAME="${POSTGRES_DB:-factory_telemetry}"
-DB_USER="${POSTGRES_USER:-postgres}"
-
-mkdir -p "${BACKUP_DIR}"
-
-echo "==> [1/4] 记录导出前的实时数据行数 (Pre-count)..."
-PRE_COUNT=$(docker exec "${CONTAINER_NAME}" psql -U "${DB_USER}" -d "${DB_NAME}" -tAc "SELECT count(*) FROM public.ldi_data;")
-
-echo "==> [2/4] 执行流式 pg_dump 导出、Gzip 压缩与 AES-256 对称加密..."
-# timescaledb_information 视图上的循环外键警告属于正常现象，无需干预
-docker exec "${CONTAINER_NAME}" pg_dump -U "${DB_USER}" -d "${DB_NAME}"   --format=plain   --no-owner   --no-privileges   | gzip -9   | openssl enc -aes-256-cbc -salt -pbkdf2 -iter 100000 -out "${BACKUP_FILE}" -pass env:BACKUP_ENCRYPTION_KEY
-
-echo "==> [3/4] 记录导出完成后的实时数据行数 (Post-count)..."
-POST_COUNT=$(docker exec "${CONTAINER_NAME}" psql -U "${DB_USER}" -d "${DB_NAME}" -tAc "SELECT count(*) FROM public.ldi_data;")
-
-echo "==> [4/4] 计算并生成 SHA-256 完整性哈希校验码..."
-sha256sum "${BACKUP_FILE}" > "${CHECKSUM_FILE}"
-
-echo "=========================================================="
-echo "数据库备份成功完成!"
-echo "目标文件:   ${BACKUP_FILE}"
-echo "压缩体积:   $(du -h "${BACKUP_FILE}" | cut -f1)"
-echo "哈希摘要:   $(cat "${CHECKSUM_FILE}")"
-echo "有效区间:   ${PRE_COUNT} <= Restored <= ${POST_COUNT}"
-echo "=========================================================="
+make backup                       # 或：bash scripts/backup-db.sh
+ls -lh backups/                   # ims_backup_YYYYmmdd_HHMMSS.sql.gz
 ```
+
+`backup-db.sh` 使用 `.env.example` 中的默认值：角色 `ims_admin`、数据库 `ims`。如果 `.env` 使用了其他名称，请修改脚本，或用相同参数手动运行 `pg_dump`。
 
 ---
 
-## 3. 临时环境恢复与区间验证协议 (Verification Protocol)
+## 3. 恢复并证明恢复正确
 
-由于 IMS 是一套**处于持续高频写入状态的时序监控系统**，对备份数据进行简单的“还原行数 == 当前实时行数”的等值比对必然产生误报。系统强制实施 **行数区间包含断言 (Row-Count Bracketing)**：恢复出的行数只要严格落在区间 $[Count_{	ext{pre}}, Count_{	ext{post}}]$ 之内即判定验证通过。
-
-### 自动化灾备验证演练指令
+### 3.1 先演练（安全）
 
 ```bash
-# 执行自动化备份还原演练
 ./scripts/dr-test.sh backup-restore
 ```
 
-### 手工验证标准排查流程
+演练会恢复到 `ims_dr_test`，然后运行 `dr-verify-restore.sh`。仅靠行数无法证明恢复正确：TimescaleDB 恢复后，约束、索引或连续聚合可能丢失，而行数仍然一致。因此校验器会比对系统目录。
+
+转储期间生产数据库仍在写入数据，因此行数不要求完全相等。对于持续写入的超表，恢复后的行数必须落在转储前后两次计数之间：
+
+$$\text{Count}_{\text{before}} \le \text{Count}_{\text{restored}} \le \text{Count}_{\text{after}}$$
+
+### 3.2 覆盖生产数据库（破坏性操作）
 
 ```bash
-# 1. 验证备份密文文件的 SHA-256 完整性
-sha256sum -c "${BACKUP_FILE}.sha256"
-
-# 2. 在数据库实例中创建独立的临时演练库 (绝不触碰生产库)
-docker exec ims-timescaledb psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE ims_dr_test;"
-
-# 3. 流式解密、解压并向临时数据库导入数据
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in "${BACKUP_FILE}" -pass env:BACKUP_ENCRYPTION_KEY   | gunzip   | docker exec -i ims-timescaledb psql -U "$POSTGRES_USER" -d ims_dr_test -v ON_ERROR_STOP=1
-
-# 4. 执行数据行数区间比对
-RESTORED_COUNT=$(docker exec ims-timescaledb psql -U "$POSTGRES_USER" -d ims_dr_test -tAc "SELECT count(*) FROM public.ldi_data;")
-
-echo "恢复数据行数: ${RESTORED_COUNT}"
-# 断言校验: PRE_COUNT <= RESTORED_COUNT <= POST_COUNT
-
-# 5. 验证完毕后清理并销毁临时演练数据库
-docker exec ims-timescaledb psql -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE ims_dr_test;"
+make restore FILE=backups/ims_backup_YYYYmmdd_HHMMSS.sql.gz
 ```
+
+该命令会覆盖 `ims`。请先停止写入方（`node-red`、`alarm-api`），确保恢复期间没有写入；恢复后重新启动它们，并用 `make verify` 检查。
 
 ---
 
-## 4. 恢复后持续聚合 (CAGG) 手动重算规范
+## 4. 备份离开本机之前（建议措施，尚未提供）
 
-TimescaleDB 持续聚合视图 (CAGGs) 的元数据定义随备份还原，但底层的预计算物化数据表需要异步重算。在生产环境执行全量灾难恢复后，必须执行以下指令强制立即物化数据：
+以下每一项都需要先实施并测试，才能依赖它；目前均不在系统中。
 
-```sql
--- 切换进入已恢复的业务数据库
-\c factory_telemetry;
+1. **加密转储文件**，密钥不要与文件存放在一起，例如：
 
--- 强制刷新 1 分钟颗粒度物化聚合视图
-CALL refresh_continuous_aggregate('public.cagg_ldi_metrics_1m', NULL, NULL);
-
--- 强制刷新 1 小时颗粒度分析聚合视图
-CALL refresh_continuous_aggregate('public.cagg_ldi_hourly', NULL, NULL);
-
--- 核查超表数据切片与列式压缩恢复状态
-SELECT 
-  hypertable_name,
-  num_chunks,
-  compressed_chunks
-FROM timescaledb_information.hypertables
-WHERE hypertable_schema = 'public';
-```
-
----
-
-## 5. 基于 WAL 归档的时间点精确恢复 (PITR)
-
-对于要求严苛零数据丢失的生产环境 (RPO < 5 分钟)，必须通过配置预写式日志 (WAL) 归档实现时间点精准恢复。
-
-### 核心配置文件 (`postgresql.conf`)
-```ini
-# WAL 归档核心参数
-wal_level = replica
-archive_mode = on
-archive_command = 'test ! -f /var/lib/postgresql/wal_archive/%f && cp %p /var/lib/postgresql/wal_archive/%f'
-archive_timeout = 300
-```
-
-### PITR 精确时间点还原步骤
-1. 停止运行中的数据库容器: `docker compose stop timescaledb`
-2. 将最新的全量基准备份解压至数据存储卷目录中。
-3. 在数据根目录下创建标志文件 `recovery.signal`。
-4. 在 `postgresql.conf` 中追加恢复目标配置：
-   ```ini
-   restore_command = 'cp /var/lib/postgresql/wal_archive/%f %p'
-   recovery_target_time = '2026-09-28 12:00:00 UTC'
-   recovery_target_action = 'promote'
+   ```bash
+   docker compose exec -T timescaledb pg_dump -U ims_admin ims \
+     | gzip -9 \
+     | openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY \
+     > "backups/ims_backup_$(date -u +%Y%m%dT%H%M%SZ).sql.gz.enc"
    ```
-5. 启动 `timescaledb`：PostgreSQL 会自动重放归档日志直到目标时间戳，并自动切换为主库读写模式。
+
+   不要把 `BACKUP_ENCRYPTION_KEY` 放进 `.env` 或 git，并在测试恢复的同一次演练中用 `openssl enc -d …` 测试解密。
+2. **复制到本机以外**，存到本机凭据无法删除的存储中，每个文件旁保留校验和 (`sha256sum`)。
+3. **定时执行。** 仓库中没有任何机制定时运行 `make backup`；请在主机上使用 cron 或 systemd timer，并在最新备份早于 RPO 目标时发出告警。
+4. **时间点恢复 (PITR)**，仅在一小时的 RPO 目标不够时才需要。需要在 `docker-compose.yaml` 的 TimescaleDB 命令行中加入 `wal_level=replica`、`archive_mode=on` 和 `archive_command`，还需要基础备份 (`pg_basebackup`) 和归档存储。目前尚未配置。
 
 ---
 
-## 6. 生产故障恢复核对清单 (DR Checklist)
+## 5. 相关文档
 
-- [ ] 校验灾备数据包的 SHA-256 哈希值无误。
-- [ ] 确认 PgBouncer 中已清理所有孤立未提交事务。
-- [ ] 确认所有恢复后的数据库对象严格位于 `public` 命名空间。
-- [ ] 执行 `refresh_continuous_aggregate` 刷新所有 CAGG 物化视图。
-- [ ] 验证 `http://localhost:3000` 处的 Grafana 大屏图表渲染正常。
-- [ ] 通过 Prometheus 指标 `rate(ims_telemetry_ingested_total[1m])` 确认数据写入流量已完全恢复。
+- `docs/operations/DR_TEST_PLAN.md`：演练计划与通过标准。
+- `docs/operations-runbook.md`：与恢复相关的日常运维操作。
 
 ---
 

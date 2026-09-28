@@ -215,7 +215,7 @@ Telemetry Window Join (+-5m)"]
 v_ldi_rca_truth_test"]
 ```
 
-Alarms flow into `public.ldi_alarm_log`, linking to `public.ldi_alarm_ms_code` by foreign key. Downstream views (`v_ldi_alarm_context`) automatically join machine telemetry within a $\pm 5	ext{-minute}$ window around the alarm timestamp, feeding statistical root cause analysis into the operator console.
+Alarms flow into `public.ldi_alarm_log`, linking to `public.ldi_alarm_ms_code` by foreign key. Downstream views (`v_ldi_alarm_context`) automatically join machine telemetry within a $\pm 5\text{-minute}$ window around the alarm timestamp, feeding statistical root cause analysis into the operator console.
 
 ---
 

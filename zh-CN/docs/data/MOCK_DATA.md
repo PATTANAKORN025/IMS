@@ -7,7 +7,7 @@
 
 <div align="center">
   <h1>CNC 钻孔与 VCP 电镀合成数据生成架构规范</h1>
-  <p><b>隔离替代数据库生成器、物理学时序模型、数据库迁移边界及监控仪表盘自动化校验</b></p>
+  <p><b>隔离替代数据库生成器、规则驱动的合成时序数据、数据库迁移边界及监控仪表盘自动化校验</b></p>
   <p>
     <a href="../../../docs/data/MOCK_DATA.md">English</a> |
     <a href="../../../th/docs/data/MOCK_DATA.md">ไทย</a> |
@@ -30,7 +30,7 @@ flowchart TD
     SCHEMA["database/mock/eap_backup-schema.sql
 创建表结构、视图及防误触标记表"]
     MOCK_JS["scripts/mock/eap-mock-data.js
-物理学模型: 转速、进给、刀具磨损、槽液温度"]
+合成模型: 转速、进给、主轴掩码、槽液温度"]
     UNIT["tests/unit/eap-mock-data.test.js
 Pre-commit 预提交单元测试"]
   end
@@ -47,7 +47,7 @@ Pre-commit 预提交单元测试"]
     DASH["Grafana 监控大屏群
 钻孔车间大屏 (4 块)
 VCP 电镀大屏 (3 块)"]
-    ALERTS["Prometheus / Alertmanager
+    ALERTS["Grafana Alerting
 7 条 VCP 生产异常告警规则"]
     VERIFY["scripts/mock/verify-mock-dashboards.js
 校验 34 个大屏图表面板 + 7 条告警规则"]
@@ -66,12 +66,12 @@ VCP 电镀大屏 (3 块)"]
 
 ## 2. 核心组成部分
 
-| 组件名称 | 仓库物理路径 | 核心职责 |
+| 组件名称 | 仓库路径 | 核心职责 |
 |---|---|---|
 | **模式定义** | `database/mock/eap_backup-schema.sql` | 建立钻孔/VCP 大屏、告警规则及迁移 084–086 所需的完整数据表与视图。 |
-| **数据生成脚本** | `scripts/mock/eap-mock-data.js` | 依照物理学特征生成拟真的钻孔主轴工序事件与 VCP 电镀线遥测数据。 |
+| **数据生成脚本** | `scripts/mock/eap-mock-data.js` | 按规则生成钻孔机作业事件与 VCP 电镀线遥测数据（全部为合成值）。 |
 | **查询校验器** | `scripts/mock/verify-mock-dashboards.js` | 逐一执行钻孔与 VCP 大屏的全部图表面板查询及告警规则，验证返回行数。 |
-| **单元测试套件** | `tests/unit/eap-mock-data.test.js` | 在无需连接实际数据库的情况下对生成器算法与物理学逻辑进行断言验证。 |
+| **单元测试套件** | `tests/unit/eap-mock-data.test.js` | 在无需连接实际数据库的情况下对生成器逻辑与数据格式进行断言验证。 |
 
 所有数据指标均为程序合成：机台台数、设定阈值、工艺配方、板件物理尺寸、批次编号及报警报文，绝无真实工厂数据的泄露风险。
 
@@ -79,7 +79,7 @@ VCP 电镀大屏 (3 块)"]
 - 事件代码与报警消息文本结构。
 - 设备标识符规范 (电镀线统一采用 `-VCP` 后缀)。
 - 槽液测定标签逆序逻辑 (`preset_<bath>` 为实际检测读数，`actual_<bath>` 为工艺目标设定值)。
-- 物理传输守恒公式: $	ext{plating\_time} 	imes 	ext{line\_speed} = 54$。
+- 配方恒等式: $\text{plating\_time} \times \text{line\_speed} = 54$。
 - 成对出现的触发 (Triggered) 与复位 (Reset) 报警流水。
 
 ---

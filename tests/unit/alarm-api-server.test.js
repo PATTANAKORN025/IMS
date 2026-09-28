@@ -16,6 +16,7 @@ const assert = require('assert');
 const {
   createApp,
   hasWritePermission,
+  resolveGrafanaIdentity,
 } = require('../../services/alarm-api/server');
 
 let passed = 0;
@@ -112,6 +113,91 @@ test('hasWritePermission: Editor and Admin true, Viewer and unknown false', () =
   assert.strictEqual(hasWritePermission('Viewer'), false);
   assert.strictEqual(hasWritePermission(null), false);
   assert.strictEqual(hasWritePermission(undefined), false);
+});
+
+test('hasWritePermission: Grafana server admin may write whatever the org role', () => {
+  assert.strictEqual(hasWritePermission('Viewer', true), true);
+  assert.strictEqual(hasWritePermission(null, true), true);
+  assert.strictEqual(hasWritePermission('Viewer', false), false);
+});
+
+// --- unit-level: resolveGrafanaIdentity against Grafana's real shapes -----
+// /api/user returns UserProfileDTO, which has NO orgRole field (the bug this
+// guards against); the role only exists per org in /api/user/orgs.
+function fakeGrafana({ user, orgs, userStatus = 200, orgsStatus = 200 }) {
+  const calls = [];
+  const fetchImpl = async (url, opts) => {
+    calls.push({ url, cookie: opts.headers.Cookie });
+    const path = new URL(url).pathname;
+    const status = path === '/api/user' ? userStatus : orgsStatus;
+    const body = path === '/api/user' ? user : orgs;
+    return { ok: status >= 200 && status < 300, status, json: async () => body };
+  };
+  return { fetchImpl, calls };
+}
+const USER = { id: 7, uid: 'u7', login: 'shift-lead', email: 'lead@example.invalid', orgId: 1, isGrafanaAdmin: false };
+
+test('resolveGrafanaIdentity: role comes from /api/user/orgs for the current org', async () => {
+  const g = fakeGrafana({ user: USER, orgs: [{ orgId: 2, name: 'Other', role: 'Admin' }, { orgId: 1, name: 'Main Org.', role: 'Editor' }] });
+  const id = await resolveGrafanaIdentity('grafana_session=abc', { grafanaUrl: 'http://grafana:3000', fetchImpl: g.fetchImpl });
+  assert.deepStrictEqual(id, { actor: 'shift-lead', orgRole: 'Editor', isGrafanaAdmin: false });
+  assert.deepStrictEqual(g.calls.map((c) => new URL(c.url).pathname), ['/api/user', '/api/user/orgs']);
+  assert.ok(g.calls.every((c) => c.cookie === 'grafana_session=abc'), 'the session cookie is forwarded on both calls');
+});
+
+test('resolveGrafanaIdentity: Viewer in the current org stays Viewer even if Admin elsewhere', async () => {
+  const g = fakeGrafana({ user: USER, orgs: [{ orgId: 1, name: 'Main Org.', role: 'Viewer' }, { orgId: 3, name: 'Lab', role: 'Admin' }] });
+  const id = await resolveGrafanaIdentity('grafana_session=abc', { grafanaUrl: 'http://grafana:3000', fetchImpl: g.fetchImpl });
+  assert.strictEqual(id.orgRole, 'Viewer');
+  assert.strictEqual(hasWritePermission(id.orgRole, id.isGrafanaAdmin), false);
+});
+
+test('resolveGrafanaIdentity: /api/user/orgs failing leaves role null (denied), never guessed', async () => {
+  const g = fakeGrafana({ user: USER, orgs: null, orgsStatus: 500 });
+  const id = await resolveGrafanaIdentity('grafana_session=abc', { grafanaUrl: 'http://grafana:3000', fetchImpl: g.fetchImpl });
+  assert.strictEqual(id.actor, 'shift-lead');
+  assert.strictEqual(id.orgRole, null);
+  assert.strictEqual(hasWritePermission(id.orgRole, id.isGrafanaAdmin), false);
+});
+
+test('resolveGrafanaIdentity: invalid session (401 on /api/user) -> null, orgs never asked', async () => {
+  const g = fakeGrafana({ user: { message: 'Unauthorized' }, orgs: [], userStatus: 401 });
+  const id = await resolveGrafanaIdentity('grafana_session=expired', { grafanaUrl: 'http://grafana:3000', fetchImpl: g.fetchImpl });
+  assert.strictEqual(id, null);
+  assert.strictEqual(g.calls.length, 1);
+});
+
+test('resolveGrafanaIdentity: no cookie -> null without any network call', async () => {
+  const g = fakeGrafana({ user: USER, orgs: [] });
+  assert.strictEqual(await resolveGrafanaIdentity('', { fetchImpl: g.fetchImpl }), null);
+  assert.strictEqual(g.calls.length, 0);
+});
+
+test('resolveGrafanaIdentity: server admin flag is carried through', async () => {
+  const g = fakeGrafana({ user: { ...USER, login: 'admin', isGrafanaAdmin: true }, orgs: [{ orgId: 1, name: 'Main Org.', role: 'Viewer' }] });
+  const id = await resolveGrafanaIdentity('grafana_session=abc', { grafanaUrl: 'http://grafana:3000', fetchImpl: g.fetchImpl });
+  assert.strictEqual(id.isGrafanaAdmin, true);
+  assert.strictEqual(hasWritePermission(id.orgRole, id.isGrafanaAdmin), true);
+});
+
+test('end to end: real resolver + real UserProfileDTO shape + Editor -> ack 200', async () => {
+  const g = fakeGrafana({ user: USER, orgs: [{ orgId: 1, name: 'Main Org.', role: 'Editor' }] });
+  const pool = {
+    connect: async () => ({
+      query: async () => ({ rowCount: 1, rows: [{ logid: 'L1', status: 'ACKNOWLEDGED', acknowledged_by: 'shift-lead' }] }),
+      release: () => {},
+    }),
+    query: async () => ({ rows: [] }),
+  };
+  const resolveIdentity = (cookie) => resolveGrafanaIdentity(cookie, { grafanaUrl: 'http://grafana:3000', fetchImpl: g.fetchImpl });
+  const srv = await startTestServer(createApp({ pool, resolveIdentity }));
+  try {
+    const res = await postJson(srv.baseUrl, '/alarms/ack', { logdate_ms: 1_700_000_000_000, logid: 'L1', acknowledged_by: 'someone-else' });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.json.acknowledged_by, 'shift-lead');
+  } finally {
+    await srv.close();
+  }
 });
 
 // --- healthz -------------------------------------------------------------

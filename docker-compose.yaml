@@ -311,7 +311,8 @@ services:
 
   # ── Grafana Image Renderer ───────────────────────────────
   renderer:
-    image: grafana/grafana-image-renderer:latest
+    # pinned to the version proven in the running stack; Dependabot proposes upgrades
+    image: grafana/grafana-image-renderer:v5.11.1
     container_name: ims-grafana-renderer
     <<: *default-restart
     environment:
@@ -579,7 +580,8 @@ services:
 
   # ── pgAdmin 4 ─────────────────────────────────────────────
   pgadmin:
-    image: dpage/pgadmin4:latest
+    # pinned to the version proven in the running stack; Dependabot proposes upgrades
+    image: dpage/pgadmin4:9.18
     container_name: ims-pgadmin4
     restart: unless-stopped
     environment:

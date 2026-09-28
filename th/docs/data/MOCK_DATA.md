@@ -7,7 +7,7 @@
 
 <div align="center">
   <h1>สถาปัตยกรรมข้อมูลสังเคราะห์สำหรับงานเจาะ CNC และสายชุบ VCP</h1>
-  <p><b>เครื่องมือสร้างฐานข้อมูลจำลองแบบแยกส่วน, แบบจำลองทางฟิสิกส์ของเครื่องจักร, ขอบเขตไมเกรชัน และการทดสอบความถูกต้องของแดชบอร์ด</b></p>
+  <p><b>เครื่องมือสร้างฐานข้อมูลจำลองแบบแยกส่วน, ข้อมูลเครื่องจักรสังเคราะห์ตามกฎ, ขอบเขตไมเกรชัน และการทดสอบความถูกต้องของแดชบอร์ด</b></p>
   <p>
     <a href="../../../docs/data/MOCK_DATA.md">English</a> |
     <a href="MOCK_DATA.md">ไทย</a> |
@@ -30,7 +30,7 @@ flowchart TD
     SCHEMA["database/mock/eap_backup-schema.sql
 สร้างตาราง วิว และตารางสัญลักษณ์ Marker"]
     MOCK_JS["scripts/mock/eap-mock-data.js
-แบบจำลองฟิสิกส์: RPM, Feed, อายุมีด, อุณหภูมิอ่าง"]
+แบบจำลองสังเคราะห์: RPM, Feed, มาสก์ spindle, อุณหภูมิอ่าง"]
     UNIT["tests/unit/eap-mock-data.test.js
 ชุดทดสอบ Unit Test ใน Pre-commit"]
   end
@@ -47,7 +47,7 @@ flowchart TD
     DASH["แดชบอร์ด Grafana
 งานเจาะ Drilling (4 แดชบอร์ด)
 งานชุบ VCP (3 แดชบอร์ด)"]
-    ALERTS["Prometheus / Alertmanager
+    ALERTS["Grafana Alerting
 กฎการแจ้งเตือน VCP 7 กฎ"]
     VERIFY["scripts/mock/verify-mock-dashboards.js
 ทดสอบคิวรีพาเนล 34 คิวรี + กฎเตือน 7 กฎ"]
@@ -79,7 +79,7 @@ flowchart TD
 - รหัสเหตุการณ์และรูปแบบข้อความแจ้งเตือน
 - รูปแบบรหัสเครื่องจักร (ลงท้ายด้วย `-VCP` สำหรับสายชุบ)
 - แท็กอุณหภูมิอ่างเคมี (`preset_<bath>` คือค่าที่วัดได้จริง, `actual_<bath>` คือค่า Setpoint เป้าหมาย)
-- เงื่อนไขทางฟิสิกส์: $	ext{plating\_time} 	imes 	ext{line\_speed} = 54$
+- เงื่อนไขของสูตร: $\text{plating\_time} \times \text{line\_speed} = 54$
 - คู่เหตุการณ์แจ้งเตือนแบบ Triggered และ Reset
 
 ---

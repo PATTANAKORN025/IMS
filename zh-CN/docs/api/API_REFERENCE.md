@@ -266,147 +266,106 @@ stateDiagram-v2
     RESOLVED --> [*]: 告警归档关闭
 ```
 
+### 调用权限
+
+`alarm-api` 不发布主机端口，只能通过 nginx 的 `/alarm-api/` 访问，或由内部网络中的其他容器通过 `http://alarm-api:4000` 访问。
+
+每个 ack/resolve 请求都需要 Grafana 会话 cookie，并依次通过两道检查：
+
+1. **nginx** 把 cookie 交给 Grafana 校验（`auth_request` → `/api/user`）。会话缺失或无效时，请求在到达服务之前就返回 **401**。
+2. **alarm-api** 再次询问 Grafana，同时调用 `/api/user` 和 `/api/user/orgs`，取得调用者的登录名以及在当前组织中的角色：
+   - **Editor** 或 **Admin** 可以写入，Grafana 服务器管理员也可以。
+   - **Viewer** 返回 **403**。
+
+写入 `acknowledged_by` / `resolved_by` 的操作人始终是该会话的 Grafana 登录名，请求体中的 `acknowledged_by` 或 `resolved_by` 字段会被忽略。
+
 ### `POST /alarm-api/alarms/ack`
 
-确认车间当前活动的告警，将状态由 `OPEN` 流转至 `ACKNOWLEDGED`。
+确认告警：`OPEN` → `ACKNOWLEDGED`。
 
-- **网关 URL**: `http://localhost:3000/alarm-api/alarms/ack` (经反向代理且受 Grafana 会话保护)
-- **内部直连 URL**: `http://localhost:4000/alarms/ack` (容器网络)
-- **请求方式**: `POST`
-- **请求标头**:
-  - `Content-Type: application/json`
-  - `Cookie: <grafana_session>` (通过端口 3000 访问时必填)
+- **URL**：`http://<host>:3000/alarm-api/alarms/ack`
+- **请求头**：`Content-Type: application/json`、`Cookie: grafana_session=…`
 
-#### 请求参数
+#### 请求体
 
-| 字段名称 | 类型 | 必填 | 说明 |
-|:---------|:-----|:-----|:-----|
-| `logdate_ms` | 数值 | 是 | 告警发生时的时间戳 (Unix epoch 毫秒数)。 |
-| `logid` | 字符串 | 是 | 告警日志记录的唯一字母数字标识符。 |
-| `acknowledged_by` | 字符串 | 是 | 执行确认操作的操作员用户名或工号。 |
+| 字段 | 类型 | 必填 | 说明 |
+|:------|:-----|:---------|:------------|
+| `logdate_ms` | Number | 是 | 告警时间，Unix 毫秒时间戳。 |
+| `logid` | String | 是 | 告警日志条目标识。 |
 
 ```json
-{
-  "logdate_ms": 1790568000000,
-  "logid": "LOG-10001",
-  "acknowledged_by": "operator-01"
-}
+{ "logdate_ms": 1790568000000, "logid": "LOG-10001" }
 ```
 
-#### 响应代码
+#### 响应
 
-- **`200 OK`**: 状态成功流转至 `ACKNOWLEDGED`。
-  ```json
-  {
-    "logid": "LOG-10001",
-    "logdate": "2026-09-28T04:00:00.000Z",
-    "status": "ACKNOWLEDGED",
-    "acknowledged_at": "2026-09-28T04:02:15.241Z",
-    "acknowledged_by": "operator-01",
-    "resolved_at": null,
-    "resolved_by": null,
-    "resolution_note": null
-  }
-  ```
-- **`400 Bad Request`**: 请求校验失败（缺少必填参数或 `logdate_ms` 不是有限数值）。
-- **`404 Not Found`**: 数据库中未找到与给定的 `logdate` 和 `logid` 匹配的记录。
-- **`409 Conflict`**: 非法的状态流转（例如对已处于 `RESOLVED` 状态的告警进行确认）。
-- **`500 Internal Error`**: 内部数据库连接错误。
+- **`200 OK`**：已变为 `ACKNOWLEDGED`；响应体返回该行数据，`acknowledged_by` 为调用者的 Grafana 登录名。
+- **`400 Bad Request`**：`{"error": "logdate_ms (number) and logid are required"}`
+- **`401 Unauthorized`**：没有有效的 Grafana 会话（由 nginx 返回；直接调用服务时由服务返回）。
+- **`403 Forbidden`**：`{"error": "insufficient permission (Viewer role cannot acknowledge/resolve alarms)"}`
+- **`404 Not Found`**：找不到与 `logdate_ms` 和 `logid` 对应的生命周期记录。
+- **`409 Conflict`**：告警不处于 `OPEN` 状态，例如 `{"error": "cannot transition to ACKNOWLEDGED from current status ACKNOWLEDGED"}`。
+- **`500 Internal Error`**：数据库不可达或出现意外错误。
 
-#### cURL 调用示例
+#### cURL 示例
 
 ```bash
 curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
-  -d '{
-    "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "acknowledged_by": "operator-01"
-  }'
+  -H "Cookie: grafana_session=<your session cookie>" \
+  -d '{"logdate_ms": 1790568000000, "logid": "LOG-10001"}'
 ```
 
 ---
 
 ### `POST /alarm-api/alarms/resolve`
 
-彻底解决告警事件，将状态由 `OPEN` 或 `ACKNOWLEDGED` 流转为 `RESOLVED`，并附带工程排查与维护根因说明。
+解决告警：`OPEN` 或 `ACKNOWLEDGED` → `RESOLVED`，可附加备注。
 
-- **网关 URL**: `http://localhost:3000/alarm-api/alarms/resolve`
-- **内部直连 URL**: `http://localhost:4000/alarms/resolve`
-- **请求方式**: `POST`
-- **请求标头**:
-  - `Content-Type: application/json`
-  - `Cookie: <grafana_session>`
+- **URL**：`http://<host>:3000/alarm-api/alarms/resolve`
+- **请求头**：`Content-Type: application/json`、`Cookie: grafana_session=…`
 
-#### 请求参数
+#### 请求体
 
-| 字段名称 | 类型 | 必填 | 说明 |
-|:---------|:-----|:-----|:-----|
-| `logdate_ms` | 数值 | 是 | 告警发生的时间戳 (Unix epoch 毫秒数)。 |
-| `logid` | 字符串 | 是 | 告警日志记录的唯一标识符。 |
-| `resolved_by` | 字符串 | 是 | 提交解决记录的工程师或技师编号。 |
-| `resolution_note` | 字符串 | 选填 | 故障排查根本原因与维护处置措施说明。 |
+| 字段 | 类型 | 必填 | 说明 |
+|:------|:-----|:---------|:------------|
+| `logdate_ms` | Number | 是 | 告警时间，Unix 毫秒时间戳。 |
+| `logid` | String | 是 | 告警日志条目标识。 |
+| `resolution_note` | String | 否 | 根因与纠正措施。 |
 
 ```json
-{
-  "logdate_ms": 1790568000000,
-  "logid": "LOG-10001",
-  "resolved_by": "engineer-02",
-  "resolution_note": "已更换气动滤芯，并验证真空负压恢复至标准公差范围内 (-15.2 kPa)。"
-}
+{ "logdate_ms": 1790568000000, "logid": "LOG-10001", "resolution_note": "Replaced the chuck filter; vacuum back in range." }
 ```
 
-#### 响应代码
+#### 响应
 
-- **`200 OK`**: 状态成功变更为 `RESOLVED`。
-  ```json
-  {
-    "logid": "LOG-10001",
-    "logdate": "2026-09-28T04:00:00.000Z",
-    "status": "RESOLVED",
-    "acknowledged_at": "2026-09-28T04:02:15.241Z",
-    "acknowledged_by": "operator-01",
-    "resolved_at": "2026-09-28T04:15:30.812Z",
-    "resolved_by": "engineer-02",
-    "resolution_note": "已更换气动滤芯，并验证真空负压恢复至标准公差范围内 (-15.2 kPa)。"
-  }
-  ```
-- **`400 Bad Request`**: 参数不完整。
-- **`404 Not Found`**: 告警记录不存在。
-- **`409 Conflict`**: 该记录已处于 `RESOLVED` 状态。
+状态码与 `ack` 相同。`200` 返回 `status: "RESOLVED"` 的行，`resolved_by` 为调用者的 Grafana 登录名；`409` 表示告警已是 `RESOLVED`。
 
-#### cURL 调用示例
+#### cURL 示例
 
 ```bash
 curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -H "Content-Type: application/json" \
-  -d '{
-    "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "resolved_by": "engineer-02",
-    "resolution_note": "已更换气动滤芯，并验证真空负压恢复至标准公差范围内 (-15.2 kPa)。"
-  }'
+  -H "Cookie: grafana_session=<your session cookie>" \
+  -d '{"logdate_ms": 1790568000000, "logid": "LOG-10001", "resolution_note": "Replaced the chuck filter."}'
 ```
 
 ---
 
 ### `GET /alarm-api/healthz`
 
-容器健康探针与数据库连接存活性检查。直接执行 `SELECT 1` 测试连接池可用性。
+存活与数据库检查（通过连接池执行 `SELECT 1`）。服务本身不要求会话，但 nginx 上的 `/alarm-api/` 仍然需要会话，因此 Docker 健康检查改在容器内部调用它。
 
-- **网关 URL**: `http://localhost:3000/alarm-api/healthz`
-- **内部直连 URL**: `http://localhost:4000/healthz`
-- **请求方式**: `GET`
+- **经 nginx**：`http://<host>:3000/alarm-api/healthz`，需要带 Grafana 会话 cookie
+- **容器内部**：`http://127.0.0.1:4000/healthz`（Docker 健康检查调用的地址）；其他容器可使用 `http://alarm-api:4000/healthz`
 
-#### 响应代码
+#### 响应
 
-- **`200 OK`**: 数据库连接正常 (`{"status":"ok"}`)。
-- **`503 Service Unavailable`**: 数据库不可达或连接池耗尽 (`{"status":"db unreachable"}`)。
-
-#### cURL 调用示例
+- **`200 OK`**：`{"status": "ok"}`
+- **`503 Service Unavailable`**：`{"status": "db unreachable"}`
 
 ```bash
-curl -s http://localhost:4000/healthz
+docker exec ims-alarm-api wget -qO- http://127.0.0.1:4000/healthz
 ```
 
 ---

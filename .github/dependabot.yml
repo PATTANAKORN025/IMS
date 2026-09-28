@@ -1,24 +1,43 @@
 version: 2
+# Minor and patch bumps are grouped into one PR per ecosystem; a major bump
+# (for example express 4 -> 5) still gets its own PR, because it can break the
+# service and must be tested on its own.
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      dev-tooling-minor-patch:
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "npm"
-    directory: "/services/alarm-api"
+    directories:
+      - "/services/alarm-api"
+      - "/services/factory-twin-3d"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      services-minor-patch:
+        update-types: ["minor", "patch"]
 
-  - package-ecosystem: "npm"
-    directory: "/services/factory-twin-3d"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-
+  # Base images of the images this repository builds. There is no Dockerfile
+  # at the repository root, so "/" alone matched nothing.
   - package-ecosystem: "docker"
+    directories:
+      - "/nodered_data"
+      - "/pgbouncer"
+      - "/services/alarm-api"
+      - "/services/factory-twin-3d"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Images pulled directly by docker-compose.yaml (TimescaleDB, Grafana,
+  # Prometheus, Alertmanager, nginx, renderer, pgAdmin, ...).
+  - package-ecosystem: "docker-compose"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -29,3 +48,6 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      actions:
+        patterns: ["*"]

@@ -7,7 +7,7 @@
 
 <div align="center">
   <h1>IMS Database Backup, Restore & Verification Procedures</h1>
-  <p><b>Enterprise pg_dump pipelines, AES-256 encrypted storage, ephemeral row-count bracketing validation, and Point-In-Time Recovery (PITR)</b></p>
+  <p><b>What the repository ships today, how to verify a restore, and what to add before a backup leaves the host</b></p>
   <p>
     <a href="BACKUP_RESTORE.md">English</a> |
     <a href="../../th/docs/operations/BACKUP_RESTORE.md">ไทย</a> |
@@ -17,218 +17,85 @@
 
 ---
 
-> **Audience:** SRE / Operations, Database Engineers, Security Auditors  
-> **Recovery Targets:** Recovery Time Objective (RTO) < 15 minutes \| Recovery Point Objective (RPO) < 1 hour  
-> **Compliance Alignment:** ISO 27001 A.12.3 (Information Backup), IEC 62443-4-2 (Data Integrity)  
-> **Provenance:** Based on verified runs of `scripts/dr-test.sh` on the production stack with real data and live ingestion.
+> **Audience:** SRE / Operations, database engineers
+> **Scope:** the `ims` database in `ims-timescaledb`. The separate `eap_backup` database is a restored plant copy and is not covered by these scripts.
+> **Recovery targets:** RTO under 15 minutes and RPO under 1 hour are **targets**, not measured guarantees. With the shipped daily-or-manual `pg_dump`, the achievable RPO is the time since the last backup.
 
 ---
 
-## 1. Backup & Recovery Architecture
+## 1. What ships today
 
-```mermaid
-flowchart TD
-  subgraph PROD["1. Live Ingestion Production Tier"]
-    DB[("TimescaleDB (PostgreSQL 16)
-Database: factory_telemetry
-Schema: public only")]
-    PRE["Pre-Snapshot Count
-SELECT count(*) FROM ldi_data"]
-    POST["Post-Snapshot Count
-SELECT count(*) FROM ldi_data"]
-    DB -.->|Query Before| PRE
-    DB -.->|Query After| POST
-  end
+| Command | Script | What it does |
+| --- | --- | --- |
+| `make backup` | `scripts/backup-db.sh` | `pg_dump` of `ims` as `ims_admin` into `./backups/ims_backup_<timestamp>.sql`, then `gzip`. Deletes `*.sql.gz` older than 30 days in `./backups`. |
+| `make restore FILE=<path>` | `scripts/restore-db.sh` | Asks for confirmation, then pipes the gunzipped dump into `psql` against the **live** `ims` database. |
+| `./scripts/dr-test.sh backup-restore` | `scripts/dr-test.sh` | Backs up `ims`, restores into a throwaway database `ims_dr_test` and compares them. Never touches the live database. |
+| `./scripts/dr-verify-restore.sh …` | `scripts/dr-verify-restore.sh` | Compares tables, columns, indexes, constraints, triggers, extensions, continuous aggregates and policies between two databases, and brackets row counts. Exits non-zero on any mismatch. |
+| `node scripts/production-assurance.js --profile=dr` | `scripts/production-assurance.js` | Runs the DR drills and writes one JSON result to `docs/evidence/runtime/`. |
 
-  subgraph PIPELINE["2. Automated Backup & Encryption Pipeline"]
-    DUMP["pg_dump Logical Export
-(Clean schema + raw hypertables)"]
-    GZIP["Gzip Compression
-(Level -9, ~85% reduction)"]
-    ENC["OpenSSL AES-256-CBC Encryption
-(-salt -pbkdf2 -iter 100000)"]
-    HASH["SHA-256 Checksum Manifest
-(sha256sum verification)"]
-    
-    DB -->|Stream Dump| DUMP
-    DUMP --> GZIP --> ENC --> HASH
-  end
-
-  subgraph STORAGE["3. Encrypted Cold Storage"]
-    VAULT[("Offsite Secure Storage / S3
-WORM Compliance Policy")]
-    HASH --> VAULT
-  end
-
-  subgraph VERIFY["4. Ephemeral Disaster Recovery Validation"]
-    EPHEM[("Ephemeral Database
-(ims_dr_test)")]
-    DEC["Decrypt & Decompress Stream"]
-    BRACKET{"Row-Count Bracketing Assertion
-Count(Pre) <= Restored <= Count(Post)"}
-    DROP["DROP DATABASE ims_dr_test
-Record Audit Evidence Log"]
-    ALERT["Trigger P0 DR Alarm
-Notify SRE On-Call"]
-
-    VAULT --> DEC --> EPHEM
-    EPHEM --> BRACKET
-    PRE -.->|Lower Bound| BRACKET
-    POST -.->|Upper Bound| BRACKET
-    BRACKET -->|PASS| DROP
-    BRACKET -->|FAIL| ALERT
-  end
-
-  style PROD fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style PIPELINE fill:#1e293b,stroke:#3b82f6,color:#f8fafc
-  style STORAGE fill:#1e293b,stroke:#8b5cf6,color:#f8fafc
-  style VERIFY fill:#1e293b,stroke:#10B981,color:#f8fafc
-```
+**Not shipped:** the backups are **not encrypted**, are **not copied off the host**, and there is **no WAL archiving or point-in-time recovery**. `./backups/` is in `.gitignore`. Anyone with read access to the host can read a dump. Section 4 lists what to add.
 
 ---
 
-## 2. Production Backup Procedure
-
-The standard production backup exports the complete relational schema and raw hypertable records. It leverages continuous stream compression and symmetric AES-256-CBC encryption to guarantee security at rest.
-
-### Automated Backup Script (`scripts/backup-production.sh`)
+## 2. Take a backup
 
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# Configuration
-BACKUP_DIR="/var/backups/ims"
-TIMESTAMP=$(date -u +"%Y%m%d_%H%M%SZ")
-BACKUP_FILE="${BACKUP_DIR}/ims_backup_${TIMESTAMP}.sql.gz.enc"
-CHECKSUM_FILE="${BACKUP_FILE}.sha256"
-CONTAINER_NAME="ims-timescaledb"
-DB_NAME="${POSTGRES_DB:-factory_telemetry}"
-DB_USER="${POSTGRES_USER:-postgres}"
-
-mkdir -p "${BACKUP_DIR}"
-
-echo "==> [1/4] Recording pre-snapshot row count..."
-PRE_COUNT=$(docker exec "${CONTAINER_NAME}" psql -U "${DB_USER}" -d "${DB_NAME}" -tAc "SELECT count(*) FROM public.ldi_data;")
-
-echo "==> [2/4] Executing pg_dump with Gzip compression and AES-256 encryption..."
-# Circular FK warnings on timescaledb_information catalogs are harmless and expected
-docker exec "${CONTAINER_NAME}" pg_dump -U "${DB_USER}" -d "${DB_NAME}"   --format=plain   --no-owner   --no-privileges   | gzip -9   | openssl enc -aes-256-cbc -salt -pbkdf2 -iter 100000 -out "${BACKUP_FILE}" -pass env:BACKUP_ENCRYPTION_KEY
-
-echo "==> [3/4] Recording post-snapshot row count..."
-POST_COUNT=$(docker exec "${CONTAINER_NAME}" psql -U "${DB_USER}" -d "${DB_NAME}" -tAc "SELECT count(*) FROM public.ldi_data;")
-
-echo "==> [4/4] Generating SHA-256 checksum..."
-sha256sum "${BACKUP_FILE}" > "${CHECKSUM_FILE}"
-
-echo "=========================================================="
-echo "Backup Completed Successfully!"
-echo "File:     ${BACKUP_FILE}"
-echo "Size:     $(du -h "${BACKUP_FILE}" | cut -f1)"
-echo "Checksum: $(cat "${CHECKSUM_FILE}")"
-echo "Bracket:  ${PRE_COUNT} <= Restored <= ${POST_COUNT}"
-echo "=========================================================="
+make backup                       # or: bash scripts/backup-db.sh
+ls -lh backups/                   # ims_backup_YYYYmmdd_HHMMSS.sql.gz
 ```
+
+`backup-db.sh` uses the role `ims_admin` and the database `ims`, the defaults in `.env.example`. If `.env` uses other names, edit the script or run `pg_dump` by hand with the same flags.
 
 ---
 
-## 3. Ephemeral Restore & Verification Protocol
+## 3. Restore, and prove the restore
 
-Because IMS is a **live high-frequency telemetry ingestion engine**, exact point-in-time equality checks between backup and active database will fail. The system enforces **Row-Count Bracketing**: the restored row count must fall within the inclusive interval $[Count_{	ext{pre}}, Count_{	ext{post}}]$.
-
-### Verification Script Execution
-
-To run an automated verification drill without touching live production data:
+### 3.1 Rehearse first (safe)
 
 ```bash
-# Execute automated backup-restore drill via DR test suite
 ./scripts/dr-test.sh backup-restore
 ```
 
-### Manual Verification Workflow
+The drill restores into `ims_dr_test` and runs `dr-verify-restore.sh`. Row counts alone do not prove a restore: a TimescaleDB restore can drop constraints, indexes or continuous aggregates while row counts still match. That is why the verifier compares the catalog.
+
+The live database keeps ingesting during the dump, so exact row equality is not expected. For each actively written hypertable, the restored count must fall inside the counts taken just before and just after the dump:
+
+$$\text{Count}_{\text{before}} \le \text{Count}_{\text{restored}} \le \text{Count}_{\text{after}}$$
+
+### 3.2 Restore over the live database (destructive)
 
 ```bash
-# 1. Verify SHA-256 integrity
-sha256sum -c "${BACKUP_FILE}.sha256"
-
-# 2. Spin up ephemeral validation database
-docker exec ims-timescaledb psql -U "$POSTGRES_USER" -d postgres -c "CREATE DATABASE ims_dr_test;"
-
-# 3. Decrypt, decompress, and restore into ephemeral database
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in "${BACKUP_FILE}" -pass env:BACKUP_ENCRYPTION_KEY   | gunzip   | docker exec -i ims-timescaledb psql -U "$POSTGRES_USER" -d ims_dr_test -v ON_ERROR_STOP=1
-
-# 4. Execute row-count validation query
-RESTORED_COUNT=$(docker exec ims-timescaledb psql -U "$POSTGRES_USER" -d ims_dr_test -tAc "SELECT count(*) FROM public.ldi_data;")
-
-echo "Restored Count: ${RESTORED_COUNT}"
-# Assert: PRE_COUNT <= RESTORED_COUNT <= POST_COUNT
-
-# 5. Clean teardown of ephemeral test database
-docker exec ims-timescaledb psql -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE ims_dr_test;"
+make restore FILE=backups/ims_backup_YYYYmmdd_HHMMSS.sql.gz
 ```
+
+This overwrites `ims`. Stop the writers first (`node-red`, `alarm-api`) so that nothing writes during the restore. Start them again afterwards and check them with `make verify`.
 
 ---
 
-## 4. Post-Restore Continuous Aggregate Refresh
+## 4. Before a backup leaves the host (recommended, not shipped)
 
-TimescaleDB Continuous Aggregates (CAGGs) store schema definitions in the dump, but the underlying materialized view data is repopulated asynchronously. Following a disaster recovery restore, execute the following SQL to force an immediate refresh:
+Each item below is a change to make and test before relying on it. None of them is part of the stack today.
 
-```sql
--- Connect to restored database
-\c factory_telemetry;
+1. **Encrypt the dump.** Encrypt it with a key that is not stored next to it, for example:
 
--- Force immediate refresh of 1-minute continuous aggregate rollup
-CALL refresh_continuous_aggregate('public.cagg_ldi_metrics_1m', NULL, NULL);
-
--- Force immediate refresh of 1-hour analytical aggregate
-CALL refresh_continuous_aggregate('public.cagg_ldi_hourly', NULL, NULL);
-
--- Verify hypertable chunk restoration and compression status
-SELECT 
-  hypertable_name,
-  num_chunks,
-  compressed_chunks
-FROM timescaledb_information.hypertables
-WHERE hypertable_schema = 'public';
-```
-
----
-
-## 5. Point-in-Time Recovery (PITR) & WAL Archiving
-
-For mission-critical production environments requiring zero data loss (RPO < 5 minutes), Point-in-Time Recovery (PITR) must be enabled via Write-Ahead Log (WAL) archiving.
-
-### PostgreSQL Configuration (`postgresql.conf`)
-```ini
-# WAL Archiving Configuration
-wal_level = replica
-archive_mode = on
-archive_command = 'test ! -f /var/lib/postgresql/wal_archive/%f && cp %p /var/lib/postgresql/wal_archive/%f'
-archive_timeout = 300
-```
-
-### Point-in-Time Recovery Execution Procedure
-1. Stop the database container: `docker compose stop timescaledb`
-2. Restore the latest base backup into the data directory.
-3. Place a `recovery.signal` trigger file in the PostgreSQL data directory.
-4. Append recovery configuration to `postgresql.conf`:
-   ```ini
-   restore_command = 'cp /var/lib/postgresql/wal_archive/%f %p'
-   recovery_target_time = '2026-09-28 12:00:00 UTC'
-   recovery_target_action = 'promote'
+   ```bash
+   docker compose exec -T timescaledb pg_dump -U ims_admin ims \
+     | gzip -9 \
+     | openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -pass env:BACKUP_ENCRYPTION_KEY \
+     > "backups/ims_backup_$(date -u +%Y%m%dT%H%M%SZ).sql.gz.enc"
    ```
-5. Start `timescaledb`: PostgreSQL will replay WAL files up to the target timestamp and automatically promote to read-write mode.
+
+   Keep `BACKUP_ENCRYPTION_KEY` out of `.env` and out of git. Test decryption with `openssl enc -d …` in the same drill that tests the restore.
+2. **Copy it off the host**, to storage that the host's own credentials cannot delete. Keep a checksum (`sha256sum`) next to each file.
+3. **Schedule it.** Nothing in the repository schedules `make backup`. Use cron or a systemd timer on the host, and alert when the newest backup is older than the RPO target.
+4. **Point-in-time recovery**, only if the one-hour RPO target is not enough. This needs `wal_level=replica`, `archive_mode=on` and an `archive_command` added to the TimescaleDB command line in `docker-compose.yaml`. It also needs a base backup (`pg_basebackup`) and archive storage. It is not configured today.
 
 ---
 
-## 6. Disaster Recovery Checklist
+## 5. Related
 
-- [ ] Verify SHA-256 checksum of the target backup file.
-- [ ] Confirm no orphaned PgBouncer client transactions remain connected.
-- [ ] Validate that all database objects reside strictly in the `public` schema.
-- [ ] Execute `refresh_continuous_aggregate` across all CAGGs.
-- [ ] Verify Grafana dashboard connectivity at `http://localhost:3000`.
-- [ ] Confirm active telemetry ingestion rate via Prometheus `rate(ims_telemetry_ingested_total[1m])`.
+- `docs/operations/DR_TEST_PLAN.md` covers the drill plan and pass criteria.
+- `docs/operations-runbook.md` covers the day-to-day operations that surround a restore.
 
 ---
 

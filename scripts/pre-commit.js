@@ -11,10 +11,10 @@ const path = require('path');
 
 let failed = false;
 
-function run(label, cmd) {
+function run(label, cmd, timeout = 30000) {
   try {
     console.log(`  Running: ${label}`);
-    execSync(cmd, { stdio: 'pipe', timeout: 30000 });
+    execSync(cmd, { stdio: 'pipe', timeout });
     console.log(`  PASS  ${label}`);
   } catch (e) {
     console.error(`  FAIL  ${label}`);
@@ -32,6 +32,8 @@ run("Parser v2 Tests", "node tests/unit/v2-parser.test.js");
 run("Query Budget Linter Tests", "node tests/unit/query-budget-linter.test.js");
 run("Gate Decision Tests", "node tests/unit/gate.test.js");
 run("Security Exception Matching Tests", "node tests/unit/security-exceptions.test.js");
+// installs services/alarm-api deps on first run, hence the longer timeout
+run("Alarm API Identity & Authorization Tests", "node scripts/run-alarm-api-tests.js", 300000);
 run("Factory Twin Mapping Contract Tests", "node tests/unit/factory-twin-mapping.test.js");
 run("Factory Twin MES Import Boundary Tests", "node tests/unit/factory-twin-mes-import.test.js");
 run("Drilling/VCP Mock Data Tests", "node tests/unit/eap-mock-data.test.js");

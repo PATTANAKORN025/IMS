@@ -103,7 +103,7 @@ flowchart TB
 * **โมเดลอุปกรณ์:** เครื่องเจาะ CNC (`drl001`–`drl010`) และสายชุบ VCP (`vcp001`–`vcp005`)
 * **แผนการเก็บข้อมูล:** จำลองรอบการทำงานจริงของเครื่องจักร:
   - **งานเจาะ (Drilling):** การเริ่มโปรแกรม, ความเร็วรอบหัวเจาะ (RPM), อัตราป้อน (Feed Rate), Spindle Mask, อายุการใช้งานดอกสว่าน และรายงานสรุปกะ
-  - **งานชุบ (VCP):** สถานะสายพาน (RUN, IDLE, DOWN), กระแสไฟฟ้าของชุดแปลงไฟ, อุณหภูมิอ่างเคมี และความสัมพันธ์ความเร็ว ($	ext{plating\_time} 	imes 	ext{line\_speed} = 54$)
+  - **งานชุบ (VCP):** สถานะสายพาน (RUN, IDLE, DOWN), กระแสไฟฟ้าของชุดแปลงไฟ, อุณหภูมิอ่างเคมี และความสัมพันธ์ความเร็ว ($\text{plating\_time} \times \text{line\_speed} = 54$)
 * **การแมปข้อมูล:** นำเข้าสู่ฐานข้อมูล `eap_backup` ในตาราง `machine_event`, `vcp_upp`, `catalog.object_registry` ส่งข้อมูลไปยังแดชบอร์ดงานเจาะ 4 ตัวและ VCP 3 ตัว
 
 ### อะแดปเตอร์ 4 — สัญญา SECS/GEM (สำหรับเครื่องจักรจริงในอนาคต)
@@ -121,8 +121,8 @@ flowchart TB
 ## 3. ขอบเขตความปลอดภัยระดับอุตสาหกรรม (IEC 62443 Boundaries)
 
 การเชื่อมต่อกับเครื่องจักรในโรงงานจริงเป็นการข้ามขอบเขตเครือข่าย Operational Technology (OT):
-* **ขอบเขตที่ 1 (ภายนอก / DMZ):** ประตูด่านหน้า Nginx Reverse Proxy บังคับใช้ TLS และตรวจสอบ Grafana Session Cookie
-* **ขอบเขตที่ 2 (ไมโครเซอร์วิสภายใน):** ตัวจัดการเชื่อมต่อ PgBouncer ในโหมด Transaction พร้อมคำสั่ง SQL แบบ Parameterized
+* **ขอบเขตที่ 1 (ทางเข้าหลัก):** nginx reverse proxy ปัจจุบัน **ให้บริการเป็น HTTP ธรรมดา ยังไม่ได้ตั้งค่า TLS** เส้นทาง `/alarm-api/` และ `/factory-twin-3d/` ต้องมี session ของ Grafana ที่ถูกต้อง (`auth_request`) ส่วน `/ldi-telemetry` และ `/inject` ต้องมี header `X-API-Key` ซึ่ง Node-RED เป็นผู้ตรวจ และมีการจำกัดอัตราคำขอ
+* **ขอบเขตที่ 2 (service ภายใน):** service ต่าง ๆ เชื่อมต่อ TimescaleDB ผ่าน PgBouncer โหมด transaction pooling บนเครือข่ายภายในของ Docker โดยแต่ละ service ใช้ role ของตัวเอง (ดู `docs/data/DATA_GOVERNANCE.md`) และ `alarm-api` ใช้ query แบบ parameterised
 * **ขอบเขตที่ 3 (เครือข่ายเครื่องจักรในโรงงาน):** การเชื่อมต่อของอะแดปเตอร์ 4 ในอนาคตจะต้องมีไฟร์วอลล์ OT กั้นเฉพาะ, มีการจำกัดสิทธิ์ mTLS / IP Whitelisting และอ่านข้อมูลแบบทางเดียว (Read-only tap) เพื่อป้องกันไม่ให้ส่งคำสั่งควบคุมกลับไปยังเครื่องจักรจริง
 
 ---

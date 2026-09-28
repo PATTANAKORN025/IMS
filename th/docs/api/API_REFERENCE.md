@@ -266,147 +266,106 @@ stateDiagram-v2
     RESOLVED --> [*]: ปิดสมบูรณ์
 ```
 
+### ใครเรียกใช้ได้
+
+`alarm-api` ไม่ได้เปิด port บนเครื่อง เรียกได้ผ่าน nginx ที่ `/alarm-api/` หรือจาก container อื่นบนเครือข่ายภายในที่ `http://alarm-api:4000` เท่านั้น
+
+ทุกคำขอ ack/resolve ต้องมี cookie session ของ Grafana และต้องผ่านการตรวจสองชั้น:
+
+1. **nginx** ส่ง cookie ไปให้ Grafana ตรวจ (`auth_request` → `/api/user`) ถ้าไม่มี session หรือ session ไม่ถูกต้อง จะได้ **401** ก่อนคำขอถึง service
+2. **alarm-api** ถาม Grafana อีกครั้งทั้ง `/api/user` และ `/api/user/orgs` เพื่อเอาชื่อ login และ role ของผู้เรียกในองค์กรปัจจุบัน
+   - **Editor** หรือ **Admin** เขียนได้ รวมถึง Grafana server admin
+   - **Viewer** จะได้ **403**
+
+ผู้ดำเนินการที่บันทึกใน `acknowledged_by` / `resolved_by` คือชื่อ login Grafana ของ session เสมอ field `acknowledged_by` หรือ `resolved_by` ใน body ของคำขอจะถูกละเลย
+
 ### `POST /alarm-api/alarms/ack`
 
-รับทราบการแจ้งเตือนในโรงงาน โดยเปลี่ยนสถานะจาก `OPEN` ไปเป็น `ACKNOWLEDGED`
+รับทราบการแจ้งเตือน: `OPEN` → `ACKNOWLEDGED`
 
-- **Gateway URL**: `http://localhost:3000/alarm-api/alarms/ack` (ผ่าน Proxy และต้องมีเซสชันยืนยันตัวตน)
-- **Direct Container URL**: `http://localhost:4000/alarms/ack` (เครือข่ายภายใน)
-- **Method**: `POST`
-- **Headers**:
-  - `Content-Type: application/json`
-  - `Cookie: <grafana_session>` (จำเป็นเมื่อเรียกผ่านเกตเวย์พอร์ต 3000)
+- **URL**: `http://<host>:3000/alarm-api/alarms/ack`
+- **Headers**: `Content-Type: application/json`, `Cookie: grafana_session=…`
 
-#### พารามิเตอร์ของ Request
+#### ข้อมูลในคำขอ
 
-| ฟิลด์ (Field) | ชนิดข้อมูล | จำเป็น | คำอธิบาย |
-|:--------------|:-----------|:-------|:---------|
-| `logdate_ms` | Number | ใช่ | เวลาที่เกิดการแจ้งเตือนในหน่วย Unix epoch milliseconds |
-| `logid` | String | ใช่ | รหัสระบุเฉพาะของบันทึกการแจ้งเตือน |
-| `acknowledged_by` | String | ใช่ | รหัสพนักงานหรือชื่อผู้ใช้ของโอเปอเรเตอร์ที่รับทราบเหตุการณ์ |
+| Field | ชนิด | จำเป็น | คำอธิบาย |
+|:------|:-----|:---------|:------------|
+| `logdate_ms` | Number | ใช่ | เวลาของการแจ้งเตือนเป็น Unix epoch มิลลิวินาที |
+| `logid` | String | ใช่ | รหัสของรายการ log การแจ้งเตือน |
 
 ```json
-{
-  "logdate_ms": 1790568000000,
-  "logid": "LOG-10001",
-  "acknowledged_by": "operator-01"
-}
+{ "logdate_ms": 1790568000000, "logid": "LOG-10001" }
 ```
 
-#### รหัสตอบกลับ
+#### การตอบกลับ
 
-- **`200 OK`**: เปลี่ยนสถานะเป็น `ACKNOWLEDGED` สำเร็จ
-  ```json
-  {
-    "logid": "LOG-10001",
-    "logdate": "2026-09-28T04:00:00.000Z",
-    "status": "ACKNOWLEDGED",
-    "acknowledged_at": "2026-09-28T04:02:15.241Z",
-    "acknowledged_by": "operator-01",
-    "resolved_at": null,
-    "resolved_by": null,
-    "resolution_note": null
-  }
-  ```
-- **`400 Bad Request`**: ข้อมูลไม่ถูกต้อง (ขาดฟิลด์บังคับ หรือ `logdate_ms` ไม่ใช่ตัวเลข)
-- **`404 Not Found`**: ไม่พบแถวข้อมูลการแจ้งเตือนที่ตรงกับ `logdate` และ `logid` ในฐานข้อมูล
-- **`409 Conflict`**: สถานะปัจจุบันไม่สามารถเปลี่ยนได้ (เช่น การแจ้งเตือนอยู่ในสถานะ `RESOLVED` แล้ว)
-- **`500 Internal Error`**: ข้อผิดพลาดภายในฐานข้อมูลหรือเครือข่าย
+- **`200 OK`**: เปลี่ยนเป็น `ACKNOWLEDGED` แล้ว body ส่งแถวข้อมูลกลับมา โดย `acknowledged_by` เป็นชื่อ login Grafana ของผู้เรียก
+- **`400 Bad Request`**: `{"error": "logdate_ms (number) and logid are required"}`
+- **`401 Unauthorized`**: ไม่มี session Grafana ที่ถูกต้อง (มาจาก nginx หรือจาก service เองเมื่อเรียกตรง)
+- **`403 Forbidden`**: `{"error": "insufficient permission (Viewer role cannot acknowledge/resolve alarms)"}`
+- **`404 Not Found`**: ไม่มีแถว lifecycle ที่ตรงกับ `logdate_ms` และ `logid`
+- **`409 Conflict`**: การแจ้งเตือนไม่ได้อยู่ในสถานะ `OPEN` เช่น `{"error": "cannot transition to ACKNOWLEDGED from current status ACKNOWLEDGED"}`
+- **`500 Internal Error`**: ติดต่อฐานข้อมูลไม่ได้ หรือเกิดข้อผิดพลาดที่ไม่คาดคิด
 
-#### ตัวอย่างคำสั่ง cURL
+#### ตัวอย่าง cURL
 
 ```bash
 curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
-  -d '{
-    "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "acknowledged_by": "operator-01"
-  }'
+  -H "Cookie: grafana_session=<your session cookie>" \
+  -d '{"logdate_ms": 1790568000000, "logid": "LOG-10001"}'
 ```
 
 ---
 
 ### `POST /alarm-api/alarms/resolve`
 
-ปิดจบและแก้ไขปัญหาการแจ้งเตือน โดยเปลี่ยนสถานะจาก `OPEN` หรือ `ACKNOWLEDGED` ไปเป็น `RESOLVED` พร้อมบันทึกรายละเอียดแนวทางแก้ไข
+ปิดการแจ้งเตือน: `OPEN` หรือ `ACKNOWLEDGED` → `RESOLVED` พร้อมบันทึกเพิ่มเติม (ไม่บังคับ)
 
-- **Gateway URL**: `http://localhost:3000/alarm-api/alarms/resolve`
-- **Direct Container URL**: `http://localhost:4000/alarms/resolve`
-- **Method**: `POST`
-- **Headers**:
-  - `Content-Type: application/json`
-  - `Cookie: <grafana_session>`
+- **URL**: `http://<host>:3000/alarm-api/alarms/resolve`
+- **Headers**: `Content-Type: application/json`, `Cookie: grafana_session=…`
 
-#### พารามิเตอร์ของ Request
+#### ข้อมูลในคำขอ
 
-| ฟิลด์ (Field) | ชนิดข้อมูล | จำเป็น | คำอธิบาย |
-|:--------------|:-----------|:-------|:---------|
-| `logdate_ms` | Number | ใช่ | เวลาที่เกิดการแจ้งเตือนในหน่วย Unix epoch milliseconds |
-| `logid` | String | ใช่ | รหัสระบุเฉพาะของการแจ้งเตือน |
-| `resolved_by` | String | ใช่ | รหัสวิศวกรหรือช่างเทคนิคที่ดำเนินการแก้ไขเสร็จสิ้น |
-| `resolution_note` | String | ไม่บังคับ | รายละเอียดการวิเคราะห์สาเหตุของปัญหาและขั้นตอนการซ่อมบำรุง |
+| Field | ชนิด | จำเป็น | คำอธิบาย |
+|:------|:-----|:---------|:------------|
+| `logdate_ms` | Number | ใช่ | เวลาของการแจ้งเตือนเป็น Unix epoch มิลลิวินาที |
+| `logid` | String | ใช่ | รหัสของรายการ log การแจ้งเตือน |
+| `resolution_note` | String | ไม่ | สาเหตุรากและการแก้ไขที่ทำ |
 
 ```json
-{
-  "logdate_ms": 1790568000000,
-  "logid": "LOG-10001",
-  "resolved_by": "engineer-02",
-  "resolution_note": "เปลี่ยนไส้กรองนิวแมติกและตรวจสอบแรงดันลมดูดให้อยู่ในเกณฑ์มาตรฐาน -15.2 kPa เรียบร้อย"
-}
+{ "logdate_ms": 1790568000000, "logid": "LOG-10001", "resolution_note": "Replaced the chuck filter; vacuum back in range." }
 ```
 
-#### รหัสตอบกลับ
+#### การตอบกลับ
 
-- **`200 OK`**: เปลี่ยนสถานะเป็น `RESOLVED` สำเร็จ
-  ```json
-  {
-    "logid": "LOG-10001",
-    "logdate": "2026-09-28T04:00:00.000Z",
-    "status": "RESOLVED",
-    "acknowledged_at": "2026-09-28T04:02:15.241Z",
-    "acknowledged_by": "operator-01",
-    "resolved_at": "2026-09-28T04:15:30.812Z",
-    "resolved_by": "engineer-02",
-    "resolution_note": "เปลี่ยนไส้กรองนิวแมติกและตรวจสอบแรงดันลมดูดให้อยู่ในเกณฑ์มาตรฐาน -15.2 kPa เรียบร้อย"
-  }
-  ```
-- **`400 Bad Request`**: ข้อมูลไม่ครบถ้วน
-- **`404 Not Found`**: ไม่พบข้อมูลในระบบ
-- **`409 Conflict`**: การแจ้งเตือนอยู่ในสถานะ `RESOLVED` อยู่ก่อนแล้ว
+รหัสเหมือน `ack` เมื่อได้ `200` จะคืนแถวที่มี `status: "RESOLVED"` และ `resolved_by` เป็นชื่อ login Grafana ของผู้เรียก ส่วน `409` หมายถึงการแจ้งเตือนเป็น `RESOLVED` อยู่แล้ว
 
-#### ตัวอย่างคำสั่ง cURL
+#### ตัวอย่าง cURL
 
 ```bash
 curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -H "Content-Type: application/json" \
-  -d '{
-    "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "resolved_by": "engineer-02",
-    "resolution_note": "เปลี่ยนไส้กรองนิวแมติกและตรวจสอบแรงดันลมดูดให้อยู่ในเกณฑ์มาตรฐาน -15.2 kPa เรียบร้อย"
-  }'
+  -H "Cookie: grafana_session=<your session cookie>" \
+  -d '{"logdate_ms": 1790568000000, "logid": "LOG-10001", "resolution_note": "Replaced the chuck filter."}'
 ```
 
 ---
 
 ### `GET /alarm-api/healthz`
 
-ตรวจสอบความพร้อมในการทำงานของคอนเทนเนอร์และการเชื่อมต่อฐานข้อมูล โดยรันคำสั่ง `SELECT 1` ผ่าน Connection Pool
+ตรวจว่า service ทำงานและติดต่อฐานข้อมูลได้ (รัน `SELECT 1` ผ่าน pool) ตัว service เองไม่ขอ session แต่เส้นทาง `/alarm-api/` บน nginx ยังต้องมี session อยู่ healthcheck ของ Docker จึงเรียกจากภายใน container แทน
 
-- **Gateway URL**: `http://localhost:3000/alarm-api/healthz`
-- **Direct Container URL**: `http://localhost:4000/healthz`
-- **Method**: `GET`
+- **ผ่าน nginx**: `http://<host>:3000/alarm-api/healthz` พร้อม cookie session ของ Grafana
+- **ภายใน container**: `http://127.0.0.1:4000/healthz` (สิ่งที่ healthcheck ของ Docker เรียก) ส่วน container อื่นใช้ `http://alarm-api:4000/healthz` ได้
 
-#### รหัสตอบกลับ
+#### การตอบกลับ
 
-- **`200 OK`**: การเชื่อมต่อฐานข้อมูลปกติ (`{"status":"ok"}`)
-- **`503 Service Unavailable`**: ไม่สามารถเชื่อมต่อฐานข้อมูลได้ (`{"status":"db unreachable"}`)
-
-#### ตัวอย่างคำสั่ง cURL
+- **`200 OK`**: `{"status": "ok"}`
+- **`503 Service Unavailable`**: `{"status": "db unreachable"}`
 
 ```bash
-curl -s http://localhost:4000/healthz
+docker exec ims-alarm-api wget -qO- http://127.0.0.1:4000/healthz
 ```
 
 ---

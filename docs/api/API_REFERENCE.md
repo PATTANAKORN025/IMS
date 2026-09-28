@@ -266,172 +266,106 @@ stateDiagram-v2
     RESOLVED --> [*]: Closed
 ```
 
+### Who may call it
+
+`alarm-api` publishes no host port. It is reachable only through nginx at `/alarm-api/`, or from another container on the internal network at `http://alarm-api:4000`.
+
+Every ack/resolve request needs a Grafana session cookie, and each request passes two checks:
+
+1. **nginx** sends the cookie to Grafana (`auth_request` → `/api/user`). A missing or invalid session gets **401** before the request reaches the service.
+2. **alarm-api** asks Grafana again, both `/api/user` and `/api/user/orgs`. It takes the caller's login and the caller's role in the current organisation:
+   - **Editor** or **Admin** may write, and so may a Grafana server admin.
+   - **Viewer** gets **403**.
+
+The actor stored in `acknowledged_by` / `resolved_by` is always the Grafana login of the session. Any `acknowledged_by` or `resolved_by` field in the request body is ignored.
+
 ### `POST /alarm-api/alarms/ack`
 
-Acknowledges an active factory alarm, transitioning its state from `OPEN` to `ACKNOWLEDGED`.
+Acknowledges an alarm: `OPEN` → `ACKNOWLEDGED`.
 
-- **Gateway URL**: `http://localhost:3000/alarm-api/alarms/ack` (Proxied & Auth Gated)
-- **Direct Container URL**: `http://localhost:4000/alarms/ack` (Internal Network)
-- **Method**: `POST`
-- **Headers**:
-  - `Content-Type: application/json`
-  - `Cookie: <grafana_session>` (Required when calling via Gateway port 3000)
+- **URL**: `http://<host>:3000/alarm-api/alarms/ack`
+- **Headers**: `Content-Type: application/json`, `Cookie: grafana_session=…`
 
-#### Request Payload
+#### Request payload
 
 | Field | Type | Required | Description |
 |:------|:-----|:---------|:------------|
-| `logdate_ms` | Number | Yes | Alarm event timestamp in Unix epoch milliseconds. |
-| `logid` | String | Yes | Alphanumeric identifier of the alarm log entry. |
-| `acknowledged_by` | String | Yes | Username or badge ID of the operator acknowledging the event. |
+| `logdate_ms` | Number | Yes | Alarm event time in Unix epoch milliseconds. |
+| `logid` | String | Yes | Identifier of the alarm log entry. |
 
 ```json
-{
-  "logdate_ms": 1790568000000,
-  "logid": "LOG-10001",
-  "acknowledged_by": "operator-01"
-}
+{ "logdate_ms": 1790568000000, "logid": "LOG-10001" }
 ```
 
 #### Responses
 
-- **`200 OK`**: Successfully transitioned to `ACKNOWLEDGED`.
-  ```json
-  {
-    "logid": "LOG-10001",
-    "logdate": "2026-09-28T04:00:00.000Z",
-    "status": "ACKNOWLEDGED",
-    "acknowledged_at": "2026-09-28T04:02:15.241Z",
-    "acknowledged_by": "operator-01",
-    "resolved_at": null,
-    "resolved_by": null,
-    "resolution_note": null
-  }
-  ```
-- **`400 Bad Request`**: Validation error (missing or non-finite `logdate_ms`, empty string values).
-  ```json
-  {
-    "error": "logdate_ms (number), logid, and acknowledged_by are required"
-  }
-  ```
-- **`404 Not Found`**: No record matching `logdate` and `logid` exists in the lifecycle table.
-  ```json
-  {
-    "error": "no lifecycle row for this alarm (predates lifecycle tracking, or logdate/logid is wrong)"
-  }
-  ```
-- **`409 Conflict`**: Invalid state transition (e.g. attempting to acknowledge an already `RESOLVED` alarm).
-  ```json
-  {
-    "error": "cannot transition to ACKNOWLEDGED from current status RESOLVED"
-  }
-  ```
-- **`500 Internal Error`**: Database connectivity or unexpected internal exception.
+- **`200 OK`**: now `ACKNOWLEDGED`. The body echoes the row, and `acknowledged_by` holds the caller's Grafana login.
+- **`400 Bad Request`**: `{"error": "logdate_ms (number) and logid are required"}`
+- **`401 Unauthorized`**: no valid Grafana session. Returned by nginx, or by the service when it is called directly.
+- **`403 Forbidden`**: `{"error": "insufficient permission (Viewer role cannot acknowledge/resolve alarms)"}`
+- **`404 Not Found`**: no lifecycle row for that `logdate_ms` and `logid`.
+- **`409 Conflict`**: the alarm is not `OPEN`, for example `{"error": "cannot transition to ACKNOWLEDGED from current status ACKNOWLEDGED"}`.
+- **`500 Internal Error`**: database unreachable or unexpected error.
 
-#### Live cURL Example
+#### cURL example
 
 ```bash
 curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
-  -d '{
-    "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "acknowledged_by": "operator-01"
-  }'
+  -H "Cookie: grafana_session=<your session cookie>" \
+  -d '{"logdate_ms": 1790568000000, "logid": "LOG-10001"}'
 ```
 
 ---
 
 ### `POST /alarm-api/alarms/resolve`
 
-Resolves an active alarm, transitioning state from `OPEN` or `ACKNOWLEDGED` to `RESOLVED` and attaching permanent corrective action notes.
+Resolves an alarm: `OPEN` or `ACKNOWLEDGED` → `RESOLVED`, with an optional note.
 
-- **Gateway URL**: `http://localhost:3000/alarm-api/alarms/resolve`
-- **Direct Container URL**: `http://localhost:4000/alarms/resolve`
-- **Method**: `POST`
-- **Headers**:
-  - `Content-Type: application/json`
-  - `Cookie: <grafana_session>`
+- **URL**: `http://<host>:3000/alarm-api/alarms/resolve`
+- **Headers**: `Content-Type: application/json`, `Cookie: grafana_session=…`
 
-#### Request Payload
+#### Request payload
 
 | Field | Type | Required | Description |
 |:------|:-----|:---------|:------------|
-| `logdate_ms` | Number | Yes | Alarm timestamp in Unix epoch milliseconds. |
-| `logid` | String | Yes | Alphanumeric identifier of the alarm log entry. |
-| `resolved_by` | String | Yes | Engineer or technician ID submitting the resolution. |
-| `resolution_note` | String | Optional | Root cause analysis and corrective maintenance actions taken. |
+| `logdate_ms` | Number | Yes | Alarm event time in Unix epoch milliseconds. |
+| `logid` | String | Yes | Identifier of the alarm log entry. |
+| `resolution_note` | String | No | Root cause and corrective action. |
 
 ```json
-{
-  "logdate_ms": 1790568000000,
-  "logid": "LOG-10001",
-  "resolved_by": "engineer-02",
-  "resolution_note": "Replaced pneumatic chuck filter; vacuum pressure restored to -15.2 kPa nominal."
-}
+{ "logdate_ms": 1790568000000, "logid": "LOG-10001", "resolution_note": "Replaced the chuck filter; vacuum back in range." }
 ```
 
 #### Responses
 
-- **`200 OK`**: Successfully transitioned to `RESOLVED`.
-  ```json
-  {
-    "logid": "LOG-10001",
-    "logdate": "2026-09-28T04:00:00.000Z",
-    "status": "RESOLVED",
-    "acknowledged_at": "2026-09-28T04:02:15.241Z",
-    "acknowledged_by": "operator-01",
-    "resolved_at": "2026-09-28T04:15:30.812Z",
-    "resolved_by": "engineer-02",
-    "resolution_note": "Replaced pneumatic chuck filter; vacuum pressure restored to -15.2 kPa nominal."
-  }
-  ```
-- **`400 Bad Request`**: Validation error (missing `logdate_ms`, `logid`, or `resolved_by`).
-- **`404 Not Found`**: Lifecycle row not found.
-- **`409 Conflict`**: Target alarm already in `RESOLVED` state.
+Same codes as `ack`. `200` returns the row with `status: "RESOLVED"`, and `resolved_by` holds the caller's Grafana login. `409` means the alarm is already `RESOLVED`.
 
-#### Live cURL Example
+#### cURL example
 
 ```bash
 curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -H "Content-Type: application/json" \
-  -d '{
-    "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "resolved_by": "engineer-02",
-    "resolution_note": "Replaced pneumatic chuck filter; vacuum pressure restored to -15.2 kPa nominal."
-  }'
+  -H "Cookie: grafana_session=<your session cookie>" \
+  -d '{"logdate_ms": 1790568000000, "logid": "LOG-10001", "resolution_note": "Replaced the chuck filter."}'
 ```
 
 ---
 
 ### `GET /alarm-api/healthz`
 
-Direct container liveness and database connection ping. Executes an active `SELECT 1` query through the database connection pool.
+Liveness and database check (`SELECT 1` through the pool). The service itself does not ask for a session. Through nginx, though, `/alarm-api/` still requires one, so Docker's healthcheck calls it from inside the container instead.
 
-- **Gateway URL**: `http://localhost:3000/alarm-api/healthz`
-- **Direct Container URL**: `http://localhost:4000/healthz`
-- **Method**: `GET`
+- **Through nginx**: `http://<host>:3000/alarm-api/healthz`, with a Grafana session cookie
+- **Inside the container**: `http://127.0.0.1:4000/healthz` (what Docker's healthcheck calls); other containers can use `http://alarm-api:4000/healthz`
 
 #### Responses
 
-- **`200 OK`**: Database pool healthy and reachable.
-  ```json
-  {
-    "status": "ok"
-  }
-  ```
-- **`503 Service Unavailable`**: Database disconnected or pool exhausted.
-  ```json
-  {
-    "status": "db unreachable"
-  }
-  ```
-
-#### Live cURL Example
+- **`200 OK`**: `{"status": "ok"}`
+- **`503 Service Unavailable`**: `{"status": "db unreachable"}`
 
 ```bash
-curl -s http://localhost:4000/healthz
+docker exec ims-alarm-api wget -qO- http://127.0.0.1:4000/healthz
 ```
 
 ---
