@@ -47,16 +47,20 @@
 | # | ปัญหา | ความรุนแรง | สถานะ | แผนแก้ไข |
 | --- | --- | --- | --- | --- |
 | 1 | ค่าทุกค่าใน `.env.example` เป็นข้อมูลสาธารณะ | สูง | ทราบแล้ว | สร้างค่าใหม่ให้ทุก secret ก่อนการติดตั้งจริงทุกครั้ง (ดู [คู่มือผู้ดูแลระบบ](docs/admin/ADMIN_MANUAL.md#รายการตรวจความปลอดภัยก่อนใช้งานจริง)) |
-| 2 | pgAdmin เปิดพอร์ต `5050` บนทุก interface และใช้ image tag `latest` | ปานกลาง | ทราบแล้ว | bind ไว้ที่ `127.0.0.1` หรือกั้นด้วยไฟร์วอลล์ และระบุ image tag ตายตัว |
-| 3 | ประตูหน้า nginx ให้บริการเป็น HTTP ธรรมดา | ปานกลาง | ทราบแล้ว | ทำ TLS termination หน้าหรือภายใน `ims-proxy` |
-| 4 | SNMP v2c community string เก็บรายอุปกรณ์ใน `public.devices` เป็นข้อความธรรมดา | ปานกลาง | ทราบแล้ว | ย้ายอุปกรณ์ที่ใช้งานจริงไปใช้ SNMPv3 (authPriv) |
-| 5 | PgBouncer ใช้ `auth_type = plain` | ปานกลาง | ทราบแล้ว (ข้อแลกเปลี่ยน) | ใช้เฉพาะเครือข่ายภายใน และพิจารณาใช้ SCRAM ตลอดเส้นทาง |
-| 6 | `observability-archiver` mount `/var/run/docker.sock` | ปานกลาง | ทราบแล้ว | flag `:ro` ไม่ได้จำกัดการเรียก Docker API ให้ถือว่าคอนเทนเนอร์นี้มีสิทธิ์สูง หรือเลิก mount |
-| 7 | การสแกน secret ใน CI ไม่บล็อกการ build และตรวจเฉพาะ working tree (`gitleaks --no-git ... \|\| true`) | ปานกลาง | ทราบแล้ว | ทำให้บล็อกได้และสแกนประวัติ (`gitleaks detect` โดยไม่ใช้ `--no-git`) และสแกนประวัติเต็มบนเครื่องก่อน push |
-| 8 | image ของ Grafana image renderer ใช้ tag `latest` | ต่ำ | ทราบแล้ว | ระบุ image tag ตายตัว |
+| 2 | ประตูหน้า nginx ให้บริการเป็น HTTP ธรรมดา | ปานกลาง | ทราบแล้ว | ทำ TLS termination หน้าหรือภายใน `ims-proxy` แล้วจึงเปิด `GF_SECURITY_COOKIE_SECURE` และ HSTS |
+| 3 | SNMP v2c community string เก็บรายอุปกรณ์ใน `public.devices` เป็นข้อความธรรมดา | ปานกลาง | ทราบแล้ว | ย้ายอุปกรณ์ที่ใช้งานจริงไปใช้ SNMPv3 (authPriv) |
+| 4 | ปิดการ sanitize HTML ของ Grafana (`GF_PANELS_DISABLE_SANITIZE_HTML=true`) เพราะแดชบอร์ด Business Text ต้องรัน JavaScript | ปานกลาง | ทราบแล้ว | ให้สิทธิ์ Editor เฉพาะคนที่ไว้ใจได้ เทมเพลต escape ค่าข้อมูลทุกค่า และ `dashboard-linter` ปฏิเสธ `{{{ }}}` และค่าใน handler `on*=` |
+| 5 | `/ldi-telemetry` และ `/inject` เข้าถึงได้ผ่านประตูหน้า โดยมีเพียงการตรวจ `x-api-key` ใน Node-RED ป้องกัน | ปานกลาง | ทราบแล้ว | เก็บ `INGEST_API_KEY` เป็นความลับและหมุนเวียน และจำกัดพอร์ตด้วยไฟร์วอลล์ |
+| 6 | การสแกน secret ใน CI ตรวจ working tree ไม่ได้ตรวจประวัติ และในประวัติมี `.env` เก่า (credential หมุนเวียนแล้ว) | ต่ำ | ทราบแล้ว | การสแกนบล็อกการ build และ image ถูกระบุเวอร์ชันแล้ว ส่วน `scripts/pre-commit.js` ไม่ยอมให้ commit ไฟล์ `.env` |
 | — | พอร์ต TimescaleDB เปิดบน host | — | **แก้แล้ว** | `docker-compose.yaml` หลักปิดคอมเมนต์การเปิดพอร์ตของ TimescaleDB ไว้; ฐานข้อมูลทำงานเฉพาะภายในเครือข่าย Docker |
 | — | พอร์ต PgBouncer เปิดบน host | — | **แก้แล้ว** | `docker-compose.yaml` หลักไม่เคยเปิดพอร์ตของ PgBouncer |
 | — | Node-RED editor ไม่มีการยืนยันตัวตน | — | **แก้แล้ว** | `nodered_data/settings.js` ไม่ยอมเริ่มหากไม่ได้ตั้ง `NODE_RED_ADMIN_PASSWORD_HASH` และพอร์ต editor bind ไว้ที่ `127.0.0.1` |
+| — | pgAdmin เปิดบนทุก interface และใช้ image `latest` | — | **แก้แล้ว** | bind ที่ `127.0.0.1:5050` และระบุ image เป็น `9.18` |
+| — | PgBouncer ใช้ `auth_type = plain` (รหัสผ่านวิ่งเป็นข้อความธรรมดาในเครือข่าย Docker) | — | **แก้แล้ว** | `AUTH_TYPE: scram-sha-256` |
+| — | `observability-archiver` mount `/var/run/docker.sock` | — | **แก้แล้ว** | เข้าถึง Docker ผ่าน `docker-socket-proxy` ที่อนุญาตเฉพาะ endpoint แบบอ่าน บนเครือข่ายภายใน |
+| — | service ต่อฐานข้อมูลด้วย superuser | — | **แก้แล้ว** | Node-RED ใช้ `nodered_writer`, archiver ใช้ `observability_archiver`, alarm-api ใช้ `alarm_api_writer`, Grafana ใช้ `grafana_reader` แต่ละ role มีสิทธิ์เฉพาะที่ใช้ |
+| — | `/alert-webhook` รับทุก request | — | **แก้แล้ว** | ต้องมี `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` |
+| — | image ของ Grafana image renderer ใช้ `latest` | — | **แก้แล้ว** | ระบุเป็น `v5.11.1` |
 
 ---
 

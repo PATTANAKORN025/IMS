@@ -26,7 +26,7 @@
 - **การพาร์ส (Parsing) ใน Node-RED:** ใช้เวลา O(N) ทำในรอบเดียว (single-pass) จำเป็นต้องจัดการหน่วยความจำ (GC) อย่างชัดเจน: `flatData.length = 0` + `msg.payload = null`
 - **Node-RED Flows:** `nodered_data/flows/*.json` (ไฟล์ย่อย) คือแหล่งข้อมูลหลัก (source of truth) พวกมันจะถูกนำมารวมกันเป็น `flows.json` ในตอนที่ทำการ deploy ด้วย `make deploy-flows` PowerShell จะแทนที่ `\n` ด้วย `\\n` ใน JSON flow — ให้ใช้สคริปต์ Python สำหรับการแก้ไขหลายไฟล์ที่ซับซ้อน
 - **การเพิ่มข้อมูล (Database Inserts):** จำนวนคอลัมน์ใน INSERT ต้องเท่ากับจำนวนตัวแทน (placeholder) ใน VALUES เมื่อใช้ `NOW()` ใน VALUES คอลัมน์ `"time"` ต้องยังคงอยู่ในรายการ INSERT
-- **PgBouncer:** `AUTH_TYPE: plain`, การพูลทรานแซกชัน (transaction pooling), ไม่ใช้ prepared statements
+- **PgBouncer:** `AUTH_TYPE: scram-sha-256`, การพูลทรานแซกชัน (transaction pooling), ไม่ใช้ prepared statements
 
 ## 4. กฎสำหรับ Grafana และ แดชบอร์ด (Grafana & Dashboard Rules)
 

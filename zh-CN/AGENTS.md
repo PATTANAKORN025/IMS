@@ -26,7 +26,7 @@
 - **Node-RED 解析 (Parsing):** O(N) 单次遍历 (single-pass)。需要显式的垃圾回收 (GC)：`flatData.length = 0` + `msg.payload = null`。
 - **Node-RED Flows:** `nodered_data/flows/*.json` (拆分文件) 是单一事实来源 (source of truth)。在部署时，它们通过 `make deploy-flows` 拼接到 `flows.json`。PowerShell 会在 flow JSON 中将 `\n` 替换为 `\\n` — 请使用 Python 脚本进行复杂的多文件编辑。
 - **数据库插入 (Inserts):** INSERT 列数必须等于 VALUES 占位符数。当在 VALUES 中使用 `NOW()` 时，`"time"` 列必须保留在 INSERT 列表中。
-- **PgBouncer:** `AUTH_TYPE: plain`，事务池化 (transaction pooling)，不使用预处理语句 (prepared statements)。
+- **PgBouncer:** `AUTH_TYPE: scram-sha-256`，事务池化 (transaction pooling)，不使用预处理语句 (prepared statements)。
 
 ## 4. Grafana 与仪表板规则 (Grafana & Dashboard Rules)
 

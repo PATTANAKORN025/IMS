@@ -88,6 +88,13 @@
   - ไม่ติดตั้ง Grafana plugin ที่ไม่ได้ใช้แล้ว
   - init script ไม่ hardcode ชื่อฐานข้อมูลและ owner อีก
 
+### การเสริมความปลอดภัย (2026-09-29 รอบที่สาม)
+- **PgBouncer:** client ยืนยันตัวตนด้วย `scram-sha-256` แทน `plain` รหัสผ่านจึงไม่วิ่งเป็นข้อความธรรมดาในเครือข่าย Docker อีก รหัสผิดจะได้ `SASL authentication failed`
+- **คอนเทนเนอร์:** ทุก service ยกเว้น pgAdmin รันด้วย `no-new-privileges` ส่วน pgAdmin ยกเว้นไว้เพราะอาจต้องใช้ file capability เพื่อ bind พอร์ต 80
+- **`docker-compose.prod.yaml`:** เลิกตั้งค่า `GF_SECURITY_COOKIE_SECURE`, HSTS และการ sanitize HTML เพราะบนประตูหน้าที่เป็น HTTP ธรรมดา Secure cookie ทำให้ login จากเครื่องอื่นไม่ได้เลย และการ sanitize ทำให้แดชบอร์ด Business Text ใช้ไม่ได้ ตอนนี้ overlay ตั้งเฉพาะข้อจำกัดทรัพยากรและระดับ log ตามที่เอกสารบอก
+- **การสแกน secret:** ระบุ gitleaks เป็น v8.28.0 และสแกน flow, เอกสาร และ README ด้วย ส่วน `scripts/pre-commit.js` ไม่ยอมให้ commit ไฟล์ `.env` (เดิมแค่ข้ามไป)
+- **`SECURITY.md`:** ตารางข้อจำกัดที่ทราบตรงกับการตั้งค่าที่รันอยู่จริงแล้ว
+
 ### การเสริมความปลอดภัย (2026-09-29 รอบที่สอง)
 - **ยืนยันตัวตนของ alert webhook:** `/alert-webhook` ต้องมี `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` (ไม่มีได้ 401 และได้ 503 ถ้าไม่ได้ตั้ง token) Alertmanager ส่ง token จาก compose secret และ contact point ของ Grafana ก็ส่งด้วย ตอนนี้ `ALERT_WEBHOOK_TOKEN` บังคับต้องมี
 - **Role ฐานข้อมูลสิทธิ์ต่ำสุด (migration 087):** Node-RED เขียนข้อมูลด้วย `nodered_writer` และ observability archiver ด้วย `observability_archiver` แต่ละ role ได้สิทธิ์เฉพาะตารางที่ใช้ ไม่มีตัวไหนเป็น superuser แล้ว คีย์ใหม่ที่บังคับใน `.env`: `NODERED_DB_PASSWORD`, `ARCHIVER_DB_PASSWORD`

@@ -185,7 +185,7 @@ nodered_data/flows/
 - **จำนวนคอลัมน์และพารามิเตอร์ต้องตรงกันในคำสั่ง `INSERT`**: จำนวนฟิลด์ใน `INSERT INTO` ต้องเท่ากับตัวแทนข้อมูลใน `VALUES ()` เสมอ เมื่อมีการใช้ `NOW()` ใน `VALUES` คอลัมน์ `"time"` ต้องคงอยู่ในรายการฟิลด์ของคำสั่ง `INSERT`
 - **ข้อกำหนดในการเชื่อมต่อผ่าน PgBouncer**:
   - โหมดการเชื่อมต่อ: `transaction` pooling
-  - การยืนยันตัวตน: `AUTH_TYPE: plain`
+  - การยืนยันตัวตน: `AUTH_TYPE: scram-sha-256`
   - การใช้งาน Prepared Statements: **ไม่อนุญาตให้ใช้งาน** เนื่องจาก PgBouncer ในโหมด transaction ไม่รองรับ
 
 ### การรันสคริปต์ Migration ในเครื่อง

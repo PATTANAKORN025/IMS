@@ -185,7 +185,7 @@ All telemetry data resides in TimescaleDB (PostgreSQL 16 with TimescaleDB extens
 - **Column Matching on `INSERT`**: The column count in `INSERT INTO` must exactly match the number of parameter placeholders in `VALUES ()`. When using `NOW()` in `VALUES`, the `"time"` column must remain in the column list.
 - **PgBouncer Connection Pooling**:
   - Connection mode: `transaction` pooling.
-  - Authentication: `AUTH_TYPE: plain`.
+  - Authentication: `AUTH_TYPE: scram-sha-256`.
   - Prepared statements: **Forbidden** (PgBouncer in transaction mode does not support prepared statements).
 
 ### Applying Migrations Locally

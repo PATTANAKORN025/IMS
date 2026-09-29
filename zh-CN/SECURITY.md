@@ -47,16 +47,20 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 | # | 问题 | 严重级别 | 状态 | 修复计划 |
 | --- | --- | --- | --- | --- |
 | 1 | `.env.example` 中的每个值都是公开的 | 高 | 已知 | 任何真实部署之前，为每个密钥生成新值（见[管理员手册](docs/admin/ADMIN_MANUAL.md#投产前安全检查清单)） |
-| 2 | pgAdmin 在所有接口上发布 `5050` 端口，镜像标签为 `latest` | 中 | 已知 | 绑定到 `127.0.0.1` 或用防火墙限制；固定镜像标签 |
-| 3 | nginx 统一入口使用明文 HTTP | 中 | 已知 | 在 `ims-proxy` 前方或内部终止 TLS |
-| 4 | SNMP v2c community string 以明文按设备存放在 `public.devices` 中 | 中 | 已知 | 将生产设备迁移到 SNMPv3（authPriv） |
-| 5 | PgBouncer 使用 `auth_type = plain` | 中 | 已知（权衡） | 仅限内部网络；考虑端到端使用 SCRAM |
-| 6 | `observability-archiver` 挂载了 `/var/run/docker.sock` | 中 | 已知 | `:ro` 标志并不能限制 Docker API 调用；应视该容器为特权容器，或取消挂载 |
-| 7 | CI 密钥扫描不阻断构建，且只扫描工作区（`gitleaks --no-git ... \|\| true`） | 中 | 已知 | 改为阻断并扫描历史（去掉 `--no-git` 运行 `gitleaks detect`）；推送前在本地进行全历史扫描 |
-| 8 | Grafana image renderer 镜像标签为 `latest` | 低 | 已知 | 固定镜像标签 |
+| 2 | nginx 统一入口使用明文 HTTP | 中 | 已知 | 在 `ims-proxy` 前方或内部终止 TLS，之后再开启 `GF_SECURITY_COOKIE_SECURE` 与 HSTS |
+| 3 | SNMP v2c community string 以明文按设备存放在 `public.devices` 中 | 中 | 已知 | 将生产设备迁移到 SNMPv3（authPriv） |
+| 4 | Grafana HTML 清理已关闭（`GF_PANELS_DISABLE_SANITIZE_HTML=true`），因为 Business Text 仪表板需要运行 JavaScript | 中 | 已知 | 只把 Editor 角色授予可信人员。模板会转义所有数据值，`dashboard-linter` 拒绝 `{{{ }}}` 以及 `on*=` 处理器中的值 |
+| 5 | `/ldi-telemetry` 与 `/inject` 可通过统一入口访问，仅由 Node-RED 中的 `x-api-key` 校验保护 | 中 | 已知 | 对 `INGEST_API_KEY` 保密并定期轮换；用防火墙限制端口 |
+| 6 | CI 密钥扫描只检查工作区而非历史；历史中有一个旧 `.env`（凭据已轮换） | 低 | 已知 | 扫描会阻断构建且镜像版本已固定；`scripts/pre-commit.js` 拒绝提交任何 `.env` |
 | — | TimescaleDB 端口暴露在主机上 | — | **已解决** | 基础 `docker-compose.yaml` 已注释 TimescaleDB 主机端口；数据库仅限内部网络 |
 | — | PgBouncer 端口暴露在主机上 | — | **已解决** | 基础 `docker-compose.yaml` 从未发布 PgBouncer 端口 |
 | — | Node-RED 编辑器无认证 | — | **已解决** | 未设置 `NODE_RED_ADMIN_PASSWORD_HASH` 时，`nodered_data/settings.js` 拒绝启动；编辑器端口绑定在 `127.0.0.1` |
+| — | pgAdmin 发布在所有接口上，镜像为 `latest` | — | **已解决** | 绑定到 `127.0.0.1:5050`，镜像固定为 `9.18` |
+| — | PgBouncer 使用 `auth_type = plain`（密码在 Docker 网络中明文传输） | — | **已解决** | `AUTH_TYPE: scram-sha-256` |
+| — | `observability-archiver` 挂载了 `/var/run/docker.sock` | — | **已解决** | 通过内部网络上只允许读取接口的 `docker-socket-proxy` 访问 Docker |
+| — | 各服务以超级用户连接数据库 | — | **已解决** | Node-RED 使用 `nodered_writer`，archiver 使用 `observability_archiver`，alarm-api 使用 `alarm_api_writer`，Grafana 使用 `grafana_reader`，各自仅有所需权限 |
+| — | `/alert-webhook` 接受任何请求 | — | **已解决** | 要求 `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` |
+| — | Grafana image renderer 镜像为 `latest` | — | **已解决** | 固定为 `v5.11.1` |
 
 ---
 

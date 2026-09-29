@@ -222,7 +222,7 @@ Alarms flow into `public.ldi_alarm_log`, linking to `public.ldi_alarm_ms_code` b
 ## 5. Architectural Constraints & Rules
 
 1. **Database Schema Isolation:** All database objects must reside in `public`. Never create `ims.*` schemas.
-2. **PgBouncer Pooling:** Strict transaction pooling (`AUTH_TYPE: plain`). Prepared statements and session-level locks are strictly disallowed.
+2. **PgBouncer Pooling:** Strict transaction pooling; clients authenticate with SCRAM (`AUTH_TYPE: scram-sha-256`). Prepared statements and session-level locks are strictly disallowed.
 3. **Idempotent Inserts:** All batch inserts must include `ON CONFLICT (log_id, "time") DO NOTHING`.
 4. **Notification Secrets:** Delivery to LINE and MS Teams requires operator-supplied tokens (`LINE_CHANNEL_ACCESS_TOKEN`, `TEAMS_WEBHOOK_URL`). Never commit secrets to git.
 

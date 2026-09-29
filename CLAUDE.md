@@ -64,7 +64,7 @@ Other profiles: `security` (`--full`), `load`, `dr`. A profile never runs a cate
 ```text
 SNMP devices / LDI machines (HTTP)
   -> Node-RED (ingestion, parsing, retry queue)
-  -> PgBouncer (transaction pooling, plain auth, NO prepared statements)
+  -> PgBouncer (transaction pooling, SCRAM auth, NO prepared statements)
   -> TimescaleDB (hypertables in `public` schema + continuous aggregates)
   -> Grafana (dashboards) / Prometheus + Alertmanager (alerting to LINE, Teams)
 ```

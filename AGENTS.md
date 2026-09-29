@@ -26,7 +26,7 @@
 - **Node-RED Parsing:** O(N) single-pass. Explicit GC required: `flatData.length = 0` + `msg.payload = null`.
 - **Node-RED Flows:** `nodered_data/flows/*.json` (split files) are the source of truth. They are concatenated into `flows.json` at deploy time via `make deploy-flows`. PowerShell replaces `\n` with `\\n` in flow JSON — use Python scripts for complex multi-file edits.
 - **Database Inserts:** INSERT column count MUST equal VALUES placeholder count. When using `NOW()` in VALUES, the `"time"` column must remain in the INSERT list.
-- **PgBouncer:** `AUTH_TYPE: plain`, transaction pooling, no prepared statements.
+- **PgBouncer:** `AUTH_TYPE: scram-sha-256`, transaction pooling, no prepared statements.
 
 ## 4. Grafana & Dashboard Rules
 

@@ -5,16 +5,16 @@ title = "IMS gitleaks config"
 useDefault = true
 
 [allowlist]
-description = "Documentation, example placeholders, and vendored deps are not real secrets"
+description = "Example placeholders and vendored deps are not real secrets"
+# .env is allowlisted only because CI copies .env.example to .env right before this
+# scan; scripts/pre-commit.js refuses to commit any .env file. Flows, docs and
+# READMEs are scanned (they were allowlisted until 2026-09-29 and scan clean).
 paths = [
   '''\.env$''',
   '''\.env\.example''',
   '''\.gitleaks\.toml''',
   '''(^|/)node_modules/''',
-  '''(^|/)nodered_data/''',
-  '''(^|/)docs/''',
   '''(^|/)\.playwright-mcp/''',
-  '''README\.md''',
 ]
 regexes = [
   '''change-me-please''',
