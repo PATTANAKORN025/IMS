@@ -19,10 +19,10 @@ The four mentor-backed dashboards load from datasource UID `mentor-ldi-readonly`
 
 Two traceability defects were found and fixed in this audit:
 
-1. Machine Snapshot had hardcoded default context for `LDI-C-01` and an old event epoch. Opening it with `All` could therefore show the wrong machine.
+1. Machine Snapshot had hardcoded default context for `LDI-01` and an old event epoch. Opening it with `All` could therefore show the wrong machine.
 2. MIS machine tiles did not provide a reliable machine-time drill-down. They now pass the clicked machine and that machine's latest telemetry epoch to Snapshot.
 
-The browser retest passed: clicking the `EXPOSURE LDI-2` tile opened the same machine, displayed seven records from its 09:45 minute, and clicking 09:45:29 retained all seven minute records while updating the selected record context.
+The browser retest passed: clicking the `LDI-02` tile opened the same machine, displayed seven records from its 09:45 minute, and clicking 09:45:29 retained all seven minute records while updating the selected record context.
 
 ## Authoritative database facts
 

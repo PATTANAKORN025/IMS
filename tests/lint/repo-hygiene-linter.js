@@ -27,7 +27,7 @@
  */
 'use strict';
 
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 
 const MAX_BYTES = 1024 * 1024; // 1 MB
 
@@ -57,7 +57,7 @@ const ALLOWLIST = new Set([
 let entries;
 try {
   // "<mode> <sha> <stage>\t<path>" per staged/tracked file.
-  const lsRaw = execSync('git ls-files -s', { cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const lsRaw = execFileSync('git', ['ls-files', '-s'], { cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const staged = lsRaw.split('\n').filter(Boolean).map((line) => {
     const tab = line.indexOf('\t');
     const meta = line.slice(0, tab).trim().split(/\s+/);
@@ -67,7 +67,9 @@ try {
   // One batched `git cat-file --batch-check` call for every blob size,
   // rather than 1400+ individual `git cat-file -s` subprocess spawns.
   const input = staged.map((f) => f.sha).join('\n');
-  const sizeOut = execSync('git cat-file --batch-check=%(objectsize)', {
+  // execFileSync, not execSync: through /bin/sh the unquoted '(' in the
+  // format string is a syntax error on Linux (dash and bash), so CI failed here.
+  const sizeOut = execFileSync('git', ['cat-file', '--batch-check=%(objectsize)'], {
     cwd: process.cwd(), encoding: 'utf8', input, maxBuffer: 64 * 1024 * 1024,
   });
   const sizes = sizeOut.split('\n').filter(Boolean).map(Number);

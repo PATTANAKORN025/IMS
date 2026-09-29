@@ -64,6 +64,14 @@ jobs:
       - name: Validate Floor 1 private geometry (skips cleanly if absent)
         run: node tests/lint/floor1-geometry-validator.js
 
+      - name: Floor 1 CAD reconciliation and orientation (skip cleanly if absent)
+        run: |
+          node tests/lint/floor1-cad-reconciliation.js
+          node tests/lint/floor1-orientation.js
+
+      - name: EAP node model contract
+        run: node tests/lint/eap-node-model-contract.js
+
       - name: Check Dashboard Inventory is up to date
         run: node scripts/generate-dashboard-inventory.js --check
         # Fails if docs/architecture/DASHBOARD_INVENTORY.md doesn't match
@@ -83,7 +91,7 @@ jobs:
             --entrypoint promtool \
             -v ${{ github.workspace }}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
             -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules \
-            prom/prometheus:v2.55.1 \
+            prom/prometheus:v3.14.0 \
             check config /etc/prometheus/prometheus.yml
 
       - name: Lint Prometheus Alert Rules
@@ -92,7 +100,7 @@ jobs:
             docker run --rm \
               --entrypoint promtool \
               -v "${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules" \
-              prom/prometheus:v2.55.1 \
+              prom/prometheus:v3.14.0 \
               check rules "/etc/prometheus/rules/$(basename $f)"
           done
 
@@ -215,6 +223,19 @@ jobs:
       - name: Run Floor 1 CAD Ring Boundary Tests
         run: node tests/unit/floor1-cad-rings.test.js
 
+      # These ran only in the local pre-commit hook.
+      - name: Run EAP Map Wire, Query Budget Linter and Security Exception Tests
+        run: |
+          node tests/unit/eap-map-wire.test.js
+          node tests/unit/query-budget-linter.test.js
+          node tests/unit/security-exceptions.test.js
+
+      - name: Run LDI Ingestion Validation Tests
+        run: node tests/unit/ldi-ingestion-validate.test.js
+
+      - name: Run LDI Alarm Simulator Replay Test
+        run: node tests/unit/ldi-alarm-simulator.test.js
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -252,6 +273,14 @@ jobs:
 
       - name: Run Query Budget Check
         run: bash tests/smoke/query-budget-check.sh
+
+      - name: Build synthetic eap_backup (drilling and VCP boards read it)
+        run: |
+          docker exec ims-timescaledb psql -U ims_admin -d ims -c "CREATE DATABASE eap_backup"
+          docker exec -i ims-timescaledb psql -U ims_admin -d eap_backup -v ON_ERROR_STOP=1 -q < database/mock/eap_backup-schema.sql
+          # 084-086 deferred themselves on first start (no eap_backup yet); apply them now
+          docker compose run --rm db-migrate
+          node scripts/mock/eap-mock-data.js --hours=48 --apply --psql-user=ims_admin
 
       - name: Run Panel Data Check (layer C — actual query results, not just syntax)
         run: node tests/e2e/panel-data-check.js

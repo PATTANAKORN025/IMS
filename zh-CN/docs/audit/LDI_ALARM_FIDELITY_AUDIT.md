@@ -53,7 +53,7 @@ UPDATE ldi_alarm_ms_code SET severity =
  END;
 ```
 
-手动检查了 19 个活动行中的每一行与此规则：**100% 匹配，无漂移**（例如 `0106001C` "Stop trigger wait signal timeout" → 通过 timeout 关键字变为 Minor；所有 12 个 `alarm_type='W'` 行 → Warning；所有其余没有软关键字的 `alarm_type='A'` 行 → Major）。当前加载的数据中没有不一致。
+手动检查了 19 个活动行中的每一行与此规则：**100% 匹配，无漂移**（例如 `0106001C` "Timed out waiting for camera stop trigger" → 通过 timeout 关键字变为 Minor；所有 12 个 `alarm_type='W'` 行 → Warning；所有其余没有软关键字的 `alarm_type='A'` 行 → Major）。当前加载的数据中没有不一致。
 
 该规则本身有两个结构性弱点，在 §8 中详细说明，因为它们对于 1,820 代码真实目录的 43 个 Critical 行最为重要，而不是 19 代码模拟集（其中没有一个触发关键字正则表达式或使用 `alarm_type='E'`）。
 
@@ -68,7 +68,7 @@ WHERE alarm_msg ~* 'test|todo|tbd|lorem|xxx|foo|bar|debug|dummy|sample|placehold
 -- 0 rows
 ```
 
-19 个代码中没有重复的消息（`GROUP BY alarm_msg HAVING count(*)>1` → 0 行）。消息长度范围为 17–48 个字符，都是简短真实的供应商风格技术短语（"Wrong camera serial number", "Failed to connect to PLC"） — 没有自动生成或 Lorem-ipsum 风格的填充词。
+19 个代码中没有重复的消息（`GROUP BY alarm_msg HAVING count(*)>1` → 0 行）。消息长度范围为 17–48 个字符，都是简短真实的供应商风格技术短语（"Camera identity does not match configuration", "PLC connection failed"） — 没有自动生成或 Lorem-ipsum 风格的填充词。
 
 **真实的** 1,820 代码目录中存在一个预先存在的问题（当前未激活，但通过 `scripts/switch-data-mode.sh real` → 迁移 061 传送），该问题已经在该迁移自身的标题注释和 `docs/DOCUMENTATION_QUALITY_REPORT.md` 中记录：alarm_id `011A0001` 的 `alarm_msg` 是字面片段 `不以`，且 `alarm_detail = NULL` — 源电子表格 CSV 解析损坏被逐字保留，而不是捏造。这不是新发现；在此标记仅因为这是本审计重新验证仍然存在的范围内的警报消息质量领域（`grep "011A0001" database/migrations/061-*.sql`）。
 
@@ -151,7 +151,7 @@ CASE WHEN c.flag_pe_out_of_spec THEN 'PE/JE Out of Spec'
   ELSE 'Within Spec' END AS "Quality Impact"
 ```
 
-一个 `93004` "Calibration cycle exception" 事件（一个纯噪声代码，与位置误差没有任何设计关系）在此列中显示 **"PE/JE Out of Spec"** 的可能性约为 ~42%，纯粹是因为碰巧在时间上最接近的无论哪一个遥测行都是在基准时超出 PE 规格的全部行中的约 45% 的一个。阅读此表的工程师会合理地将其理解为“此警报是由位置误差引起的” — 事实并非如此；这是在一个长期出错的数据集上的时间巧合。这是本次审计中最具可操作性的发现：它不仅是内部语义不精确，而且在实时生产面板上产生了具体、可验证的错误归因。
+一个 `93004` "Calibration cycle did not complete" 事件（一个纯噪声代码，与位置误差没有任何设计关系）在此列中显示 **"PE/JE Out of Spec"** 的可能性约为 ~42%，纯粹是因为碰巧在时间上最接近的无论哪一个遥测行都是在基准时超出 PE 规格的全部行中的约 45% 的一个。阅读此表的工程师会合理地将其理解为“此警报是由位置误差引起的” — 事实并非如此；这是在一个长期出错的数据集上的时间巧合。这是本次审计中最具可操作性的发现：它不仅是内部语义不精确，而且在实时生产面板上产生了具体、可验证的错误归因。
 
 ## 8. 前 30 个严重（Critical）代码的严重性合理化
 

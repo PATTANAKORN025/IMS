@@ -623,12 +623,17 @@ BEGIN
     END IF;
 END
 $$;
-GRANT CONNECT ON DATABASE ims TO grafana_reader;
+DO $$
+BEGIN
+    EXECUTE format('GRANT CONNECT ON DATABASE %I TO grafana_reader', current_database());
+END
+$$;
 GRANT USAGE ON SCHEMA public TO grafana_reader;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO grafana_reader;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO grafana_reader;
-ALTER DEFAULT PRIVILEGES FOR ROLE ims_admin IN SCHEMA public GRANT SELECT ON TABLES TO grafana_reader;
-ALTER DEFAULT PRIVILEGES FOR ROLE ims_admin IN SCHEMA public GRANT SELECT ON SEQUENCES TO grafana_reader;
+-- no FOR ROLE: applies to the session user (POSTGRES_USER), whatever it is named
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO grafana_reader;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON SEQUENCES TO grafana_reader;
 
 -- ══════════════════════════════════════════════════════════════
 -- MIGRATION TRACKING

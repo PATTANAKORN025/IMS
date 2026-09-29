@@ -44,7 +44,7 @@ Note: the push was accepted by GitHub with a reported bypass of branch-protectio
 - Startup logs clean: `Node-RED version: v4.1.13`, `Started flows`, `Device registry loaded: 4 devices`, no unexpected errors.
 - Live `nodered_data/flows.json`: 70 nodes, 0 duplicate IDs (verified directly).
 - `/ldi-telemetry` auth behavior (tested through the real nginx passthrough):
-  - Valid key + real registered device (`LDI-C-01`): **HTTP 200**, `{"message":"LDI Batch received","rows":1}`, confirmed persisted in `ldi_data`.
+  - Valid key + real registered device (`LDI-01`): **HTTP 200**, `{"message":"LDI Batch received","rows":1}`, confirmed persisted in `ldi_data`.
   - Wrong key: **HTTP 401** `Unauthorized`.
   - Missing key: **HTTP 401** `Unauthorized`.
   - Bad payload: **HTTP 400** `Payload must be a JSON array`.

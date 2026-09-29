@@ -56,6 +56,38 @@
   - แก้เอกสารอ้างอิง alarm-api: ผู้ดำเนินการมาจาก session, มี 401/403, ไม่มี port บนเครื่อง
   - แก้ขอบเขตความปลอดภัยของ EAP: ปัจจุบันเป็น HTTP ธรรมดา
 
+### การแก้ไขตามผลตรวจ (2026-09-29)
+- **นำข้อมูลโรงงานออกจาก tree สาธารณะ:**
+  - ปัดค่า recipe ใน simulator (dosage, scan speed, อุณหภูมิ, ความชื้น, vacuum, PE/JE)
+  - แทนชื่อเครื่องจริงด้วย `LDI-nn` และล้างค่า default ของ `log_id` ใน Machine Snapshot
+  - เรียบเรียงข้อความ alarm ของ vendor ใหม่ (คง code เดิม) และเบลอ screenshot สองภาพใน README
+  - เปลี่ยน ID เครื่องเจาะใน mock เป็น `MOCK-DRL-nnn`
+  - ประวัติ git ยังมีค่าเดิมอยู่
+- **Fleet Availability:** หารด้วยจำนวนเครื่องที่ส่งข้อมูลอยู่ ไม่ใช่ทุกแถวอุปกรณ์ที่เปิดใช้งาน แถวอุปกรณ์ legacy จึงไม่ดึงตัวเลขลงอีก
+- **Guardrail ที่เคยผ่านทั้งที่พัง:**
+  - `repo-hygiene-linter` crash บน Linux (`%(objectsize)` ไม่ได้ quote)
+  - `panel-data-check` เคยนับ SQL error เป็น "0 แถว" ตอนนี้หยุดเมื่อ error, รันแต่ละ dashboard กับฐานข้อมูลของตัวเอง, แทนค่า template variable และ repeat panel และนับการ skip เป็น fail ในโหมด strict
+  - `orphan-object-linter` fail ใน CI เมื่อต่อฐานข้อมูลไม่ได้
+- **Migration:** runner หยุดที่ไฟล์แรกที่ fail migration ที่ต้องใช้ `eap_backup` แต่ไม่พบจะถูกรายงานว่า deferred และรันใหม่ในการ start ครั้งถัดไป แทนที่จะถูกบันทึกว่า applied
+- **CI:** สร้าง `eap_backup` สังเคราะห์ก่อน panel check test ที่ไม่เคยรันทั้งใน pre-commit และ CI ตอนนี้รันทั้งสองที่ และ `promtool` ตรงกับเวอร์ชัน Prometheus ที่ใช้งานจริง
+- **VCP alert rule:** `execErrState: KeepLast` เมื่อยังไม่มี `eap_backup` จึงไม่แจ้งเตือนตั้งแต่วันแรก
+- **LDI ingestion:**
+  - `"0"` คงเป็น 0 และ `state` ที่หายไปเป็น NULL ไม่ใช่ "running"
+  - แถวที่ไม่มี `eqp_id`/`log_id` ถูกปฏิเสธพร้อม index และ batch เกิน 1,000 แถวได้ 413
+  - DB pool ที่ค้างถูกสร้างใหม่แทนการปิด Node-RED
+- **LDI simulator:**
+  - alarm ใช้ process และ factory ของเครื่องนั้น
+  - ลด noise พื้นหลัง และเพิ่มความถี่ของ fault ด้าน vacuum/alignment ให้ alarm ที่เกิดจากเงื่อนไขจริงเป็นส่วนใหญ่
+  - ความผันผวนของสภาพแวดล้อมตรงกับ standard deviation ใน profile
+  - alarm จำลองถูก acknowledge และ resolve โดย actor `simulator` (`LDI_SIM_AUTO_LIFECYCLE`)
+  - มี test replay 24 ชั่วโมงครอบคลุม
+- **Dashboard:** กราฟ SPC moving-average แยก series ต่อเครื่อง panel scan speed และ judgment error ใน Engineering Drill-Down มีชื่อและหน่วยที่ถูกต้อง
+- **การ deploy:** `make verify` fail ถ้า secret ใดใน `.env` ยังเท่ากับค่าสาธารณะใน `.env.example` (แสดงเฉพาะชื่อ)
+- **เครื่องมือ:**
+  - `make doctor`, `deploy-flows` และ `test-unit` รันได้จาก make ทุก shell และ `test-unit` รัน unit test ทั้งหมด
+  - ไม่ติดตั้ง Grafana plugin ที่ไม่ได้ใช้แล้ว
+  - init script ไม่ hardcode ชื่อฐานข้อมูลและ owner อีก
+
 ### เอกสารและการจัดระเบียบคลังโค้ด (Documentation & Repository Hygiene)
 - ตรวจทานเอกสารและรายการแสดงสถานะระบบทั้งหมดเทียบกับระบบจริง (`main`) ณ 2026-09-28 ครบทั้ง 3 ภาษา (EN/TH/ZH-CN)
 - ซิงค์ป้ายเวอร์ชันเป็น `v1.0.1` ครบทุกภาษา และนำเอกสารกฎเกณฑ์หลัก (`AGENTS.md`) ออกจาก `.gitignore`

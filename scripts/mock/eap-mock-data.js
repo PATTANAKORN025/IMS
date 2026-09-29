@@ -111,7 +111,7 @@ const DRILL_ALARMS = [
 
 function drillingMachines(count) {
   const list = [];
-  for (let i = 1; i <= count; i++) list.push(`DRL${pad(i, 3)}-M`);
+  for (let i = 1; i <= count; i++) list.push(`MOCK-DRL-${pad(i, 3)}`);
   return list;
 }
 

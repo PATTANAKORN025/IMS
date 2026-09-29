@@ -4,6 +4,26 @@ set -euo pipefail
 echo "=== IMS Deployment Verification ==="
 echo ""
 
+# 0. Secrets still at their public .env.example values? Those values are in a
+#    public repo, so a deployment that kept one has a known key or password.
+#    Names only are printed, never values.
+echo "0. Secrets changed from .env.example:"
+if [ -f .env ] && [ -f .env.example ]; then
+  reused=$(awk -F= '
+    FNR == NR { if ($1 ~ /(PASSWORD|SECRET|TOKEN|KEY|HASH)/ && $0 !~ /^#/) ex[$1] = substr($0, index($0, "=") + 1); next }
+    ($1 in ex) && ex[$1] != "" && substr($0, index($0, "=") + 1) == ex[$1] { print $1 }
+  ' .env.example .env)
+  if [ -n "$reused" ]; then
+    echo "   ✗ still at the public example value:"
+    echo "$reused" | sed 's/^/     /'
+    exit 1
+  fi
+  echo "   ✓ none reused"
+else
+  echo "   (no .env or .env.example here -- skipped)"
+fi
+echo ""
+
 # 1. All containers running?
 echo "1. Container status:"
 docker compose ps --format "table {{.Name}}\t{{.Status}}"

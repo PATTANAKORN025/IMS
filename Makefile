@@ -15,9 +15,11 @@ down:
 restart:
 	docker compose restart node-red grafana alertmanager prometheus
 
-deploy-flows:
-	@echo "Deploying split flows to Node-RED..."
-	curl -X POST http://127.0.0.1:1880/flows -H 'Content-Type: application/json' -d @<(jq -s 'add' nodered_data/flows/*.json)
+# posts the built flows.json (same content as the split files concatenated);
+# no jq or bash process substitution, so it runs from any make shell
+deploy-flows: build-flows
+	@echo "Deploying flows to Node-RED..."
+	curl -X POST http://127.0.0.1:1880/flows -H "Content-Type: application/json" --data-binary @nodered_data/flows.json
 
 verify:
 ifeq ($(OS),Windows_NT)
@@ -32,11 +34,11 @@ backup:
 restore:
 	bash scripts/restore-db.sh $(FILE)
 
+# every tests/unit/*.test.js; alarm-api-server needs its service deps, so it
+# goes through the runner that installs them
 test-unit:
-	node tests/unit/boundary-validation.test.js
-	node tests/unit/parser.test.js
-	node tests/unit/counter-wraparound.test.js
-	node tests/unit/v2-parser.test.js
+	node -e "const fs=require('fs'),cp=require('child_process');for(const f of fs.readdirSync('tests/unit').filter(f=>f.endsWith('.test.js')&&f!=='alarm-api-server.test.js').sort())cp.execFileSync(process.execPath,['tests/unit/'+f],{stdio:'inherit'})"
+	node scripts/run-alarm-api-tests.js
 
 test-load:
 	k6 run tests/k6/pipeline-stress.js
@@ -78,11 +80,11 @@ snapshot-flows:
 # ── IaC: Doctor — check prerequisites ─────────────────────
 doctor:
 	@echo "=== IMS Doctor ==="
-	@docker --version 2>NUL || (echo "FAIL: Docker not found" && exit 1)
+	@docker --version || (echo "FAIL: Docker not found" && exit 1)
 	@echo "  Docker: OK"
-	@docker compose version 2>NUL || (echo "FAIL: docker compose not found" && exit 1)
+	@docker compose version || (echo "FAIL: docker compose not found" && exit 1)
 	@echo "  Docker Compose: OK"
-	@node --version 2>NUL || (echo "FAIL: Node.js not found" && exit 1)
+	@node --version || (echo "FAIL: Node.js not found" && exit 1)
 	@echo "  Node.js: OK"
 	@echo "=== All checks passed ==="
 # ── IaC: Validate dashboards for corruption ─────────────

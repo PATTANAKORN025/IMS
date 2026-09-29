@@ -56,6 +56,38 @@
   - 更正 alarm-api 参考：操作人来自会话、存在 401/403、无主机端口。
   - 更正 EAP 安全边界：目前为明文 HTTP。
 
+### 审计修复（2026-09-29）
+- **从公开代码树中移除工厂数据：**
+  - 模拟器配方值已取整（dosage、scan speed、温度、湿度、真空、PE/JE）。
+  - 真实机台名称替换为 `LDI-nn`，Machine Snapshot 的 `log_id` 默认值已清空。
+  - 厂商告警文本已改写（保留代码），README 中两张截图已做像素化处理。
+  - 钻孔模拟数据 ID 改为 `MOCK-DRL-nnn`。
+  - Git 历史中仍保留旧值。
+- **Fleet Availability：** 分母改为正在上报数据的机台，而不是所有已启用的设备行；遗留设备行不再拉低该值。
+- **曾在失效时仍能通过的防护检查：**
+  - `repo-hygiene-linter` 在 Linux 上崩溃（`%(objectsize)` 未加引号）。
+  - `panel-data-check` 曾把 SQL 错误计为"0 行"。现在遇错即停，每个仪表板在其自身的数据库上运行，解析模板变量与重复面板，严格模式下跳过即视为失败。
+  - `orphan-object-linter` 在 CI 中无法连接数据库时判定失败。
+- **迁移：** 运行器在第一个失败文件处停止。需要 `eap_backup` 但未找到它的迁移会报告为 deferred，并在下次启动时重新运行，而不是被记录为已应用。
+- **CI：** 在面板检查前构建合成的 `eap_backup`；此前既不在 pre-commit 也不在 CI 中运行的测试现在两处都会运行；`promtool` 与运行时 Prometheus 版本一致。
+- **VCP 告警规则：** `execErrState: KeepLast`，缺少 `eap_backup` 时不会从第一天起就触发告警。
+- **LDI 数据接入：**
+  - `"0"` 保持为 0，缺失的 `state` 为 NULL 而非"运行中"。
+  - 缺少 `eqp_id`/`log_id` 的行会连同其索引被拒绝，超过 1,000 行的批次返回 413。
+  - 卡住的数据库连接池会被替换，而不是让 Node-RED 退出。
+- **LDI 模拟器：**
+  - 告警携带其机台的 process 与 factory。
+  - 背景噪声减少，真空/对位故障更频繁，使由条件触发的告警占主导。
+  - 环境波动与 profile 中的标准差一致。
+  - 模拟告警由 actor `simulator` 确认并解决（`LDI_SIM_AUTO_LIFECYCLE`）。
+  - 有 24 小时回放测试覆盖。
+- **仪表板：** SPC 移动平均趋势按机台分为独立序列；Engineering Drill-Down 中扫描速度与判定误差面板的标题和单位已更正。
+- **部署：** 只要 `.env` 中任一密钥仍等于 `.env.example` 中的公开值，`make verify` 即失败（只打印名称）。
+- **工具：**
+  - `make doctor`、`deploy-flows` 与 `test-unit` 可在任意 make shell 下运行，`test-unit` 会运行全部单元测试。
+  - 不再安装未使用的 Grafana 插件。
+  - 初始化脚本不再硬编码数据库名与所有者名。
+
 ### 文档与仓库规范化治理 (Documentation & Repository Hygiene)
 - 截至 2026-09-28 对照实时运行系统 (`main`) 在英、泰、简中三语下重新核实所有现行文档与系统清单。
 - 同步全语言 README 版本徽标至 `v1.0.1`，并从 `.gitignore` 中移除核心规则文档 (`AGENTS.md`)。

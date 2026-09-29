@@ -30,9 +30,9 @@
 
 | 发现                                            | 更改                                                                                                                                                                                                                                                                                 | 位置                     |
 | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| 静态校准错误 (频率 #5 的根本原因) | `LDI-02.temp_mu` 26.49→21.72 (按构造位于 20-24 规格范围之外); DF-OUTER/SM `air_vacuum` 硬编码 `0.0` (始终 >-8，迁移 054 的回归) → 真实的每台机器标称值 (-12.9 至 -14.6) + `vac_sd: 0.45`，现在是真正的 OU 过程，而不是平坦的常数 | `ldisim_gen`, `P` 表   |
+| 静态校准错误 (频率 #5 的根本原因) | `LDI-02.temp_mu` 26.5→21.5 (按构造位于 20-24 规格范围之外); DF-OUTER/SM `air_vacuum` 硬编码 `0.0` (始终 >-8，迁移 054 的回归) → 真实的每台机器标称值 (-12.9 至 -14.6) + `vac_sd: 0.45`，现在是真正的 OU 过程，而不是平坦的常数 | `ldisim_gen`, `P` 表   |
 | #1 漂移                                           | 新的 `driftStep()` 状态机 (`nominal→drifting→faulted→serviced→cooldown`), 每台机器独立 × {vac, temp, rh, align}, `DRIFT_CFG` 时间/幅度表                                                                                                                   | `ldisim_gen`              |
-| #5 故障频率                                 | 新的 `calibrate()` 钳制 PE/JE (mean,sd) 以便标称 P(\|x\|>10) 是一种罕见的尾部事件，而不是基线保证 (例如，mean=-14.76, sd=21.32 的通道已经相对于 ±10 规格错误校准)                                                                               | `ldisim_gen`              |
+| #5 故障频率                                 | 新的 `calibrate()` 钳制 PE/JE (mean,sd) 以便标称 P(\|x\|>10) 是一种罕见的尾部事件，而不是基线保证 (例如，mean=-15, sd=21.5 的通道已经相对于 ±10 规格错误校准)                                                                               | `ldisim_gen`              |
 | #6 突发/泛滥                                     | 新的 `ldi_alarm_state` 防抖表; `almsim_gen` 检查/跳过仍在 12 分钟冷却期内的代码; `almsim_db` 在每次插入后更新插入状态                                                                                                                                      | `almsim_gen`, `almsim_db` |
 | #7 相关性语义                           | `newRow()` 现在采用显式 `linkBasis` 参数; 条件驱动/关键代码传递 `'causal'`, 噪声代码传递 `'nearest'`, 写入新列 `link_basis`，而不是从 `related_log_id` 是否碰巧为空来推断                                   | `almsim_gen`, `almsim_db` |
 | #8 关键分布                           | 新的 `RARE_CRITICAL_CODES`/`RARE_CRITICAL_PROB` 分支, 独立于噪声/条件池                                                                                                                                                                                        | `almsim_gen`              |
@@ -50,7 +50,7 @@
 +//
 +// LDI Alarm Fidelity Audit (docs/audit/LDI_ALARM_FIDELITY_AUDIT.md,
 +// 2026-08-11) found the fleet was chronically out-of-spec by construction,
-+// not intermittently faulted: LDI-02's nominal temp_mu (26.49) was already
++// not intermittently faulted: LDI-02's nominal temp_mu (26.5) was already
 +// outside the 20-24 spec band; DF-OUTER/SM air_vacuum was hardcoded to the
 +// 0.0 zero-coercion test constant, which is always > -8 (always "out of
 +// spec"); and pe/je channels were literally memoryless per-tick noise with
@@ -59,8 +59,8 @@
 +// -> faulted -> serviced -> cooldown) for vacuum/environment/alignment so
 +// faults are discrete, bounded episodes instead of a permanent condition.
  // ══════════════════════════════════════════════════════════════════
--const P = { ...original 10-machine table, vac:0.0 for DF-OUTER/SM, LDI-02 temp_mu:26.49... };
-+const P = { ...same table, vac now real per-machine nominal + vac_sd:0.45, LDI-02 temp_mu:21.72... };
+-const P = { ...original 10-machine table, vac:0.0 for DF-OUTER/SM, LDI-02 temp_mu:26.5... };
++const P = { ...same table, vac now real per-machine nominal + vac_sd:0.45, LDI-02 temp_mu:21.5... };
  const SENTINEL = 1.79769313486232;
  // DESIGN_STRESS: exercises layout edge cases (real dropouts, long strings,
  // spec-boundary values, extra machines) that realistic mock data rarely hits.
@@ -72,7 +72,7 @@
 +
 +// ── PE/JE calibration: several channels' source (mean,sd) pairs implied a
 +// high baseline P(|x|>10) against the +/-10 spec purely from the numbers
-+// themselves (e.g. a channel with mean=-14.76, sd=21.32 is out of spec on
++// themselves (e.g. a channel with mean=-15, sd=21.5 is out of spec on
 +// most independent draws). Clamp the effective nominal mean well inside the
 +// limit and cap sd so mean+3*sd stays inside it too -- nominal-state OOS
 +// becomes a rare tail event (~0.1%/tick) instead of a coin flip, matching a
@@ -216,7 +216,7 @@
  const pool = global.get('pgPool');
  ...
  const ALIGN_CODES = ["90001", "90004", "90005", "90012"];
-+const RARE_CRITICAL_CODES = ["01180016", "0C020014"]; // Emergency Stop / Safety sensor triggered
++const RARE_CRITICAL_CODES = ["01180016", "0C020014"]; // Emergency Stop / Safety sensor tripped
 +const RARE_CRITICAL_PROB = 0.00002; // per machine per 10s tick
  const RATE_PER_TICK = 0.01194 * 20 * (15 / 20); // unchanged overall pacing, noise share only
 +const COOLDOWN_MIN = 12; // debounce window: suppress re-fire of the same (machine, code) within this many minutes

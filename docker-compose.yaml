@@ -234,7 +234,9 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
       GF_SERVER_ENABLE_GZIP: "true"
-      GF_INSTALL_PLUGINS: "grafana-clock-panel,volkovlabs-echarts-panel,marcusolsson-dynamictext-panel,benjaminfourmaux-status-panel"
+      # only the plugins a provisioned dashboard uses; clock/status panels were
+      # installed but referenced by no dashboard
+      GF_INSTALL_PLUGINS: "volkovlabs-echarts-panel,marcusolsson-dynamictext-panel"
       GF_RENDERING_SERVER_URL: http://renderer:8081/render
       GF_RENDERING_CALLBACK_URL: http://grafana:${GRAFANA_PORT:-3000}/
       GF_RENDERING_RENDERER_TOKEN: ${GRAFANA_RENDERER_TOKEN:?set GRAFANA_RENDERER_TOKEN in .env}
@@ -243,7 +245,6 @@ services:
       GF_SECURITY_COOKIE_SECURE: "false"
       GF_SECURITY_STRICT_TRANSPORT_SECURITY: "false"
       GF_LOG_LEVEL: "info"
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "ims-3d-panel"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -517,6 +518,7 @@ services:
       TEAMS_WEBHOOK_TYPE: ${TEAMS_WEBHOOK_TYPE:-AdaptiveCard}
       INGEST_API_KEY: ${INGEST_API_KEY:?set INGEST_API_KEY in .env}
       LDI_SIMULATOR_ENABLED: ${LDI_SIMULATOR_ENABLED:-true}
+      LDI_SIM_AUTO_LIFECYCLE: ${LDI_SIM_AUTO_LIFECYCLE:-true}
     ports:
       - "127.0.0.1:${NODE_RED_PORT:-1880}:${NODE_RED_PORT:-1880}"
     volumes:

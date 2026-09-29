@@ -52,7 +52,7 @@ const TABLES = [
 function psql(sql) {
   return execFileSync(
     'docker',
-    ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-A', '-t', '-F', '\x01', '-f', '-'],
+    ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-v', 'ON_ERROR_STOP=1', '-A', '-t', '-F', '\x01', '-f', '-'],
     { encoding: 'utf8', input: sql, stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: MAXBUF }
   ).trim();
 }
@@ -61,7 +61,7 @@ function explainMs(sql) {
   const wrapped = `EXPLAIN (ANALYZE, FORMAT JSON) ${sql}`;
   const out = execFileSync(
     'docker',
-    ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-A', '-t', '-f', '-'],
+    ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-v', 'ON_ERROR_STOP=1', '-A', '-t', '-f', '-'],
     { encoding: 'utf8', input: wrapped, stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: MAXBUF }
   );
   const plan = JSON.parse(out);

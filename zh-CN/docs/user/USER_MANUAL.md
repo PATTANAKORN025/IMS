@@ -127,7 +127,7 @@ Grafana 在四个文件夹中预置了 22 个仪表板：
 
 - 落在绿色区带内的点表示 PCB 质量处于可接受公差内。
 - 落在区带外的点需要检查激光头。
-- 对照 **LDI Throughput & Process Efficiency** 面板，确认生产节拍是否也受到影响。
+- 对照 **LDI Scan Speed & Position Error** 面板，确认扫描速度或位置误差是否在同一时段发生变化。
 
 ### 4. AIOps & Capacity 仪表板
 

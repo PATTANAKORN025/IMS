@@ -18,7 +18,7 @@
 | ไฟล์                                                                                                                                                                                                                                                                                                                          | สิ่งที่ทำ                                                                                                                                                                                                                                                                                                                                                    |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`database/migrations/069-ldi-alarm-debounce-and-link-basis.sql`](../../../database/migrations/069-ldi-alarm-debounce-and-link-basis.sql) (ใหม่)                                                                                                                                                                                  | สร้าง `public.ldi_alarm_state` (สถานะ debounce: `equipmentid`, `errorcode`, `first_fired`, `last_fired`, `fire_count`); เพิ่ม `ldi_alarm_log.link_basis` (`causal` \| `nearest`); อัปเดต `v_ldi_alarm_context` เพื่อเปิดเผย `link_basis` เป็นคอลัมน์ต่อท้าย (`CREATE OR REPLACE VIEW` ไม่สามารถจัดลำดับคอลัมน์ที่มีอยู่ใหม่ได้ ดังนั้นจึงถูกต่อท้าย ไม่ได้แทรกในบรรทัด) |
-| [`database/migrations/036-ldi-alarm-master-mock.sql`](../../../database/migrations/036-ldi-alarm-master-mock.sql) (แก้ไขแล้ว — ไฟล์นี้จะรันใหม่ในทุกการสวิตช์ `mock` ไม่เหมือน migration แบบเพิ่มหน่วยปกติ ดังนั้นการแก้ไขทับที่เดิมจึงเป็นธรรมเนียมปฏิบัติที่ยอมรับ ไม่ใช่การละเมิดกฎ "ห้ามแก้ไข migration ที่ถูกผสานแล้ว") | เพิ่มรหัสจากผู้จำหน่ายที่มีระดับความรุนแรง Critical จริง 2 รหัส (`01180016` Emergency Stop, `0C020014` Safety sensor triggered) ลงในแค็ตตาล็อก mock ทำให้มีจำนวนเพิ่มจาก 19 เป็น 21 รหัส                                                                                                                                                                                                  |
+| [`database/migrations/036-ldi-alarm-master-mock.sql`](../../../database/migrations/036-ldi-alarm-master-mock.sql) (แก้ไขแล้ว — ไฟล์นี้จะรันใหม่ในทุกการสวิตช์ `mock` ไม่เหมือน migration แบบเพิ่มหน่วยปกติ ดังนั้นการแก้ไขทับที่เดิมจึงเป็นธรรมเนียมปฏิบัติที่ยอมรับ ไม่ใช่การละเมิดกฎ "ห้ามแก้ไข migration ที่ถูกผสานแล้ว") | เพิ่มรหัสจากผู้จำหน่ายที่มีระดับความรุนแรง Critical จริง 2 รหัส (`01180016` Emergency Stop, `0C020014` Safety sensor tripped) ลงในแค็ตตาล็อก mock ทำให้มีจำนวนเพิ่มจาก 19 เป็น 21 รหัส                                                                                                                                                                                                  |
 
 ทั้งคู่นำมาใช้งานจริง: `docker exec ims-timescaledb psql ... < 069-...sql` (ใช้งานอย่างสะอาดเรียบร้อย, `CREATE TABLE`/`ALTER TABLE`/`CREATE VIEW`/`GRANT`), จากนั้น `bash scripts/switch-data-mode.sh mock` (หว่านข้อมูล 036 อีกรอบ, ยืนยันว่า `INSERT 0 21`)
 
@@ -30,9 +30,9 @@
 
 | ข้อค้นพบ                                            | การเปลี่ยนแปลง                                                                                                                                                                                                                                                                                 | จุดที่เปลี่ยน                     |
 | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| การปรับเทียบสถิตที่ผิดพลาด (สาเหตุของความถี่ใน #5) | `LDI-02.temp_mu` 26.49→21.72 (แต่เดิมอยู่นอกขอบเขตของข้อกำหนด 20-24 ตั้งแต่ขั้นตอนการสร้าง); DF-OUTER/SM `air_vacuum` ค่าที่ถูกฮาร์ดโค้ดเป็น `0.0` (มักจะ >-8 ตลอด ซึ่งเป็นการถดถอยจาก migration 054) → ค่าทั่วไปเฉพาะของเครื่องจริง (-12.9 ถึง -14.6) + `vac_sd: 0.45` ซึ่งตอนนี้กลายเป็นกระบวนการ OU ของแท้ แทนที่จะเป็นค่าคงที่แบบแนวระนาบ | `ldisim_gen`, ตาราง `P`   |
+| การปรับเทียบสถิตที่ผิดพลาด (สาเหตุของความถี่ใน #5) | `LDI-02.temp_mu` 26.5→21.5 (แต่เดิมอยู่นอกขอบเขตของข้อกำหนด 20-24 ตั้งแต่ขั้นตอนการสร้าง); DF-OUTER/SM `air_vacuum` ค่าที่ถูกฮาร์ดโค้ดเป็น `0.0` (มักจะ >-8 ตลอด ซึ่งเป็นการถดถอยจาก migration 054) → ค่าทั่วไปเฉพาะของเครื่องจริง (-12.9 ถึง -14.6) + `vac_sd: 0.45` ซึ่งตอนนี้กลายเป็นกระบวนการ OU ของแท้ แทนที่จะเป็นค่าคงที่แบบแนวระนาบ | `ldisim_gen`, ตาราง `P`   |
 | #1 ดริฟต์                                           | กลไกการรักษาสถานะ `driftStep()` ตัวใหม่ (`nominal→drifting→faulted→serviced→cooldown`), แยกอิสระต่อเครื่อง × {vac, temp, rh, align}, `DRIFT_CFG` ตารางกำหนดเวลา/ขนาด                                                                                                                   | `ldisim_gen`              |
-| #5 ความถี่ของข้อบกพร่อง                                 | ฟังก์ชัน `calibrate()` ตัวใหม่ควบคุม PE/JE (mean,sd) ดังนั้นตัวกำหนด P(\|x\|>10) ทั่วไปคือเหตุการณ์ tail แบบหายาก, ไม่ใช่สิ่งที่รับประกันตามเส้นฐาน (เช่น ช่องสัญญาณที่มี mean=-14.76, sd=21.32 ได้รับการปรับเทียบผิดเทียบกับข้อกำหนด ±10)                                                                               | `ldisim_gen`              |
+| #5 ความถี่ของข้อบกพร่อง                                 | ฟังก์ชัน `calibrate()` ตัวใหม่ควบคุม PE/JE (mean,sd) ดังนั้นตัวกำหนด P(\|x\|>10) ทั่วไปคือเหตุการณ์ tail แบบหายาก, ไม่ใช่สิ่งที่รับประกันตามเส้นฐาน (เช่น ช่องสัญญาณที่มี mean=-15, sd=21.5 ได้รับการปรับเทียบผิดเทียบกับข้อกำหนด ±10)                                                                               | `ldisim_gen`              |
 | #6 เกิดแบบปะทุ/น้ำท่วม                                     | ตาราง debounce `ldi_alarm_state` ตัวใหม่; `almsim_gen` ตรวจสอบ/ข้ามโค้ดที่ยังอยู่ในช่วงคูลดาวน์ 12 นาที; `almsim_db` อัปเสิร์ตสถานะหลังจากแทรกแต่ละครั้ง                                                                                                                                      | `almsim_gen`, `almsim_db` |
 | #7 ความหมายของสหสัมพันธ์                           | `newRow()` ตอนนี้จะรับพารามิเตอร์ `linkBasis` แบบชัดเจน; โค้ดที่อิงตามเงื่อนไข/แบบวิกฤต ส่งผ่านค่า `'causal'`, โค้ดที่มีสัญญาณรบกวนส่งผ่านค่า `'nearest'`, แล้วเขียนลงไปในคอลัมน์ใหม่ `link_basis` แทนการอนุมานว่า `related_log_id` นั้นเป็นแค่ตัวแปรว่าง (null) อย่างบังเอิญ                                   | `almsim_gen`, `almsim_db` |
 | #8 การกระจายตัวระดับ critical                           | สาขาของ `RARE_CRITICAL_CODES`/`RARE_CRITICAL_PROB` ที่ใหม่, เป็นอิสระจากพูลของทั้ง noise/condition                                                                                                                                                                                        | `almsim_gen`              |
@@ -50,7 +50,7 @@
 +//
 +// LDI Alarm Fidelity Audit (docs/audit/LDI_ALARM_FIDELITY_AUDIT.md,
 +// 2026-08-11) found the fleet was chronically out-of-spec by construction,
-+// not intermittently faulted: LDI-02's nominal temp_mu (26.49) was already
++// not intermittently faulted: LDI-02's nominal temp_mu (26.5) was already
 +// outside the 20-24 spec band; DF-OUTER/SM air_vacuum was hardcoded to the
 +// 0.0 zero-coercion test constant, which is always > -8 (always "out of
 +// spec"); and pe/je channels were literally memoryless per-tick noise with
@@ -59,8 +59,8 @@
 +// -> faulted -> serviced -> cooldown) for vacuum/environment/alignment so
 +// faults are discrete, bounded episodes instead of a permanent condition.
  // ══════════════════════════════════════════════════════════════════
--const P = { ...original 10-machine table, vac:0.0 for DF-OUTER/SM, LDI-02 temp_mu:26.49... };
-+const P = { ...same table, vac now real per-machine nominal + vac_sd:0.45, LDI-02 temp_mu:21.72... };
+-const P = { ...original 10-machine table, vac:0.0 for DF-OUTER/SM, LDI-02 temp_mu:26.5... };
++const P = { ...same table, vac now real per-machine nominal + vac_sd:0.45, LDI-02 temp_mu:21.5... };
  const SENTINEL = 1.79769313486232;
  // DESIGN_STRESS: exercises layout edge cases (real dropouts, long strings,
  // spec-boundary values, extra machines) that realistic mock data rarely hits.
@@ -72,7 +72,7 @@
 +
 +// ── PE/JE calibration: several channels' source (mean,sd) pairs implied a
 +// high baseline P(|x|>10) against the +/-10 spec purely from the numbers
-+// themselves (e.g. a channel with mean=-14.76, sd=21.32 is out of spec on
++// themselves (e.g. a channel with mean=-15, sd=21.5 is out of spec on
 +// most independent draws). Clamp the effective nominal mean well inside the
 +// limit and cap sd so mean+3*sd stays inside it too -- nominal-state OOS
 +// becomes a rare tail event (~0.1%/tick) instead of a coin flip, matching a
@@ -216,7 +216,7 @@
  const pool = global.get('pgPool');
  ...
  const ALIGN_CODES = ["90001", "90004", "90005", "90012"];
-+const RARE_CRITICAL_CODES = ["01180016", "0C020014"]; // Emergency Stop / Safety sensor triggered
++const RARE_CRITICAL_CODES = ["01180016", "0C020014"]; // Emergency Stop / Safety sensor tripped
 +const RARE_CRITICAL_PROB = 0.00002; // per machine per 10s tick
  const RATE_PER_TICK = 0.01194 * 20 * (15 / 20); // unchanged overall pacing, noise share only
 +const COOLDOWN_MIN = 12; // debounce window: suppress re-fire of the same (machine, code) within this many minutes

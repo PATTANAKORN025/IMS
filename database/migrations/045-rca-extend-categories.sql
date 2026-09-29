@@ -9,7 +9,7 @@
 --      and flag_humidity_out_of_spec, so THERMAL and HUMIDITY can be
 --      correlated as separate RCA categories instead of one blended one.
 --   2. Adds flag_scan_speed_out_of_spec, correlatable against the real
---      alarm code 70004 ("Position-synchronised output overspeed" ->
+--      alarm code 70004 ("Synchronised position output too fast" ->
 --      MOTION category in v_ldi_alarm_category).
 --   3. Adds flag_exposure_out_of_spec (resist_dosage) for completeness —
 --      NOTE: no alarm code in ldi_alarm_ms_code currently mentions
@@ -24,7 +24,7 @@
 -- and in current data are exactly constant per machine (stddev = 0 for
 -- both, verified live) -- a per-machine statistical deviation flag would
 -- divide by zero. Used a fixed absolute ceiling instead (headroom above
--- the observed legitimate range, 101.8-435.0 mm/s and 15.0-595.3 mJ/cm2
+-- the observed legitimate range, roughly 100-440 mm/s and 15-600 mJ/cm2
 -- across all 10 machines), matching how vacuum/PE thresholds already
 -- work in this view. Provisional pending a real QA-defined limit, same
 -- caveat the design doc already carries for the Temperature threshold

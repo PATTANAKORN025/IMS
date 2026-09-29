@@ -1578,7 +1578,7 @@
     },
     {
       "id": 503,
-      "title": "◈ LDI Throughput & Process Efficiency",
+      "title": "◈ LDI Scan Speed & Position Error",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1602,7 +1602,7 @@
             "showGridLines": false,
             "axisBorderShow": false
           },
-          "unit": "Mbps",
+          "unit": "suffix: mm/s",
           "color": {
             "mode": "palette-classic"
           },
@@ -1613,7 +1613,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Throughput"
+              "options": "Scan speed"
             },
             "properties": [
               {
@@ -1771,7 +1771,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('1 minute', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_scan_speed)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${ldi_machine_id:singlequote}) AND avg_scan_speed IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('1 minute', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_scan_speed)::NUMERIC, 1) AS \"Scan speed\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${ldi_machine_id:singlequote}) AND avg_scan_speed IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1796,11 +1796,11 @@
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, #22C55E) and Process Efficiency in µm (right axis, #F59E0B). PE within ±10µm tolerance is normal."
+      "description": "LDI manufacturing scan speed (left axis, #22C55E) and Process Efficiency in µm (right axis, #F59E0B). PE within ±10µm tolerance is normal."
     },
     {
       "id": 504,
-      "title": "◈ LDI Junction Efficiency & Humidity",
+      "title": "◈ LDI Judgment Error & Humidity",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -2046,7 +2046,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+      "description": "Judgment Error in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
     },
     {
       "id": 510,

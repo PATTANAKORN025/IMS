@@ -121,7 +121,7 @@ This pass completed 3 of the 20 checklist items (long-name handling on tiles, qu
 
 ### 1. Long machine-name support — Machine tiles: VERIFIED PASS (first real test across P15-P18)
 
-This item was named as "HIGH PRIORITY" in every phase from P15 through P18 and never actually stress-tested with a name longer than the real fleet's longest (`LDI-C-01`, 8 chars) — always deferred as a static-JSON assumption. Tested for real this pass:
+This item was named as "HIGH PRIORITY" in every phase from P15 through P18 and never actually stress-tested with a name longer than the real fleet's longest (`LDI-01`, 8 chars) — always deferred as a static-JSON assumption. Tested for real this pass:
 
 **Method:** the machine tile's title is the literal `$machine_id` template variable value (a Grafana repeat-panel, `repeat: machine_id`), not query data — so a synthetic long name can be tested safely via a URL variable override (`?var-machine_id=LDI-EXPOSURE-STATION-07B-EXTRA-LONG&var-machine_id=LDI-01&...`), through Grafana's real render pipeline, with zero file or data changes, fully reversible by reloading the plain URL.
 
@@ -168,7 +168,7 @@ This exact pattern (`colorMode: "background"` + these 3 tokens + default/fixed l
 | 1366×768 layout | NOT VERIFIED | Screenshot tool failure (see below); no DOM-only substitute attempted this pass |
 | 1920×1080 layout | Partially verified (P17: DOM measurement, no overlap found) | Not re-verified after this pass's changes |
 | 4K (3840×2160) layout | NOT VERIFIED | Screenshot tool failure |
-| Current-state visibility / no-data state | Spot-checked incidentally (`LDI-C-01` correctly shows `NO_DATA` on tiles and correctly has no timeline row) | Not a systematic audit |
+| Current-state visibility / no-data state | Spot-checked incidentally (`LDI-01` correctly shows `NO_DATA` on tiles and correctly has no timeline row) | Not a systematic audit |
 | Timeline click-through | **Confirmed NOT implemented** (carried over from P17's own disclosure) | Real, known gap — not attempted this pass either |
 | Browser rendering cost (CPU/memory/paint time) | NOT VERIFIED | No profiling performed |
 | Accessibility — color contrast | **Partially verified** — see item 4 above, real numbers computed | Keyboard/ARIA/focus not audited this pass |
@@ -193,7 +193,7 @@ The Playwright screenshot backend (`browser_take_screenshot`) failed consistentl
 | Query count (Compliance section) | 1 (exceptions table) | 2 (Temp+Humidity timelines) | Measured — matches restored pre-revert architecture, no fan-out |
 | Query latency (Compliance queries) | — | 8.4ms exec / 86.6ms plan (~95ms total) | Measured via EXPLAIN ANALYZE, ~50x margin under 5s refresh |
 | Browser CPU / memory | — | — | NOT VERIFIED |
-| Machines visible (Compliance timeline) | 0-11 (exceptions only) | 10 of 11 with current data (LDI-C-01 correctly absent, no data) | Measured |
+| Machines visible (Compliance timeline) | 0-11 (exceptions only) | 10 of 11 with current data (LDI-01 correctly absent, no data) | Measured |
 | Minimum pixels/row (Compliance timeline) | ~1.9px/row (original design, proven illegible) | h=6 grid units, ~16px canvas row height, proven legible (h=5 proven illegible) | Measured, both bounds tested |
 | Longest machine name tested | 8 chars (real fleet max) | 36 chars (synthetic, via URL override, real render pipeline) | Measured — PASS (ellipsis + native tooltip) on tiles; canvas timeline rows NOT VERIFIED (no safe test method) |
 | Timeline buckets | N/A (was a table) | Full 2h window at raw `ldi_data` sample rate, no artificial resampling | Measured |

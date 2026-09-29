@@ -28,6 +28,12 @@ console.log("=".repeat(40));
 
 // 1. Run unit tests
 run("Unit Tests", "node tests/unit/boundary-validation.test.js");
+// these three ran only in CI
+run("Parser Tests", "node tests/unit/parser.test.js");
+run("Circuit Breaker Tests", "node tests/unit/circuit-breaker.test.js");
+run("Counter Wraparound Tests", "node tests/unit/counter-wraparound.test.js");
+run("LDI Ingestion Validation Tests", "node tests/unit/ldi-ingestion-validate.test.js");
+run("LDI Alarm Simulator Replay Test", "node tests/unit/ldi-alarm-simulator.test.js", 120000);
 run("Parser v2 Tests", "node tests/unit/v2-parser.test.js");
 run("Query Budget Linter Tests", "node tests/unit/query-budget-linter.test.js");
 run("Gate Decision Tests", "node tests/unit/gate.test.js");
@@ -88,6 +94,10 @@ run("Alarm Sync Linter", "node tests/lint/alarm-sync-linter.js");
 run("RCA Coverage Linter", "node tests/lint/rca-mapping-coverage.js");
 run("Query Budget Linter", "node tests/lint/query-budget-linter.js");
 run("Doc Over-Claim Linter", "node tests/lint/doc-overclaim-linter.js");
+// these three ran only in CI; the leak scanner is the one that matters most locally
+run("Private Data Leak Scanner", "node tests/lint/private-data-leak-scanner.js");
+run("Alert Rule Linter", "node tests/lint/alert-rule-linter.js");
+run("Floor 1 Geometry Validator (skips cleanly if absent)", "node tests/lint/floor1-geometry-validator.js");
 run("Docs README Index", "node scripts/generate-docs-readme-index.js --check");
 
 // 2. Validate dashboard JSON files

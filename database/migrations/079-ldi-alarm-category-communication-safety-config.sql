@@ -15,21 +15,21 @@
 --
 --   SAFETY        -- operator/interlock-triggered, not measurement-driven
 --     01180016 Emergency Stop
---     0C020014 Safety sensor triggered (light curtain / area guard)
+--     0C020014 Safety sensor tripped (light curtain / area guard)
 --
 --   COMMUNICATION -- network/fieldbus/DB link faults
---     0106000C Failed to stop camera (comms/driver fault)
---     01060013 Found the same IP (duplicate address on station network)
+--     0106000C Camera did not stop on command (comms/driver fault)
+--     01060013 Duplicate IP address on device network (duplicate address on station network)
 --     0106001C stop trigger wait signal time out (I/O timing)
---     01100001 Failed to connect to PLC
+--     01100001 PLC connection failed
 --     01130002 Communication abnormality (cable/port/device fault)
---     80001    Waiting for subdrawing preparation data timeout
+--     80001    Timed out waiting for image preparation data
 --     92013    Network connection timeout
 --     97005    Database connection exception
 --
 --   CONFIGURATION -- station setup/registration faults, not runtime drift
---     01060009 Wrong camera serial number (station config vs. hardware)
---     010E0064 Motor type undefined (axis parameter never set)
+--     01060009 Camera identity does not match configuration (station config vs. hardware)
+--     010E0064 Motor type not configured (axis parameter never set)
 
 CREATE OR REPLACE VIEW public.v_ldi_alarm_category AS
 SELECT

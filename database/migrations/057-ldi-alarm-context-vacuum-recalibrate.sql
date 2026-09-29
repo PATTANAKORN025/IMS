@@ -6,7 +6,7 @@
 -- sufficient. The threshold itself (air_vacuum > -50 OR air_vacuum <
 -- -95, i.e. "in spec" is only the closed band [-95, -50] kPa) doesn't
 -- match ANY value the simulator has ever produced -- not even DF
--- INNER's real recipe constants (-16.08, -17.21, -19.15, -17.86),
+-- INNER's recipe constants (all between -16 and -20 kPa),
 -- confirmed live: `air_vacuum > -50` is true for every one of those.
 -- So alarm code 91009 (VACUUM) was structurally 100% "out of spec"
 -- regardless of the NULL fix, and its RCA correlation stayed

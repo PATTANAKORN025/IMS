@@ -49,7 +49,7 @@ An earlier same-session capture on this dashboard showed a 37.5s wall-clock span
 
 Live network capture (`browser_network_requests`) on a fresh navigation to the Andon Board: every `/api/ds/query` POST returned `[200] OK`. One `net::ERR_ABORTED` (`SQR107`) observed, which is normal query-cancellation behavior on rapid variable/refresh churn, not an error state. This is the first real-browser confirmation that removing the no-op `mo IN (...)` filter (commit `3bb5dd3`) actually resolved the live HTTP 400s previously seen in production — prior evidence was query-level (0 NULL values, byte-identical result comparison) only.
 
-Screenshot at 1920×1080 (device-pixel-ratio-scaled capture, `screenshots/p15-final/andon_1920.png`) shows working machine tiles with correct state+color+text pairing (e.g. `LDI-01 ALARM` red, `LDI-02 OK` green, `LDI-C-01 NO_DATA` gray) at the widened `w:3` tile size from commit `2085de9`, and correct fleet KPIs (91% Fleet Availability, 6 Active Critical/Major Alarms, 100% Environmental Compliance, 10 Machines Running).
+Screenshot at 1920×1080 (device-pixel-ratio-scaled capture, `screenshots/p15-final/andon_1920.png`) shows working machine tiles with correct state+color+text pairing (e.g. `LDI-01 ALARM` red, `LDI-02 OK` green, `LDI-01 NO_DATA` gray) at the widened `w:3` tile size from commit `2085de9`, and correct fleet KPIs (91% Fleet Availability, 6 Active Critical/Major Alarms, 100% Environmental Compliance, 10 Machines Running).
 
 ## 5. Investigated and Retracted: "Excessive Whitespace" Finding
 
