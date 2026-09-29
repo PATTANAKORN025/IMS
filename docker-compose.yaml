@@ -557,7 +557,7 @@ services:
   # to both a host file and public.container_restart_audit, plus tails
   # each critical container's logs into their own non-rotating host file.
   observability-archiver:
-    image: docker:27-cli
+    image: docker:29-cli
     container_name: ims-observability-archiver
     <<: *default-restart
     init: true
