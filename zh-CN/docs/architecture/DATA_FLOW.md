@@ -221,7 +221,7 @@ v_ldi_rca_truth_test"]
 ## 5. 核心架构约束与工程准则
 
 1. **Schema 隔离铁律:** 所有数据表、视图及持续聚合必须存放于 `public` 命名空间，严禁引入 `ims.*`。
-2. **PgBouncer 代理模式:** 强制使用事务模式 (`AUTH_TYPE: plain`)，严格禁止 Prepared Statements。
+2. **PgBouncer 代理模式:** 强制使用事务模式，客户端通过 SCRAM 认证（`AUTH_TYPE: scram-sha-256`），严格禁止 Prepared Statements。
 3. **写入操作幂等性:** 所有批量插入必须携带 `ON CONFLICT (log_id, "time") DO NOTHING`。
 4. **外部敏感凭证安全:** 涉及 LINE 及 Teams 的通知密钥由运维人员本地注入，禁止提交至 Git 代码仓库。
 

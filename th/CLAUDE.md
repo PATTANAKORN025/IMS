@@ -64,7 +64,7 @@ node scripts/production-assurance.js --profile=full --allow-container-kill
 ```text
 SNMP devices / LDI machines (HTTP)
   -> Node-RED (ingestion, parsing, retry queue)
-  -> PgBouncer (transaction pooling, plain auth, ห้าม prepared statements)
+  -> PgBouncer (transaction pooling, SCRAM auth, ห้าม prepared statements)
   -> TimescaleDB (hypertables ใน public schema + continuous aggregates)
   -> Grafana (dashboards) / Prometheus + Alertmanager (alerting ไปยัง LINE, Teams)
 ```

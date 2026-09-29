@@ -12,6 +12,12 @@ x-logging: &default-logging
 x-restart: &default-restart
   restart: unless-stopped
 
+# A process in the container can never gain privileges through setuid binaries
+# or file capabilities (e.g. after a compromise).
+x-hardening: &default-hardening
+  security_opt:
+    - no-new-privileges:true
+
 x-healthcheck-defaults: &healthcheck-defaults
   interval: 15s
   timeout: 5s
@@ -37,7 +43,7 @@ services:
     container_name: ims-timescaledb
     # parallel query uses /dev/shm; the Docker default of 64 MB is too small for it
     shm_size: 256mb
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     environment:
       TZ: ${TZ:-UTC}
@@ -118,7 +124,7 @@ services:
     build:
       context: ./pgbouncer
     container_name: ims-pgbouncer
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     entrypoint: ["/bin/sh", "/etc/pgbouncer/entrypoint-wrapper.sh"]
     healthcheck:
@@ -141,7 +147,8 @@ services:
       CLIENT_IDLE_TIMEOUT: 300
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
-      AUTH_TYPE: plain
+      # clients prove the password with SCRAM; nothing crosses the network in cleartext
+      AUTH_TYPE: scram-sha-256
       IGNORE_STARTUP_PARAMETERS: extra_float_digits,statement_timeout
     volumes:
       - ./pgbouncer/entrypoint-wrapper.sh:/etc/pgbouncer/entrypoint-wrapper.sh:ro
@@ -162,7 +169,7 @@ services:
   prometheus:
     image: prom/prometheus:v3.14.0
     container_name: ims-prometheus
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     user: "nobody:nobody"
     command:
@@ -195,7 +202,7 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.33.1
     container_name: ims-alertmanager
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     user: "nobody:nobody"
     command:
@@ -225,7 +232,7 @@ services:
   grafana:
     image: grafana/grafana:13.1.2
     container_name: ims-grafana
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     user: "472:472"
     environment:
@@ -290,7 +297,7 @@ services:
   proxy:
     image: nginx:1.27-alpine
     container_name: ims-proxy
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     volumes:
       - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -321,7 +328,7 @@ services:
     # pinned to the version proven in the running stack; Dependabot proposes upgrades
     image: grafana/grafana-image-renderer:v5.11.1
     container_name: ims-grafana-renderer
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     environment:
       TZ: ${TZ:-UTC}
       ENABLE_METRICS: "false"
@@ -340,7 +347,7 @@ services:
   snmpsim:
     image: tandrup/snmpsim:v0.4
     container_name: ims-snmpsim
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     entrypoint: ["python", "/usr/local/bin/snmpsimd.py"]
     command:
@@ -365,7 +372,7 @@ services:
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.28.0
     container_name: ims-blackbox
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     user: root
     cap_add:
@@ -393,6 +400,7 @@ services:
     image: timescale/timescaledb:2.29.2-pg16
     container_name: ims-db-migrate
     restart: "no"
+    <<: *default-hardening
     init: true
     entrypoint: ["/bin/sh", "/scripts/migrate-entrypoint.sh"]
     environment:
@@ -419,7 +427,7 @@ services:
     build:
       context: ./services/alarm-api
     container_name: ims-alarm-api
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     environment:
       PGHOST: ims-pgbouncer
@@ -456,7 +464,7 @@ services:
     build:
       context: ./services/factory-twin-3d
     container_name: ims-factory-twin-3d
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     # Read-only mount, host-only, never baked into the image (see
     # Dockerfile's comment). This repo's own checkout has nothing real
@@ -505,7 +513,7 @@ services:
       context: ./nodered_data
       dockerfile: Dockerfile
     container_name: ims-node-red
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     user: "1000:1000"
     environment:
@@ -572,7 +580,7 @@ services:
     build:
       context: ./services/observability-archiver
     container_name: ims-observability-archiver
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     init: true
     environment:
       # observability_archiver (migration 087): INSERT on
@@ -606,7 +614,7 @@ services:
   docker-socket-proxy:
     image: tecnativa/docker-socket-proxy:v0.5.0
     container_name: ims-docker-socket-proxy
-    <<: *default-restart
+    <<: [*default-restart, *default-hardening]
     environment:
       CONTAINERS: 1
       EVENTS: 1

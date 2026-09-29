@@ -112,7 +112,7 @@ jobs:
 
       - name: Secret Scan (gitleaks)
         run: |
-          docker run --rm -v "${{ github.workspace }}:/repo" zricethezav/gitleaks:latest \
+          docker run --rm -v "${{ github.workspace }}:/repo" zricethezav/gitleaks:v8.28.0 \
             detect --source=/repo --no-git --redact --verbose \
             --config=/repo/.gitleaks.toml --exit-code 1
 

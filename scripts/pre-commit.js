@@ -131,9 +131,16 @@ const secretPatterns = [
   /password\s*[:=]\s*["'][^"']+["']/i,
 ];
 
-const changedFiles = execSync('git diff --cached --name-only', { encoding: 'utf8' }).trim().split('\n');
+const changedFiles = execSync('git diff --cached --name-only --diff-filter=ACMR', { encoding: 'utf8' }).trim().split('\n');
+// A real .env was committed once (2026-06-22). Refuse it outright; gitleaks has to
+// allowlist .env because CI creates one from .env.example before scanning.
+const envFiles = changedFiles.filter((f) => /(^|\/)\.env(\.[^/]*)?$/.test(f) && !/\.env\.example$/.test(f));
+if (envFiles.length) {
+  console.error(`  FAIL  .env file staged for commit: ${envFiles.join(', ')} -- unstage it (git rm --cached <file>)`);
+  failed = true;
+}
 for (const file of changedFiles) {
-  if (!file || file.endsWith('.env') || file.includes('secret')) continue;
+  if (!file || envFiles.includes(file) || file.includes('secret')) continue;
   try {
     const content = fs.readFileSync(file, 'utf8');
     for (const pat of secretPatterns) {

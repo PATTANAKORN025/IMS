@@ -1,6 +1,7 @@
 #!/bin/sh
 # Wrapper: pre-seed userlist.txt with grafana_reader, then run original entrypoint
-# auth_type=plain: PgBouncer proxies without validating, PostgreSQL handles SCRAM auth
+# auth_type=scram-sha-256: PgBouncer checks each client with SCRAM against these
+# plaintext entries and logs in to PostgreSQL with SCRAM using the same password.
 
 _AUTH_FILE="${AUTH_FILE:-/etc/pgbouncer/userlist.txt}"
 touch "${_AUTH_FILE}"

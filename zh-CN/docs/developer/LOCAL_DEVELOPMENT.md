@@ -185,7 +185,7 @@ Node-RED 中的 Function 节点运行在受限的 VM 沙箱环境中：
 - **`INSERT` 语句字段与参数严格对应**：`INSERT INTO` 声明的字段数量必须与 `VALUES ()` 中的占位符完全一致。当使用 `NOW()` 时，`"time"` 必须保留在字段列表中。
 - **PgBouncer 连接池使用规范**：
   - 连接模式：`transaction` 事务级池化。
-  - 认证方式：`AUTH_TYPE: plain`。
+  - 认证方式：`AUTH_TYPE: scram-sha-256`。
   - 预处理语句 (Prepared Statements)：**严格禁止**（PgBouncer 事务模式不支持）。
 
 ### 本地执行数据库迁移脚本

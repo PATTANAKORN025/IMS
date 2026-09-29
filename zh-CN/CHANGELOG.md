@@ -88,6 +88,13 @@
   - 不再安装未使用的 Grafana 插件。
   - 初始化脚本不再硬编码数据库名与所有者名。
 
+### 安全加固（2026-09-29 第三轮）
+- **PgBouncer：** 客户端改用 `scram-sha-256` 认证取代 `plain`，密码不再以明文在 Docker 网络中传输。密码错误时返回 `SASL authentication failed`。
+- **容器：** 除 pgAdmin 外的所有服务都以 `no-new-privileges` 运行。pgAdmin 可能需要文件能力来绑定 80 端口，因此未包含。
+- **`docker-compose.prod.yaml`：** 不再设置 `GF_SECURITY_COOKIE_SECURE`、HSTS 和 HTML 清理。在明文 HTTP 统一入口上，Secure cookie 会导致其他机器无法登录，HTML 清理会使 Business Text 仪表板失效。该叠加文件现在只按文档所述设置资源限制和日志级别。
+- **密钥扫描：** gitleaks 固定为 v8.28.0，并开始扫描 flow、文档和 README。`scripts/pre-commit.js` 拒绝提交任何 `.env` 文件（之前只是跳过）。
+- **`SECURITY.md`：** 已知限制表与实际运行配置一致。
+
 ### 安全加固（2026-09-29 第二轮）
 - **告警 webhook 认证：** `/alert-webhook` 要求 `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>`（否则返回 401，未设置令牌时返回 503）。Alertmanager 通过 compose secret 发送，Grafana 联络点同样发送。`ALERT_WEBHOOK_TOKEN` 现为必填。
 - **最小权限数据库角色（迁移 087）：** Node-RED 以 `nodered_writer` 写入，observability archiver 以 `observability_archiver` 写入，各自只拥有所用表的权限，均不再是超级用户。新增必填 `.env` 键：`NODERED_DB_PASSWORD`、`ARCHIVER_DB_PASSWORD`。

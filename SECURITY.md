@@ -47,16 +47,20 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 | # | Issue | Severity | Status | Fix plan |
 | --- | --- | --- | --- | --- |
 | 1 | Every value in `.env.example` is public | High | Known | Generate new values for every secret before any real deployment (see [Admin Manual](docs/admin/ADMIN_MANUAL.md#pre-production-security-checklist)) |
-| 2 | pgAdmin published on port `5050` on all interfaces, image tag `latest` | Medium | Known | Bind to `127.0.0.1` or firewall it; pin the image tag |
-| 3 | nginx front door serves plain HTTP | Medium | Known | Terminate TLS in front of, or inside, `ims-proxy` |
-| 4 | SNMP v2c community strings stored per device in `public.devices` (plain text) | Medium | Known | Move production devices to SNMPv3 (authPriv) |
-| 5 | PgBouncer uses `auth_type = plain` | Medium | Known (trade-off) | Internal network only; consider SCRAM end to end |
-| 6 | `observability-archiver` mounts `/var/run/docker.sock` | Medium | Known | The `:ro` flag does not restrict Docker API calls; treat the container as privileged or replace the mount |
-| 7 | CI secret scan is non-blocking and working-tree only (`gitleaks --no-git ... \|\| true`) | Medium | Known | Make it blocking and scan history (`gitleaks detect` without `--no-git`); run a full-history scan locally before pushing |
-| 8 | Grafana image renderer image tag `latest` | Low | Known | Pin the image tag |
+| 2 | nginx front door serves plain HTTP | Medium | Known | Terminate TLS in front of, or inside, `ims-proxy`; only then set `GF_SECURITY_COOKIE_SECURE` and HSTS |
+| 3 | SNMP v2c community strings stored per device in `public.devices` (plain text) | Medium | Known | Move production devices to SNMPv3 (authPriv) |
+| 4 | Grafana HTML sanitizing is off (`GF_PANELS_DISABLE_SANITIZE_HTML=true`), because the Business Text dashboards run JavaScript | Medium | Known | Give the Editor role only to trusted people. Templates escape every data value, and `dashboard-linter` rejects `{{{ }}}` and values inside `on*=` handlers |
+| 5 | `/ldi-telemetry` and `/inject` are reachable through the front door and protected only by the `x-api-key` check in Node-RED | Medium | Known | Keep `INGEST_API_KEY` secret and rotated; restrict the port with a firewall |
+| 6 | The CI secret scan checks the working tree, not history; an old `.env` (credentials since rotated) is in history | Low | Known | The scan blocks and its image is pinned; `scripts/pre-commit.js` refuses to commit any `.env` |
 | — | TimescaleDB port exposed on the host | — | **Resolved** | The base `docker-compose.yaml` comments out host port exposure for TimescaleDB; database is internal only |
 | — | PgBouncer port exposed on the host | — | **Resolved** | The base `docker-compose.yaml` never publishes a PgBouncer port |
 | — | Node-RED editor without authentication | — | **Resolved** | `nodered_data/settings.js` refuses to start unless `NODE_RED_ADMIN_PASSWORD_HASH` is set; the editor port is bound to `127.0.0.1` |
+| — | pgAdmin on all interfaces, image `latest` | — | **Resolved** | Bound to `127.0.0.1:5050`, image pinned to `9.18` |
+| — | PgBouncer `auth_type = plain` (cleartext passwords on the Docker network) | — | **Resolved** | `AUTH_TYPE: scram-sha-256` |
+| — | `observability-archiver` mounted `/var/run/docker.sock` | — | **Resolved** | It reaches Docker through `docker-socket-proxy`, which allows read endpoints only, on an internal network |
+| — | Services connected to the database as the superuser | — | **Resolved** | Node-RED uses `nodered_writer`, the archiver `observability_archiver`, alarm-api `alarm_api_writer`, Grafana `grafana_reader`; each has grants only on what it uses |
+| — | `/alert-webhook` accepted any request | — | **Resolved** | It requires `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` |
+| — | Grafana image renderer image `latest` | — | **Resolved** | Pinned to `v5.11.1` |
 
 ---
 

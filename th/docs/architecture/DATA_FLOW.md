@@ -221,7 +221,7 @@ v_ldi_rca_truth_test"]
 ## 5. กฎเหล็กและข้อจำกัดทางสถาปัตยกรรม (Architectural Rules)
 
 1. **สคีมาฐานข้อมูล:** ข้อมูลทั้งหมดต้องอยู่ในสคีมา `public` เท่านั้น ห้ามสร้างสคีมา `ims.*`
-2. **PgBouncer:** ใช้โหมด Transaction และตั้งค่า `AUTH_TYPE: plain` ห้ามใช้ Prepared Statements
+2. **PgBouncer:** ใช้โหมด Transaction และตั้งค่า `AUTH_TYPE: scram-sha-256` ห้ามใช้ Prepared Statements
 3. **ความปลอดภัยในการบันทึกข้อมูล:** คำสั่ง SQL ต้องมี `ON CONFLICT (log_id, "time") DO NOTHING` เสมอ
 4. **ความลับและโทเค็น:** การแจ้งเตือนไปยัง LINE และ MS Teams ต้องใช้โทเค็นที่ผู้ควบคุมระบบกำหนดเองเท่านั้น ห้ามคอมมิตลงใน Git
 

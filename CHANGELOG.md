@@ -88,6 +88,13 @@
   - Unused Grafana plugins are no longer installed.
   - Init scripts no longer hardcode the database and owner names.
 
+### Hardening (2026-09-29, third pass)
+- **PgBouncer:** clients authenticate with `scram-sha-256` instead of `plain`, so no password crosses the Docker network in cleartext. Wrong passwords fail with `SASL authentication failed`.
+- **Containers:** every service except pgAdmin runs with `no-new-privileges`. pgAdmin is left out because it may need file capabilities to bind port 80.
+- **`docker-compose.prod.yaml`:** no longer sets `GF_SECURITY_COOKIE_SECURE`, HSTS or HTML sanitizing. Over the plain-HTTP front door the Secure cookie would break every login from another machine, and sanitizing would break the Business Text dashboards. The overlay now only sets resource limits and log level, as documented.
+- **Secret scanning:** gitleaks is pinned to v8.28.0 and now also scans flows, docs and READMEs. `scripts/pre-commit.js` refuses to commit any `.env` file; before, it skipped them.
+- **`SECURITY.md`:** the Known Limitations table now matches the running configuration.
+
 ### Hardening (2026-09-29, second pass)
 - **Alert webhook authentication:** `/alert-webhook` requires `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` (401 otherwise, 503 when the token is unset). Alertmanager sends it from a compose secret, and the Grafana contact point sends it too. `ALERT_WEBHOOK_TOKEN` is now required.
 - **Least-privilege database roles (migration 087):** Node-RED writes as `nodered_writer` and the observability archiver as `observability_archiver`, each granted only the tables it uses; neither is the superuser any more. New required `.env` keys: `NODERED_DB_PASSWORD`, `ARCHIVER_DB_PASSWORD`.
