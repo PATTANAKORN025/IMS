@@ -115,7 +115,7 @@ curl -s http://localhost:9093/-/healthy
 
 ### Database Migrations
 
-ปัจจุบัน `database/migrations/` มีไฟล์ 61 ไฟล์ตามลำดับ (`013` ถึง `086` โดยมีบางหมายเลขที่ข้ามหรือย้ายไปเก็บถาวร — หมายเลข `001-012` ถูกรวมเข้าไปใน `postgres/init/001-init-timescaledb.sql` ซึ่งเป็นเส้นทาง bootstrap สำหรับการติดตั้งใหม่) service `ims-db-migrate` แบบครั้งเดียวจะ apply ให้อัตโนมัติทุกครั้งที่รัน `docker compose up` และ `node-red` กับ `alarm-api` จะไม่เริ่มจนกว่าจะจบการทำงานสำเร็จ
+ปัจจุบัน `database/migrations/` มีไฟล์ 64 ไฟล์ตามลำดับ (`013` ถึง `089` โดยมีบางหมายเลขที่ข้ามหรือย้ายไปเก็บถาวร — หมายเลข `001-012` ถูกรวมเข้าไปใน `postgres/init/001-init-timescaledb.sql` ซึ่งเป็นเส้นทาง bootstrap สำหรับการติดตั้งใหม่) service `ims-db-migrate` แบบครั้งเดียวจะ apply ให้อัตโนมัติทุกครั้งที่รัน `docker compose up` และ `node-red` กับ `alarm-api` จะไม่เริ่มจนกว่าจะจบการทำงานสำเร็จ
 
 Migration 084–086 ทำงานบนฐานข้อมูล `eap_backup` ซึ่งแยกต่างหากและเก็บข้อมูลงานเจาะและ VCP หากยังไม่มีฐานข้อมูลนี้ migration จะพิมพ์ `IMS_MIGRATION_DEFERRED` และตัวรันจะ **ไม่** บันทึกว่ารันแล้ว เมื่อสร้าง `eap_backup` แล้ว การรัน `db-migrate` ครั้งถัดไป (`docker compose run --rm db-migrate`) จะรันให้อัตโนมัติ นอกจากนี้ตัวรันจะหยุดทันทีที่ migration ใดล้มเหลว แทนที่จะรันไฟล์ถัดไปบน schema ที่ติดตั้งไม่ครบ ระบบที่ migrate ก่อนมีพฤติกรรมนี้อาจบันทึก 084–086 ไว้แล้วโดยไม่มีผล ให้รันสามไฟล์นี้เองตามขั้นตอนใน [ข้อมูลสังเคราะห์สำหรับงานเจาะและ VCP](../data/MOCK_DATA.md) ไฟล์ทั้งสามรันซ้ำได้อย่างปลอดภัย
 
@@ -148,8 +148,10 @@ migration ทุกไฟล์เขียนให้รันซ้ำได�
 | `POSTGRES_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` | **เปลี่ยน** — superuser ของฐานข้อมูล (`POSTGRES_USER`) |
 | `GRAFANA_DB_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → role `grafana_reader` และ userlist ของ PgBouncer | **เปลี่ยน** — มีสิทธิ์อ่านทุกตารางที่ Grafana query ได้ |
 | `ALARM_API_DB_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → role `alarm_api_writer` (migration `078-alarm-api-writer-role.sql`) | **เปลี่ยน** — จำกัดสิทธิ์แค่ `SELECT`+`UPDATE` บน `ldi_alarm_lifecycle` แต่ยังเป็น credential ของฐานข้อมูลจริง |
+| `NODERED_DB_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → role `nodered_writer` (migration `087-service-writer-roles.sql`) และ userlist ของ PgBouncer | **เปลี่ยน** — บังคับต้องมี; ใช้เขียนข้อมูล ingest ของ Node-RED (ไม่ใช่ superuser) ถ้าไม่ตั้ง compose จะไม่ยอมเริ่ม |
+| `ARCHIVER_DB_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → role `observability_archiver` (migration `087-service-writer-roles.sql`) | **เปลี่ยน** — บังคับต้องมี; มีสิทธิ์แค่ `INSERT` บน `container_restart_audit` |
 | `GRAFANA_ADMIN_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → ผู้ดูแล Grafana | **เปลี่ยน** — แก้ไขแดชบอร์ดและ datasource ได้ |
-| `ALERT_WEBHOOK_TOKEN`, `GRAFANA_RENDERER_TOKEN` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` | **เปลี่ยน** — shared secret ของ webhook และ renderer |
+| `ALERT_WEBHOOK_TOKEN`, `GRAFANA_RENDERER_TOKEN` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` | **เปลี่ยน** — shared secret ของ webhook และ renderer โดย `ALERT_WEBHOOK_TOKEN` บังคับต้องมี: `/alert-webhook` ตอบ 401 ถ้าไม่มี `Authorization: Bearer <token>` และตอบ 503 ถ้าไม่ได้ตั้งค่า; Alertmanager (ผ่าน compose secret) และ contact point ของ Grafana ส่ง token นี้ |
 | `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH` | ค่าตัวอย่างที่เป็นสาธารณะ / ค่าว่าง | `.env` → Node-RED | **เปลี่ยน** ก่อนเก็บ credential ใด ๆ ใน flow หาก hash ว่าง `nodered_data/settings.js` จะไม่ยอมเริ่ม Node-RED |
 | `PGADMIN_DEFAULT_PASSWORD` | ค่าตัวอย่างที่เป็นสาธารณะ | `.env` → pgAdmin | **เปลี่ยน** — pgAdmin เปิดพอร์ตบนทุก interface |
 
@@ -162,13 +164,18 @@ migration ทุกไฟล์เขียนให้รันซ้ำได�
 gen() { python -c "import secrets; print(secrets.token_urlsafe($1))"; }
 NEW_API_KEY=$(gen 32); NEW_PG_PASS=$(gen 24); NEW_GRAFANA_DB_PASS=$(gen 24)
 NEW_ALARM_API_DB_PASS=$(gen 24); NEW_GRAFANA_ADMIN_PASS=$(gen 24)
+NEW_NODERED_DB_PASS=$(gen 24); NEW_ARCHIVER_DB_PASS=$(gen 24); NEW_ALERT_WEBHOOK_TOKEN=$(gen 32)
 
 # 2. เปลี่ยนรหัสผ่านของ role ในฐานข้อมูล "ก่อน" ขณะที่ credential เดิมยังใช้ได้
 #    การแก้ .env ไม่ได้เปลี่ยนรหัสผ่าน superuser ใน data volume ที่มีอยู่แล้ว
+#    ปิด statement logging ของ session นี้ เพื่อไม่ให้รหัสผ่านไปอยู่ใน log ของเซิร์ฟเวอร์
 docker compose exec -T timescaledb sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<SQL
+SET log_statement = 'none';
 ALTER ROLE CURRENT_USER WITH PASSWORD '$NEW_PG_PASS';
 ALTER ROLE grafana_reader WITH PASSWORD '$NEW_GRAFANA_DB_PASS';
 ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';
+ALTER ROLE nodered_writer WITH PASSWORD '$NEW_NODERED_DB_PASS';
+ALTER ROLE observability_archiver WITH PASSWORD '$NEW_ARCHIVER_DB_PASS';
 SQL
 
 # 3. แก้ .env ให้ตรงกัน
@@ -177,10 +184,13 @@ sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_PG_PASS/" .env
 sed -i "s/^GRAFANA_DB_PASSWORD=.*/GRAFANA_DB_PASSWORD=$NEW_GRAFANA_DB_PASS/" .env
 sed -i "s/^ALARM_API_DB_PASSWORD=.*/ALARM_API_DB_PASSWORD=$NEW_ALARM_API_DB_PASS/" .env
 sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_ADMIN_PASS/" .env
+sed -i "s/^NODERED_DB_PASSWORD=.*/NODERED_DB_PASSWORD=$NEW_NODERED_DB_PASS/" .env
+sed -i "s/^ARCHIVER_DB_PASSWORD=.*/ARCHIVER_DB_PASSWORD=$NEW_ARCHIVER_DB_PASS/" .env
+sed -i "s/^ALERT_WEBHOOK_TOKEN=.*/ALERT_WEBHOOK_TOKEN=$NEW_ALERT_WEBHOOK_TOKEN/" .env
 
 # 4. สร้างคอนเทนเนอร์ใหม่เพื่อให้รับ environment ใหม่
 #    (pgbouncer สร้าง userlist.txt ใหม่จาก .env ตอนเริ่ม)
-docker compose up -d --force-recreate pgbouncer node-red grafana alarm-api factory-twin-3d observability-archiver
+docker compose up -d --force-recreate pgbouncer node-red grafana alertmanager alarm-api factory-twin-3d observability-archiver
 
 # 5. GF_SECURITY_ADMIN_PASSWORD มีผลเฉพาะกับฐานข้อมูล Grafana ที่สร้างใหม่เท่านั้น
 #    กับฐานข้อมูลที่มีอยู่แล้ว ต้องรีเซ็ตรหัสผ่านผู้ดูแลโดยตรง:

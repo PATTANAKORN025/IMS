@@ -165,6 +165,8 @@ Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, Syste
 
 Shows Fleet Availability, Active Critical/Major Alarms, Environmental Compliance, Machines Running, per-machine status tiles, a pipeline heartbeat, Temperature (22 ± 2 °C) and Humidity (55 ± 5 %) compliance timelines, and the **Action Queue** of Critical/Major alarms from the last 5 minutes. Acknowledge and Resolve happen on the **LDI Alarm Console**, not on the Andon board.
 
+Each machine tile reads ALARM, OK, IDLE, STALE (no reading for more than 5 minutes) or NO_DATA (the machine has never reported). Freshness is measured against the wall clock, so a stopped pipeline turns tiles STALE rather than leaving them on their last colour. To read an archived or paused dataset, open the board with `?var-clock=replay`, which measures against the newest timestamp in the database instead.
+
 ### 8. LDI Engineering Analytics & SPC
 
 **Purpose**: In-depth analysis for engineers — Cpk/SPC ranking, RCA Truth Test, and PE/JE distributions.

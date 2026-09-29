@@ -19,7 +19,7 @@
 
 > **Audience:** SRE / Operations, Data Engineers, Software Architects, QA / Compliance  
 > **Telemetry Scope:** 4 Industrial Domains (IT/OT Infrastructure, LDI Photolithography, CNC Drilling Fleet, VCP Electroplating)  
-> **Provenance:** Every table, view, function node, and continuous aggregate referenced below is verified against `timescaledb_information.continuous_aggregates`, migrations 013–086, and active Node-RED flows.
+> **Provenance:** Every table, view, function node, and continuous aggregate referenced below is verified against `timescaledb_information.continuous_aggregates`, migrations 013–089, and active Node-RED flows.
 
 ---
 

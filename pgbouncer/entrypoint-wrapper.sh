@@ -15,5 +15,10 @@ if ! grep -q '"alarm_api_writer"' "${_AUTH_FILE}" 2>/dev/null; then
   echo "\"alarm_api_writer\" \"${ALARM_API_DB_PASSWORD}\"" >> "${_AUTH_FILE}"
 fi
 
+# Add nodered_writer if missing (migration 087)
+if ! grep -q '"nodered_writer"' "${_AUTH_FILE}" 2>/dev/null; then
+  echo "\"nodered_writer\" \"${NODERED_DB_PASSWORD:?set NODERED_DB_PASSWORD in .env}\"" >> "${_AUTH_FILE}"
+fi
+
 # Run original entrypoint with the pgbouncer command as argument
 exec /entrypoint.sh pgbouncer /etc/pgbouncer/pgbouncer.ini

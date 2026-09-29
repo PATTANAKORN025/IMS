@@ -88,6 +88,16 @@
   - 不再安装未使用的 Grafana 插件。
   - 初始化脚本不再硬编码数据库名与所有者名。
 
+### 安全加固（2026-09-29 第二轮）
+- **告警 webhook 认证：** `/alert-webhook` 要求 `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>`（否则返回 401，未设置令牌时返回 503）。Alertmanager 通过 compose secret 发送，Grafana 联络点同样发送。`ALERT_WEBHOOK_TOKEN` 现为必填。
+- **最小权限数据库角色（迁移 087）：** Node-RED 以 `nodered_writer` 写入，observability archiver 以 `observability_archiver` 写入，各自只拥有所用表的权限，均不再是超级用户。新增必填 `.env` 键：`NODERED_DB_PASSWORD`、`ARCHIVER_DB_PASSWORD`。
+- **Docker socket：** archiver 不再挂载 `/var/run/docker.sock`，改为在内部网络上通过只允许读取接口（拒绝 POST）的 `docker-socket-proxy` 读取容器事件；所需工具构建进其自有镜像，不再每次启动时安装。
+- **仪表板脚本注入：** Alarm Console 的确认/解决按钮和钻孔机群的机器链接不再把数据库值放进 `onclick` JavaScript，VCP 看板也不再把 URL 变量未转义地写入链接。`dashboard-linter` 会拒绝这两种写法。
+- **Operator Andon：** 数据相对真实时钟超过 5 分钟未更新时，磁贴变为灰色 STALE，停止的管道不会让它一直显示绿色。`?var-clock=replay` 保留原来的回放行为。
+- **每台 LDI 机器的最新状态（迁移 088）：** 由插入触发器维护在 `ldi_machine_last_state` 中；`v_ldi_machine_latest_full` 读取该表且列不变，查询成本不再随 `ldi_data` 增长。
+- **Drilling Fleet Overview：** 每张卡片显示所属工厂（"F3 - DRL001-M"），来自新的 `machine_master` 登记表（迁移 089，仅建表结构），Factory 筛选现在作用于卡片和 KPI。登记表中缺失的机器仍会显示为 "F?"。水平滚动位置在自动刷新和页面重新加载后保持不变。
+- **凭据轮换：** 文档中的步骤会先关闭本会话的语句日志，因为开启 DDL 日志时 `ALTER ROLE ... PASSWORD` 会写入服务器日志。
+
 ### 文档与仓库规范化治理 (Documentation & Repository Hygiene)
 - 截至 2026-09-28 对照实时运行系统 (`main`) 在英、泰、简中三语下重新核实所有现行文档与系统清单。
 - 同步全语言 README 版本徽标至 `v1.0.1`，并从 `.gitignore` 中移除核心规则文档 (`AGENTS.md`)。

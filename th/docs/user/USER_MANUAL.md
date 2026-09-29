@@ -165,6 +165,8 @@ scatter แสดง PE เทียบกับ JE รายนาที (µm) 
 
 แสดง Fleet Availability, Active Critical/Major Alarms, Environmental Compliance, Machines Running, ไทล์สถานะรายเครื่อง, pipeline heartbeat, ไทม์ไลน์การผ่านเกณฑ์อุณหภูมิ (22 ± 2 °C) และความชื้น (55 ± 5 %) และ **Action Queue** ของ alarm ระดับ Critical/Major ใน 5 นาทีล่าสุด การ Acknowledge และ Resolve ทำบน **LDI Alarm Console** ไม่ใช่บนบอร์ด Andon
 
+ไทล์ของแต่ละเครื่องแสดง ALARM, OK, IDLE, STALE (ไม่มีข้อมูลเกิน 5 นาที) หรือ NO_DATA (เครื่องไม่เคยส่งข้อมูล) ความสดของข้อมูลวัดเทียบกับเวลาจริง ถ้า pipeline หยุด ไทล์จึงเปลี่ยนเป็น STALE แทนที่จะค้างสีเดิม หากต้องการดูชุดข้อมูลย้อนหลังหรือที่หยุดไว้ ให้เปิดบอร์ดด้วย `?var-clock=replay` ซึ่งจะวัดเทียบกับเวลาล่าสุดที่มีในฐานข้อมูลแทน
+
 ### 8. LDI Engineering Analytics & SPC
 
 **วัตถุประสงค์**: วิเคราะห์เชิงลึกสำหรับวิศวกร — จัดอันดับ Cpk/SPC, RCA Truth Test และการกระจายของ PE/JE

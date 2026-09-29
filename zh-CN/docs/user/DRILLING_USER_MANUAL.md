@@ -91,6 +91,7 @@ $$\text{主轴 } N \text{ 启用} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
 
 1. **Drilling — 01 Fleet Digital Twin & Overview (UID: `001`)**:
    - 展现全厂钻机实时卡片，包含 6 轴运行指示灯、当前刀具直径、转速进给、累计孔数。
+   - 卡片标题为 `F<工厂> - <机器>`（例如 `FMOCK - MOCK-DRL-001`），工厂取自 `public.machine_master`；未登记的机器显示 `F?`。**Factory** 变量同时筛选卡片和 KPI 计数。
    - 提供状态一键过滤（`ALL`, `RUN`, `ALARM`, `TOOL_CHANGE`, `STOP`, `STANDBY`, `OFFLINE`）与程序名搜索。
 2. **Drilling — 02 Shift Production & OEE Tracking (UID: `ims-drilling-history`)**:
    - 7 天滚动窗口班次生产看板，对比早班（08:00–20:00）与晚班（20:00–08:00）孔数及机台开动率（Availability Rate %）。

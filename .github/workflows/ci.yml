@@ -236,6 +236,9 @@ jobs:
       - name: Run LDI Alarm Simulator Replay Test
         run: node tests/unit/ldi-alarm-simulator.test.js
 
+      - name: Run Alert Webhook Auth Tests
+        run: node tests/unit/alert-webhook-auth.test.js
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -16,6 +16,7 @@ updates:
     directories:
       - "/services/alarm-api"
       - "/services/factory-twin-3d"
+      - "/services/observability-archiver"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
@@ -31,6 +32,7 @@ updates:
       - "/pgbouncer"
       - "/services/alarm-api"
       - "/services/factory-twin-3d"
+      - "/services/observability-archiver"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10

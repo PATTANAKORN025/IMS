@@ -34,6 +34,7 @@ run("Circuit Breaker Tests", "node tests/unit/circuit-breaker.test.js");
 run("Counter Wraparound Tests", "node tests/unit/counter-wraparound.test.js");
 run("LDI Ingestion Validation Tests", "node tests/unit/ldi-ingestion-validate.test.js");
 run("LDI Alarm Simulator Replay Test", "node tests/unit/ldi-alarm-simulator.test.js", 120000);
+run("Alert Webhook Auth Tests", "node tests/unit/alert-webhook-auth.test.js");
 run("Parser v2 Tests", "node tests/unit/v2-parser.test.js");
 run("Query Budget Linter Tests", "node tests/unit/query-budget-linter.test.js");
 run("Gate Decision Tests", "node tests/unit/gate.test.js");

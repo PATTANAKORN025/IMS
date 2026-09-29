@@ -115,7 +115,7 @@ curl -s http://localhost:9093/-/healthy
 
 ### 数据库迁移
 
-`database/migrations/` 目前有 61 个按序编号的文件（`013` 至 `086`，部分编号已跳过或归档——更早的 `001-012` 已并入全新部署的引导路径 `postgres/init/001-init-timescaledb.sql`）。一次性服务 `ims-db-migrate` 会在每次 `docker compose up` 时自动应用；在其成功退出之前，`node-red` 与 `alarm-api` 不会启动。
+`database/migrations/` 目前有 64 个按序编号的文件（`013` 至 `089`，部分编号已跳过或归档——更早的 `001-012` 已并入全新部署的引导路径 `postgres/init/001-init-timescaledb.sql`）。一次性服务 `ims-db-migrate` 会在每次 `docker compose up` 时自动应用；在其成功退出之前，`node-red` 与 `alarm-api` 不会启动。
 
 迁移 084–086 作用于单独的 `eap_backup` 数据库（存放钻孔与 VCP 数据）。该库不存在时，它们会输出 `IMS_MIGRATION_DEFERRED`，运行器**不会**将其记为已执行；`eap_backup` 建立后，下一次运行 `db-migrate`（`docker compose run --rm db-migrate`）会自动应用它们。运行器也会在第一个失败的迁移处停止，不会在只应用了一半的 schema 上继续执行后续迁移。在此行为之前完成迁移的环境可能已将 084–086 记为已执行但并未生效，请按[钻孔与 VCP 合成数据](../data/MOCK_DATA.md)中的步骤手动执行这三个文件；它们可以安全地重复执行。
 
@@ -148,8 +148,10 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 | `POSTGRES_PASSWORD` | 公开的示例值 | `.env` | **必须更改**——数据库超级用户（`POSTGRES_USER`） |
 | `GRAFANA_DB_PASSWORD` | 公开的示例值 | `.env` → `grafana_reader` 角色、PgBouncer userlist | **必须更改**——可读取 Grafana 能查询的所有表 |
 | `ALARM_API_DB_PASSWORD` | 公开的示例值 | `.env` → `alarm_api_writer` 角色（迁移 `078-alarm-api-writer-role.sql`） | **必须更改**——权限仅限 `ldi_alarm_lifecycle` 上的 `SELECT`+`UPDATE`，但仍是真实的数据库凭据 |
+| `NODERED_DB_PASSWORD` | 公开的示例值 | `.env` → `nodered_writer` 角色（迁移 `087-service-writer-roles.sql`）、PgBouncer userlist | **必须更改**——必填；Node-RED 写入采集数据所用（非超级用户）。未设置时 compose 拒绝启动 |
+| `ARCHIVER_DB_PASSWORD` | 公开的示例值 | `.env` → `observability_archiver` 角色（迁移 `087-service-writer-roles.sql`） | **必须更改**——必填；仅有 `container_restart_audit` 的 `INSERT` 权限 |
 | `GRAFANA_ADMIN_PASSWORD` | 公开的示例值 | `.env` → Grafana 管理员 | **必须更改**——可编辑仪表板与数据源 |
-| `ALERT_WEBHOOK_TOKEN`、`GRAFANA_RENDERER_TOKEN` | 公开的示例值 | `.env` | **必须更改**——webhook 与 renderer 的共享密钥 |
+| `ALERT_WEBHOOK_TOKEN`、`GRAFANA_RENDERER_TOKEN` | 公开的示例值 | `.env` | **必须更改**——webhook 与 renderer 的共享密钥。`ALERT_WEBHOOK_TOKEN` 为必填：缺少 `Authorization: Bearer <token>` 时 `/alert-webhook` 返回 401，未设置时返回 503；Alertmanager（compose secret）与 Grafana 联络点会发送该令牌 |
 | `NODE_RED_CREDENTIAL_SECRET`、`NODE_RED_ADMIN_PASSWORD_HASH` | 公开的示例值 / 空 | `.env` → Node-RED | 在任何 flow 中保存凭据之前**必须更改**；哈希为空时 `nodered_data/settings.js` 会拒绝启动 Node-RED |
 | `PGADMIN_DEFAULT_PASSWORD` | 公开的示例值 | `.env` → pgAdmin | **必须更改**——pgAdmin 在所有接口上发布端口 |
 
@@ -162,13 +164,18 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 gen() { python -c "import secrets; print(secrets.token_urlsafe($1))"; }
 NEW_API_KEY=$(gen 32); NEW_PG_PASS=$(gen 24); NEW_GRAFANA_DB_PASS=$(gen 24)
 NEW_ALARM_API_DB_PASS=$(gen 24); NEW_GRAFANA_ADMIN_PASS=$(gen 24)
+NEW_NODERED_DB_PASS=$(gen 24); NEW_ARCHIVER_DB_PASS=$(gen 24); NEW_ALERT_WEBHOOK_TOKEN=$(gen 32)
 
 # 2. 趁旧凭据仍然有效，"先"修改数据库角色密码。
 #    修改 .env 不会更改现有数据卷中的超级用户密码。
+#    本会话关闭语句日志，避免密码写入服务器日志。
 docker compose exec -T timescaledb sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<SQL
+SET log_statement = 'none';
 ALTER ROLE CURRENT_USER WITH PASSWORD '$NEW_PG_PASS';
 ALTER ROLE grafana_reader WITH PASSWORD '$NEW_GRAFANA_DB_PASS';
 ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';
+ALTER ROLE nodered_writer WITH PASSWORD '$NEW_NODERED_DB_PASS';
+ALTER ROLE observability_archiver WITH PASSWORD '$NEW_ARCHIVER_DB_PASS';
 SQL
 
 # 3. 同步更新 .env
@@ -177,10 +184,13 @@ sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_PG_PASS/" .env
 sed -i "s/^GRAFANA_DB_PASSWORD=.*/GRAFANA_DB_PASSWORD=$NEW_GRAFANA_DB_PASS/" .env
 sed -i "s/^ALARM_API_DB_PASSWORD=.*/ALARM_API_DB_PASSWORD=$NEW_ALARM_API_DB_PASS/" .env
 sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_ADMIN_PASS/" .env
+sed -i "s/^NODERED_DB_PASSWORD=.*/NODERED_DB_PASSWORD=$NEW_NODERED_DB_PASS/" .env
+sed -i "s/^ARCHIVER_DB_PASSWORD=.*/ARCHIVER_DB_PASSWORD=$NEW_ARCHIVER_DB_PASS/" .env
+sed -i "s/^ALERT_WEBHOOK_TOKEN=.*/ALERT_WEBHOOK_TOKEN=$NEW_ALERT_WEBHOOK_TOKEN/" .env
 
 # 4. 重建容器以加载新的环境变量
 #    （pgbouncer 启动时会根据 .env 重新生成 userlist.txt）
-docker compose up -d --force-recreate pgbouncer node-red grafana alarm-api factory-twin-3d observability-archiver
+docker compose up -d --force-recreate pgbouncer node-red grafana alertmanager alarm-api factory-twin-3d observability-archiver
 
 # 5. GF_SECURITY_ADMIN_PASSWORD 只对全新的 Grafana 数据库生效；
 #    对已有数据库，需显式重置管理员密码：

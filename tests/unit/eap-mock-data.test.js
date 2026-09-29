@@ -137,7 +137,7 @@ check('--incidents: VCP03 hotwater > 10 C over setpoint across the 30-minute rul
 const sql = toSql(healthy, meta);
 check('SQL is one transaction that checks the marker first', sql.startsWith(`BEGIN;\n${MARKER_CHECK}`) && sql.trimEnd().endsWith('COMMIT;'));
 check('undo checks the marker and deletes only MOCK- rows',
-  UNDO_SQL.includes(MARKER_CHECK) && (UNDO_SQL.match(/DELETE FROM/g) || []).length === 7
+  UNDO_SQL.includes(MARKER_CHECK) && (UNDO_SQL.match(/DELETE FROM/g) || []).length === 8
   && UNDO_SQL.split('\n').filter(l => l.startsWith('DELETE')).every(l => /LIKE 'MOCK-%'|run_id <> 'schema'/.test(l)));
 check('every generated id carries the MOCK- prefix',
   events.every(e => e.message_id.startsWith('MOCK-'))

@@ -40,6 +40,12 @@ echo "observability-archiver: database ready, starting collectors."
 # probe on every container with one configured, which would flood this file
 # with routine noise (thousands of lines/hour) with nothing to do with an
 # actual restart.
+# The stream goes through docker-socket-proxy (DOCKER_HOST) and can be cut by
+# a proxy or daemon restart, so it is re-opened in a loop; before, the whole
+# collector ended silently the first time the stream closed. Events in the
+# few seconds between a cut and the reconnect are not replayed.
+(
+while true; do
 docker events --filter type=container \
     --filter event=create --filter event=start --filter event=stop \
     --filter event=die --filter event=restart --filter event=kill \
@@ -54,13 +60,19 @@ docker events --filter type=container \
     case "$action" in
         start|die|restart|kill|oom)
             [ -n "$cname" ] && [ -n "$ts" ] || continue
-            escaped=$(echo "$line" | sed "s/'/''/g")
-            psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=0 -c \
-                "INSERT INTO public.container_restart_audit (container_name, event_action, event_time, raw_event) VALUES ('$cname', '$action', to_timestamp($ts), '$escaped'::jsonb);" \
+            # values go in as psql variables (:'name'), so a quote in the
+            # event JSON cannot change the statement
+            echo "INSERT INTO public.container_restart_audit (container_name, event_action, event_time, raw_event) VALUES (:'cname', :'action', to_timestamp(:'ts'::double precision), :'raw'::jsonb);" \
+                | psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -q -v ON_ERROR_STOP=1 \
+                    -v cname="$cname" -v action="$action" -v ts="$ts" -v raw="$line" \
                 >/dev/null 2>&1 || echo "observability-archiver: failed to record $action for $cname" >&2
             ;;
     esac
-done &
+done
+echo "observability-archiver: docker events stream closed, reconnecting" >&2
+sleep 5
+done
+) &
 
 # ── 3: durable per-container crash-log tail ─────────────────────────────
 # Restart the tail if the container disappears and comes back (docker logs

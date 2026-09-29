@@ -115,7 +115,7 @@ curl -s http://localhost:9093/-/healthy
 
 ### Database Migrations
 
-`database/migrations/` currently has 61 sequenced files (`013` through `086`, with some numbers skipped/archived — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` and `alarm-api` won't start until it exits successfully.
+`database/migrations/` currently has 64 sequenced files (`013` through `089`, with some numbers skipped/archived — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` and `alarm-api` won't start until it exits successfully.
 
 Migrations 084–086 act on the separate `eap_backup` database, which holds the drilling and VCP data. When it is absent they print `IMS_MIGRATION_DEFERRED` and the runner does **not** record them, so they apply automatically on the next `db-migrate` run after `eap_backup` exists (`docker compose run --rm db-migrate`). The runner also stops at the first failed migration instead of running later ones on a half-applied schema. Installs migrated before this behaviour may have 084–086 recorded without effect; run those three files by hand as shown in [Synthetic Drilling and VCP Data](../data/MOCK_DATA.md). They are safe to re-run.
 
@@ -148,8 +148,10 @@ All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded
 | `POSTGRES_PASSWORD`      | public example value | `.env` | **CHANGE** — database superuser (`POSTGRES_USER`) |
 | `GRAFANA_DB_PASSWORD`    | public example value | `.env` → `grafana_reader` role, PgBouncer userlist | **CHANGE** — read access to every table Grafana can query |
 | `ALARM_API_DB_PASSWORD`  | public example value | `.env` → `alarm_api_writer` role (migration `078-alarm-api-writer-role.sql`) | **CHANGE** — scoped to `SELECT`+`UPDATE` on `ldi_alarm_lifecycle`, but still a real DB credential |
+| `NODERED_DB_PASSWORD`    | public example value | `.env` → `nodered_writer` role (migration `087-service-writer-roles.sql`), PgBouncer userlist | **CHANGE** — required; Node-RED's ingest writes (no superuser). Compose refuses to start without it |
+| `ARCHIVER_DB_PASSWORD`   | public example value | `.env` → `observability_archiver` role (migration `087-service-writer-roles.sql`) | **CHANGE** — required; `INSERT` on `container_restart_audit` only |
 | `GRAFANA_ADMIN_PASSWORD` | public example value | `.env` → Grafana admin | **CHANGE** — dashboard edit + datasource access |
-| `ALERT_WEBHOOK_TOKEN`, `GRAFANA_RENDERER_TOKEN` | public example value | `.env` | **CHANGE** — webhook and renderer shared secrets |
+| `ALERT_WEBHOOK_TOKEN`, `GRAFANA_RENDERER_TOKEN` | public example value | `.env` | **CHANGE** — webhook and renderer shared secrets. `ALERT_WEBHOOK_TOKEN` is required: `/alert-webhook` answers 401 without `Authorization: Bearer <token>` and 503 when it is unset; Alertmanager (compose secret) and the Grafana contact point send it |
 | `NODE_RED_CREDENTIAL_SECRET`, `NODE_RED_ADMIN_PASSWORD_HASH` | public example value / empty | `.env` → Node-RED | **CHANGE** before storing any credential in a flow; `nodered_data/settings.js` refuses to start Node-RED when the hash is empty |
 | `PGADMIN_DEFAULT_PASSWORD` | public example value | `.env` → pgAdmin | **CHANGE** — pgAdmin is published on all interfaces |
 
@@ -162,13 +164,18 @@ Every value in `.env.example` is public (the repository is public). Treat each o
 gen() { python -c "import secrets; print(secrets.token_urlsafe($1))"; }
 NEW_API_KEY=$(gen 32); NEW_PG_PASS=$(gen 24); NEW_GRAFANA_DB_PASS=$(gen 24)
 NEW_ALARM_API_DB_PASS=$(gen 24); NEW_GRAFANA_ADMIN_PASS=$(gen 24)
+NEW_NODERED_DB_PASS=$(gen 24); NEW_ARCHIVER_DB_PASS=$(gen 24); NEW_ALERT_WEBHOOK_TOKEN=$(gen 32)
 
 # 2. Change the database role passwords FIRST, while the old credentials still work.
 #    The superuser password in an existing data volume is NOT changed by editing .env.
+#    Statement logging is switched off for this session so the passwords do not reach the server log.
 docker compose exec -T timescaledb sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<SQL
+SET log_statement = 'none';
 ALTER ROLE CURRENT_USER WITH PASSWORD '$NEW_PG_PASS';
 ALTER ROLE grafana_reader WITH PASSWORD '$NEW_GRAFANA_DB_PASS';
 ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';
+ALTER ROLE nodered_writer WITH PASSWORD '$NEW_NODERED_DB_PASS';
+ALTER ROLE observability_archiver WITH PASSWORD '$NEW_ARCHIVER_DB_PASS';
 SQL
 
 # 3. Update .env to match
@@ -177,10 +184,13 @@ sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_PG_PASS/" .env
 sed -i "s/^GRAFANA_DB_PASSWORD=.*/GRAFANA_DB_PASSWORD=$NEW_GRAFANA_DB_PASS/" .env
 sed -i "s/^ALARM_API_DB_PASSWORD=.*/ALARM_API_DB_PASSWORD=$NEW_ALARM_API_DB_PASS/" .env
 sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_ADMIN_PASS/" .env
+sed -i "s/^NODERED_DB_PASSWORD=.*/NODERED_DB_PASSWORD=$NEW_NODERED_DB_PASS/" .env
+sed -i "s/^ARCHIVER_DB_PASSWORD=.*/ARCHIVER_DB_PASSWORD=$NEW_ARCHIVER_DB_PASS/" .env
+sed -i "s/^ALERT_WEBHOOK_TOKEN=.*/ALERT_WEBHOOK_TOKEN=$NEW_ALERT_WEBHOOK_TOKEN/" .env
 
 # 4. Recreate the containers so they pick up the new environment
 #    (pgbouncer re-seeds userlist.txt from .env on start)
-docker compose up -d --force-recreate pgbouncer node-red grafana alarm-api factory-twin-3d observability-archiver
+docker compose up -d --force-recreate pgbouncer node-red grafana alertmanager alarm-api factory-twin-3d observability-archiver
 
 # 5. GF_SECURITY_ADMIN_PASSWORD only applies to a brand-new Grafana database;
 #    on an existing one, reset the admin password explicitly:

@@ -165,6 +165,8 @@ Grafana 在四个文件夹中预置了 22 个仪表板：
 
 显示 Fleet Availability、Active Critical/Major Alarms、Environmental Compliance、Machines Running、各设备状态卡片、流水线心跳、温度（22 ± 2 °C）与湿度（55 ± 5 %）达标时间线，以及最近 5 分钟 Critical/Major 告警的 **Action Queue**。确认与解决操作在 **LDI Alarm Console** 上完成，而不是在 Andon 看板上。
 
+每台设备的卡片显示 ALARM、OK、IDLE、STALE（超过 5 分钟没有数据）或 NO_DATA（设备从未上报）。数据新鲜度以实际时钟为准，因此流水线停止时卡片会变为 STALE，而不是停留在最后的颜色。如需查看归档或暂停的数据集，请使用 `?var-clock=replay` 打开看板，此时以数据库中最新的时间戳为基准。
+
 ### 8. LDI Engineering Analytics & SPC
 
 **用途**：面向工程师的深入分析——Cpk/SPC 排名、RCA Truth Test 与 PE/JE 分布。

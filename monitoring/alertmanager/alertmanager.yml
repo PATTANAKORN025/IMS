@@ -54,12 +54,18 @@ route:
 receivers:
   - name: 'null'
 
+  # Node-RED's /alert-webhook requires this bearer token. The file is the
+  # compose secret alert_webhook_token (from ALERT_WEBHOOK_TOKEN in .env);
+  # Alertmanager's config has no environment-variable substitution.
   - name: 'ims-webhook-default'
     webhook_configs:
       - url: 'http://node-red:1880/alert-webhook'
         send_resolved: true
         http_config:
           follow_redirects: true
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/alert_webhook_token
 
   - name: 'ims-slack-critical'
     # This receiver's only working delivery path is webhook_configs below,
@@ -78,6 +84,10 @@ receivers:
     webhook_configs:
       - url: 'http://node-red:1880/alert-webhook'
         send_resolved: true
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/alert_webhook_token
 
 
 inhibit_rules:

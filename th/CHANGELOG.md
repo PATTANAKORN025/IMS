@@ -88,6 +88,16 @@
   - ไม่ติดตั้ง Grafana plugin ที่ไม่ได้ใช้แล้ว
   - init script ไม่ hardcode ชื่อฐานข้อมูลและ owner อีก
 
+### การเสริมความปลอดภัย (2026-09-29 รอบที่สอง)
+- **ยืนยันตัวตนของ alert webhook:** `/alert-webhook` ต้องมี `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` (ไม่มีได้ 401 และได้ 503 ถ้าไม่ได้ตั้ง token) Alertmanager ส่ง token จาก compose secret และ contact point ของ Grafana ก็ส่งด้วย ตอนนี้ `ALERT_WEBHOOK_TOKEN` บังคับต้องมี
+- **Role ฐานข้อมูลสิทธิ์ต่ำสุด (migration 087):** Node-RED เขียนข้อมูลด้วย `nodered_writer` และ observability archiver ด้วย `observability_archiver` แต่ละ role ได้สิทธิ์เฉพาะตารางที่ใช้ ไม่มีตัวไหนเป็น superuser แล้ว คีย์ใหม่ที่บังคับใน `.env`: `NODERED_DB_PASSWORD`, `ARCHIVER_DB_PASSWORD`
+- **Docker socket:** archiver ไม่ mount `/var/run/docker.sock` แล้ว อ่าน event ของ container ผ่าน `docker-socket-proxy` ที่อนุญาตเฉพาะ endpoint แบบอ่าน (ปฏิเสธ POST) บน network ภายใน และติดตั้งเครื่องมือไว้ใน image ของตัวเองแทนการติดตั้งทุกครั้งที่เริ่ม
+- **การแทรกสคริปต์ในแดชบอร์ด:** ปุ่ม acknowledge/resolve ของ Alarm Console และลิงก์เครื่องของ drilling fleet ไม่ใส่ค่าจากฐานข้อมูลลงใน JavaScript ของ `onclick` แล้ว และ VCP wall ไม่เขียนตัวแปรจาก URL ลงในลิงก์โดยไม่ escape อีก `dashboard-linter` ปฏิเสธทั้งสองรูปแบบ
+- **Operator Andon:** tile เปลี่ยนเป็นสีเทา STALE เมื่อข้อมูลเก่ากว่า 5 นาทีเทียบกับนาฬิกาจริง pipeline ที่หยุดจึงไม่ทำให้ค้างสีเขียว ใช้ `?var-clock=replay` เพื่อกลับไปแบบ replay เดิม
+- **สถานะ LDI ล่าสุดต่อเครื่อง (migration 088):** เก็บใน `ldi_machine_last_state` ด้วย trigger ตอน insert และ `v_ldi_machine_latest_full` อ่านจากตารางนี้โดยคอลัมน์เหมือนเดิม ต้นทุนจึงไม่โตตามขนาด `ldi_data` อีก
+- **Drilling Fleet Overview:** การ์ดแต่ละใบแสดงโรงงาน ("F3 - DRL001-M") จากตาราง `machine_master` ใหม่ (migration 089 สร้างเฉพาะโครงสร้าง) และตัวกรอง Factory มีผลกับการ์ดและ KPI แล้ว เครื่องที่ไม่มีในตารางยังแสดงอยู่ในชื่อ "F?" ตำแหน่ง scroll แนวนอนคงอยู่หลัง auto-refresh และหลังโหลดหน้าใหม่
+- **การหมุนเวียน credential:** ขั้นตอนในเอกสารปิด statement logging ของ session ก่อน เพราะเมื่อเปิด DDL logging คำสั่ง `ALTER ROLE ... PASSWORD` จะไปอยู่ใน log ของเซิร์ฟเวอร์
+
 ### เอกสารและการจัดระเบียบคลังโค้ด (Documentation & Repository Hygiene)
 - ตรวจทานเอกสารและรายการแสดงสถานะระบบทั้งหมดเทียบกับระบบจริง (`main`) ณ 2026-09-28 ครบทั้ง 3 ภาษา (EN/TH/ZH-CN)
 - ซิงค์ป้ายเวอร์ชันเป็น `v1.0.1` ครบทุกภาษา และนำเอกสารกฎเกณฑ์หลัก (`AGENTS.md`) ออกจาก `.gitignore`
