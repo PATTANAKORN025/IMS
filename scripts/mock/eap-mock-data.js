@@ -502,6 +502,10 @@ function toSql(data, meta) {
     ['message_id', 'equipment_id', 'message_type', 'event_type', 'event_code', 'event_message', 'event_time', 'sent_time', 'source', 'source_file', 'magazine_no', 'spindle', 'raw_item_code'],
     data.drilling.events,
     e => [e.message_id, e.equipment_id, e.message_type, e.event_type, e.event_code, e.event_message, e.event_time, e.sent_time, e.source, e.source_file, e.magazine_no, e.spindle, e.raw_item_code]));
+  // every generated machine is registered, all in one mock factory
+  const machines = [...new Set(data.drilling.events.map(e => e.equipment_id))].sort();
+  parts.push(insert('public.machine_master', ['equipment_id', 'factory'], machines, m => [m, 'MOCK'])
+    .replace(/;$/, '\nON CONFLICT (equipment_id) DO NOTHING;'));
   parts.push(insert('public.eap_status',
     ['equipment_id', 'message_id', 'agent_status', 'current_file', 'last_data_time', 'last_error', 'heartbeat', 'event_time'],
     data.drilling.status,
@@ -529,6 +533,7 @@ ${MARKER_CHECK}
 DELETE FROM public.machine_event WHERE message_id LIKE 'MOCK-%';
 DELETE FROM public.eap_status WHERE message_id LIKE 'MOCK-%';
 DELETE FROM public.agent_log WHERE message_id LIKE 'MOCK-%';
+DELETE FROM public.machine_master WHERE equipment_id LIKE 'MOCK-%';
 DELETE FROM public.vcp_upp WHERE log_id LIKE 'MOCK-%';
 DELETE FROM public.vcp_status_change WHERE log_id LIKE 'MOCK-%';
 DELETE FROM public.vcp_alarm WHERE log_id LIKE 'MOCK-%';

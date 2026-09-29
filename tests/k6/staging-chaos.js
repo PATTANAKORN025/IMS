@@ -68,7 +68,7 @@ export default function () {
   });
 
   const res = http.post(WEBHOOK_URL, payload, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (__ENV.ALERT_WEBHOOK_TOKEN || '') },
     timeout: '10s',
   });
 

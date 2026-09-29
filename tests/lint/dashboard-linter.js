@@ -32,6 +32,8 @@
  *      an overlap, never repositioned back) passes Check 9 clean since
  *      nothing overlaps; this walks panels sorted by y and flags any panel
  *      starting more than GAP_THRESHOLD units past where prior content ends
+ *  19. Business Text templates never emit data unescaped: no {{{ }}}, and no
+ *      {{value}} inside an inline on*="..." handler
  *
  * Also validates monitoring/grafana/library-panels/*.json (real Grafana
  * Library Panels, provisioned via scripts/provision-library-panels.sh --
@@ -207,6 +209,24 @@ function lintDashboard(filePath) {
     // validated separately by lintLibraryPanel below), not the dashboard
     // JSON. Nothing past this point applies to them.
     if (panel.libraryPanel) continue;
+
+    // Check 19: Business Text templates must not emit data unescaped. HTML
+    // sanitizing is off in this stack (GF_PANELS_DISABLE_SANITIZE_HTML), so
+    // the template is the only escaping there is: a triple-stash emits raw
+    // HTML, and a {{value}} inside an on*="..." handler becomes JavaScript
+    // (the browser decodes &#x27; back to ' before running it). Pass values
+    // to handlers through data-* attributes and read this.dataset instead.
+    if (panel.type === 'marcusolsson-dynamictext-panel' && panel.options) {
+      const content = String(panel.options.content || '');
+      if (/\{\{\{/.test(content)) {
+        error(file, pid, 'Business Text content uses {{{ }}} (unescaped HTML); use {{ }}');
+      }
+      for (const m of content.matchAll(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*')/gi)) {
+        if (m[1].includes('{{')) {
+          error(file, pid, `Business Text inline handler interpolates a template value: ${m[0].slice(0, 80)}... -- use data-* and this.dataset`);
+        }
+      }
+    }
 
     // Check 11: Panel Design Tokens (PANEL_TOKENS.md)
     const title = (panel.title || '').toLowerCase();

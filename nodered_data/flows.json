@@ -31,7 +31,9 @@
             "alert_catch",
             "alert_error_debug",
             "alert_status_line",
-            "alert_status_teams"
+            "alert_status_teams",
+            "alert_auth",
+            "alert_reject"
         ],
         "x": 38,
         "y": 55,
@@ -52,8 +54,7 @@
         "y": 144,
         "wires": [
             [
-                "alert_respond",
-                "alert_format"
+                "alert_auth"
             ]
         ]
     },
@@ -69,6 +70,45 @@
         },
         "x": 396,
         "y": 96,
+        "wires": []
+    },
+    {
+        "id": "alert_auth",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Check Bearer Token",
+        "func": "// Alertmanager and Grafana send \"Authorization: Bearer <ALERT_WEBHOOK_TOKEN>\".\n// Anything else on the Docker network (or 127.0.0.1:1880) could otherwise\n// push arbitrary text to LINE/Teams through this endpoint.\n// Output 1: authorised. Output 2: rejected (401, or 503 if no token is set --\n// fail closed rather than accept everything).\nconst expected = env.get('ALERT_WEBHOOK_TOKEN') || '';\nif (expected === '') {\n    node.error('ALERT_WEBHOOK_TOKEN is not set -- rejecting /alert-webhook');\n    msg.statusCode = 503;\n    msg.payload = { error: 'webhook token not configured' };\n    return [null, msg];\n}\nconst header = (msg.req && msg.req.headers && msg.req.headers.authorization) || '';\nconst given = header.startsWith('Bearer ') ? header.slice(7) : '';\n// length-independent comparison: no early exit on the first differing char\nlet diff = given.length ^ expected.length;\nfor (let i = 0; i < expected.length; i++) {\n    diff |= expected.charCodeAt(i) ^ (i < given.length ? given.charCodeAt(i) : 0);\n}\nif (diff !== 0) {\n    node.warn('/alert-webhook rejected: missing or wrong bearer token');\n    msg.statusCode = 401;\n    msg.payload = { error: 'unauthorized' };\n    return [null, msg];\n}\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 314,
+        "y": 204,
+        "wires": [
+            [
+                "alert_respond",
+                "alert_format"
+            ],
+            [
+                "alert_reject"
+            ]
+        ]
+    },
+    {
+        "id": "alert_reject",
+        "type": "http response",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Reject (msg.statusCode)",
+        "statusCode": "",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 544,
+        "y": 254,
         "wires": []
     },
     {

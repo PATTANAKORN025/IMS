@@ -12,4 +12,8 @@ contactPoints:
         settings:
           url: http://node-red:1880/alert-webhook
           httpMethod: POST
+          # Node-RED rejects the webhook without this; Grafana substitutes
+          # the variable from its container environment at provisioning
+          authorization_scheme: Bearer
+          authorization_credentials: $ALERT_WEBHOOK_TOKEN
         disableResolveMessage: false

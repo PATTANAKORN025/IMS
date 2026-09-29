@@ -111,7 +111,7 @@ _Status: Both scripts are real, runnable, and pass against their own (not the ea
 
 1. **Operator Andon Test:** Unplug the network cable from a non-production LDI machine (e.g. `LDI-01` -- real machine IDs are `LDI-01` through `LDI-10`, two-digit, not `LDI-001`).
 
-- _Pass Criteria:_ The [LDI Operator Andon](http://localhost:3000/d/ims-ldi-operator-andon/set2-operator-andon) board must show that machine as `NO_DATA` (gray) within roughly one refresh cycle plus processing -- the board's refresh interval is **5 seconds** (not 10s), and the status tile reads `v_ldi_machine_latest_full`'s `is_stale` flag (no reading in the last 5 minutes = `NO_DATA`), so the realistic pass window is closer to **~7-10 seconds**, not 12.
+- _Pass Criteria:_ The [LDI Operator Andon](http://localhost:3000/d/ims-ldi-operator-andon/set2-operator-andon) board must show that machine as `STALE` (gray) once its last reading is more than **5 minutes** old, measured against the wall clock -- so the pass window is about 5 minutes plus one 5-second refresh, not seconds. `NO_DATA` is reserved for a machine that has never reported.
 
 1. **Yield Anomaly Test:** Inject a dummy high-temperature value into a test LDI unit.
 

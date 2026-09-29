@@ -111,7 +111,7 @@ _状态：两个脚本都是真实的、可运行的，并且根据它们自己�
 
 1. **操作员 Andon 测试：** 拔下非生产 LDI 机器（例如 `LDI-01` -- 真实机器 ID 为 `LDI-01` 到 `LDI-10`，两位数，而不是 `LDI-001`）的网线。
 
-- _通过标准：_ [LDI Operator Andon](http://localhost:3000/d/ims-ldi-operator-andon/set2-operator-andon) 看板必须在大概一个刷新周期加上处理时间内将该机器显示为 `NO_DATA`（灰色） -- 看板的刷新间隔为 **5 秒**（不是 10 秒），并且状态磁贴读取 `v_ldi_machine_latest_full` 的 `is_stale` 标志（过去 5 分钟内没有读数 = `NO_DATA`），因此实际的通过时间窗口接近 **~7-10 秒**，而不是 12 秒。
+- _通过标准：_ [LDI Operator Andon](http://localhost:3000/d/ims-ldi-operator-andon/set2-operator-andon) 看板必须在该机器最后一条读数超过 **5 分钟**（以实际时钟为准）后将其显示为 `STALE`（灰色） -- 因此通过时间窗口约为 5 分钟加一次 5 秒刷新，而不是几秒钟。`NO_DATA` 仅用于从未上报过的机器。
 
 1. **产量异常测试：** 向测试 LDI 单元注入一个虚构的高温值。
 

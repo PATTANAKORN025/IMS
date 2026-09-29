@@ -6,6 +6,34 @@
   "templating": {
     "list": [
       {
+        "name": "clock",
+        "label": "Clock",
+        "type": "custom",
+        "query": "Live : live, Replay : replay",
+        "current": {
+          "selected": true,
+          "text": "Live",
+          "value": "live"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "Live",
+            "value": "live"
+          },
+          {
+            "selected": false,
+            "text": "Replay",
+            "value": "replay"
+          }
+        ],
+        "multi": false,
+        "includeAll": false,
+        "hide": 2,
+        "skipUrlSync": false,
+        "description": "Live: freshness against the wall clock. Replay (URL ?var-clock=replay): against the newest timestamp in the database. Hidden like the other variables, so the kiosk layout keeps its height."
+      },
+      {
         "name": "factory",
         "label": "Factory",
         "type": "query",
@@ -130,6 +158,10 @@
                 "3": {
                   "color": "#EF4444",
                   "text": "ALARM"
+                },
+                "4": {
+                  "color": "#64748B",
+                  "text": "STALE"
                 }
               }
             }
@@ -180,11 +212,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: snapshot-aware status. Freshness and the five-minute alarm window use the newest timestamp available in the database, so historical or paused datasets retain truthful colors. ALARM (3) takes priority over every other state. */\nWITH clock AS (\n  SELECT GREATEST(\n    (SELECT MAX(\"time\") FROM public.ldi_data),\n    (SELECT MAX(logdate) FROM public.ldi_alarm_log)\n  ) AS db_now\n)\nSELECT CASE\n  WHEN EXISTS (\n    SELECT 1\n    FROM public.ldi_alarm_log a\n    JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n    LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n    WHERE a.equipmentid = v.eqp_id\n      AND m.severity IN ('Critical', 'Major')\n      AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'\n      AND l.status IS DISTINCT FROM 'RESOLVED'\n  ) THEN 3\n  WHEN NOT v.has_data OR v.\"time\" < (SELECT db_now FROM clock) - INTERVAL '5 minutes' THEN 0\n  WHEN v.state THEN 2\n  ELSE 1\nEND AS \"$machine_id\"\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = ${machine_id:sqlstring}",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: snapshot-aware status. Freshness and the five-minute alarm window use the wall clock (Clock = Live) or the newest timestamp in the database (Clock = Replay). ALARM (3) takes priority over every other state. */\nWITH clock AS (\n  -- Live (default): the wall clock, so a stopped pipeline turns tiles STALE\n  -- instead of freezing them on their last colour. Replay: the newest\n  -- timestamp in the database, for reading an archived or paused dataset.\n  SELECT CASE WHEN ${clock:sqlstring} = 'replay' THEN GREATEST(\n    (SELECT MAX(\"time\") FROM public.ldi_data),\n    (SELECT MAX(logdate) FROM public.ldi_alarm_log)\n  ) ELSE NOW() END AS db_now\n)\nSELECT CASE\n  WHEN EXISTS (\n    SELECT 1\n    FROM public.ldi_alarm_log a\n    JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n    LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n    WHERE a.equipmentid = v.eqp_id\n      AND m.severity IN ('Critical', 'Major')\n      AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'\n      AND l.status IS DISTINCT FROM 'RESOLVED'\n  ) THEN 3\n  WHEN NOT v.has_data THEN 0\n  WHEN v.\"time\" < (SELECT db_now FROM clock) - INTERVAL '5 minutes' THEN 4\n  WHEN v.state THEN 2\n  ELSE 1\nEND AS \"$machine_id\"\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = ${machine_id:sqlstring}",
           "format": "table"
         }
       ],
-      "description": "ALARM/OK/IDLE/NO_DATA status for $machine_id. The latest timestamp present in the database is the freshness reference, so archived or paused datasets remain readable. ALARM means an unresolved Critical/Major event within five minutes of that database timestamp; otherwise the tile uses the machine's latest telemetry state."
+      "description": "ALARM/OK/IDLE/STALE/NO_DATA status for $machine_id. With Clock = Live, telemetry older than five minutes is STALE, so a stopped pipeline cannot leave a tile green; Clock = Replay measures against the newest timestamp in the database, for archived or paused datasets. ALARM means an unresolved Critical/Major event within five minutes of that reference; otherwise the tile uses the machine's latest telemetry state. NO_DATA means the machine has never reported."
     },
     {
       "id": 1001,
@@ -448,7 +480,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* Snapshot-aware active count: unresolved Critical/Major alarms in the same five-minute database-time window used by the machine tiles and Action Queue. */\nWITH clock AS (\n  SELECT GREATEST(\n    (SELECT MAX(\"time\") FROM public.ldi_data),\n    (SELECT MAX(logdate) FROM public.ldi_alarm_log)\n  ) AS db_now\n)\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nLEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\nWHERE a.equipmentid IN (${machine_id:sqlstring})\n  AND m.severity IN ('Critical', 'Major')\n  AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'\n  AND l.status IS DISTINCT FROM 'RESOLVED';",
+          "rawSql": "/* Snapshot-aware active count: unresolved Critical/Major alarms in the same five-minute database-time window used by the machine tiles and Action Queue. */\nWITH clock AS (\n  -- Live (default): the wall clock, so a stopped pipeline turns tiles STALE\n  -- instead of freezing them on their last colour. Replay: the newest\n  -- timestamp in the database, for reading an archived or paused dataset.\n  SELECT CASE WHEN ${clock:sqlstring} = 'replay' THEN GREATEST(\n    (SELECT MAX(\"time\") FROM public.ldi_data),\n    (SELECT MAX(logdate) FROM public.ldi_alarm_log)\n  ) ELSE NOW() END AS db_now\n)\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nLEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\nWHERE a.equipmentid IN (${machine_id:sqlstring})\n  AND m.severity IN ('Critical', 'Major')\n  AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'\n  AND l.status IS DISTINCT FROM 'RESOLVED';",
           "format": "table"
         }
       ],
@@ -1118,7 +1150,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH clock AS (\n  SELECT GREATEST(\n    (SELECT MAX(\"time\") FROM public.ldi_data),\n    (SELECT MAX(logdate) FROM public.ldi_alarm_log)\n  ) AS db_now\n), real_alarms AS (\n  SELECT a.equipmentid AS \"Machine\",\n         m.severity AS \"Severity\",\n         l.status AS \"Status\",\n         m.alarm_type AS \"Alarm Type\",\n         m.alarm_msg AS \"Alarm Msg\",\n         m.alarm_detail AS \"Alarm Detail\",\n         a.factory AS \"Factory\",\n         d.mo AS \"MO\",\n         a.logdate AS \"When\",\n         (EXTRACT(EPOCH FROM a.logdate) * 1000)::BIGINT AS \"When_ms\",\n         CASE\n           WHEN (SELECT db_now FROM clock) - a.logdate < INTERVAL '1 hour'\n             THEN GREATEST(EXTRACT(MINUTE FROM ((SELECT db_now FROM clock) - a.logdate))::INT, 0)::TEXT || 'm'\n           ELSE EXTRACT(HOUR FROM ((SELECT db_now FROM clock) - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM ((SELECT db_now FROM clock) - a.logdate))::INT::TEXT, 2, '0') || 'm'\n         END AS \"Elapsed\",\n         CASE COALESCE(c.category, 'UNCLASSIFIED')\n           WHEN 'VACUUM' THEN 'Maintenance'\n           WHEN 'CAMERA' THEN 'Maintenance'\n           WHEN 'MOTION' THEN 'Maintenance'\n           WHEN 'MOTOR' THEN 'Maintenance'\n           WHEN 'ENVIRONMENT' THEN 'Facility'\n           WHEN 'NETWORK' THEN 'Automation'\n           WHEN 'PLC' THEN 'Automation'\n           WHEN 'COMMUNICATION' THEN 'Automation'\n           WHEN 'DATABASE' THEN 'IT'\n           WHEN 'ALIGNMENT' THEN 'Process Engineering'\n           WHEN 'CALIBRATION' THEN 'Process Engineering'\n           WHEN 'REGISTRATION' THEN 'Process Engineering'\n           WHEN 'PROCESS' THEN 'Process Engineering'\n           ELSE 'Maintenance'\n         END AS \"Owner\"\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.ldi_data d ON d.log_id = a.related_log_id AND d.time BETWEEN a.logdate - INTERVAL '10 minutes' AND a.logdate + INTERVAL '10 minutes'\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE m.severity IN ('Critical', 'Major')\n    AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'\n    AND a.equipmentid IN (${machine_id:sqlstring})\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n), with_action AS (\n  SELECT \"Machine\",\"Severity\",\"Status\",\"Alarm Type\",\"Alarm Msg\",\"Alarm Detail\",\"Factory\",\"MO\",\"When\",\"When_ms\",\"Elapsed\",\"Owner\",\n    CASE \"Owner\"\n      WHEN 'Maintenance' THEN 'CALL MAINT'\n      WHEN 'Facility' THEN 'CHECK HVAC'\n      WHEN 'Automation' THEN 'CHECK AUTOMATION'\n      WHEN 'IT' THEN 'CALL IT'\n      WHEN 'Process Engineering' THEN 'CHECK PROCESS'\n    END AS \"Action\"\n  FROM real_alarms\n), combined AS (\n  SELECT * FROM with_action\n  UNION ALL\n  SELECT NULL,'NONE','NONE',NULL,'NO ACTIVE CRITICAL/MAJOR ALARMS',NULL,NULL,NULL,(SELECT db_now FROM clock),0,NULL,NULL,NULL\n  WHERE NOT EXISTS (SELECT 1 FROM with_action)\n)\nSELECT * FROM combined\nORDER BY (CASE \"Severity\" WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 WHEN 'NONE' THEN 2 ELSE 3 END), \"When\" DESC\nLIMIT 50;",
+          "rawSql": "WITH clock AS (\n  -- Live (default): the wall clock, so a stopped pipeline turns tiles STALE\n  -- instead of freezing them on their last colour. Replay: the newest\n  -- timestamp in the database, for reading an archived or paused dataset.\n  SELECT CASE WHEN ${clock:sqlstring} = 'replay' THEN GREATEST(\n    (SELECT MAX(\"time\") FROM public.ldi_data),\n    (SELECT MAX(logdate) FROM public.ldi_alarm_log)\n  ) ELSE NOW() END AS db_now\n), real_alarms AS (\n  SELECT a.equipmentid AS \"Machine\",\n         m.severity AS \"Severity\",\n         l.status AS \"Status\",\n         m.alarm_type AS \"Alarm Type\",\n         m.alarm_msg AS \"Alarm Msg\",\n         m.alarm_detail AS \"Alarm Detail\",\n         a.factory AS \"Factory\",\n         d.mo AS \"MO\",\n         a.logdate AS \"When\",\n         (EXTRACT(EPOCH FROM a.logdate) * 1000)::BIGINT AS \"When_ms\",\n         CASE\n           WHEN (SELECT db_now FROM clock) - a.logdate < INTERVAL '1 hour'\n             THEN GREATEST(EXTRACT(MINUTE FROM ((SELECT db_now FROM clock) - a.logdate))::INT, 0)::TEXT || 'm'\n           ELSE EXTRACT(HOUR FROM ((SELECT db_now FROM clock) - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM ((SELECT db_now FROM clock) - a.logdate))::INT::TEXT, 2, '0') || 'm'\n         END AS \"Elapsed\",\n         CASE COALESCE(c.category, 'UNCLASSIFIED')\n           WHEN 'VACUUM' THEN 'Maintenance'\n           WHEN 'CAMERA' THEN 'Maintenance'\n           WHEN 'MOTION' THEN 'Maintenance'\n           WHEN 'MOTOR' THEN 'Maintenance'\n           WHEN 'ENVIRONMENT' THEN 'Facility'\n           WHEN 'NETWORK' THEN 'Automation'\n           WHEN 'PLC' THEN 'Automation'\n           WHEN 'COMMUNICATION' THEN 'Automation'\n           WHEN 'DATABASE' THEN 'IT'\n           WHEN 'ALIGNMENT' THEN 'Process Engineering'\n           WHEN 'CALIBRATION' THEN 'Process Engineering'\n           WHEN 'REGISTRATION' THEN 'Process Engineering'\n           WHEN 'PROCESS' THEN 'Process Engineering'\n           ELSE 'Maintenance'\n         END AS \"Owner\"\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.ldi_data d ON d.log_id = a.related_log_id AND d.time BETWEEN a.logdate - INTERVAL '10 minutes' AND a.logdate + INTERVAL '10 minutes'\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE m.severity IN ('Critical', 'Major')\n    AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'\n    AND a.equipmentid IN (${machine_id:sqlstring})\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n), with_action AS (\n  SELECT \"Machine\",\"Severity\",\"Status\",\"Alarm Type\",\"Alarm Msg\",\"Alarm Detail\",\"Factory\",\"MO\",\"When\",\"When_ms\",\"Elapsed\",\"Owner\",\n    CASE \"Owner\"\n      WHEN 'Maintenance' THEN 'CALL MAINT'\n      WHEN 'Facility' THEN 'CHECK HVAC'\n      WHEN 'Automation' THEN 'CHECK AUTOMATION'\n      WHEN 'IT' THEN 'CALL IT'\n      WHEN 'Process Engineering' THEN 'CHECK PROCESS'\n    END AS \"Action\"\n  FROM real_alarms\n), combined AS (\n  SELECT * FROM with_action\n  UNION ALL\n  SELECT NULL,'NONE','NONE',NULL,'NO ACTIVE CRITICAL/MAJOR ALARMS',NULL,NULL,NULL,(SELECT db_now FROM clock),0,NULL,NULL,NULL\n  WHERE NOT EXISTS (SELECT 1 FROM with_action)\n)\nSELECT * FROM combined\nORDER BY (CASE \"Severity\" WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 WHEN 'NONE' THEN 2 ELSE 3 END), \"When\" DESC\nLIMIT 50;",
           "format": "table"
         }
       ],

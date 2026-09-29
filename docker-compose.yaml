@@ -131,6 +131,7 @@ services:
       DATABASE_URLS: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB},postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/eap_backup
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
       ALARM_API_DB_PASSWORD: ${ALARM_API_DB_PASSWORD:?ALARM_API_DB_PASSWORD required in .env}
+      NODERED_DB_PASSWORD: ${NODERED_DB_PASSWORD:?NODERED_DB_PASSWORD required in .env}
       POOL_MODE: transaction
       MAX_CLIENT_CONN: 200
       DEFAULT_POOL_SIZE: 20
@@ -204,6 +205,9 @@ services:
     volumes:
       - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
+    # bearer token for Node-RED's /alert-webhook, read via credentials_file
+    secrets:
+      - alert_webhook_token
     ports:
       - "127.0.0.1:${ALERTMANAGER_PORT:-9093}:${ALERTMANAGER_PORT:-9093}"
     deploy:
@@ -236,6 +240,8 @@ services:
       GF_SERVER_ENABLE_GZIP: "true"
       # only the plugins a provisioned dashboard uses; clock/status panels were
       # installed but referenced by no dashboard
+      # contact point bearer token for Node-RED's /alert-webhook
+      ALERT_WEBHOOK_TOKEN: ${ALERT_WEBHOOK_TOKEN:?set ALERT_WEBHOOK_TOKEN in .env}
       GF_INSTALL_PLUGINS: "volkovlabs-echarts-panel,marcusolsson-dynamictext-panel"
       GF_RENDERING_SERVER_URL: http://renderer:8081/render
       GF_RENDERING_CALLBACK_URL: http://grafana:${GRAFANA_PORT:-3000}/
@@ -395,6 +401,9 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       PGHOST: timescaledb
       ALARM_API_DB_PASSWORD: ${ALARM_API_DB_PASSWORD:?set ALARM_API_DB_PASSWORD in .env}
+      # migration 087 sets these roles' passwords
+      NODERED_DB_PASSWORD: ${NODERED_DB_PASSWORD:?set NODERED_DB_PASSWORD in .env}
+      ARCHIVER_DB_PASSWORD: ${ARCHIVER_DB_PASSWORD:?set ARCHIVER_DB_PASSWORD in .env}
     volumes:
       - ./database/migrations:/migrations:ro
       - ./scripts/migrate-entrypoint.sh:/scripts/migrate-entrypoint.sh:ro
@@ -510,8 +519,11 @@ services:
       PGHOST: ims-pgbouncer
       PGPORT: "5432"
       PGDATABASE: ${POSTGRES_DB}
-      PGUSER: ${POSTGRES_USER}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
+      # nodered_writer (migration 087): only the tables the flows write,
+      # not the superuser
+      PGUSER: nodered_writer
+      PGPASSWORD: ${NODERED_DB_PASSWORD:?set NODERED_DB_PASSWORD in .env}
+      ALERT_WEBHOOK_TOKEN: ${ALERT_WEBHOOK_TOKEN:?set ALERT_WEBHOOK_TOKEN in .env}
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN:-}
       LINE_USER_ID: ${LINE_USER_ID:-}
       TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL:-}
@@ -557,27 +569,52 @@ services:
   # to both a host file and public.container_restart_audit, plus tails
   # each critical container's logs into their own non-rotating host file.
   observability-archiver:
-    image: docker:27-cli
+    build:
+      context: ./services/observability-archiver
     container_name: ims-observability-archiver
     <<: *default-restart
     init: true
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - "apk add --no-cache postgresql-client jq bash >/dev/null && sh /scripts/observability-archiver.sh"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      # observability_archiver (migration 087): INSERT on
+      # container_restart_audit only, not the superuser
+      POSTGRES_USER: observability_archiver
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
-      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGPASSWORD: ${ARCHIVER_DB_PASSWORD:?set ARCHIVER_DB_PASSWORD in .env}
       PGHOST: timescaledb
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./scripts/observability-archiver.sh:/scripts/observability-archiver.sh:ro
       - ./ops-logs:/archive
     depends_on:
       timescaledb:
         condition: service_healthy
+      docker-socket-proxy:
+        condition: service_started
+      db-migrate:
+        condition: service_completed_successfully
     networks:
       - ims-internal
+      - ims-docker-api
+    logging: *default-logging
+
+  # ── Docker API proxy (read-only) ──────────────────────────
+  # The archiver needs container events and logs. Mounting the socket gave it
+  # the whole Docker API -- ':ro' on a socket does not stop API writes, so
+  # that was root on the host. This proxy answers GET on /events and
+  # /containers only (POST=0); everything else is denied. It sits on its own
+  # internal network that only the archiver joins.
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0
+    container_name: ims-docker-socket-proxy
+    <<: *default-restart
+    environment:
+      CONTAINERS: 1
+      EVENTS: 1
+      POST: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - ims-docker-api
     logging: *default-logging
 
   # ── pgAdmin 4 ─────────────────────────────────────────────
@@ -612,6 +649,10 @@ services:
       - timescaledb
     logging: *default-logging
 
+secrets:
+  alert_webhook_token:
+    environment: ALERT_WEBHOOK_TOKEN
+
 volumes:
   timescaledb_data:
     driver: local
@@ -629,3 +670,7 @@ networks:
     driver: bridge
   ims-monitoring:
     driver: bridge
+  # archiver <-> docker-socket-proxy only; no route out
+  ims-docker-api:
+    driver: bridge
+    internal: true

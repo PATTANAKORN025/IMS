@@ -96,6 +96,16 @@ CREATE TABLE IF NOT EXISTS public.agent_log (
 );
 SELECT create_hypertable('public.agent_log', 'event_time', chunk_time_interval => INTERVAL '7 days', if_not_exists => true);
 
+-- Machine registry: the factory each drilling machine belongs to (Fleet
+-- Overview label and factory filter). Same definition as migration 089.
+CREATE TABLE IF NOT EXISTS public.machine_master (
+    equipment_id VARCHAR(100) NOT NULL,
+    brand        VARCHAR(50),
+    model        VARCHAR(50),
+    factory      VARCHAR(5),
+    CONSTRAINT pk_machine_master PRIMARY KEY (equipment_id)
+);
+
 -- ---------------------------------------------------------------- vcp
 -- One row per line per minute. 18 rectifier stations, two sides (a/b) each;
 -- 18 pumps; nine baths. The source swaps the bath tags: preset_<bath> is the

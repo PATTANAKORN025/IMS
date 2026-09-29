@@ -88,6 +88,16 @@
   - Unused Grafana plugins are no longer installed.
   - Init scripts no longer hardcode the database and owner names.
 
+### Hardening (2026-09-29, second pass)
+- **Alert webhook authentication:** `/alert-webhook` requires `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` (401 otherwise, 503 when the token is unset). Alertmanager sends it from a compose secret, and the Grafana contact point sends it too. `ALERT_WEBHOOK_TOKEN` is now required.
+- **Least-privilege database roles (migration 087):** Node-RED writes as `nodered_writer` and the observability archiver as `observability_archiver`, each granted only the tables it uses; neither is the superuser any more. New required `.env` keys: `NODERED_DB_PASSWORD`, `ARCHIVER_DB_PASSWORD`.
+- **Docker socket:** the archiver no longer mounts `/var/run/docker.sock`. It reads container events through `docker-socket-proxy`, which allows only read endpoints (POST is refused), on an internal network. Its tools are built into its own image instead of installed at every start.
+- **Dashboard script injection:** the Alarm Console acknowledge/resolve buttons and the drilling fleet machine links no longer place database values inside `onclick` JavaScript, and the VCP wall no longer writes URL variables unescaped into links. `dashboard-linter` rejects both patterns.
+- **Operator Andon:** a tile turns grey STALE when its data is more than 5 minutes old against the wall clock, so a stopped pipeline cannot leave it green. `?var-clock=replay` keeps the old replay behaviour.
+- **Latest LDI state per machine (migration 088):** kept in `ldi_machine_last_state` by an insert trigger; `v_ldi_machine_latest_full` reads it with unchanged columns, so its cost no longer grows with `ldi_data`.
+- **Drilling Fleet Overview:** each card shows its factory ("F3 - DRL001-M") from the new `machine_master` registry (migration 089, schema only), and the Factory filter now applies to the cards and the KPIs. A machine missing from the registry is still shown, as "F?". The horizontal scroll position survives the auto-refresh and a page reload.
+- **Credential rotation:** the documented procedure switches statement logging off for the session, because `ALTER ROLE ... PASSWORD` otherwise reaches the server log when DDL logging is on.
+
 ### Documentation & Repository Hygiene
 - Re-verified all living documentation and inventories against live runtime (`main`) as of 2026-09-28 across EN, TH, and ZH-CN.
 - Synchronized release badge to `v1.0.1` and removed living rule files (`AGENTS.md`) from `.gitignore`.

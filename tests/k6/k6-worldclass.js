@@ -92,7 +92,7 @@ export default function () {
   group('Alert Webhook — Spike Chaos', () => {
     const payload = generateAlertPayload(vuId);
     const params = {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (__ENV.ALERT_WEBHOOK_TOKEN || '') },
       timeout: '10s',
     };
 

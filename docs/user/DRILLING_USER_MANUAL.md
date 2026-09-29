@@ -313,7 +313,7 @@ The database query categorizes alarms into **11 canonical failure domains** usin
 ```
 
 #### Machine Card Anatomy (8 Core Elements):
-1. **Machine Identifier & Link:** `MOCK-DRL-001` with hyperlinked URL parameter routing directly to *03 Machine Investigation* (`var-focus_machine=MOCK-DRL-001`).
+1. **Machine Identifier & Link:** `F<factory> - <machine>` (e.g. `FMOCK - MOCK-DRL-001`), with hyperlinked URL parameter routing directly to *03 Machine Investigation* (`var-focus_machine=MOCK-DRL-001`). The factory comes from `public.machine_master`; a machine not registered there shows `F?`. The **Factory** variable filters the cards and the KPI counts.
 2. **State Pill:** Distinct color badge matching the operational state (`RUN`, `ALARM`, `TOOL_CHANGE`, `STOP`, `STANDBY`, `OFFLINE`).
 3. **Time Ago:** Telemetry elapsed counter (`12s ago`, `4m ago`) flagging stagnant feeds.
 4. **Spindle Array (1–6):** 6 circular badges reflecting bitmask activation. Shows green when active, red with warning icon on alarm, gray when masked.
