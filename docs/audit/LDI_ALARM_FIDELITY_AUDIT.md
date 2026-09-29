@@ -53,7 +53,7 @@ UPDATE ldi_alarm_ms_code SET severity =
  END;
 ```
 
-Checked every one of the 19 live rows against this rule by hand: **100% match, no drift** (e.g. `0106001C` "Stop trigger wait signal timeout" → Minor via the timeout keyword; all 12 `alarm_type='W'` rows → Warning; all remaining `alarm_type='A'` rows with no soft keyword → Major). No inconsistency in the currently loaded data.
+Checked every one of the 19 live rows against this rule by hand: **100% match, no drift** (e.g. `0106001C` "Timed out waiting for camera stop trigger" → Minor via the timeout keyword; all 12 `alarm_type='W'` rows → Warning; all remaining `alarm_type='A'` rows with no soft keyword → Major). No inconsistency in the currently loaded data.
 
 The rule itself has two structural weaknesses, surfaced in detail in §8 because they matter most for the 1,820-code real catalog's 43 Critical rows, not the 19-code mock set (none of which trip the keyword regex or use `alarm_type='E'`).
 
@@ -68,7 +68,7 @@ WHERE alarm_msg ~* 'test|todo|tbd|lorem|xxx|foo|bar|debug|dummy|sample|placehold
 -- 0 rows
 ```
 
-No duplicate messages across the 19 codes (`GROUP BY alarm_msg HAVING count(*)>1` → 0 rows). Message lengths range 17–48 characters, all real short vendor-style technical phrases ("Wrong camera serial number", "Failed to connect to PLC") — no auto-generated or Lorem-ipsum-style filler.
+No duplicate messages across the 19 codes (`GROUP BY alarm_msg HAVING count(*)>1` → 0 rows). Message lengths range 17–48 characters, all real short vendor-style technical phrases ("Camera identity does not match configuration", "PLC connection failed") — no auto-generated or Lorem-ipsum-style filler.
 
 One pre-existing issue in the **real** 1,820-code catalog (not currently live, but ships via `scripts/switch-data-mode.sh real` → migration 061), already documented in that migration's own header comment and in `docs/DOCUMENTATION_QUALITY_REPORT.md`: alarm_id `011A0001`'s `alarm_msg` is the literal fragment `不以` with `alarm_detail = NULL` — a source-spreadsheet CSV-parsing corruption carried through verbatim rather than invented. Not a new finding; flagged here only because it is in-scope alarm-message-quality territory this audit re-verified still exists (`grep "011A0001" database/migrations/061-*.sql`).
 
@@ -151,7 +151,7 @@ CASE WHEN c.flag_pe_out_of_spec THEN 'PE/JE Out of Spec'
   ELSE 'Within Spec' END AS "Quality Impact"
 ```
 
-A `93004` "Calibration cycle exception" event (a pure noise code with zero designed relationship to position error) has a ~42% chance of displaying **"PE/JE Out of Spec"** in this column, purely because whatever telemetry row landed nearest in time happened to be one of the ~45% of all rows that are PE-out-of-spec at baseline. An engineer reading this table would reasonably read that as "this alarm was caused by a position error" — it wasn't; it's a coincidence of timing on a chronically-faulted dataset. This is the audit's most actionable finding: it's not just an internal semantic imprecision, it produces a specific, verifiable false attribution on a live production panel.
+A `93004` "Calibration cycle did not complete" event (a pure noise code with zero designed relationship to position error) has a ~42% chance of displaying **"PE/JE Out of Spec"** in this column, purely because whatever telemetry row landed nearest in time happened to be one of the ~45% of all rows that are PE-out-of-spec at baseline. An engineer reading this table would reasonably read that as "this alarm was caused by a position error" — it wasn't; it's a coincidence of timing on a chronically-faulted dataset. This is the audit's most actionable finding: it's not just an internal semantic imprecision, it produces a specific, verifiable false attribution on a live production panel.
 
 ## 8. Severity rationalization for top 30 critical codes
 

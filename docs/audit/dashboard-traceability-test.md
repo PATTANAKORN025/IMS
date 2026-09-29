@@ -29,7 +29,7 @@
 | Test | Status | Notes |
 |---|---|---|
 | Digital Twin machine color follows DB snapshot | PASS | Fixed and verified on Preview 3300 |
-| MIS machine tile → Snapshot | PASS | Browser-tested with `EXPOSURE LDI-2`; machine and latest telemetry epoch were preserved |
+| MIS machine tile → Snapshot | PASS | Browser-tested with `LDI-02`; machine and latest telemetry epoch were preserved |
 | Andon status uses database time | PASS | Prevents browser-clock mismatch |
 | Machine Snapshot context | PASS (tested path) | Seven records in the selected 09:45 minute remained visible after selecting 09:45:29; full ten-machine matrix remains incomplete |
 | Factory/Zone context preservation | PENDING | Requires real layout and authoritative zone mapping |
@@ -40,10 +40,10 @@
 
 | Source | Clicked value | Destination context | Result |
 | --- | --- | --- | --- |
-| Mentor MIS machine tile | `EXPOSURE LDI-2` | `machine_id=EXPOSURE LDI-2`, latest telemetry epoch `1784515558591` | PASS |
+| Mentor MIS machine tile | `LDI-02` | `machine_id=LDI-02`, latest telemetry epoch `1784515558591` | PASS |
 | Snapshot minute table | `2026-07-20 09:45:29` | Same machine and all seven 09:45 records retained | PASS |
 
-The audit also removed hardcoded default Snapshot context (`LDI-C-01` and a stale epoch). Direct navigation now starts with `All` and no implicit clicked series.
+The audit also removed hardcoded default Snapshot context (`LDI-01` and a stale epoch). Direct navigation now starts with `All` and no implicit clicked series.
 
 ## Test evidence template
 

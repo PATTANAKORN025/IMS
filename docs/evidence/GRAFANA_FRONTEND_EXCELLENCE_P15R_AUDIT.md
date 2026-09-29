@@ -19,7 +19,7 @@ P15-R's brief covers 33 sections (viewport matrix at 5 resolutions, axis micro-g
 
 - `git status`: clean at session start. Created dedicated branch `perf/grafana-p15r-operator-andon` off `main` at `6b47131`.
 - Read the full Andon Board JSON (11 panels + 2 repeated-tile templates, kiosk design: 1280x720, 20-grid-unit height ceiling, zero-scroll intent per its own `description` field).
-- Confirmed live fleet size: 11 machines (`LDI-01`..`LDI-10`, `LDI-C-01`), up from the smaller count assumed when `maxPerRow: 8` was originally set — wraps machine tiles to a second row.
+- Confirmed live fleet size: 11 machines (`LDI-01`..`LDI-10`, `LDI-01`), up from the smaller count assumed when `maxPerRow: 8` was originally set — wraps machine tiles to a second row.
 - **Concurrent-session note:** mid-session, `git reflog` showed an external process checked this repo out to `main` and committed (`0859d1b docs: finalize world-class polyglot audit`) while this audit was in progress. That commit and its files (`README.md`, `th/`, `zh-CN/` docs) were left untouched — not authored by this audit, out of scope, and touching them would risk clobbering someone else's in-progress work. All commits from this audit were made on the dedicated branch, isolated from that activity.
 
 ## 2. P0 Finding: Action Queue table permanently stuck loading

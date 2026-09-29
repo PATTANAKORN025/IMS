@@ -117,7 +117,7 @@ curl -s http://localhost:9093/-/healthy
 
 `database/migrations/` 目前有 61 个按序编号的文件（`013` 至 `086`，部分编号已跳过或归档——更早的 `001-012` 已并入全新部署的引导路径 `postgres/init/001-init-timescaledb.sql`）。一次性服务 `ims-db-migrate` 会在每次 `docker compose up` 时自动应用；在其成功退出之前，`node-red` 与 `alarm-api` 不会启动。
 
-迁移 084–086 作用于单独的 `eap_backup` 数据库（存放钻孔与 VCP 数据），该库不存在时会正常跳过，但运行器仍会把跳过的文件记为已执行。如果之后才创建或还原 `eap_backup`，请按[钻孔与 VCP 合成数据](../data/MOCK_DATA.md)中的步骤手动执行这三个文件；它们可以安全地重复执行。
+迁移 084–086 作用于单独的 `eap_backup` 数据库（存放钻孔与 VCP 数据）。该库不存在时，它们会输出 `IMS_MIGRATION_DEFERRED`，运行器**不会**将其记为已执行；`eap_backup` 建立后，下一次运行 `db-migrate`（`docker compose run --rm db-migrate`）会自动应用它们。运行器也会在第一个失败的迁移处停止，不会在只应用了一半的 schema 上继续执行后续迁移。在此行为之前完成迁移的环境可能已将 084–086 记为已执行但并未生效，请按[钻孔与 VCP 合成数据](../data/MOCK_DATA.md)中的步骤手动执行这三个文件；它们可以安全地重复执行。
 
 ```bash
 # 不启动栈的其他部分，手动重新运行迁移

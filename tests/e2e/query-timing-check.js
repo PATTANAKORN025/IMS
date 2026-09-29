@@ -39,7 +39,7 @@ function runExplain(sql) {
   try {
     const out = execFileSync(
       'docker',
-      ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-A', '-t', '-f', '-'],
+      ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-v', 'ON_ERROR_STOP=1', '-A', '-t', '-f', '-'],
       { encoding: 'utf8', input: wrapped, stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: MAXBUF }
     );
     const plan = JSON.parse(out);
@@ -57,7 +57,7 @@ function resolveVariables(dashboard) {
     try {
       const out = execFileSync(
         'docker',
-        ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-A', '-F', '\x01', '-P', 'footer=off', '-f', '-'],
+        ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-v', 'ON_ERROR_STOP=1', '-A', '-F', '\x01', '-P', 'footer=off', '-f', '-'],
         { encoding: 'utf8', input: sql, stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: MAXBUF }
       );
       const lines = out.split('\n').filter((l, i, arr) => !(i === arr.length - 1 && l === ''));
@@ -110,6 +110,11 @@ function checkDashboard(filePath) {
     for (const target of panel.targets || []) {
       const rawSql = target.rawSql;
       if (!rawSql) continue;
+      // The 80ms budget is the ims pipeline's contract. Panels on the
+      // drilling-timescaledb source read eap_backup (a plant restore, absent
+      // in CI); running them against ims only produced relation errors.
+      const ds = (target.datasource && target.datasource.uid) || (panel.datasource && panel.datasource.uid) || 'timescaledb';
+      if (ds !== 'timescaledb') { skipped++; continue; }
 
       const sql = substitute(rawSql, vars, WINDOW);
       if (hasUnresolvedMacro(sql)) { skipped++; continue; }

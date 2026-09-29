@@ -24,7 +24,7 @@
 -- 19 codes almsim_gen can currently emit (NOISE_CUM + ALIGN_CODES +
 -- condition-driven literals '91008'/'70004'/'91009') -- 9 carried over
 -- unchanged, 10 new ones added with fresh functional descriptions (their
--- real vendor text, e.g. "Failed to connect to PLC", is itself already a
+-- real vendor text, e.g. "PLC connection failed", is itself already a
 -- generic technical phrase, not proprietary content, but detail text below
 -- is still an independent rewrite per this file's stated policy).
 -- ══════════════════════════════════════════════════════════════════════════
@@ -35,49 +35,49 @@ TRUNCATE TABLE public.ldi_alarm_ms_code;
 
 INSERT INTO public.ldi_alarm_ms_code (alarm_id, alarm_type, alarm_code, alarm_msg, alarm_detail) VALUES
 -- ── กลุ่ม 9xxxx: Process / Quality (รหัสที่เครื่องจริงใช้บ่อยที่สุด) ──────
-('91009','W','91009','Vacuum pressure out of control range',
+('91009','W','91009','Table vacuum outside its set band',
  'แรงดันสุญญากาศบนโต๊ะดูดแผ่นหลุดออกนอกช่วงที่ตั้งไว้ ตรวจสอบคอลัมน์ air_vacuum'),
-('90005','W','90005','Registration error (PE/JE) out of tolerance',
+('90005','W','90005','Registration error beyond tolerance (PE/JE)',
  'ค่าความคลาดเคลื่อนของตำแหน่ง PE หรือ JE เกินสเปกที่ตั้งไว้ ตรวจสอบ pe_1..pe_6 / je_1..je_4'),
-('90004','W','90004','Outer layer alignment to grip point failed',
+('90004','W','90004','Outer-layer alignment to reference point failed',
  'การจัดตำแหน่งชั้นนอกกับจุดจับยึดล้มเหลว มักสัมพันธ์กับ scale_x/scale_y และค่า PE'),
-('93004','W','93004','Calibration cycle exception',
+('93004','W','93004','Calibration cycle did not complete',
  'รอบการสอบเทียบไม่สมบูรณ์หรือไม่ได้เริ่มตามกำหนด'),
-('90001','W','90001','Inner layer alignment to grip point failed',
+('90001','W','90001','Inner-layer alignment to reference point failed',
  'การจัดตำแหน่งชั้นในกับจุดจับยึดล้มเหลว ตรวจสอบค่า PE ของชั้นใน'),
-('90012','W','90012','Alignment failed and operator cancelled exposure',
+('90012','W','90012','Exposure cancelled by operator after alignment failure',
  'ผู้ปฏิบัติงานยกเลิกการฉายแสงหลังการจัดตำแหน่งล้มเหลว'),
-('91008','W','91008','Ambient temperature or humidity abnormal',
+('91008','W','91008','Room temperature or humidity out of band',
  'อุณหภูมิหรือความชื้นในห้องหลุดสเปก ตรวจสอบคอลัมน์ temperature (22±2°C) / humidity (55±5%)'),
 -- ── กลุ่ม 7xxxx: Motion ────────────────────────────────────────────────
-('70004','W','70004','Position-synchronised output overspeed',
+('70004','W','70004','Synchronised position output too fast',
  'ความเร็วสแกนเกินขีดจำกัดของระบบซิงค์ตำแหน่ง ตรวจสอบคอลัมน์ scan_speed'),
 -- ── กลุ่ม 1xxxx: Optics ────────────────────────────────────────────────
-('10006','A','10006','Failed to set imaging device to protection mode',
+('10006','A','10006','Imaging unit could not enter protection mode',
  'ตั้งค่าอุปกรณ์สร้างภาพเข้าสู่โหมดป้องกันไม่สำเร็จ'),
 -- ── Camera / vision subsystem ────────────────────────────────────────
-('01060009','A','01060009','Wrong camera serial number',
+('01060009','A','01060009','Camera identity does not match configuration',
  'หมายเลขซีเรียลกล้องที่ตรวจพบไม่ตรงกับที่ตั้งค่าไว้ในระบบ'),
-('0106000C','A','0106000C','Failed to stop camera',
+('0106000C','A','0106000C','Camera did not stop on command',
  'สั่งหยุดการทำงานของกล้องไม่สำเร็จ'),
-('0106001C','A','0106001C','Stop trigger wait signal timeout',
+('0106001C','A','0106001C','Timed out waiting for camera stop trigger',
  'รอสัญญาณ trigger เพื่อหยุดการทำงานนานเกินกำหนด'),
 -- ── Network / connectivity ────────────────────────────────────────────
-('01060013','A','01060013','Found the same IP',
+('01060013','A','01060013','Duplicate IP address on device network',
  'ตรวจพบ IP ซ้ำกันบนเครือข่ายกล้อง/อุปกรณ์ อาจเกิดจากการตั้งค่าเครือข่ายผิดพลาด'),
-('92013','W','92013','Network connection timeout',
+('92013','W','92013','Network connection timed out',
  'การเชื่อมต่อเครือข่ายหมดเวลา ตรวจสอบสถานะเครือข่ายของเครื่อง'),
 -- ── Motor / PLC / general comms ──────────────────────────────────────
-('010E0064','A','010E0064','Motor type undefined',
+('010E0064','A','010E0064','Motor type not configured',
  'ยังไม่ได้กำหนดชนิดของมอเตอร์ในระบบ'),
-('01100001','A','01100001','Failed to connect to PLC',
+('01100001','A','01100001','PLC connection failed',
  'เชื่อมต่อกับ PLC ไม่สำเร็จ ตรวจสอบสายสัญญาณ/การตั้งค่าเครือข่ายกับ PLC'),
-('01130002','A','01130002','Communication abnormality',
+('01130002','A','01130002','Device communication fault',
  'การสื่อสารระหว่างอุปกรณ์ผิดปกติ'),
 -- ── Process / data pipeline ──────────────────────────────────────────
-('80001','W','80001','Waiting for subdrawing preparation data timeout',
+('80001','W','80001','Timed out waiting for image preparation data',
  'รอข้อมูลเตรียมภาพย่อย (subdrawing) นานเกินกำหนด'),
-('97005','W','97005','Database connection exception',
+('97005','W','97005','Database connection fault',
  'การเชื่อมต่อฐานข้อมูลผิดปกติ');
 
 -- ══════════════════════════════════════════════════════════════════════════

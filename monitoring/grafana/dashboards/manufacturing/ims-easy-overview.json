@@ -119,7 +119,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM public.v_ldi_machine_latest_full",
+          "rawSql": "-- Registered devices that have never sent telemetry (has_data = false) are not\n-- machines on the floor; counting them in the denominator showed 43% while all\n-- reporting machines ran. A machine that reported but went stale counts as down.\nSELECT ROUND((COUNT(*) FILTER (WHERE state = true AND NOT is_stale) * 100.0\n              / NULLIF(COUNT(*) FILTER (WHERE has_data), 0))::NUMERIC, 0) AS value\nFROM public.v_ldi_machine_latest_full",
           "format": "table"
         }
       ],
@@ -197,7 +197,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*) FILTER (WHERE state = true) AS value FROM public.v_ldi_machine_latest_full",
+          "rawSql": "SELECT COUNT(*) FILTER (WHERE state = true AND NOT is_stale) AS value FROM public.v_ldi_machine_latest_full",
           "format": "table"
         }
       ],

@@ -127,7 +127,7 @@ The scatter plots PE against JE per minute (µm), with a ±10 µm tolerance band
 
 - Points inside the green band mean PCB quality is within the accepted tolerance.
 - Points outside the band call for an inspection of the laser head.
-- Cross-check with the **LDI Throughput & Process Efficiency** panel to see whether production rate is also affected.
+- Cross-check with the **LDI Scan Speed & Position Error** panel to see whether scan speed or registration moved at the same time.
 
 ### 4. AIOps & Capacity Dashboard
 

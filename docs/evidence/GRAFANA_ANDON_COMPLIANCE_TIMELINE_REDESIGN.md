@@ -39,7 +39,7 @@ Grafana state-timeline rows need enough pixel height to render each machine's ro
 | h=6 | ~161px canvas | Still legible, all 10 labels crisp (`compliance_timeline_canvas_h6.png`) |
 | h=5 | ~134px canvas | **Illegible** — labels collapse into an unreadable smear (`compliance_timeline_canvas_h5.png`) |
 
-**h=6 is the measured minimum legible height** for an 11-machine state-timeline in this Grafana version/theme. (LDI-C-01, the 11th machine, has no recent temperature/humidity samples in the query window and correctly does not appear as a row — confirmed consistent with its `NO_DATA` state shown on its machine tile elsewhere on the board, not a rendering defect.)
+**h=6 is the measured minimum legible height** for an 11-machine state-timeline in this Grafana version/theme. (LDI-01, the 11th machine, has no recent temperature/humidity samples in the query window and correctly does not appear as a row — confirmed consistent with its `NO_DATA` state shown on its machine tile elsewhere on the board, not a rendering defect.)
 
 ## Selected architecture
 
@@ -88,10 +88,10 @@ No threshold, no query semantics, and no data source changed from the original p
 
 | Metric | Before (exceptions table) | After (restored timeline) | Status |
 |---|---:|---:|---|
-| Machines visible in Compliance section | Only out-of-tolerance ones (0-11, worst-first) | All with recent data (10 of 11; LDI-C-01 has no current sample) | Changed by design — full fleet timeline restored |
+| Machines visible in Compliance section | Only out-of-tolerance ones (0-11, worst-first) | All with recent data (10 of 11; LDI-01 has no current sample) | Changed by design — full fleet timeline restored |
 | Pixels/row (measured) | N/A (table, not per-machine rows) | ~16px at h=6 canvas height / 10 rows | Measured, proven legible (h=5 proven illegible) |
 | Time buckets visible | N/A | Full 2h window at raw `ldi_data` sample rate | Measured (real sample density, not resampled) |
-| Longest machine label tested | N/A | `LDI-C-01` (8 chars, real fleet data) | Verified legible on machine tiles; not stress-tested with synthetic longer names this pass |
+| Longest machine label tested | N/A | `LDI-01` (8 chars, real fleet data) | Verified legible on machine tiles; not stress-tested with synthetic longer names this pass |
 | Query count (Compliance section) | 1 | 2 (Temp, Humidity — same as pre-revert original) | Matches original architecture, no fan-out |
 | Query latency | Not separately measured this pass | Not separately measured this pass | NOT VERIFIED |
 | 1366px result | NOT VERIFIED (prior pass) | NOT VERIFIED (screenshot tool failure this pass) | NOT VERIFIED |

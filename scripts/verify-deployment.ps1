@@ -1,6 +1,36 @@
 Write-Host "=== IMS Deployment Verification (V2 Architecture) ===" -ForegroundColor Cyan
 Write-Host ""
 
+# 0. Secrets still at their public .env.example values? Those values are in a
+#    public repo, so a deployment that kept one has a known key or password.
+#    Names only are printed, never values.
+Write-Host "0. Secrets changed from .env.example:" -ForegroundColor Yellow
+if ((Test-Path .env) -and (Test-Path .env.example)) {
+    function Read-EnvFile ($Path) {
+        $map = @{}
+        foreach ($line in Get-Content $Path) {
+            if ($line -match '^\s*#' -or $line -notmatch '=') { continue }
+            $i = $line.IndexOf('=')
+            $map[$line.Substring(0, $i)] = $line.Substring($i + 1)
+        }
+        return $map
+    }
+    $example = Read-EnvFile .env.example
+    $actual = Read-EnvFile .env
+    $reused = @($example.Keys | Where-Object {
+        $_ -match '(PASSWORD|SECRET|TOKEN|KEY|HASH)' -and $example[$_] -ne '' -and $actual[$_] -eq $example[$_]
+    } | Sort-Object)
+    if ($reused.Count -gt 0) {
+        Write-Host "   ❌ still at the public example value:" -ForegroundColor Red
+        $reused | ForEach-Object { Write-Host "     $_" }
+        exit 1
+    }
+    Write-Host "   ✅ none reused" -ForegroundColor Green
+} else {
+    Write-Host "   (no .env or .env.example here -- skipped)"
+}
+Write-Host ""
+
 # 1. All containers running?
 Write-Host "1. Container status:" -ForegroundColor Yellow
 docker compose ps --format "table {{.Name}}`t{{.Status}}"

@@ -96,6 +96,12 @@ let objects;
 try {
   objects = getLiveDbObjects();
 } catch (e) {
+  // Locally (no stack running) skipping is fine; in CI the stack is up, so an
+  // unreachable database means the check did not run and must not pass.
+  if (process.env.CI === 'true') {
+    console.error('Could not reach the database (', e.message.split('\n')[0], ') -- failing because CI=true.');
+    process.exit(1);
+  }
   console.error('Could not reach the database (', e.message.split('\n')[0], ') -- skipping.');
   process.exit(0);
 }

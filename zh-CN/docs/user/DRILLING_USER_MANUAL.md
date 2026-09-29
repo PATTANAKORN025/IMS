@@ -36,13 +36,13 @@
 
 ## 1. 系统架构与数据摄取管道 (Architecture & Pipeline)
 
-PCB 机械数控钻孔（Mechanical CNC Drilling）是多层印刷电路板加工的关键首道工序。机群包括 `DRL001-M` 至 `DRL104-M` 钻机，配备 6 个主轴，工作转速 **20,000 至 200,000 RPM**，进给速度达 2.5–3.0 m/min，钻头直径范围为 **0.15 mm 至 6.50 mm**。
+PCB 机械数控钻孔（Mechanical CNC Drilling）是多层印刷电路板加工的关键首道工序。机群中的钻机（例如 `MOCK-DRL-001`），配备 6 个主轴，工作转速 **20,000 至 200,000 RPM**，进给速度达 2.5–3.0 m/min，钻头直径范围为 **0.15 mm 至 6.50 mm**。
 
 遥测数据由机台本地 EAP 文件代理监听捕获，汇入独立的 TimescaleDB `eap_backup` 数据库中的超表（Hypertable）`public.machine_event`，并通过规范视图层 `drilling.*`（Migration 086）呈现在 Grafana 仪表板上。
 
 ```mermaid
 flowchart TD
-    M["数控钻机群 (DRL001-M ~ DRL104-M)"] --> AGENT["EAP 代理服务 (文件监听与事件解析)"]
+    M["数控钻机群 (例如 MOCK-DRL-001)"] --> AGENT["EAP 代理服务 (文件监听与事件解析)"]
     AGENT --> RAW[("public.machine_event (TimescaleDB eap_backup)")]
     RAW --- IDX["加速索引 (Migration 085)"]
     RAW --- VIEW["规范视图 (drilling.*)"]

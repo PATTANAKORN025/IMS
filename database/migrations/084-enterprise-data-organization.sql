@@ -164,5 +164,5 @@ COMMENT ON VIEW public.vw_drl_active_alarms IS
 'Enterprise View: Filtered stream of active and historical alarm incidents for CNC Drilling operations';
 
 \else
-\echo '084: database eap_backup not present on this server, skipped'
+\echo 'IMS_MIGRATION_DEFERRED 084: database eap_backup not present on this server; runs again on the next start'
 \endif

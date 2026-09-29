@@ -49,6 +49,12 @@
 # cells draws current, the same rule the panels use. Rule 2 once tested cell 1a
 # alone and missed windows where the line plated with no preset_amp.
 #
+# execErrState KeepLast. The rules read eap_backup, which a fresh install does
+# not have until it is restored or built from mock data; with Error every rule
+# paged LINE/Teams with DatasourceError from day one. A real database outage is
+# still caught by the ServiceDown blackbox probe on timescaledb:5432
+# (monitoring/prometheus/rules/ims-alerts.yml).
+#
 # noDataState OK. These rules list breaches, so an empty result is the healthy
 # state; with the default NoData every rule raised a DatasourceNoData alert
 # whenever nothing breached.
@@ -76,7 +82,7 @@ groups:
         # a rule that lists breaches returns no rows when nothing breaches; that is
         # the normal state, not a datasource failure (a silent feed has its own rule)
         noDataState: OK
-        execErrState: Error
+        execErrState: KeepLast
         data:
           - refId: A
             relativeTimeRange: { from: 900, to: 0 }
@@ -162,7 +168,7 @@ groups:
         # a rule that lists breaches returns no rows when nothing breaches; that is
         # the normal state, not a datasource failure (a silent feed has its own rule)
         noDataState: OK
-        execErrState: Error
+        execErrState: KeepLast
         data:
           - refId: A
             relativeTimeRange: { from: 900, to: 0 }
@@ -219,7 +225,7 @@ groups:
         # a rule that lists breaches returns no rows when nothing breaches; that is
         # the normal state, not a datasource failure (a silent feed has its own rule)
         noDataState: OK
-        execErrState: Error
+        execErrState: KeepLast
         data:
           - refId: A
             relativeTimeRange: { from: 900, to: 0 }
@@ -294,7 +300,7 @@ groups:
         # a rule that lists breaches returns no rows when nothing breaches; that is
         # the normal state, not a datasource failure (a silent feed has its own rule)
         noDataState: OK
-        execErrState: Error
+        execErrState: KeepLast
         data:
           - refId: A
             relativeTimeRange: { from: 900, to: 0 }
@@ -344,7 +350,7 @@ groups:
         # a rule that lists breaches returns no rows when nothing breaches; that is
         # the normal state, not a datasource failure (a silent feed has its own rule)
         noDataState: OK
-        execErrState: Error
+        execErrState: KeepLast
         data:
           - refId: A
             relativeTimeRange: { from: 900, to: 0 }
@@ -418,7 +424,7 @@ groups:
         # a rule that lists breaches returns no rows when nothing breaches; that is
         # the normal state, not a datasource failure (a silent feed has its own rule)
         noDataState: OK
-        execErrState: Error
+        execErrState: KeepLast
         data:
           - refId: A
             relativeTimeRange: { from: 1800, to: 0 }
@@ -495,7 +501,7 @@ groups:
         for: 10m
         # the query itself decides silence, so no rows here is the healthy state
         noDataState: OK
-        execErrState: Error
+        execErrState: KeepLast
         data:
           - refId: A
             relativeTimeRange: { from: 900, to: 0 }

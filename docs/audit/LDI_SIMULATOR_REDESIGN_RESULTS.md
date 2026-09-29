@@ -18,7 +18,7 @@
 | File                                                                                                                                                                                                                                                                                                                          | What it does                                                                                                                                                                                                                                                                                                                                                    |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`database/migrations/069-ldi-alarm-debounce-and-link-basis.sql`](../../database/migrations/069-ldi-alarm-debounce-and-link-basis.sql) (new)                                                                                                                                                                                  | Creates `public.ldi_alarm_state` (debounce state: `equipmentid`, `errorcode`, `first_fired`, `last_fired`, `fire_count`); adds `ldi_alarm_log.link_basis` (`causal` \| `nearest`); updates `v_ldi_alarm_context` to expose `link_basis` as a trailing column (`CREATE OR REPLACE VIEW` cannot reorder existing columns, so it's appended, not inserted inline). |
-| [`database/migrations/036-ldi-alarm-master-mock.sql`](../../database/migrations/036-ldi-alarm-master-mock.sql) (edited — this file is re-run on every `mock` switch, unlike normal incremental migrations, so editing it in place is the established convention, not a violation of the "never edit a merged migration" rule) | Adds 2 real Critical-severity vendor codes (`01180016` Emergency Stop, `0C020014` Safety sensor triggered) to the mock catalog, taking it from 19 to 21 codes.                                                                                                                                                                                                  |
+| [`database/migrations/036-ldi-alarm-master-mock.sql`](../../database/migrations/036-ldi-alarm-master-mock.sql) (edited — this file is re-run on every `mock` switch, unlike normal incremental migrations, so editing it in place is the established convention, not a violation of the "never edit a merged migration" rule) | Adds 2 real Critical-severity vendor codes (`01180016` Emergency Stop, `0C020014` Safety sensor tripped) to the mock catalog, taking it from 19 to 21 codes.                                                                                                                                                                                                  |
 
 Both applied live: `docker exec ims-timescaledb psql ... < 069-...sql` (clean apply, `CREATE TABLE`/`ALTER TABLE`/`CREATE VIEW`/`GRANT`), then `bash scripts/switch-data-mode.sh mock` (re-seeds 036, confirmed `INSERT 0 21`).
 
@@ -30,9 +30,9 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 
 | Finding                                            | Change                                                                                                                                                                                                                                                                                 | Where                     |
 | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Static miscalibration (root cause of #5 frequency) | `LDI-02.temp_mu` 26.49→21.72 (was outside the 20-24 spec band by construction); DF-OUTER/SM `air_vacuum` hardcoded `0.0` (always >-8, a regression of migration 054) → real per-machine nominal (-12.9 to -14.6) + `vac_sd: 0.45`, now a genuine OU process instead of a flat constant | `ldisim_gen`, `P` table   |
+| Static miscalibration (root cause of #5 frequency) | `LDI-02.temp_mu` 26.5→21.5 (was outside the 20-24 spec band by construction); DF-OUTER/SM `air_vacuum` hardcoded `0.0` (always >-8, a regression of migration 054) → real per-machine nominal (-12.9 to -14.6) + `vac_sd: 0.45`, now a genuine OU process instead of a flat constant | `ldisim_gen`, `P` table   |
 | #1 drift                                           | New `driftStep()` state machine (`nominal→drifting→faulted→serviced→cooldown`), independent per machine × {vac, temp, rh, align}, `DRIFT_CFG` timing/magnitude table                                                                                                                   | `ldisim_gen`              |
-| #5 fault frequency                                 | New `calibrate()` clamps PE/JE (mean,sd) so nominal P(\|x\|>10) is a rare tail event, not baseline-guaranteed (e.g. a channel with mean=-14.76, sd=21.32 was already miscalibrated against the ±10 spec)                                                                               | `ldisim_gen`              |
+| #5 fault frequency                                 | New `calibrate()` clamps PE/JE (mean,sd) so nominal P(\|x\|>10) is a rare tail event, not baseline-guaranteed (e.g. a channel with mean=-15, sd=21.5 was already miscalibrated against the ±10 spec)                                                                               | `ldisim_gen`              |
 | #6 burst/flood                                     | New `ldi_alarm_state` debounce table; `almsim_gen` checks/skips codes still in a 12-minute cooldown; `almsim_db` upserts state after every insert                                                                                                                                      | `almsim_gen`, `almsim_db` |
 | #7 correlation semantics                           | `newRow()` now takes an explicit `linkBasis` param; condition-driven/critical codes pass `'causal'`, noise codes pass `'nearest'`, written to the new `link_basis` column instead of being inferred from whether `related_log_id` happens to be null                                   | `almsim_gen`, `almsim_db` |
 | #8 critical distribution                           | New `RARE_CRITICAL_CODES`/`RARE_CRITICAL_PROB` branch, independent of the noise/condition pools                                                                                                                                                                                        | `almsim_gen`              |
@@ -50,7 +50,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +//
 +// LDI Alarm Fidelity Audit (docs/audit/LDI_ALARM_FIDELITY_AUDIT.md,
 +// 2026-08-11) found the fleet was chronically out-of-spec by construction,
-+// not intermittently faulted: LDI-02's nominal temp_mu (26.49) was already
++// not intermittently faulted: LDI-02's nominal temp_mu (26.5) was already
 +// outside the 20-24 spec band; DF-OUTER/SM air_vacuum was hardcoded to the
 +// 0.0 zero-coercion test constant, which is always > -8 (always "out of
 +// spec"); and pe/je channels were literally memoryless per-tick noise with
@@ -59,8 +59,8 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +// -> faulted -> serviced -> cooldown) for vacuum/environment/alignment so
 +// faults are discrete, bounded episodes instead of a permanent condition.
  // ══════════════════════════════════════════════════════════════════
--const P = { ...original 10-machine table, vac:0.0 for DF-OUTER/SM, LDI-02 temp_mu:26.49... };
-+const P = { ...same table, vac now real per-machine nominal + vac_sd:0.45, LDI-02 temp_mu:21.72... };
+-const P = { ...original 10-machine table, vac:0.0 for DF-OUTER/SM, LDI-02 temp_mu:26.5... };
++const P = { ...same table, vac now real per-machine nominal + vac_sd:0.45, LDI-02 temp_mu:21.5... };
  const SENTINEL = 1.79769313486232;
  // DESIGN_STRESS: exercises layout edge cases (real dropouts, long strings,
  // spec-boundary values, extra machines) that realistic mock data rarely hits.
@@ -72,7 +72,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +
 +// ── PE/JE calibration: several channels' source (mean,sd) pairs implied a
 +// high baseline P(|x|>10) against the +/-10 spec purely from the numbers
-+// themselves (e.g. a channel with mean=-14.76, sd=21.32 is out of spec on
++// themselves (e.g. a channel with mean=-15, sd=21.5 is out of spec on
 +// most independent draws). Clamp the effective nominal mean well inside the
 +// limit and cap sd so mean+3*sd stays inside it too -- nominal-state OOS
 +// becomes a rare tail event (~0.1%/tick) instead of a coin flip, matching a
@@ -216,7 +216,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
  const pool = global.get('pgPool');
  ...
  const ALIGN_CODES = ["90001", "90004", "90005", "90012"];
-+const RARE_CRITICAL_CODES = ["01180016", "0C020014"]; // Emergency Stop / Safety sensor triggered
++const RARE_CRITICAL_CODES = ["01180016", "0C020014"]; // Emergency Stop / Safety sensor tripped
 +const RARE_CRITICAL_PROB = 0.00002; // per machine per 10s tick
  const RATE_PER_TICK = 0.01194 * 20 * (15 / 20); // unchanged overall pacing, noise share only
 +const COOLDOWN_MIN = 12; // debounce window: suppress re-fire of the same (machine, code) within this many minutes

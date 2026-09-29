@@ -56,6 +56,38 @@
   - Corrected the alarm-api reference: session-derived actor, 401/403, no host port.
   - Corrected the EAP security boundaries: plain HTTP today.
 
+### Audit Fixes (2026-09-29)
+- **Plant data removed from the public tree:**
+  - Simulator recipe values are rounded (dosage, scan speed, temperature, humidity, vacuum, PE/JE).
+  - Real machine names are replaced with `LDI-nn`, and the Machine Snapshot `log_id` default is cleared.
+  - Vendor alarm texts are paraphrased (codes kept), and the two README screenshots are pixelated.
+  - Drilling mock IDs are now `MOCK-DRL-nnn`.
+  - Git history still holds the old values.
+- **Fleet Availability:** divides by machines that are reporting, not by every enabled device row. Disabled/legacy device rows no longer pull it down.
+- **Guardrails that could pass while broken:**
+  - `repo-hygiene-linter` crashed on Linux (unquoted `%(objectsize)`).
+  - `panel-data-check` counted a SQL error as "0 rows". It now stops on error, runs each dashboard against its own database, resolves template variables and repeat panels, and counts a skip as a failure in strict mode.
+  - `orphan-object-linter` fails in CI when it cannot reach the database.
+- **Migrations:** the runner stops at the first failed file. A migration that needs `eap_backup` and finds it missing is reported as deferred and runs again on the next start, instead of being recorded as applied.
+- **CI:** builds a synthetic `eap_backup` before the panel check. Tests that ran in neither pre-commit nor CI now run in both, and `promtool` matches the runtime Prometheus version.
+- **VCP alert rules:** `execErrState: KeepLast`, so a missing `eap_backup` does not page on day one.
+- **LDI ingestion:**
+  - `"0"` stays 0, and a missing `state` is NULL, not "running".
+  - Rows without `eqp_id`/`log_id` are rejected with their indexes, and batches over 1,000 rows get 413.
+  - A stuck DB pool is replaced instead of exiting Node-RED.
+- **LDI simulators:**
+  - Alarms carry their machine's process and factory.
+  - Background noise is cut, and vacuum/alignment faults are more frequent, so condition-driven alarms lead.
+  - Environment variation now matches the profile's standard deviation.
+  - Simulated alarms are acknowledged and resolved as actor `simulator` (`LDI_SIM_AUTO_LIFECYCLE`).
+  - A 24-hour replay test covers this.
+- **Dashboards:** the SPC moving-average trend is one series per machine. The Engineering Drill-Down scan-speed and judgment-error panels carry correct titles and units.
+- **Deployment:** `make verify` fails while any secret in `.env` still equals its public `.env.example` value (names only are printed).
+- **Tooling:**
+  - `make doctor`, `deploy-flows` and `test-unit` run from any make shell, and `test-unit` runs every unit test.
+  - Unused Grafana plugins are no longer installed.
+  - Init scripts no longer hardcode the database and owner names.
+
 ### Documentation & Repository Hygiene
 - Re-verified all living documentation and inventories against live runtime (`main`) as of 2026-09-28 across EN, TH, and ZH-CN.
 - Synchronized release badge to `v1.0.1` and removed living rule files (`AGENTS.md`) from `.gitignore`.

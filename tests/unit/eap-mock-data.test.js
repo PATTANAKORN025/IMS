@@ -107,9 +107,9 @@ check('bit breakage, laser, shank, tool life, overload, air, magazine alarms all
   ['0408', '0409', '0424', '0414', '0124', '0102', '0406'].every(code => events.some(e => e.event_code === code)));
 check('emergency stop is followed by its release', has(/^Emergency Stop pressed$/) && has(/Emergency Stop Released/));
 const lastSeen = id => Math.max(...events.filter(e => e.equipment_id === id).map(e => e.event_time.getTime()));
-check('last machine silent for 3 h (COMM LOSS)', END - lastSeen('DRL012-M') >= 3 * 3600e3);
+check('last machine silent for 3 h (COMM LOSS)', END - lastSeen('MOCK-DRL-012') >= 3 * 3600e3);
 check('second-to-last machine silent 1-2 h (STALE RUN window)',
-  END - lastSeen('DRL011-M') >= 3600e3 && END - lastSeen('DRL011-M') < 2 * 3600e3);
+  END - lastSeen('MOCK-DRL-011') >= 3600e3 && END - lastSeen('MOCK-DRL-011') < 2 * 3600e3);
 check('every machine reports', new Set(events.map(e => e.equipment_id)).size === 12);
 check('events stay inside the window', events.every(e => e.event_time >= healthy.start && e.event_time <= END));
 

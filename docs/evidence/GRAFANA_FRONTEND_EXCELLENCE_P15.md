@@ -55,7 +55,7 @@ Removed the `mo IN (${mo:sqlstring})` clause from all 6 sites. This is provably 
 
 ### Also found, forward-looking (P1.3)
 
-`public.devices` already has 2 enabled LDI devices with names up to 15 characters including a space (`EXPOSURE LDI-2B`, `EXPOSURE LDI-2`) — longer than any currently-live `machine_id` (max 8 chars). These devices have no telemetry rows yet, so they don't currently appear as Andon tiles, but the moment they report data they will repeat into the machine-identity stat panels (previously `w:2`, ~114–160px) and would clip. Widened to `w:3` (maxPerRow 10→8 to preserve clean 24-unit rows) — a real, evidenced, purely-additive fix, **not re-rendered to visually confirm** due to the auth blocker. Disclosed as such.
+`public.devices` already has 2 enabled LDI devices with names up to 15 characters including a space (`LDI-02B`, `LDI-02`) — longer than any currently-live `machine_id` (max 8 chars). These devices have no telemetry rows yet, so they don't currently appear as Andon tiles, but the moment they report data they will repeat into the machine-identity stat panels (previously `w:2`, ~114–160px) and would clip. Widened to `w:3` (maxPerRow 10→8 to preserve clean 24-unit rows) — a real, evidenced, purely-additive fix, **not re-rendered to visually confirm** due to the auth blocker. Disclosed as such.
 
 ### Also found, deferred (P1.4)
 

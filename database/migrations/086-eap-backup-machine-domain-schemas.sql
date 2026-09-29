@@ -195,5 +195,5 @@ GRANT SELECT ON ALL TABLES IN SCHEMA drilling, vcp, ldi, shopfloor, catalog TO g
 COMMIT;
 
 \else
-\echo '086: database eap_backup not present on this server, skipped'
+\echo 'IMS_MIGRATION_DEFERRED 086: database eap_backup not present on this server; runs again on the next start'
 \endif

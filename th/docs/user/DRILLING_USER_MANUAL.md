@@ -65,14 +65,14 @@
 
 ### 1.2 โทโพโลยีการเชื่อมโยงระบบโทรมาตรอุตสาหกรรม (C4 Telemetry Topology)
 
-ระบบเชื่อมต่อข้อมูลจากเครื่องเจาะ CNC ฝูงเครื่องจักร `DRL001-M` ถึง `DRL104-M` ผ่านระบบอัตโนมัติ EAP (Equipment Automation Program) สู่ระบบจัดเก็บข้อมูลอนุกรมเวลา TimescaleDB และส่งต่อมาประมวลผลบน Grafana Dashboard ดังแผนภาพ:
+ระบบเชื่อมต่อข้อมูลจากเครื่องเจาะ CNC ฝูงเครื่องจักร (เช่น `MOCK-DRL-001`) ผ่านระบบอัตโนมัติ EAP (Equipment Automation Program) สู่ระบบจัดเก็บข้อมูลอนุกรมเวลา TimescaleDB และส่งต่อมาประมวลผลบน Grafana Dashboard ดังแผนภาพ:
 
 ```mermaid
 flowchart TD
     subgraph SHOPFLOOR[" ชั้นปฏิบัติการโรงงาน (Shopfloor Drilling Fleet) "]
-        M1["เครื่องเจาะ CNC #1<br/>(DRL001-M / 6 Spindles)"]
-        M2["เครื่องเจาะ CNC #2<br/>(DRL002-M / 6 Spindles)"]
-        MN["เครื่องเจาะ CNC #N...<br/>(DRL104-M / 6 Spindles)"]
+        M1["เครื่องเจาะ CNC #1<br/>(MOCK-DRL-001 / 6 Spindles)"]
+        M2["เครื่องเจาะ CNC #2<br/>(MOCK-DRL-002 / 6 Spindles)"]
+        MN["เครื่องเจาะ CNC #N...<br/>(MOCK-DRL-nnn / 6 Spindles)"]
     end
 
     subgraph INGESTION[" ชั้นการรวบรวมข้อมูลโทรมาตร (EAP Ingestion Layer) "]
@@ -129,7 +129,7 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | `id` | `bigint` | Primary Identity | ตัวระบุลำดับแถวแบบเรียงตามลำดับเวลาที่บันทึก |
 | `message_id` | `text` | Trace ID | รหัสข้อความโทรมาตรที่ส่งมาจาก EAP Agent |
-| `equipment_id` | `text` | Machine Identifier | รหัสประจำเครื่องจักร เช่น `DRL001-M`, `DRL012-M` ถึง `DRL104-M` |
+| `equipment_id` | `text` | Machine Identifier | รหัสประจำเครื่องจักร เช่น `MOCK-DRL-001` |
 | `message_type` | `text` | Message Protocol | ประเภทของโปรโตคอลข้อความ เช่น `EVENT`, `alarm` |
 | `event_type` | `text` | Event Severity | ประเภทเหตุการณ์หลัก ได้แก่ `RUN`, `STOP`, `TOOL_CHANGE`, `ALARM`, `E`, `EVENT`, `M`, `PROGRAM_LOAD` |
 | `event_code` | `text` | Machine Code | รหัส 4 หลักที่เครื่องส่งออกมา เช่น `0101`, `0408`, `0211`, `0109` |
@@ -138,7 +138,7 @@ flowchart TD
 | `sent_time` | `timestamptz` | Transmission Time | เวลาที่ EAP Agent บันทึกหรือส่งข้อความออกมา |
 | `received_at` | `timestamptz` | Ingestion Time | เวลาที่ข้อมูลถูกบันทึกลงใน TimescaleDB จริง |
 | `source` | `text` | Source Category | แหล่งที่มาของข้อมูล (`production`, `eap_log`, `mock`) |
-| `source_file` | `text` | Source File Name | ชื่อไฟล์ Log หรือโฟลเดอร์ที่ Agent ตรวจพบ เช่น `mock_DRL001-M.log` |
+| `source_file` | `text` | Source File Name | ชื่อไฟล์ Log หรือโฟลเดอร์ที่ Agent ตรวจพบ เช่น `mock_MOCK-DRL-001.log` |
 | `magazine_no` | `text` | Tool Magazine | หมายเลขกล่องแมกกาซีนบรรจุดอกสว่าน (Magazine 1–4) |
 | `spindle` | `text` | Spindle Number | หมายเลขหัวเจาะที่เกิดเหตุการณ์ (Spindle 1–6) |
 | `raw_item_code` | `text` | Item Metadata | รหัสเฉพาะของสินค้าหรือคำสั่งผลิต (ถ้ามี) |
@@ -332,7 +332,7 @@ pie title "สัดส่วนสาเหตุความผิดปกต
 | Filter: [ALL (12)]  [🟢 RUN (7)]  [🔴 ALARM (2)]  [🟠 TOOL (1)]  [🟡 STOP (1)]  [⚪ STANDBY (1)] [⚫ OFF (0)]|
 | Search Program: [ JOB0101__________ ]                                                                   |
 +---------------------------------------------------------------------------------------------------------+
-| [DRL001-M] 🟢 RUN       12s ago | [DRL002-M] 🔴 ALARM      2m ago | [DRL003-M] 🟠 TOOL_CHANGE 45s ago   |
+| [MOCK-DRL-001] 🟢 RUN       12s ago | [MOCK-DRL-002] 🔴 ALARM      2m ago | [MOCK-DRL-003] 🟠 TOOL_CHANGE 45s ago   |
 | Spindle: (1)(2)(3)(4)(5)(6) [63]| Spindle: (1)(!)(3)(4)(5)(6)     | Spindle: (-)(-)(-)(-)(-)(-)     [0] |
 | Code: 0112   Holes: 45,820      | Code: 0408   Holes: 12,450      | Code: 0110   Holes: 32,100      |
 | Program: JOB0101_L1.tlp         | Program: JOB0102_L2.tlp         | Program: JOB0103_L1.tlp         |
@@ -343,7 +343,7 @@ pie title "สัดส่วนสาเหตุความผิดปกต
 ```
 
 #### กายวิภาคของการ์ดเครื่องจักร (Machine Card Anatomy - 8 องค์ประกอบหลัก):
-1. **รหัสเครื่องจักร (Equipment Identifier):** แสดงรหัสเครื่อง เช่น `DRL001-M` พร้อมลิงก์ Drill-down คลิกเพื่อเปิดหน้า *03 Machine Investigation* ของเครื่องนั้นทันที
+1. **รหัสเครื่องจักร (Equipment Identifier):** แสดงรหัสเครื่อง เช่น `MOCK-DRL-001` พร้อมลิงก์ Drill-down คลิกเพื่อเปิดหน้า *03 Machine Investigation* ของเครื่องนั้นทันที
 2. **ป้ายสถานะสี (State Label Pill):** แสดงสถานะสดตามสีมาตรฐาน (`RUN` เขียว, `ALARM` แดง, `TOOL_CHANGE` ส้ม, `STOP` เหลือง, `STANDBY` ฟ้า/เทา, `OFFLINE` ดำ)
 3. **เวลาที่ผ่านไป (Time Ago Indicator):** แสดงเวลาที่ห่างจากเหตุการณ์ล่าสุด เช่น `12s ago`, `3m ago` ช่วยให้รู้ได้ทันทีว่าเครื่องจักรหยุดส่งข้อมูลหรือไม่
 4. **แถบดวงไฟสปินเดิล 6 หัว (Spindle 1–6 Indicator Array):**
@@ -368,7 +368,7 @@ pie title "สัดส่วนสาเหตุความผิดปกต
 
 ```
 +---------------------------------------------------------------------------------------------------------+
-| PRODUCTION INFORMATION — DRL001-M                                                              [X] Close|
+| PRODUCTION INFORMATION — MOCK-DRL-001                                                              [X] Close|
 +------------+------------+------------+------------+------------+------------+------------+------------+
 | Metric     | 09/28 (Mon)| 09/27 (Sun)| 09/26 (Sat)| 09/25 (Fri)| 09/24 (Thu)| 09/23 (Wed)| 09/22 (Tue)|
 +------------+------------+------------+------------+------------+------------+------------+------------+
@@ -405,10 +405,10 @@ pie title "สัดส่วนสาเหตุความผิดปกต
 
 ```
 +---------------------------------------------------------------------------------------------------------+
-| DRILLING — MACHINE INVESTIGATION : DRL001-M                                                             |
+| DRILLING — MACHINE INVESTIGATION : MOCK-DRL-001                                                             |
 +------------------------------------+--------------------------------------------------------------------+
 | PANEL 301: LIVE MACHINE STATUS     | PANEL 302: EVENT DISTRIBUTION (SELECTED TIME RANGE)                |
-| [DRL001-M] 🟢 RUN        Just now   |                                                                    |
+| [MOCK-DRL-001] 🟢 RUN        Just now   |                                                                    |
 | Code: 0112   Prog: JOB0101_L1.tlp  |  15,000 +--[ M: 14,200 ]-----------------------------------------+ |
 | Holes: 57,010   Tool: T155 (M287)  |         |                                                        | |
 | Spindle: (1)(2)(3)(4)(5)(6) [63]   |  10,000 +--[ EVENT: 850 ]----------------------------------------+ |
@@ -461,10 +461,10 @@ pie title "สัดส่วนสาเหตุความผิดปกต
 +-----------------------------------------+----------------------------------------------------------------+
 | TOP 15 MACHINE OFFENDERS (ANOMALY RANK) | RECENT CRITICAL ALARM INCIDENTS (FLEET-WIDE AUDIT LOG)         |
 | Machine   | Anomalies (Count)           | Time      | Machine  | Code   | Category        | Recorded Msg   |
-| DRL088-M  | ■■■■■■■■■■■■■■■■ 142        | 15:28:10  | DRL088-M | E-0408 | Bit Breakage    | Spindle #4 bit |
-| DRL015-M  | ■■■■■■■■■■■■■ 118           | 15:25:04  | DRL015-M | E-0409 | Laser Measure   | Spindle #2 dia |
-| DRL021-M  | ■■■■■■■■■■ 95               | 15:21:40  | DRL021-M | E-0424 | Shank & Collet  | shank too long |
-| DRL092-M  | ■■■■■■■■ 74                 | 15:18:22  | DRL092-M | E-0102 | Pneumatic Low   | Air Low        |
+| MOCK-DRL-088  | ■■■■■■■■■■■■■■■■ 142        | 15:28:10  | MOCK-DRL-088 | E-0408 | Bit Breakage    | Spindle #4 bit |
+| MOCK-DRL-015  | ■■■■■■■■■■■■■ 118           | 15:25:04  | MOCK-DRL-015 | E-0409 | Laser Measure   | Spindle #2 dia |
+| MOCK-DRL-021  | ■■■■■■■■■■ 95               | 15:21:40  | MOCK-DRL-021 | E-0424 | Shank & Collet  | shank too long |
+| MOCK-DRL-092  | ■■■■■■■■ 74                 | 15:18:22  | MOCK-DRL-092 | E-0102 | Pneumatic Low   | Air Low        |
 +-----------------------------------------+----------------------------------------------------------------+
 ```
 

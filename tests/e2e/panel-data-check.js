@@ -15,20 +15,23 @@
  * Two severities:
  *   - SQL execution error (bad column/table, syntax error) -> always a
  *     hard failure, regardless of how much data the DB has. A real bug.
- *   - Zero rows returned, or a timeseries panel missing a `time` column
- *     -> WARNING by default, escalated to a hard failure only when
- *     STRICT_DATA_CHECK=1. Same reasoning tests/smoke/query-budget-check.sh
- *     already documents for this repo: a freshly-started CI stack has
- *     only run the simulator for ~30s and genuinely won't have data for
- *     every panel yet, so "zero rows" isn't always a bug in that
- *     environment. Run with STRICT_DATA_CHECK=1 against a dev DB with
- *     real accumulated history (or a long-lived staging/nightly CI
- *     environment) to enforce it for real.
+ *   - Zero rows returned, a timeseries panel missing a `time` column, or a
+ *     panel this check could not run (unresolved macro, missing database)
+ *     -> WARNING by default, escalated to a hard failure when
+ *     STRICT_DATA_CHECK=1. A freshly-started CI stack has only run the
+ *     simulator for ~30s and genuinely won't have data for every panel yet.
+ *
+ * Each target runs against the database its data source points at:
+ *   timescaledb           -> POSTGRES_DB (default ims)
+ *   drilling-timescaledb  -> EAP_DB (default eap_backup)
+ * psql runs with ON_ERROR_STOP=1: without it psql exits 0 on a SQL error,
+ * and every broken query was silently counted as "0 rows".
  *
  * Usage:
  *   node tests/e2e/panel-data-check.js
  *   STRICT_DATA_CHECK=1 node tests/e2e/panel-data-check.js
  *   PANEL_CHECK_WINDOW='7 days' node tests/e2e/panel-data-check.js
+ *   TIMESCALEDB_CONTAINER=... POSTGRES_USER=... EAP_DB=... node tests/e2e/panel-data-check.js
  */
 
 const fs = require('fs');
@@ -41,6 +44,8 @@ const WINDOW = process.env.PANEL_CHECK_WINDOW || '30 days';
 const CONTAINER = process.env.TIMESCALEDB_CONTAINER || 'ims-timescaledb';
 const DB_USER = process.env.POSTGRES_USER || 'ims_admin';
 const DB_NAME = process.env.POSTGRES_DB || 'ims';
+const EAP_DB = process.env.EAP_DB || 'eap_backup';
+const DATASOURCE_DB = { timescaledb: DB_NAME, 'drilling-timescaledb': EAP_DB };
 const FIELD_SEP = '\x01';
 
 const MAXBUF = 20 * 1024 * 1024; // 20MB; some panels legitimately return large result sets
@@ -48,15 +53,30 @@ const MAXBUF = 20 * 1024 * 1024; // 20MB; some panels legitimately return large 
 // Runs sql via stdin (not argv -- long IN(...) lists from resolved template
 // variables can exceed the OS command-line length limit) and caps the
 // result to CHECK_ROW_CAP rows (we only need to know "has rows" / "has a
-// time column", not the true row count, so this also bounds memory use for
-// panels that would otherwise return huge result sets over PANEL_CHECK_WINDOW).
+// time column", not the true row count).
 const CHECK_ROW_CAP = 200;
-function runSql(sql) {
-  const wrapped = `SELECT * FROM (${sql.replace(/;\s*$/, '')}) __panel_check LIMIT ${CHECK_ROW_CAP};`;
+
+// Leading `SET LOCAL ...;` statements (the drilling and VCP boards use them)
+// cannot sit inside the wrapping subquery; run them first in a transaction.
+function splitSetPrefix(sql) {
+  let rest = sql;
+  const sets = [];
+  for (;;) {
+    const m = rest.match(/^\s*(?:--[^\n]*\n\s*)*(SET\s+LOCAL\s+[^;]+;)/i);
+    if (!m) break;
+    sets.push(m[1]);
+    rest = rest.slice(m[0].length);
+  }
+  return { sets, body: rest };
+}
+
+function runSql(sql, db) {
+  const { sets, body } = splitSetPrefix(sql);
+  const wrapped = `BEGIN;\n${sets.join('\n')}\nSELECT * FROM (${body.replace(/;\s*$/, '')}) __panel_check LIMIT ${CHECK_ROW_CAP};\nROLLBACK;`;
   try {
     const out = execFileSync(
       'docker',
-      ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME,
+      ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', db, '-v', 'ON_ERROR_STOP=1', '-q',
        '-A', '-F', FIELD_SEP, '-P', 'footer=off', '-f', '-'],
       { encoding: 'utf8', input: wrapped, stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: MAXBUF }
     );
@@ -69,100 +89,185 @@ function runSql(sql) {
   }
 }
 
-// Resolve a templating variable's real option list by running its own
-// query against the DB (variables can reference earlier variables, so
-// resolve in declaration order and substitute as we go, same as Grafana).
+const dbExistsCache = {};
+function databaseExists(db) {
+  if (!(db in dbExistsCache)) {
+    const r = runSql(`SELECT 1 FROM pg_database WHERE datname = '${db.replace(/'/g, "''")}'`, DB_NAME);
+    dbExistsCache[db] = r.ok && r.rows > 0;
+  }
+  return dbExistsCache[db];
+}
+
+function datasourceUid(target, panel, dashboard) {
+  const ds = (target && target.datasource) || (panel && panel.datasource) || null;
+  if (ds && typeof ds === 'object' && ds.uid) return ds.uid;
+  if (typeof ds === 'string') return ds;
+  return 'timescaledb';
+}
+
+function queryText(v) {
+  if (typeof v.query === 'string') return v.query;
+  if (v.query && typeof v.query === 'object') return v.query.rawSql || v.query.query || '';
+  return v.definition || '';
+}
+
+// Resolve template variables in declaration order, the way Grafana does:
+// the dashboard's saved current value wins; "All" expands to every option.
 function resolveVariables(dashboard) {
   const resolved = {}; // name -> array of string values
   for (const v of (dashboard.templating && dashboard.templating.list) || []) {
-    if (v.type !== 'query' || !v.query) continue;
-    let sql = v.query;
-    sql = substitute(sql, resolved, '24 hours'); // vars rarely use $__timeFilter; window irrelevant here
-    const res = runSql(sql); // -A -F FIELD_SEP, so multi-column results (__text, __value) stay separated
-    if (!res.ok || res.rows === 0) { resolved[v.name] = []; continue; }
-    // prefer a column literally named __value (Grafana's own convention for these
-    // variable queries); fall back to the last column if __value isn't present
-    let colIdx = res.columns.findIndex(c => c === '__value');
-    if (colIdx === -1) colIdx = res.columns.length - 1;
-    resolved[v.name] = res.dataLines.map(l => l.split(FIELD_SEP)[colIdx]).filter(x => x !== undefined);
+    let options = [];
+    if (v.type === 'query') {
+      const db = DATASOURCE_DB[datasourceUid(null, v, dashboard)];
+      const sql = queryText(v);
+      if (db && sql && databaseExists(db)) {
+        const res = runSql(substitute(sql, resolved, '24 hours'), db);
+        if (res.ok && res.rows > 0) {
+          let colIdx = res.columns.findIndex((c) => c === '__value');
+          if (colIdx === -1) colIdx = res.columns.length - 1;
+          options = res.dataLines.map((l) => l.split(FIELD_SEP)[colIdx]).filter((x) => x !== undefined);
+        }
+      }
+    } else if (v.type === 'custom') {
+      options = String(v.query || '').split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (v.type === 'constant' || v.type === 'textbox') {
+      options = [String(v.query || '')];
+    } else if (v.type === 'interval') {
+      options = [String((v.query || '5m').split(',')[0]).trim()];
+    } else {
+      continue;
+    }
+    const cur = v.current && v.current.value;
+    const curList = Array.isArray(cur) ? cur : (cur === undefined || cur === null ? [] : [cur]);
+    let values;
+    if (curList.some((x) => x === '$__all')) {
+      values = options.filter((o) => o !== 'All');
+    } else if (curList.length === 0) {
+      values = options.slice(0, v.multi ? options.length : 1);
+    } else {
+      values = curList.map(String);
+      // a saved value the options no longer contain is replaced by the first
+      // option when the dashboard loads (query/custom variables refresh)
+      if ((v.type === 'query' || v.type === 'custom') && options.length > 0 && !values.every((x) => options.includes(x))) {
+        values = options.slice(0, 1);
+      }
+    }
+    if (values.length === 0 && v.type === 'textbox') values = [''];
+    resolved[v.name] = values;
   }
   return resolved;
 }
 
 function sqlList(values) {
   if (!values || values.length === 0) return "''"; // empty IN() would be invalid SQL; force a no-match literal instead
-  return values.map(v => `'${v.replace(/'/g, "''")}'`).join(',');
+  return values.map((v) => `'${String(v).replace(/'/g, "''")}'`).join(',');
+}
+
+const INTERVAL_WORDS = { s: 'seconds', m: 'minutes', h: 'hours', d: 'days' };
+function toInterval(g) {
+  const m = String(g).trim().replace(/^'|'$/g, '').match(/^(\d+)\s*([smhd])$/);
+  return m ? `${m[1]} ${INTERVAL_WORDS[m[2]]}` : String(g).trim().replace(/^'|'$/g, '');
 }
 
 function substitute(sql, vars, window) {
   let out = sql;
-  // $__timeFilter(col) -> col BETWEEN NOW() - INTERVAL 'window' AND NOW()
-  out = out.replace(/\$__timeFilter\(([^)]+)\)/g, (_, col) => `${col} BETWEEN NOW() - INTERVAL '${window}' AND NOW()`);
-  for (const [name, values] of Object.entries(vars)) {
+  const from = `(NOW() - INTERVAL '${window}')`;
+  out = out.replace(/\$__timeFilter\(([^)]+)\)/g, (_, col) => `${col} BETWEEN ${from} AND NOW()`);
+  out = out.replace(/\$__timeGroupAlias\(([^,]+),\s*([^,)]+)(?:,[^)]*)?\)/g, (_, col, g) => `time_bucket('${toInterval(g)}', ${col.trim()}) AS "time"`);
+  out = out.replace(/\$__timeGroup\(([^,]+),\s*([^,)]+)(?:,[^)]*)?\)/g, (_, col, g) => `time_bucket('${toInterval(g)}', ${col.trim()})`);
+  out = out.replace(/\$__timeFrom\(\)/g, from).replace(/\$__timeTo\(\)/g, 'NOW()');
+  out = out.replace(/\$\{__from(?::[a-z]+)?\}/g, `(EXTRACT(EPOCH FROM ${from}) * 1000)::bigint`);
+  out = out.replace(/\$\{__to(?::[a-z]+)?\}/g, '(EXTRACT(EPOCH FROM NOW()) * 1000)::bigint');
+  out = out.replace(/\$__interval_ms/g, '60000').replace(/\$__interval/g, '1m');
+  // longest names first so $machine_id is not eaten by $machine
+  for (const name of Object.keys(vars).sort((a, b) => b.length - a.length)) {
+    const values = vars[name];
     const list = sqlList(values);
     const first = values && values.length > 0 ? values[0] : '';
     out = out.split(`\${${name}:sqlstring}`).join(list);
     out = out.split(`\${${name}:singlequote}`).join(list);
+    out = out.split(`\${${name}:csv}`).join(values.join(','));
+    out = out.split(`\${${name}:raw}`).join(first);
     out = out.split(`\${${name}}`).join(first);
+    out = out.replace(new RegExp(`\\$${name}(?![A-Za-z0-9_])`, 'g'), first);
   }
   return out;
 }
 
 function hasUnresolvedMacro(sql) {
-  return /\$__|\$\{/.test(sql);
+  return /\$__|\$\{|\$[A-Za-z_][A-Za-z0-9_]*/.test(sql.replace(/'[^']*'/g, "''").replace(/\$\$/g, ''));
+}
+
+function allPanels(panels, out = []) {
+  for (const p of panels || []) {
+    out.push(p);
+    if (Array.isArray(p.panels)) allPanels(p.panels, out);
+  }
+  return out;
+}
+
+function softFail(summary, msg) {
+  if (STRICT) { summary.errors++; console.error(`  ERROR  ${msg}`); }
+  else { summary.warnings++; console.warn(`  WARN   ${msg}`); }
 }
 
 function checkDashboard(filePath, summary) {
   const file = path.basename(filePath);
   const dashboard = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  const vars = resolveVariables(dashboard);
+  const allVars = resolveVariables(dashboard);
 
-  for (const panel of dashboard.panels || []) {
+  for (const panel of allPanels(dashboard.panels)) {
     if (panel.type === 'row' || panel.type === 'text') continue;
+    // a repeated panel gets one value of its repeat variable per copy;
+    // check the first copy
+    const vars = panel.repeat && allVars[panel.repeat]
+      ? { ...allVars, [panel.repeat]: allVars[panel.repeat].slice(0, 1) }
+      : allVars;
 
     for (const target of panel.targets || []) {
       const rawSql = target.rawSql;
       if (!rawSql) continue;
+      const where = `${file} [${panel.id}] "${panel.title}" [${target.refId}]`;
+
+      const uid = datasourceUid(target, panel, dashboard);
+      const db = DATASOURCE_DB[uid];
+      if (!db) { summary.skipped++; softFail(summary, `${where} — data source "${uid}" is not a mapped SQL database`); continue; }
+      if (!databaseExists(db)) { summary.skipped++; softFail(summary, `${where} — database "${db}" does not exist here`); continue; }
 
       const sql = substitute(rawSql, vars, WINDOW);
       if (hasUnresolvedMacro(sql)) {
         summary.skipped++;
-        console.log(`  SKIP   ${file} [${panel.id}] "${panel.title}" — unresolved macro after substitution, not covered by this check`);
+        softFail(summary, `${where} — unresolved macro after substitution, not run`);
         continue;
       }
 
-      const res = runSql(sql);
+      const res = runSql(sql, db);
       if (!res.ok) {
         summary.errors++;
-        console.error(`  ERROR  ${file} [${panel.id}] "${panel.title}" [${target.refId}] — query failed: ${res.error}`);
+        console.error(`  ERROR  ${where} — query failed on ${db}: ${res.error}`);
         continue;
       }
 
       const isTimeseries = panel.type === 'timeseries' || panel.type === 'state-timeline' || target.format === 'time_series';
-      const hasTimeCol = res.columns.some(c => c.toLowerCase() === 'time');
+      const hasTimeCol = res.columns.some((c) => c.toLowerCase() === 'time');
 
       if (isTimeseries && !hasTimeCol) {
-        const msg = `${file} [${panel.id}] "${panel.title}" [${target.refId}] — timeseries panel, result has no "time" column (columns: ${res.columns.join(', ')})`;
-        if (STRICT) { summary.errors++; console.error(`  ERROR  ${msg}`); }
-        else { summary.warnings++; console.warn(`  WARN   ${msg}`); }
+        softFail(summary, `${where} — timeseries panel, result has no "time" column (columns: ${res.columns.join(', ')})`);
         continue;
       }
-
       if (res.rows === 0) {
-        const msg = `${file} [${panel.id}] "${panel.title}" [${target.refId}] — query returned 0 rows`;
-        if (STRICT) { summary.errors++; console.error(`  ERROR  ${msg}`); }
-        else { summary.warnings++; console.warn(`  WARN   ${msg}`); }
+        softFail(summary, `${where} — query returned 0 rows`);
         continue;
       }
-
       summary.passed++;
     }
   }
 }
 
 console.log('IMS Panel Data Check');
-console.log(`Mode: ${STRICT ? 'STRICT (zero-rows/missing-time-column = failure)' : 'default (zero-rows/missing-time-column = warning)'}`);
+console.log(`Mode: ${STRICT ? 'STRICT (zero rows, missing time column or a skipped panel = failure)' : 'default (those are warnings; SQL errors always fail)'}`);
 console.log(`Time window for $__timeFilter substitution: ${WINDOW}`);
+console.log(`Databases: timescaledb -> ${DB_NAME}, drilling-timescaledb -> ${EAP_DB}`);
 console.log('='.repeat(70));
 
 if (!fs.existsSync(DASHBOARD_DIR)) {
@@ -186,10 +291,7 @@ function listDashboardJsonFiles(dir) {
 
 // PANEL_CHECK_ONLY: comma-separated dashboard-relative paths (forward-slash,
 // e.g. "manufacturing/ims-easy-overview.json") to restrict the scan to a
-// subset. Used by tests/data-quality/runner.js's lightweight mode (the
-// "fast" assurance profile) so a quick run doesn't have to walk all 139
-// panel targets across all 15 dashboards every time; unset (the CLI
-// default) scans everything, unchanged from before this option existed.
+// subset. Used by tests/data-quality/runner.js's lightweight mode.
 const ONLY = process.env.PANEL_CHECK_ONLY
   ? process.env.PANEL_CHECK_ONLY.split(',').map((s) => s.trim()).filter(Boolean)
   : null;

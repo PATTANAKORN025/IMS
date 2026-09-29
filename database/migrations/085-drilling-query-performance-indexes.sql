@@ -35,5 +35,5 @@ COMMENT ON INDEX public.ix_machine_event_anomalies IS
 'Partial index covering all Drilling alarm and anomaly event codes for 04-RCA dashboard';
 
 \else
-\echo '085: database eap_backup not present on this server, skipped'
+\echo 'IMS_MIGRATION_DEFERRED 085: database eap_backup not present on this server; runs again on the next start'
 \endif
