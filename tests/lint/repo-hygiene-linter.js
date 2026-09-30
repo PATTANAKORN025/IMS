@@ -8,8 +8,8 @@
  *
  * FT-15.1's own reason for existing: monitoring/grafana/plugins/ had 677
  * tracked files / 137MB of installed plugin bundles, source maps and
- * compiled JS that GF_INSTALL_PLUGINS (docker-compose.yaml) and Grafana's
- * own core-bundled plugins already reproduce on every container start --
+ * compiled JS that [plugins] preinstall_sync (monitoring/grafana/grafana.ini)
+ * already reproduces on every container start --
  * see .gitignore's own comment on that directory. This exists so it, or
  * something like it, cannot happen again silently.
  *

@@ -88,6 +88,14 @@
   - Unused Grafana plugins are no longer installed.
   - Init scripts no longer hardcode the database and owner names.
 
+### Grafana configuration (2026-09-30)
+- **`monitoring/grafana/grafana.ini`** is now the single source of truth; compose passes only secrets and per-deployment values. Three keys had been silently ignored (`hide_version` and `disable_sanitize_html` under `[security]`, `hide_new_plugins`), and the home dashboard path pointed at a file that does not exist.
+- **Exposure closed:** `/api/health` no longer shows version and commit without a login; nginx refuses `/metrics`; external snapshots (`snapshots.raintank.io`) and public dashboards are off.
+- **Browser hardening:** Content-Security-Policy with a per-request nonce and `frame-ancestors 'self'`; no gravatar, grafana.com news, analytics or update checks.
+- **Accounts:** new and changed passwords must meet Grafana's password policy; no org creation; session lifetimes stated explicitly.
+- **Plugins:** installed from `preinstall_sync` at pinned versions before startup, no UI plugin admin, and Grafana's unused default plugins are disabled, so a start needs no internet beyond the two pinned panels.
+- **Provisioning:** provisioned dashboards can no longer be deleted from the UI; the Mentor LDI data source, which never received its connection settings, is removed. The renderer callback uses Grafana's container port, not the host port.
+
 ### Hardening (2026-09-29, third pass)
 - **PgBouncer:** clients authenticate with `scram-sha-256` instead of `plain`, so no password crosses the Docker network in cleartext. Wrong passwords fail with `SASL authentication failed`.
 - **Containers:** every service except pgAdmin runs with `no-new-privileges`. pgAdmin is left out because it may need file capabilities to bind port 80.

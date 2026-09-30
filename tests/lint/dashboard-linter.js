@@ -211,7 +211,7 @@ function lintDashboard(filePath) {
     if (panel.libraryPanel) continue;
 
     // Check 19: Business Text templates must not emit data unescaped. HTML
-    // sanitizing is off in this stack (GF_PANELS_DISABLE_SANITIZE_HTML), so
+    // sanitizing is off in this stack ([panels] disable_sanitize_html), so
     // the template is the only escaping there is: a triple-stash emits raw
     // HTML, and a {{value}} inside an on*="..." handler becomes JavaScript
     // (the browser decodes &#x27; back to ' before running it). Pass values

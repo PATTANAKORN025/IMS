@@ -49,7 +49,7 @@
 | 1 | ค่าทุกค่าใน `.env.example` เป็นข้อมูลสาธารณะ | สูง | ทราบแล้ว | สร้างค่าใหม่ให้ทุก secret ก่อนการติดตั้งจริงทุกครั้ง (ดู [คู่มือผู้ดูแลระบบ](docs/admin/ADMIN_MANUAL.md#รายการตรวจความปลอดภัยก่อนใช้งานจริง)) |
 | 2 | ประตูหน้า nginx ให้บริการเป็น HTTP ธรรมดา | ปานกลาง | ทราบแล้ว | ทำ TLS termination หน้าหรือภายใน `ims-proxy` แล้วจึงเปิด `GF_SECURITY_COOKIE_SECURE` และ HSTS |
 | 3 | SNMP v2c community string เก็บรายอุปกรณ์ใน `public.devices` เป็นข้อความธรรมดา | ปานกลาง | ทราบแล้ว | ย้ายอุปกรณ์ที่ใช้งานจริงไปใช้ SNMPv3 (authPriv) |
-| 4 | ปิดการ sanitize HTML ของ Grafana (`GF_PANELS_DISABLE_SANITIZE_HTML=true`) เพราะแดชบอร์ด Business Text ต้องรัน JavaScript | ปานกลาง | ทราบแล้ว | ให้สิทธิ์ Editor เฉพาะคนที่ไว้ใจได้ เทมเพลต escape ค่าข้อมูลทุกค่า และ `dashboard-linter` ปฏิเสธ `{{{ }}}` และค่าใน handler `on*=` |
+| 4 | ปิดการ sanitize HTML ของ Grafana (`[panels] disable_sanitize_html = true` ใน `monitoring/grafana/grafana.ini`) เพราะแดชบอร์ด Business Text ต้องรัน JavaScript | ปานกลาง | ทราบแล้ว | ให้สิทธิ์ Editor เฉพาะคนที่ไว้ใจได้ เทมเพลต escape ค่าข้อมูลทุกค่า และ `dashboard-linter` ปฏิเสธ `{{{ }}}` และค่าใน handler `on*=` |
 | 5 | `/ldi-telemetry` และ `/inject` เข้าถึงได้ผ่านประตูหน้า โดยมีเพียงการตรวจ `x-api-key` ใน Node-RED ป้องกัน | ปานกลาง | ทราบแล้ว | เก็บ `INGEST_API_KEY` เป็นความลับและหมุนเวียน และจำกัดพอร์ตด้วยไฟร์วอลล์ |
 | 6 | การสแกน secret ใน CI ตรวจ working tree ไม่ได้ตรวจประวัติ และในประวัติมี `.env` เก่า (credential หมุนเวียนแล้ว) | ต่ำ | ทราบแล้ว | การสแกนบล็อกการ build และ image ถูกระบุเวอร์ชันแล้ว ส่วน `scripts/pre-commit.js` ไม่ยอมให้ commit ไฟล์ `.env` |
 | — | พอร์ต TimescaleDB เปิดบน host | — | **แก้แล้ว** | `docker-compose.yaml` หลักปิดคอมเมนต์การเปิดพอร์ตของ TimescaleDB ไว้; ฐานข้อมูลทำงานเฉพาะภายในเครือข่าย Docker |
@@ -61,6 +61,10 @@
 | — | service ต่อฐานข้อมูลด้วย superuser | — | **แก้แล้ว** | Node-RED ใช้ `nodered_writer`, archiver ใช้ `observability_archiver`, alarm-api ใช้ `alarm_api_writer`, Grafana ใช้ `grafana_reader` แต่ละ role มีสิทธิ์เฉพาะที่ใช้ |
 | — | `/alert-webhook` รับทุก request | — | **แก้แล้ว** | ต้องมี `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` |
 | — | image ของ Grafana image renderer ใช้ `latest` | — | **แก้แล้ว** | ระบุเป็น `v5.11.1` |
+| — | `/metrics` ของ Grafana และเวอร์ชันกับ commit ใน `/api/health` อ่านได้โดยไม่ login ผ่านประตูหน้า | — | **แก้แล้ว** | nginx ตอบ 404 ที่ `/metrics` และตั้ง `[auth.anonymous] hide_version = true` (เดิมใส่ key ผิด section) |
+| — | คลิกเดียวก็เผยแพร่ snapshot ไป `snapshots.raintank.io` หรือแชร์แดชบอร์ดแบบไม่ต้อง login ได้ | — | **แก้แล้ว** | `[snapshots] external_enabled = false` และ `[public_dashboards] enabled = false` |
+| — | ติดตั้ง plugin จาก UI ได้ และ plugin อัปเดตเป็นเวอร์ชันล่าสุดเองตอน start | — | **แก้แล้ว** | `plugin_admin_enabled = false`, `preinstall_sync` ล็อกเวอร์ชัน panel 2 ตัวที่ใช้ และปิด plugin ค่าเริ่มต้นที่ไม่ได้ใช้ |
+| — | ไม่มี Content-Security-Policy ไม่มี password policy และติดต่อ grafana.com กับ gravatar.com | — | **แก้แล้ว** | CSP พร้อม nonce ต่อ request, `password_policy = true` และปิด analytics, การตรวจอัปเดต, news และ gravatar |
 
 ---
 
