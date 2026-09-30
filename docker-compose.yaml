@@ -106,6 +106,9 @@ services:
       - log_min_duration_statement=5s
       - -c
       - log_lock_waits=on
+      # Disable outbound telemetry in air-gapped / enterprise industrial network
+      - -c
+      - timescaledb.telemetry_level=off
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
@@ -118,7 +121,7 @@ services:
           cpus: '0.5'
           memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5

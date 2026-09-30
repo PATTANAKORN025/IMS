@@ -4,9 +4,11 @@ build-flows:
 	node scripts/build-flows.js
 
 up: build-flows
+	node scripts/check-env.js
 	docker compose -f docker-compose.yaml up -d
 
 up-prod: build-flows
+	node scripts/check-env.js --strict
 	docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
 
 down:
@@ -29,7 +31,11 @@ else
 endif
 
 backup:
+ifeq ($(OS),Windows_NT)
+	powershell -ExecutionPolicy Bypass -File scripts\backup-db.ps1
+else
 	bash scripts/backup-db.sh
+endif
 
 restore:
 	bash scripts/restore-db.sh $(FILE)
