@@ -241,7 +241,7 @@ services:
 
   # ── Grafana ───────────────────────────────────────────────
   grafana:
-    image: grafana/grafana:13.1.2
+    image: grafana/grafana:13.2.2
     container_name: ims-grafana
     <<: [*default-restart, *default-hardening, *no-caps]
     init: true
