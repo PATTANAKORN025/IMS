@@ -93,6 +93,7 @@ $$\text{主轴 } N \text{ 启用} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
    - 展现全厂钻机实时卡片，包含 6 轴运行指示灯、当前刀具直径、转速进给、累计孔数。
    - 卡片标题为 `F<工厂> - <机器>`（例如 `FMOCK - MOCK-DRL-001`），工厂取自 `public.machine_master`；未登记的机器显示 `F?`。**Factory** 变量同时筛选卡片和 KPI 计数。
    - 提供状态一键过滤（`ALL`, `RUN`, `ALARM`, `TOOL_CHANGE`, `STOP`, `STANDBY`, `OFFLINE`）与程序名搜索。
+   - 卡片条以 25 px/秒 匀速向左移动，到末端停 5 秒后回到起点，再停 3 秒重新开始。数据刷新（即使每 5 秒）不会让它跳动，页面重新加载后也保持原位置。指针停在卡片上时暂停，离开 2 秒后继续；用滚轮、滚动条、触摸或拖动手动移动后等待 6 秒；键盘焦点在卡片条内时暂停；切换状态过滤会从最左侧重新开始；操作系统开启“减少动态效果”时不自动移动。
 2. **Drilling — 02 Shift Production & OEE Tracking (UID: `ims-drilling-history`)**:
    - 7 天滚动窗口班次生产看板，对比早班（08:00–20:00）与晚班（20:00–08:00）孔数及机台开动率（Availability Rate %）。
 3. **Drilling — 03 Machine Investigation & Diagnostics (UID: `ims-drilling-machine-detail`)**:

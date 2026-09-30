@@ -88,6 +88,10 @@
   - Unused Grafana plugins are no longer installed.
   - Init scripts no longer hardcode the database and owner names.
 
+### Drilling fleet card strip (2026-09-30)
+- **No more jump to the start on refresh.** Each refresh replaced the Business Text HTML, so the card strip was rebuilt at position 0 and the saved position was put back one painted frame later: a visible jump on 5 of 6 refreshes at a 5 s refresh, measured. The strip is now driven by one scroller that lives outside the render and restores the position in a MutationObserver callback before the browser paints: 0 jumps over 12 refreshes, steady 25 px/s.
+- Hover, drag, wheel pauses and the end-of-strip rewind now survive a refresh (before, a pointer resting on a card was ignored after every refresh and the strip moved under it). A drag that ends on a card no longer opens the machine. Keyboard focus and the operating system's reduced-motion setting stop the automatic movement.
+
 ### Dashboard settings (2026-09-30)
 - **All 22 dashboards** now share one set of dashboard-level settings, enforced by `dashboard-linter` Check 20: timezone and week start inherited from `grafana.ini` (`Asia/Bangkok`, Monday) instead of a mix of browser, UTC and Asia/Bangkok; shared crosshair; `editable: false`; the built-in "Annotations & Alerts" layer (5 dashboards had none); a folder-wide dashboards link (8 dashboards had no links at all); unique panel ids (19 panels had none).
 - **LDI and Platform dashboards** now show plant time. They showed UTC, 7 hours behind the clock on the shop floor.

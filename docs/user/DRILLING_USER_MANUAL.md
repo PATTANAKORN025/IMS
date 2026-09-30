@@ -322,6 +322,14 @@ The database query categorizes alarms into **11 canonical failure domains** usin
 7. **Speed & Feed:** Operational parameters (e.g., 140 kRPM, 2.2 m/min).
 8. **Recorded Evidence:** Direct message emitted by machine controller.
 
+#### Card Strip Motion
+The card strip glides left at a steady 25 px/s, waits 5 s at the end, rewinds, waits 3 s and starts again. A data refresh (even every 5 s) does not move it: the strip keeps its place, and it stays where you left it after a page reload.
+- **Pointer over the cards** stops it; it moves again 2 s after the pointer leaves.
+- **Wheel, scrollbar, touch or drag** moves it by hand; it waits 6 s before moving on its own. A drag that ends on a card does not open that machine.
+- **Keyboard focus** inside the strip stops it.
+- **Status filter** starts the strip again from the left.
+- **Reduced motion** (operating-system setting) turns the automatic movement off; manual scrolling still works.
+
 ---
 
 ### 3.2 Dashboard 02: Drilling — 02 Shift Production & OEE Tracking (UID: `ims-drilling-history`)
