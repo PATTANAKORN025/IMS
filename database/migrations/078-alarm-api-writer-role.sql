@@ -25,7 +25,10 @@ DO $$ BEGIN
 END $$;
 
 \getenv alarm_api_db_password ALARM_API_DB_PASSWORD
+BEGIN;
+SET LOCAL log_statement = 'none';
 ALTER ROLE alarm_api_writer WITH PASSWORD :'alarm_api_db_password';
+COMMIT;
 
 GRANT CONNECT ON DATABASE ims TO alarm_api_writer;
 GRANT USAGE ON SCHEMA public TO alarm_api_writer;

@@ -23,6 +23,20 @@ FAILED=0
 echo "IMS Migration Runner"
 echo "─────────────────────"
 
+# Wait for database TCP connection to be fully ready before proceeding
+MAX_RETRIES=30
+RETRY_COUNT=0
+echo "Waiting for PostgreSQL at ${PGHOST:-timescaledb}:${PGPORT:-5432}..."
+until pg_isready -h "${PGHOST:-timescaledb}" -p "${PGPORT:-5432}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"; do
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
+        echo "ERROR: PostgreSQL at ${PGHOST:-timescaledb}:${PGPORT:-5432} not reachable after ${MAX_RETRIES} attempts." >&2
+        exit 2
+    fi
+    echo "Waiting for database connection... (${RETRY_COUNT}/${MAX_RETRIES})"
+    sleep 1
+done
+
 # Ensure tracking table exists
 psql -v ON_ERROR_STOP=1 --username "${POSTGRES_USER}" --dbname "${POSTGRES_DB}" -c "
 CREATE TABLE IF NOT EXISTS public.schema_migrations (

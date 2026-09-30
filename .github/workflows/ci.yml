@@ -96,7 +96,7 @@ jobs:
             --entrypoint promtool \
             -v ${{ github.workspace }}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
             -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules \
-            prom/prometheus:v3.14.0 \
+            prom/prometheus:v3.15.0 \
             check config /etc/prometheus/prometheus.yml
 
       - name: Lint Prometheus Alert Rules
@@ -105,7 +105,7 @@ jobs:
             docker run --rm \
               --entrypoint promtool \
               -v "${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules" \
-              prom/prometheus:v3.14.0 \
+              prom/prometheus:v3.15.0 \
               check rules "/etc/prometheus/rules/$(basename $f)"
           done
 
@@ -377,7 +377,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm ci
@@ -448,7 +448,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm ci
@@ -504,7 +504,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20'
+          node-version: '22'
       - name: Install dependencies
         run: npm ci
       - name: Run Full Architecture & Pre-commit Gate
