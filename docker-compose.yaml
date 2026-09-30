@@ -295,7 +295,7 @@ services:
 
   # ── Proxy (same-origin front door: Grafana + auth-gated alarm-api) ──
   proxy:
-    image: nginx:1.27-alpine
+    image: nginx:1.31-alpine
     container_name: ims-proxy
     <<: [*default-restart, *default-hardening]
     init: true
