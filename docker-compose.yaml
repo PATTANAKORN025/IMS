@@ -208,7 +208,7 @@ services:
 
   # ── Alertmanager ──────────────────────────────────────────
   alertmanager:
-    image: prom/alertmanager:v0.33.1
+    image: prom/alertmanager:v0.34.1
     container_name: ims-alertmanager
     <<: [*default-restart, *default-hardening, *no-caps]
     init: true
