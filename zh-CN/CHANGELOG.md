@@ -88,6 +88,13 @@
   - 不再安装未使用的 Grafana 插件。
   - 初始化脚本不再硬编码数据库名与所有者名。
 
+### 仪表板设置（2026-09-30）
+- **全部 22 个仪表板**使用同一套仪表板级设置，由 `dashboard-linter` Check 20 强制：时区和每周起始日继承 `grafana.ini`（`Asia/Bangkok`，周一），不再混用 browser、UTC 与 Asia/Bangkok；共享十字光标；`editable: false`；内置 "Annotations & Alerts" 层（原有 5 个缺失）；按文件夹的仪表板链接（原有 8 个完全没有链接）；面板 id 唯一（原有 19 个面板无 id）。
+- **LDI 与 Platform 仪表板**现在显示工厂时间，之前显示 UTC，比车间时钟慢 7 小时。
+- **Drilling 02–04：** Factory 筛选器之前显示 "2" 却不筛选任何内容，现在列出 `machine_master` 中的工厂并缩小机台列表，与 01 一致。Machine Investigation 的机台列表不再扫描整个事件表（工厂数据上由 209 ms 降至 21 ms），30 天范围的刷新间隔由 5 秒改为 30 秒。
+- **文件夹权限：** `scripts/grafana-folder-permissions.js` 将 provision 文件夹的 Editor 与 Viewer 设为 View，仪表板不会再出现在 git 之外。
+- 删除未使用的数据源变量（Meta-Monitoring）和已弃用的 `time_options`；VCP 筛选标签改为 Factory、Status、Error type。
+
 ### Grafana 配置（2026-09-30）
 - **`monitoring/grafana/grafana.ini`** 成为唯一配置来源，compose 只传入密钥和各部署不同的值。此前有 3 个键被 Grafana 静默忽略（`[security]` 下的 `hide_version` 与 `disable_sanitize_html`，以及 `hide_new_plugins`），首页仪表板路径也指向不存在的文件。
 - **关闭暴露面：** 未登录时 `/api/health` 不再显示版本和 commit；nginx 拒绝 `/metrics`；关闭外部快照（`snapshots.raintank.io`）与公开仪表板。

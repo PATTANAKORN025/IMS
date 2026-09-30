@@ -9,7 +9,7 @@
         },
         "enable": true,
         "hide": true,
-        "iconColor": "#3b82f6",
+        "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
       },
@@ -1213,7 +1213,7 @@
     "list": [
       {
         "name": "factory",
-        "label": "factory",
+        "label": "Factory",
         "type": "query",
         "datasource": {
           "type": "postgres",
@@ -1273,7 +1273,7 @@
       },
       {
         "name": "status_filter",
-        "label": "current_status",
+        "label": "Status",
         "type": "query",
         "datasource": {
           "type": "postgres",
@@ -1303,7 +1303,7 @@
       },
       {
         "name": "severity",
-        "label": "error_type",
+        "label": "Error type",
         "type": "query",
         "datasource": {
           "type": "postgres",
@@ -1350,10 +1350,10 @@
     "nowDelay": "1m",
     "hidden": false
   },
-  "timezone": "Asia/Bangkok",
+  "timezone": "",
   "title": "VCP — 02 Plating Line Operations Console",
   "uid": "ims-vcp-operations-console",
   "version": 1,
-  "weekStart": "monday",
-  "liveNow": false
+  "liveNow": false,
+  "id": null
 }

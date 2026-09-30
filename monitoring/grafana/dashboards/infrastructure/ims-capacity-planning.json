@@ -14,7 +14,7 @@
     "predictive",
     "sre"
   ],
-  "timezone": "UTC",
+  "timezone": "",
   "schemaVersion": 39,
   "refresh": "5m",
   "time": {
@@ -42,6 +42,20 @@
       "type": "link",
       "icon": "external link",
       "targetBlank": true
+    },
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "infrastructure"
+      ],
+      "targetBlank": false,
+      "title": "All Platform dashboards",
+      "tooltip": "Every dashboard tagged infrastructure",
+      "type": "dashboards",
+      "url": ""
     }
   ],
   "templating": {
@@ -2222,5 +2236,7 @@
       ]
     }
   ],
-  "graphTooltip": 1
+  "graphTooltip": 1,
+  "editable": false,
+  "id": null
 }

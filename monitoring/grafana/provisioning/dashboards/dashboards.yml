@@ -44,6 +44,3 @@ providers:
     options:
       path: /var/lib/grafana/dashboards/vcp
       foldersFromFilesStructure: false
-
-
-

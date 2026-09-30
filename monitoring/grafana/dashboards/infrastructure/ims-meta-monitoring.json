@@ -1,12 +1,40 @@
 {
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "infrastructure"
+      ],
+      "targetBlank": false,
+      "title": "All Platform dashboards",
+      "tooltip": "Every dashboard tagged infrastructure",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
@@ -40,7 +68,8 @@
           "custom": {}
         }
       },
-      "options": {}
+      "options": {},
+      "id": 10000
     },
     {
       "type": "timeseries",
@@ -107,7 +136,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "id": 10001
     },
     {
       "type": "timeseries",
@@ -174,7 +204,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "id": 10002
     },
     {
       "type": "stat",
@@ -277,7 +308,8 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      }
+      },
+      "id": 10003
     },
     {
       "type": "row",
@@ -294,7 +326,8 @@
           "custom": {}
         }
       },
-      "options": {}
+      "options": {},
+      "id": 10004
     },
     {
       "type": "stat",
@@ -397,7 +430,8 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      }
+      },
+      "id": 10005
     },
     {
       "type": "stat",
@@ -496,7 +530,8 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      }
+      },
+      "id": 10006
     },
     {
       "type": "stat",
@@ -583,7 +618,8 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      }
+      },
+      "id": 10007
     },
     {
       "type": "row",
@@ -600,7 +636,8 @@
           "custom": {}
         }
       },
-      "options": {}
+      "options": {},
+      "id": 10008
     },
     {
       "type": "timeseries",
@@ -666,7 +703,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "id": 10009
     },
     {
       "type": "table",
@@ -801,7 +839,8 @@
           "show": false
         },
         "noValue": "NO_DATA"
-      }
+      },
+      "id": 10010
     },
     {
       "type": "row",
@@ -818,7 +857,8 @@
           "custom": {}
         }
       },
-      "options": {}
+      "options": {},
+      "id": 10011
     },
     {
       "type": "stat",
@@ -921,7 +961,8 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      }
+      },
+      "id": 10012
     },
     {
       "type": "timeseries",
@@ -988,7 +1029,8 @@
         "tooltip": {
           "mode": "multi"
         }
-      }
+      },
+      "id": 10013
     },
     {
       "type": "gauge",
@@ -1086,7 +1128,8 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      }
+      },
+      "id": 10014
     }
   ],
   "refresh": "5m",
@@ -1103,22 +1146,7 @@
     "timescaledb"
   ],
   "templating": {
-    "list": [
-      {
-        "name": "DS_PROMETHEUS",
-        "type": "datasource",
-        "query": "prometheus",
-        "current": {},
-        "hide": 0,
-        "includeAll": false,
-        "multi": false,
-        "options": [],
-        "queryValue": "",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-15m",
@@ -1128,5 +1156,5 @@
   "description": "The ingestion pipeline's own health: rows/sec insert rate, batch success rate, retry queue depth, circuit breaker state, and device poll rates. Watches the pipeline, not the fleet it monitors.",
   "uid": "ims-meta-monitoring",
   "version": 1,
-  "timezone": "UTC"
+  "timezone": ""
 }

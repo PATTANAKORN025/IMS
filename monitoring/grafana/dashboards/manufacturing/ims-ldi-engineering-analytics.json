@@ -3,7 +3,7 @@
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
-  "graphTooltip": 2,
+  "graphTooltip": 1,
   "templating": {
     "list": [
       {
@@ -155,8 +155,8 @@
           "uid": "-- Grafana --"
         },
         "enable": true,
-        "hide": false,
-        "iconColor": "rgba(255, 96, 96, 1)",
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
       }
@@ -2478,6 +2478,20 @@
       "targetBlank": false,
       "keepTime": false,
       "includeVars": true
+    },
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "manufacturing"
+      ],
+      "targetBlank": false,
+      "title": "All LDI dashboards",
+      "tooltip": "Every dashboard tagged manufacturing",
+      "type": "dashboards",
+      "url": ""
     }
   ],
   "id": null,
@@ -2488,7 +2502,7 @@
     "from": "now-6h",
     "to": "now"
   },
-  "timezone": "UTC",
+  "timezone": "",
   "refresh": "1m",
   "tags": [
     "engineer",
@@ -2501,5 +2515,6 @@
     "process-control",
     "quality",
     "spc"
-  ]
+  ],
+  "editable": false
 }

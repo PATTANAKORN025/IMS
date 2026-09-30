@@ -15,7 +15,7 @@
       }
     ]
   },
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
@@ -55,6 +55,20 @@
       "targetBlank": false,
       "includeVars": true,
       "keepTime": true
+    },
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "drilling"
+      ],
+      "targetBlank": false,
+      "title": "All Drilling dashboards",
+      "tooltip": "Every dashboard tagged drilling",
+      "type": "dashboards",
+      "url": ""
     }
   ],
   "liveNow": false,
@@ -477,8 +491,8 @@
           "type": "postgres",
           "uid": "drilling-timescaledb"
         },
-        "query": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL;",
-        "definition": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL;",
+        "query": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL AND ('All' IN (${factory:sqlstring}) OR equipment_id IN (SELECT mm.equipment_id FROM public.machine_master mm WHERE mm.factory IN (${factory:sqlstring})));",
+        "definition": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL AND ('All' IN (${factory:sqlstring}) OR equipment_id IN (SELECT mm.equipment_id FROM public.machine_master mm WHERE mm.factory IN (${factory:sqlstring})));",
         "current": {},
         "multi": true,
         "includeAll": false,
@@ -491,21 +505,29 @@
       {
         "name": "factory",
         "label": "Factory",
-        "type": "custom",
-        "query": "All, 1, 2, 3",
+        "type": "query",
+        "query": "SELECT 'All' AS __text, 'All' AS __value UNION ALL (SELECT DISTINCT factory, factory FROM public.machine_master WHERE factory IS NOT NULL ORDER BY 1);",
         "current": {
           "text": [
-            "2"
+            "All"
           ],
           "value": [
-            "2"
+            "All"
           ]
         },
         "multi": true,
         "includeAll": false,
         "hide": 0,
         "options": [],
-        "skipUrlSync": false
+        "skipUrlSync": false,
+        "datasource": {
+          "type": "postgres",
+          "uid": "drilling-timescaledb"
+        },
+        "definition": "SELECT 'All' AS __text, 'All' AS __value UNION ALL (SELECT DISTINCT factory, factory FROM public.machine_master WHERE factory IS NOT NULL ORDER BY 1);",
+        "refresh": 1,
+        "sort": 0,
+        "description": "Factory from public.machine_master. Narrows the machine list."
       }
     ]
   },
@@ -523,20 +545,9 @@
       "15m",
       "30m",
       "1h"
-    ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "Drilling — 04 Fleet Anomaly & Root Cause Analysis",
   "description": "Fleet anomaly detection, spindle vibration out-of-spec events, and multi-factor root cause analysis across the CNC drilling fleet.",
   "uid": "ims-drilling-5-anomaly"

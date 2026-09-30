@@ -9,7 +9,7 @@
         },
         "enable": true,
         "hide": true,
-        "iconColor": "#3b82f6",
+        "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
       },
@@ -187,7 +187,7 @@
     "list": [
       {
         "name": "factory",
-        "label": "factory",
+        "label": "Factory",
         "type": "query",
         "datasource": {
           "type": "postgres",
@@ -247,7 +247,7 @@
       },
       {
         "name": "status_filter",
-        "label": "current_status",
+        "label": "Status",
         "type": "query",
         "datasource": {
           "type": "postgres",
@@ -277,7 +277,7 @@
       },
       {
         "name": "severity",
-        "label": "error_type",
+        "label": "Error type",
         "type": "query",
         "datasource": {
           "type": "postgres",
@@ -324,11 +324,10 @@
     "nowDelay": "1m",
     "hidden": false
   },
-  "timezone": "Asia/Bangkok",
+  "timezone": "",
   "title": "VCP — 03 Real-Time Plating Line Wall Display",
   "uid": "ims-vcp-realtime-wall",
   "version": 1,
-  "weekStart": "monday",
   "tags": [
     "ims",
     "vcp",
@@ -341,5 +340,6 @@
     "kiosk",
     "operator",
     "level-2-operation"
-  ]
+  ],
+  "id": null
 }

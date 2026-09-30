@@ -177,6 +177,31 @@ function lintDashboard(filePath) {
     }
   }
 
+  // Check 20: dashboard-level settings are identical across files
+  // (GRAFANA_DESIGN_SYSTEM.md §6). Timezone and week start come from
+  // grafana.ini [date_formats]; a dashboard that pins its own drifts from the
+  // plant clock the SQL formats text in. editable stays false because the
+  // provider refuses UI saves. Every panel needs a unique id for links,
+  // viewPanel and alert rules to address it.
+  if (data.timezone) error(file, 'dashboard', `timezone "${data.timezone}" -- leave it "" so grafana.ini [date_formats] decides`);
+  if ('weekStart' in data) error(file, 'dashboard', 'weekStart set -- grafana.ini [date_formats] default_week_start decides');
+  if (data.graphTooltip !== 1) error(file, 'dashboard', `graphTooltip ${data.graphTooltip} -- must be 1 (shared crosshair)`);
+  if (data.editable !== false) error(file, 'dashboard', 'editable must be false (dashboards are provisioned from git)');
+  const builtIn = (data.annotations?.list || []).find((a) => a.builtIn === 1);
+  if (!builtIn || !builtIn.enable) error(file, 'dashboard', 'built-in "Annotations & Alerts" layer missing or disabled');
+  if (!(data.links || []).some((l) => l.type === 'dashboards' && (l.tags || []).includes(domainDir))) {
+    error(file, 'dashboard', `no "dashboards" link for tag "${domainDir}" -- every dashboard reaches its siblings`);
+  }
+  const allPanels = [];
+  const collect = (ps) => (ps || []).forEach((p) => { allPanels.push(p); collect(p.panels); });
+  collect(data.panels);
+  const seenIds = new Set();
+  for (const p of allPanels) {
+    if (p.id == null) error(file, p.title || '?', 'panel has no id');
+    else if (seenIds.has(p.id)) error(file, p.title || p.id, `duplicate panel id ${p.id}`);
+    seenIds.add(p.id);
+  }
+
   // Check 1: No hardcoded IPs in rawSql
   const ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
 

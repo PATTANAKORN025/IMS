@@ -1,12 +1,40 @@
 {
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "infrastructure"
+      ],
+      "targetBlank": false,
+      "title": "All Platform dashboards",
+      "tooltip": "Every dashboard tagged infrastructure",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
@@ -622,5 +650,5 @@
   "description": "Read-only. Real source_ts -> ingest_ts latency evidence from migration 081's ingest_ts columns -- no simulated data, no interactive write actions. Companion to tests/e2e/ingestion-latency-check.js.",
   "uid": "ims-ingestion-latency",
   "version": 1,
-  "timezone": "UTC"
+  "timezone": ""
 }

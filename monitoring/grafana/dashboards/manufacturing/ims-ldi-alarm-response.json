@@ -16,10 +16,10 @@
     "reliability",
     "supervisor"
   ],
-  "timezone": "UTC",
+  "timezone": "",
   "schemaVersion": 39,
   "version": 1,
-  "editable": true,
+  "editable": false,
   "graphTooltip": 1,
   "fiscalYearStartMonth": 0,
   "liveNow": false,
@@ -30,9 +30,37 @@
   },
   "timepicker": {},
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "manufacturing"
+      ],
+      "targetBlank": false,
+      "title": "All LDI dashboards",
+      "tooltip": "Every dashboard tagged manufacturing",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "templating": {
     "list": []
   },

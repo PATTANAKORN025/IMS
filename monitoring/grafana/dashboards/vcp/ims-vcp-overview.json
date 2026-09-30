@@ -9,9 +9,9 @@
         },
         "enable": true,
         "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
-        "type": "dashboard",
-        "iconColor": "#3b82f6"
+        "type": "dashboard"
       },
       {
         "name": "Left RUN",
@@ -150,7 +150,7 @@
       },
       {
         "name": "severity",
-        "label": "error_type",
+        "label": "Error type",
         "type": "query",
         "datasource": {
           "type": "postgres",
@@ -197,11 +197,10 @@
     "nowDelay": "1m",
     "hidden": false
   },
-  "timezone": "Asia/Bangkok",
+  "timezone": "",
   "title": "VCP — 01 Plating Fleet Overview & Process Analytics",
   "uid": "ims-vcp-overview",
   "version": 2,
-  "weekStart": "monday",
   "panels": [
     {
       "id": 1,

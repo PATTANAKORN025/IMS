@@ -157,6 +157,13 @@ All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded
 
 Every value in `.env.example` is public (the repository is public). Treat each one as compromised and never deploy it.
 
+After the first `docker compose up`, lock the provisioned dashboard folders so Editors can view but not add dashboards to them (Admins keep full access; the General folder stays open to Editors). The script shows what differs and changes nothing without `--apply`; the change takes effect within about 30 seconds:
+
+```bash
+node scripts/grafana-folder-permissions.js
+node scripts/grafana-folder-permissions.js --apply
+```
+
 ### How to Rotate
 
 ```bash
