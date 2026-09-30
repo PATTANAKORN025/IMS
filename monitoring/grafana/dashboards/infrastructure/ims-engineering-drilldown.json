@@ -14,7 +14,7 @@
     "snmp",
     "sre"
   ],
-  "timezone": "UTC",
+  "timezone": "",
   "schemaVersion": 39,
   "refresh": "5m",
   "time": {
@@ -42,6 +42,20 @@
       "type": "link",
       "icon": "external link",
       "targetBlank": true
+    },
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "infrastructure"
+      ],
+      "targetBlank": false,
+      "title": "All Platform dashboards",
+      "tooltip": "Every dashboard tagged infrastructure",
+      "type": "dashboards",
+      "url": ""
     }
   ],
   "templating": {
@@ -99,7 +113,7 @@
           "uid": "-- Grafana --"
         },
         "enable": true,
-        "hide": false,
+        "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
@@ -2146,7 +2160,8 @@
           "custom": {}
         }
       },
-      "options": {}
+      "options": {},
+      "id": 10000
     },
     {
       "type": "stat",
@@ -2249,7 +2264,8 @@
           "valueSize": 48
         }
       },
-      "description": "Estimated 24-hour electricity cost in Thai Baht. Calculated as: avg_watts x 24h / 1000 x 4 THB/kWh tariff. Based on rolling 1-hour average power consumption from LDI manufacturing metrics. Thresholds: green < 500 THB, yellow 500-1000 THB, red > 1000 THB."
+      "description": "Estimated 24-hour electricity cost in Thai Baht. Calculated as: avg_watts x 24h / 1000 x 4 THB/kWh tariff. Based on rolling 1-hour average power consumption from LDI manufacturing metrics. Thresholds: green < 500 THB, yellow 500-1000 THB, red > 1000 THB.",
+      "id": 10001
     },
     {
       "type": "stat",
@@ -2352,7 +2368,8 @@
           "valueSize": 48
         }
       },
-      "description": "Manufacturing throughput per watt of power consumed. Higher is better. Calculated as: throughput_count / power_watt. Tracks how efficiently the LDI machine converts electrical energy into productive output. Below 1.0 indicates excessive idle power draw relative to production volume."
+      "description": "Manufacturing throughput per watt of power consumed. Higher is better. Calculated as: throughput_count / power_watt. Tracks how efficiently the LDI machine converts electrical energy into productive output. Below 1.0 indicates excessive idle power draw relative to production volume.",
+      "id": 10002
     },
     {
       "type": "stat",
@@ -2454,7 +2471,8 @@
           "valueSize": 48
         }
       },
-      "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline — indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected."
+      "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline — indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected.",
+      "id": 10003
     },
     {
       "id": 500,
@@ -2844,5 +2862,7 @@
       "description": "Machine fleet composition by status (Online/Warning/Critical). Single UNION ALL query (metric, value) -- see CPU/RAM/Storage Distribution panel's note on why this shape (not 3 separate targets) is required for piechart to label its legend by the metric text instead of the literal string \"value\"."
     }
   ],
-  "graphTooltip": 1
+  "graphTooltip": 1,
+  "editable": false,
+  "id": null
 }

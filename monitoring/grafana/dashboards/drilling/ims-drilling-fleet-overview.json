@@ -15,7 +15,7 @@
       }
     ]
   },
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
@@ -55,6 +55,20 @@
       "targetBlank": false,
       "includeVars": true,
       "keepTime": true
+    },
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "drilling"
+      ],
+      "targetBlank": false,
+      "title": "All Drilling dashboards",
+      "tooltip": "Every dashboard tagged drilling",
+      "type": "dashboards",
+      "url": ""
     }
   ],
   "liveNow": true,
@@ -201,8 +215,8 @@
           "type": "postgres",
           "uid": "drilling-timescaledb"
         },
-        "query": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL;",
-        "definition": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL;",
+        "query": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL AND ('All' IN (${factory:sqlstring}) OR equipment_id IN (SELECT mm.equipment_id FROM public.machine_master mm WHERE mm.factory IN (${factory:sqlstring})));",
+        "definition": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL AND ('All' IN (${factory:sqlstring}) OR equipment_id IN (SELECT mm.equipment_id FROM public.machine_master mm WHERE mm.factory IN (${factory:sqlstring})));",
         "current": {
           "text": "All",
           "value": "All"
@@ -288,20 +302,9 @@
       "30s",
       "1m",
       "5m"
-    ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "Drilling — 01 Fleet Digital Twin & Overview",
   "description": "Live 3D shopfloor digital twin and high-level operational overview of all CNC drilling machines.",
   "uid": "001"

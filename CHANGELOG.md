@@ -88,6 +88,13 @@
   - Unused Grafana plugins are no longer installed.
   - Init scripts no longer hardcode the database and owner names.
 
+### Dashboard settings (2026-09-30)
+- **All 22 dashboards** now share one set of dashboard-level settings, enforced by `dashboard-linter` Check 20: timezone and week start inherited from `grafana.ini` (`Asia/Bangkok`, Monday) instead of a mix of browser, UTC and Asia/Bangkok; shared crosshair; `editable: false`; the built-in "Annotations & Alerts" layer (5 dashboards had none); a folder-wide dashboards link (8 dashboards had no links at all); unique panel ids (19 panels had none).
+- **LDI and Platform dashboards** now show plant time. They showed UTC, 7 hours behind the clock on the shop floor.
+- **Drilling 02–04:** the Factory filter showed "2" and filtered nothing. It now lists the factories in `machine_master` and narrows the machine list, as on 01. The Machine Investigation machine list no longer scans the whole event table (209 ms to 21 ms on the plant data), and its refresh is 30 s instead of 5 s over a 30-day range.
+- **Folder permissions:** `scripts/grafana-folder-permissions.js` sets Editor and Viewer to View on the provisioned folders, so dashboards cannot appear there outside git.
+- Removed an unused data-source variable (Meta-Monitoring) and deprecated `time_options`; VCP filter labels read Factory, Status, Error type.
+
 ### Grafana configuration (2026-09-30)
 - **`monitoring/grafana/grafana.ini`** is now the single source of truth; compose passes only secrets and per-deployment values. Three keys had been silently ignored (`hide_version` and `disable_sanitize_html` under `[security]`, `hide_new_plugins`), and the home dashboard path pointed at a file that does not exist.
 - **Exposure closed:** `/api/health` no longer shows version and commit without a login; nginx refuses `/metrics`; external snapshots (`snapshots.raintank.io`) and public dashboards are off.

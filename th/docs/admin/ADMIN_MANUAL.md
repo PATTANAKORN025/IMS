@@ -157,6 +157,13 @@ migration ทุกไฟล์เขียนให้รันซ้ำได�
 
 ค่าทุกค่าใน `.env.example` เป็นข้อมูลสาธารณะ (repository เป็นแบบสาธารณะ) ให้ถือว่าทุกค่าถูกเปิดเผยแล้ว และห้ามนำไปใช้งานจริง
 
+หลัง `docker compose up` ครั้งแรก ให้ล็อกโฟลเดอร์แดชบอร์ดที่ provision เพื่อให้ Editor ดูได้แต่เพิ่มแดชบอร์ดไม่ได้ (Admin ยังมีสิทธิ์เต็ม และโฟลเดอร์ General ยังเปิดให้ Editor) สคริปต์จะแสดงส่วนที่ต่างและไม่เปลี่ยนอะไรหากไม่ใส่ `--apply` การเปลี่ยนแปลงมีผลภายในประมาณ 30 วินาที:
+
+```bash
+node scripts/grafana-folder-permissions.js
+node scripts/grafana-folder-permissions.js --apply
+```
+
 ### วิธีเปลี่ยน (Rotate) Credential
 
 ```bash

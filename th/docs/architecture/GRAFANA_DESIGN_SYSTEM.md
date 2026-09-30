@@ -228,6 +228,12 @@ stat/gauge/bargauge ใด ๆ ที่ใช้ `colorMode: "background"` ภ�
 | Default time range                     | NOC: `now-6h` / Engineering: `now-6h` / Capacity: `now-30d` | สอดคล้องกับพฤติกรรมการใช้งานจริงของแต่ละหน้า; ไม่ได้กำหนดเป็นค่าเริ่มต้นรวมไปทั้งหมด.                           |
 | Refresh rate                           | NOC/Engineering: `10s` / Capacity: `5m`                     | สอดคล้องกับความถี่ในการเปลี่ยนแปลงข้อมูลจริง ช่วยป้องกันคำขอ(query)ที่เปล่าประโยชน์.                            |
 | `allowUiUpdates` (provider)            | `false`                                                     | บังคับให้ใช้ dashboard-as-code เพื่อป้องกันการเบี่ยงเบนจากข้อมูลใน git.                                         |
+| Timezone / week start                  | `""` (ไม่ตั้ง) / ไม่ตั้ง                                        | รับค่าจาก `grafana.ini` `[date_formats]` (`Asia/Bangkok`, วันจันทร์) ซึ่งเป็นเวลาเดียวกับที่ SQL ใช้จัดรูปแบบข้อความ |
+| `editable`                             | `false`                                                     | provider ไม่ยอมให้บันทึกจาก UI ปุ่มแก้ไขจึงนำไปสู่การบันทึกที่ล้มเหลวเท่านั้น                                  |
+| Annotations                            | "Annotations & Alerts" ในตัว เปิดใช้ และซ่อนปุ่มสลับ            | การเปลี่ยนสถานะ alert แสดงบนทุก time series โดยไม่ต้องตั้งค่าแยกแต่ละแดชบอร์ด                               |
+| Links                                  | ลิงก์แบบ `dashboards` ตาม tag ของโฟลเดอร์ คงช่วงเวลาและตัวแปร   | ทุกแดชบอร์ดไปยังแดชบอร์ดอื่นในกลุ่มเดียวกันได้ในคลิกเดียว                                                   |
+| Panel `id`                             | มีและไม่ซ้ำ                                                   | ลิงก์ของ panel, `viewPanel` และ alert rule อ้างถึง panel ด้วย id                                            |
+| สิทธิ์โฟลเดอร์                            | Viewer และ Editor = View (`scripts/grafana-folder-permissions.js`) | Editor เพิ่มแดชบอร์ดที่มีเฉพาะใน UI ลงโฟลเดอร์ที่ provision ไม่ได้ ส่วนโฟลเดอร์ General ยังใช้ทดลองได้        |
 
 ---
 

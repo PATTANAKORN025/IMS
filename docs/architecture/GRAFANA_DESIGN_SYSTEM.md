@@ -226,7 +226,7 @@ Choose panel types based on the **nature of the data**, not out of habit:
 
 ## 6. Interaction Standards
 
-Configure **dashboard settings** identically across all files:
+Configure **dashboard settings** identically across all files (`tests/lint/dashboard-linter.js` Check 20 enforces the dashboard-level rows):
 
 | Setting                                | Value                                                       | Rationale                                                                                                  |
 | -------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -236,6 +236,12 @@ Configure **dashboard settings** identically across all files:
 | Default time range                     | NOC: `now-6h` / Engineering: `now-6h` / Capacity: `now-30d` | Aligns with the actual usage behavior of each page; not universally defaulted.                             |
 | Refresh rate                           | NOC/Engineering: `10s` / Capacity: `5m`                     | Aligns with actual data mutation frequency; prevents unnecessary queries.                                  |
 | `allowUiUpdates` (provider)            | `false`                                                     | Enforces dashboard-as-code, preventing drift from git.                                                     |
+| Timezone / week start                  | `""` (not set) / not set                                    | Inherited from `grafana.ini` `[date_formats]` (`Asia/Bangkok`, Monday), the clock the SQL formats text in.  |
+| `editable`                             | `false`                                                     | The provider refuses UI saves; the edit button would only lead to a failed save.                           |
+| Annotations                            | Built-in "Annotations & Alerts", enabled, hidden toggle     | Alert state changes show on every time series without per-dashboard setup.                                 |
+| Links                                  | A `dashboards` link for the folder's tag, keep time and variables | Every dashboard reaches its siblings in one click.                                                  |
+| Panel `id`                             | Present and unique                                          | Panel links, `viewPanel` and alert rules address panels by id.                                             |
+| Folder permissions                     | Viewer and Editor = View (`scripts/grafana-folder-permissions.js`) | Editors cannot add UI-only dashboards to provisioned folders; the General folder stays their sandbox. |
 
 ---
 

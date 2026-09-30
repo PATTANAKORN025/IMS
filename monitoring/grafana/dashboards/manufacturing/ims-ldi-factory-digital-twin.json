@@ -3,8 +3,8 @@
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
-  "editable": true,
-  "graphTooltip": 0,
+  "editable": false,
+  "graphTooltip": 1,
   "templating": {
     "list": []
   },
@@ -3099,7 +3099,22 @@
     }
   ],
   "fiscalYearStartMonth": 0,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "manufacturing"
+      ],
+      "targetBlank": false,
+      "title": "All LDI dashboards",
+      "tooltip": "Every dashboard tagged manufacturing",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "id": null,
   "uid": "ims-ldi-factory-digital-twin",
   "title": "LDI — 03 Factory 3D Digital Twin & Spatial Layout",
@@ -3108,7 +3123,7 @@
     "from": "now-2h",
     "to": "now"
   },
-  "timezone": "UTC",
+  "timezone": "",
   "refresh": "30s",
   "tags": [
     "cad",
@@ -3120,5 +3135,21 @@
     "manufacturing",
     "spatial",
     "supervisor"
-  ]
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  }
 }

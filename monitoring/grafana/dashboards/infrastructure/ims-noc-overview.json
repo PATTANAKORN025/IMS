@@ -12,7 +12,7 @@
     "platform",
     "sre"
   ],
-  "timezone": "UTC",
+  "timezone": "",
   "schemaVersion": 39,
   "refresh": "5m",
   "time": {
@@ -40,6 +40,20 @@
       "type": "link",
       "icon": "external link",
       "targetBlank": true
+    },
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "infrastructure"
+      ],
+      "targetBlank": false,
+      "title": "All Platform dashboards",
+      "tooltip": "Every dashboard tagged infrastructure",
+      "type": "dashboards",
+      "url": ""
     }
   ],
   "templating": {
@@ -81,7 +95,7 @@
           "uid": "-- Grafana --"
         },
         "enable": true,
-        "hide": false,
+        "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
@@ -1756,5 +1770,7 @@
   ],
   "graphTooltip": 1,
   "fiscalYearStartMonth": 0,
-  "description": "Infrastructure-only (servers) -- LDI process/quality metrics live on the Manufacturing and Machine Snapshot dashboards."
+  "description": "Infrastructure-only (servers) -- LDI process/quality metrics live on the Manufacturing and Machine Snapshot dashboards.",
+  "editable": false,
+  "id": null
 }

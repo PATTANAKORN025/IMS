@@ -85,8 +85,8 @@
           "uid": "-- Grafana --"
         },
         "enable": true,
-        "hide": false,
-        "iconColor": "rgba(255, 96, 96, 1)",
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
       }
@@ -150,7 +150,22 @@
     }
   ],
   "fiscalYearStartMonth": 0,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "manufacturing"
+      ],
+      "targetBlank": false,
+      "title": "All LDI dashboards",
+      "tooltip": "Every dashboard tagged manufacturing",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "id": null,
   "uid": "ims-ldi-alarm-console",
   "title": "LDI — 07 Live Alarm Management Console",
@@ -159,7 +174,7 @@
     "from": "now-2h",
     "to": "now"
   },
-  "timezone": "UTC",
+  "timezone": "",
   "refresh": "5s",
   "tags": [
     "alarms",
@@ -172,5 +187,7 @@
     "maintenance",
     "manufacturing",
     "operator"
-  ]
+  ],
+  "graphTooltip": 1,
+  "editable": false
 }

@@ -88,6 +88,13 @@
   - ไม่ติดตั้ง Grafana plugin ที่ไม่ได้ใช้แล้ว
   - init script ไม่ hardcode ชื่อฐานข้อมูลและ owner อีก
 
+### การตั้งค่าแดชบอร์ด (2026-09-30)
+- **แดชบอร์ดทั้ง 22 ตัว** ใช้การตั้งค่าระดับแดชบอร์ดชุดเดียวกัน บังคับด้วย `dashboard-linter` Check 20: timezone และวันเริ่มสัปดาห์รับจาก `grafana.ini` (`Asia/Bangkok`, วันจันทร์) แทนที่จะปนกันระหว่าง browser, UTC และ Asia/Bangkok, ใช้ shared crosshair, `editable: false`, มีชั้น "Annotations & Alerts" ในตัว (เดิม 5 ตัวไม่มี), มีลิงก์ไปแดชบอร์ดทั้งโฟลเดอร์ (เดิม 8 ตัวไม่มีลิงก์เลย) และ panel id ไม่ซ้ำ (เดิม 19 panel ไม่มี id)
+- **แดชบอร์ด LDI และ Platform** แสดงเวลาโรงงานแล้ว เดิมแสดง UTC ช้ากว่านาฬิกาหน้างาน 7 ชั่วโมง
+- **Drilling 02–04:** ตัวกรอง Factory เดิมแสดง "2" แต่ไม่กรองอะไรเลย ตอนนี้แสดงรายการ factory จาก `machine_master` และจำกัดรายการเครื่องเหมือนหน้า 01 รายการเครื่องของ Machine Investigation เลิกสแกนตาราง event ทั้งตาราง (จาก 209 ms เหลือ 21 ms บนข้อมูลโรงงาน) และ refresh ทุก 30 วินาทีแทน 5 วินาทีบนช่วง 30 วัน
+- **สิทธิ์โฟลเดอร์:** `scripts/grafana-folder-permissions.js` ตั้ง Editor และ Viewer เป็น View บนโฟลเดอร์ที่ provision แดชบอร์ดจึงเกิดขึ้นนอก git ไม่ได้
+- ลบตัวแปร data source ที่ไม่ได้ใช้ (Meta-Monitoring) และ `time_options` ที่เลิกใช้แล้ว ป้ายตัวกรอง VCP เป็น Factory, Status, Error type
+
 ### การตั้งค่า Grafana (2026-09-30)
 - **`monitoring/grafana/grafana.ini`** เป็นแหล่งค่าเดียว ส่วน compose ส่งเฉพาะความลับและค่าที่ต่างกันแต่ละ deployment มี 3 key ที่ Grafana ข้ามไปเงียบๆ (`hide_version` และ `disable_sanitize_html` ใต้ `[security]` และ `hide_new_plugins`) และ path ของแดชบอร์ดหน้าแรกชี้ไปไฟล์ที่ไม่มีอยู่
 - **ปิดข้อมูลที่เปิดเผย:** `/api/health` ไม่แสดงเวอร์ชันและ commit เมื่อไม่ login, nginx ปฏิเสธ `/metrics` และปิด snapshot ภายนอก (`snapshots.raintank.io`) กับ public dashboard

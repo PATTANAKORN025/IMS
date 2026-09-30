@@ -157,6 +157,13 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 `.env.example` 中的每个值都是公开的（仓库为公开仓库）。应将其全部视为已泄露，切勿用于部署。
 
+首次 `docker compose up` 之后，锁定 provision 的仪表板文件夹，使 Editor 只能查看、不能向其中添加仪表板（Admin 保留全部权限，General 文件夹仍对 Editor 开放）。脚本会列出差异，不加 `--apply` 时不做任何更改；更改约 30 秒内生效：
+
+```bash
+node scripts/grafana-folder-permissions.js
+node scripts/grafana-folder-permissions.js --apply
+```
+
 ### 如何轮换凭据
 
 ```bash

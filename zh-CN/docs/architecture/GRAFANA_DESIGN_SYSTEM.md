@@ -222,6 +222,12 @@ stat/gauge/bargauge 面板发出警告，以防在添加新面板时暗中出现
 | Default time range                     | NOC: `now-6h` / Engineering: `now-6h` / Capacity: `now-30d` | 这符合各个页面的实际使用行为；并未作统一化默认设置。                                         |
 | Refresh rate                           | NOC/Engineering: `10s` / Capacity: `5m`                     | 契合数据的实际突变频率；进而防止出现不必要的查询。                                           |
 | `allowUiUpdates` (provider)            | `false`                                                     | 严格落实仪表板即代码的准则，防范与 Git 版本出现偏离。                                        |
+| Timezone / week start                  | `""`（不设置）/ 不设置                                        | 继承 `grafana.ini` `[date_formats]`（`Asia/Bangkok`，周一），与 SQL 格式化文本所用时钟一致。                |
+| `editable`                             | `false`                                                     | provider 拒绝从 UI 保存，编辑按钮只会导致保存失败。                                                        |
+| Annotations                            | 内置 "Annotations & Alerts"，启用，隐藏开关                  | 告警状态变化无需逐个仪表板配置即可显示在所有时间序列上。                                                   |
+| Links                                  | 按文件夹标签的 `dashboards` 链接，保留时间范围和变量          | 每个仪表板一键即可到达同组的其他仪表板。                                                                   |
+| 面板 `id`                              | 必须存在且唯一                                               | 面板链接、`viewPanel` 和告警规则通过 id 定位面板。                                                         |
+| 文件夹权限                             | Viewer 与 Editor = View（`scripts/grafana-folder-permissions.js`） | Editor 无法向 provision 的文件夹添加仅存在于 UI 的仪表板；General 文件夹仍可作为其试验区。          |
 
 ---
 
