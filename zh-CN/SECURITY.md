@@ -65,6 +65,11 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 | — | 一键即可把仪表板快照发布到 `snapshots.raintank.io`，或无需登录公开分享仪表板 | — | **已解决** | `[snapshots] external_enabled = false`，`[public_dashboards] enabled = false` |
 | — | 可从 UI 安装插件，且启动时插件会浮动到最新版本 | — | **已解决** | `plugin_admin_enabled = false`；`preinstall_sync` 固定所用的两个面板版本；未使用的默认插件已禁用 |
 | — | 没有 Content-Security-Policy 和密码策略，并会访问 grafana.com 与 gravatar.com | — | **已解决** | 启用带每请求 nonce 的 CSP、`password_policy = true`，关闭 analytics、更新检查、news 与 gravatar |
+| — | alarm-api 接受同站任意来源的 cookie 认证写请求、不限制输入，并在错误响应中带出堆栈（未设置 `NODE_ENV`） | — | **已解决** | 校验 Origin / `Sec-Fetch-Site`，请求体上限 8 kB，限制 `logid` 与备注长度，JSON 错误处理，`NODE_ENV=production`，nginx 对 `/alarm-api/` 限速 |
+| — | Node-RED 可在运行时安装 npm 模块和 palette 节点，且无审计日志 | — | **已解决** | `functionExternalModules: false`，关闭 `externalModules` 安装，开启审计日志，强制要求凭据密钥 |
+| — | Node-RED 镜像构建无 lockfile，各服务使用 `npm install` 构建 | — | **已解决** | 提交 `nodered_data/package-lock.json`，所有镜像使用 `npm ci`；移除两个未使用的 Node-RED 包 |
+| — | 容器保留 Docker 默认的 Linux capabilities | — | **已解决** | 13 个服务 `cap_drop: ALL`（blackbox 保留 `NET_RAW`，snmpsim 保留 `NET_BIND_SERVICE`/`SETUID`/`SETGID`）；alarm-api 与 factory-twin-3d 以只读根文件系统运行 |
+| — | CI 工作流使用默认令牌权限，action 通过可变标签引用 | — | **已解决** | `permissions: contents: read`；所有 action 固定到 commit SHA（由 Dependabot 更新） |
 
 ---
 

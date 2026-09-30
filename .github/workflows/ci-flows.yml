@@ -6,15 +6,20 @@ on:
   pull_request:
     branches: [ main ]
 
+# The workflow token can read the repository and nothing else; a compromised
+# step or dependency cannot push, tag or comment with it.
+permissions:
+  contents: read
+
 jobs:
   verify-flows:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20'
 

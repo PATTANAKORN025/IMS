@@ -13,11 +13,13 @@ USER root
 # switching Alpine major versions or Node-RED image tags.
 RUN apk update && apk upgrade --no-cache
 
-COPY package.json /tmp/package.json
-RUN cd /tmp && npm install --omit=dev --no-fund && \
+# npm ci installs exactly the committed lockfile, so every build ships the same
+# dependency tree instead of whatever the version ranges resolve to that day.
+COPY package.json package-lock.json /tmp/
+RUN cd /tmp && npm ci --omit=dev --no-fund --no-audit && \
     mv node_modules /usr/src/node_modules && \
     npm cache clean --force && \
-    rm /tmp/package.json && \
+    rm /tmp/package.json /tmp/package-lock.json && \
     chown -R node-red:node-red /usr/src/node_modules
 
 USER node-red

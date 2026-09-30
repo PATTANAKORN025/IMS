@@ -88,6 +88,12 @@
   - ไม่ติดตั้ง Grafana plugin ที่ไม่ได้ใช้แล้ว
   - init script ไม่ hardcode ชื่อฐานข้อมูลและ owner อีก
 
+### การเสริมความปลอดภัย (2026-09-30 รอบที่สี่)
+- **alarm-api:** ปฏิเสธคำสั่งเขียนที่ยืนยันด้วย cookie เมื่อ `Origin` หรือ `Sec-Fetch-Site` ไม่ใช่ site นี้ (SameSite=Lax ไม่ครอบคลุม host อื่นใน site เดียวกัน) จำกัด body 8 kB และ `logid`/`resolution_note` ที่ 128/500 ตัวอักษร ตอบ error (รวมถึง JSON ที่ผิดรูปแบบ) เป็น JSON รันด้วย `NODE_ENV=production` และไม่มี `X-Powered-By` ส่วน nginx จำกัดอัตราที่ `/alarm-api/` และให้เวลา client ส่ง header และ body 15 วินาทีแทน 60 วินาที
+- **Node-RED:** ปิดการติดตั้ง npm module และ palette node ระหว่างรัน บันทึก audit log ของการกระทำของ admin และไม่ยอม start หากไม่มี credential secret image ติดตั้งจาก lockfile ที่ commit ด้วย `npm ci` และถอด `node-red-dashboard` กับ `node-red-node-snmp` เพราะไม่มี flow ใดใช้
+- **Container:** 13 service ตัด Linux capability ทั้งหมด (blackbox คง `NET_RAW` สำหรับ ICMP และ snmpsim คงเท่าที่ต้องใช้ bind พอร์ต 161 และสลับ user) alarm-api และ factory-twin-3d รันด้วย root filesystem แบบอ่านอย่างเดียว และ service Node ทั้งสอง build ด้วย `npm ci`
+- **CI:** workflow ได้ token แบบอ่านอย่างเดียว และทุก action ถูก pin ด้วย commit SHA, `ci-flows` เลิกใช้ action v3 และ Dependabot ดูแล `nodered_data` แทนโฟลเดอร์ที่ไม่มี `package.json`
+
 ### แถบการ์ดของ Drilling Fleet (2026-09-30)
 - **ไม่กระโดดกลับต้นแถบเมื่อ refresh อีกต่อไป** ทุกครั้งที่ refresh แผง Business Text สร้าง HTML ใหม่ แถบการ์ดจึงเริ่มที่ตำแหน่ง 0 และตำแหน่งเดิมถูกใส่กลับหลังจากหน้าจอวาดไปแล้วหนึ่งเฟรม จึงเห็นการกระโดด 5 ใน 6 ครั้งที่ refresh ทุก 5 วินาที (วัดจริง) ตอนนี้แถบถูกควบคุมโดยตัวเลื่อนตัวเดียวที่อยู่นอกการ render และใส่ตำแหน่งคืนใน MutationObserver ก่อน browser วาดหน้าจอ ผลคือไม่กระโดดเลยตลอด 12 ครั้งที่ refresh และเลื่อนคงที่ 25 px/วินาที
 - การหยุดเมื่อวางเมาส์ การลาก การหมุนล้อ และการเลื่อนกลับที่ปลายแถบ ไม่หายไปเมื่อ refresh (เดิมหลัง refresh จะไม่รู้ว่าเมาส์วางอยู่บนการ์ด แถบจึงเลื่อนไปใต้เมาส์) การลากที่ปล่อยบนการ์ดไม่เปิดหน้าเครื่องนั้นแล้ว โฟกัสคีย์บอร์ดและการตั้งค่าลดการเคลื่อนไหวของระบบปฏิบัติการหยุดการเลื่อนอัตโนมัติ

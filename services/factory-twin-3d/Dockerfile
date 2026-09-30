@@ -1,9 +1,11 @@
 FROM node:22-alpine
 
 WORKDIR /app
+# production mode: Express error pages carry no stack traces
+ENV NODE_ENV=production
 
-COPY package.json package-lock.json* ./
-RUN npm install --omit=dev --no-fund
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --no-fund --no-audit
 
 COPY server.js ./
 COPY lib ./lib

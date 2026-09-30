@@ -65,6 +65,11 @@
 | — | คลิกเดียวก็เผยแพร่ snapshot ไป `snapshots.raintank.io` หรือแชร์แดชบอร์ดแบบไม่ต้อง login ได้ | — | **แก้แล้ว** | `[snapshots] external_enabled = false` และ `[public_dashboards] enabled = false` |
 | — | ติดตั้ง plugin จาก UI ได้ และ plugin อัปเดตเป็นเวอร์ชันล่าสุดเองตอน start | — | **แก้แล้ว** | `plugin_admin_enabled = false`, `preinstall_sync` ล็อกเวอร์ชัน panel 2 ตัวที่ใช้ และปิด plugin ค่าเริ่มต้นที่ไม่ได้ใช้ |
 | — | ไม่มี Content-Security-Policy ไม่มี password policy และติดต่อ grafana.com กับ gravatar.com | — | **แก้แล้ว** | CSP พร้อม nonce ต่อ request, `password_policy = true` และปิด analytics, การตรวจอัปเดต, news และ gravatar |
+| — | alarm-api รับคำสั่งเขียนที่ยืนยันด้วย cookie จากทุก origin ใน site เดียวกัน ไม่จำกัดขนาดข้อมูล และตอบ error พร้อม stack trace (ไม่ได้ตั้ง `NODE_ENV`) | — | **แก้แล้ว** | ตรวจ Origin / `Sec-Fetch-Site`, จำกัด body 8 kB, จำกัดความยาว `logid` และ note, ตอบ error เป็น JSON, `NODE_ENV=production` และจำกัดอัตราที่ nginx `/alarm-api/` |
+| — | Node-RED ติดตั้ง npm module และ palette node ระหว่างรันได้ และไม่มี audit log | — | **แก้แล้ว** | `functionExternalModules: false`, ปิดการติดตั้งผ่าน `externalModules`, เปิด audit log และบังคับให้มี credential secret |
+| — | image ของ Node-RED build โดยไม่มี lockfile และ service build ด้วย `npm install` | — | **แก้แล้ว** | commit `nodered_data/package-lock.json` และใช้ `npm ci` ในทุก image ถอด package ของ Node-RED ที่ไม่ได้ใช้ 2 ตัว |
+| — | container ใช้ Linux capability ค่าเริ่มต้นของ Docker | — | **แก้แล้ว** | `cap_drop: ALL` บน 13 service (blackbox คง `NET_RAW`, snmpsim คง `NET_BIND_SERVICE`/`SETUID`/`SETGID`) และ alarm-api กับ factory-twin-3d รันด้วย root filesystem แบบอ่านอย่างเดียว |
+| — | workflow ของ CI ใช้ token สิทธิ์ค่าเริ่มต้น และอ้าง action ด้วย tag ที่เปลี่ยนได้ | — | **แก้แล้ว** | `permissions: contents: read` และ pin ทุก action ด้วย commit SHA (Dependabot อัปเดต pin ให้) |
 
 ---
 
