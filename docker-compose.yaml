@@ -326,7 +326,7 @@ services:
   # ── Grafana Image Renderer ───────────────────────────────
   renderer:
     # pinned to the version proven in the running stack; Dependabot proposes upgrades
-    image: grafana/grafana-image-renderer:v5.11.1
+    image: grafana/grafana-image-renderer:v5.12.4
     container_name: ims-grafana-renderer
     <<: [*default-restart, *default-hardening, *no-caps]
     environment:
