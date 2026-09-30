@@ -4,7 +4,7 @@
   "private": true,
   "description": "Industrial NOC Monitoring System",
   "devDependencies": {
-    "@commitlint/cli": "^20.5.3",
+    "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^20.5.3",
     "@thesvg/icons": "^3.3.9",
     "husky": "^9.1.7",
