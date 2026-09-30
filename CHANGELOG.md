@@ -88,6 +88,12 @@
   - Unused Grafana plugins are no longer installed.
   - Init scripts no longer hardcode the database and owner names.
 
+### Hardening (2026-09-30, fourth pass)
+- **alarm-api:** refuses cookie-authenticated writes whose `Origin` or `Sec-Fetch-Site` is not this site (SameSite=Lax did not cover sibling hosts), caps the body at 8 kB and `logid`/`resolution_note` at 128/500 characters, answers errors (including malformed JSON) as JSON, runs with `NODE_ENV=production` and no `X-Powered-By`. nginx rate-limits `/alarm-api/` and gives clients 15 s instead of 60 s to send headers and body.
+- **Node-RED:** runtime installs of npm modules and palette nodes are off, admin actions are audit-logged, and it refuses to start without a credential secret. The image installs from a committed lockfile with `npm ci`; `node-red-dashboard` and `node-red-node-snmp` were removed because no flow uses them.
+- **Containers:** 13 services drop every Linux capability (blackbox keeps `NET_RAW` for ICMP, snmpsim what it needs to bind port 161 and switch user); alarm-api and factory-twin-3d run with a read-only root filesystem. Both Node services build with `npm ci`.
+- **CI:** workflows get a read-only token and every action is pinned to a commit SHA; `ci-flows` moved off the v3 actions; Dependabot now watches `nodered_data` instead of a directory with no `package.json`.
+
 ### Drilling fleet card strip (2026-09-30)
 - **No more jump to the start on refresh.** Each refresh replaced the Business Text HTML, so the card strip was rebuilt at position 0 and the saved position was put back one painted frame later: a visible jump on 5 of 6 refreshes at a 5 s refresh, measured. The strip is now driven by one scroller that lives outside the render and restores the position in a MutationObserver callback before the browser paints: 0 jumps over 12 refreshes, steady 25 px/s.
 - Hover, drag, wheel pauses and the end-of-strip rewind now survive a refresh (before, a pointer resting on a card was ignored after every refresh and the strip moved under it). A drag that ends on a card no longer opens the machine. Keyboard focus and the operating system's reduced-motion setting stop the automatic movement.

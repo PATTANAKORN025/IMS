@@ -65,6 +65,11 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 | — | One click could publish a dashboard snapshot to `snapshots.raintank.io`, or share a dashboard publicly without a login | — | **Resolved** | `[snapshots] external_enabled = false`, `[public_dashboards] enabled = false` |
 | — | Plugins could be installed from the UI and floated to the latest version at start | — | **Resolved** | `plugin_admin_enabled = false`; `preinstall_sync` pins the two panels in use; unused default plugins are disabled |
 | — | No Content-Security-Policy, no password policy, phone-home to grafana.com and gravatar.com | — | **Resolved** | CSP with a per-request nonce, `password_policy = true`, analytics, update checks, news and gravatar off |
+| — | alarm-api accepted cookie-authenticated writes from any origin on the same site, unbounded input, and answered errors with stack traces (no `NODE_ENV`) | — | **Resolved** | Origin / `Sec-Fetch-Site` check, 8 kB body limit, bounded `logid` and note, JSON error handler, `NODE_ENV=production`, nginx rate limit on `/alarm-api/` |
+| — | Node-RED could install npm modules and palette nodes at runtime; no audit log | — | **Resolved** | `functionExternalModules: false`, `externalModules` installs off, audit logging on, credential secret mandatory |
+| — | Node-RED image built without a lockfile; services built with `npm install` | — | **Resolved** | Committed `nodered_data/package-lock.json`, `npm ci` in every image; two unused Node-RED packages removed |
+| — | Containers kept Docker's default Linux capabilities | — | **Resolved** | `cap_drop: ALL` on 13 services (blackbox keeps `NET_RAW`, snmpsim `NET_BIND_SERVICE`/`SETUID`/`SETGID`); alarm-api and factory-twin-3d run with a read-only root filesystem |
+| — | CI workflows ran with the default token scope and actions referenced by mutable tags | — | **Resolved** | `permissions: contents: read`; every action pinned to a commit SHA (Dependabot updates the pins) |
 
 ---
 

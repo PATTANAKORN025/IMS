@@ -18,6 +18,14 @@ x-hardening: &default-hardening
   security_opt:
     - no-new-privileges:true
 
+# No Linux capabilities: none of these services binds a port below 1024, changes
+# file ownership or switches user at runtime, so a compromised process gets no
+# kernel privileges back. timescaledb, proxy and pgadmin keep the default set
+# because their entrypoints chown data directories and drop to another user.
+x-no-caps: &no-caps
+  cap_drop:
+    - ALL
+
 x-healthcheck-defaults: &healthcheck-defaults
   interval: 15s
   timeout: 5s
@@ -124,7 +132,7 @@ services:
     build:
       context: ./pgbouncer
     container_name: ims-pgbouncer
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
     entrypoint: ["/bin/sh", "/etc/pgbouncer/entrypoint-wrapper.sh"]
     healthcheck:
@@ -169,7 +177,7 @@ services:
   prometheus:
     image: prom/prometheus:v3.14.0
     container_name: ims-prometheus
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
     user: "nobody:nobody"
     command:
@@ -202,7 +210,7 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.33.1
     container_name: ims-alertmanager
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
     user: "nobody:nobody"
     command:
@@ -232,7 +240,7 @@ services:
   grafana:
     image: grafana/grafana:13.1.2
     container_name: ims-grafana
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
     user: "472:472"
     environment:
@@ -320,7 +328,7 @@ services:
     # pinned to the version proven in the running stack; Dependabot proposes upgrades
     image: grafana/grafana-image-renderer:v5.11.1
     container_name: ims-grafana-renderer
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     environment:
       TZ: ${TZ:-UTC}
       ENABLE_METRICS: "false"
@@ -339,8 +347,13 @@ services:
   snmpsim:
     image: tandrup/snmpsim:v0.4
     container_name: ims-snmpsim
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
+    # binds UDP 161 as root, then switches to nobody:nogroup
+    cap_add:
+      - NET_BIND_SERVICE
+      - SETUID
+      - SETGID
     entrypoint: ["python", "/usr/local/bin/snmpsimd.py"]
     command:
       - --data-dir=/data
@@ -364,7 +377,7 @@ services:
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.28.0
     container_name: ims-blackbox
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
     user: root
     cap_add:
@@ -392,7 +405,7 @@ services:
     image: timescale/timescaledb:2.29.2-pg16
     container_name: ims-db-migrate
     restart: "no"
-    <<: *default-hardening
+    <<: [*default-hardening, *no-caps]
     init: true
     entrypoint: ["/bin/sh", "/scripts/migrate-entrypoint.sh"]
     environment:
@@ -419,8 +432,13 @@ services:
     build:
       context: ./services/alarm-api
     container_name: ims-alarm-api
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
+    # The process writes nothing to its own filesystem; a read-only root means an
+    # exploit cannot drop or modify files there either.
+    read_only: true
+    tmpfs:
+      - /tmp
     environment:
       PGHOST: ims-pgbouncer
       PGPORT: "5432"
@@ -456,8 +474,13 @@ services:
     build:
       context: ./services/factory-twin-3d
     container_name: ims-factory-twin-3d
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
+    # The process writes nothing to its own filesystem; a read-only root means an
+    # exploit cannot drop or modify files there either.
+    read_only: true
+    tmpfs:
+      - /tmp
     # Read-only mount, host-only, never baked into the image (see
     # Dockerfile's comment). This repo's own checkout has nothing real
     # here -- services/factory-twin-3d/private/ is gitignored -- so a
@@ -505,7 +528,7 @@ services:
       context: ./nodered_data
       dockerfile: Dockerfile
     container_name: ims-node-red
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
     user: "1000:1000"
     environment:
@@ -572,7 +595,7 @@ services:
     build:
       context: ./services/observability-archiver
     container_name: ims-observability-archiver
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     init: true
     environment:
       # observability_archiver (migration 087): INSERT on
@@ -606,7 +629,7 @@ services:
   docker-socket-proxy:
     image: tecnativa/docker-socket-proxy:v0.5.0
     container_name: ims-docker-socket-proxy
-    <<: [*default-restart, *default-hardening]
+    <<: [*default-restart, *default-hardening, *no-caps]
     environment:
       CONTAINERS: 1
       EVENTS: 1

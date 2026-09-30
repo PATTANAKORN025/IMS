@@ -88,6 +88,12 @@
   - 不再安装未使用的 Grafana 插件。
   - 初始化脚本不再硬编码数据库名与所有者名。
 
+### 安全加固（2026-09-30 第四轮）
+- **alarm-api：** 拒绝 `Origin` 或 `Sec-Fetch-Site` 不属于本站的 cookie 认证写请求（SameSite=Lax 不覆盖同站的其他主机），请求体上限 8 kB，`logid`/`resolution_note` 上限 128/500 字符，错误（包括格式错误的 JSON）以 JSON 返回，以 `NODE_ENV=production` 运行且不再返回 `X-Powered-By`。nginx 对 `/alarm-api/` 限速，并把客户端发送请求头和请求体的时限从 60 秒缩短为 15 秒。
+- **Node-RED：** 关闭运行时安装 npm 模块和 palette 节点，记录管理员操作审计日志，缺少凭据密钥时拒绝启动。镜像通过已提交的 lockfile 用 `npm ci` 安装；移除没有任何流程使用的 `node-red-dashboard` 与 `node-red-node-snmp`。
+- **容器：** 13 个服务移除全部 Linux capabilities（blackbox 为 ICMP 保留 `NET_RAW`，snmpsim 保留绑定 161 端口和切换用户所需的权限）；alarm-api 与 factory-twin-3d 以只读根文件系统运行，两者均使用 `npm ci` 构建。
+- **CI：** 工作流令牌改为只读，所有 action 固定到 commit SHA；`ci-flows` 不再使用 v3 action；Dependabot 改为监控 `nodered_data`，而不是没有 `package.json` 的目录。
+
 ### 钻孔机群卡片条（2026-09-30）
 - **刷新时不再跳回起点。** 每次刷新 Business Text 面板都会替换 HTML，卡片条在位置 0 重建，保存的位置要在浏览器绘制一帧之后才恢复：在 5 秒刷新下，6 次刷新中有 5 次可见跳动（实测）。现在由一个独立于渲染之外的滚动器控制卡片条，并在浏览器绘制前的 MutationObserver 回调中恢复位置：12 次刷新 0 次跳动，速度稳定在 25 px/秒。
 - 悬停、拖动、滚轮暂停以及末端回卷在刷新后都会保留（之前每次刷新后都会忽略停在卡片上的指针，卡片条会在其下方移动）。在卡片上结束的拖动不再打开该机台。键盘焦点和操作系统的“减少动态效果”设置会停止自动移动。

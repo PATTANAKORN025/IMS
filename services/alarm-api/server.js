@@ -157,6 +157,35 @@ function requireActor({ resolveIdentity = resolveGrafanaIdentity } = {}) {
   };
 }
 
+/**
+ * Cookie-authenticated writes must come from the page that holds the cookie.
+ * SameSite=Lax on Grafana's session cookie already stops cross-site POSTs; this
+ * also stops same-site ones (another host under the same site on the plant
+ * network). Browsers send Sec-Fetch-Site on every request and Origin on every
+ * POST; a request with neither is not a browser (scripts, tests) and cannot
+ * carry a victim's cookie by itself, so it passes to the identity check.
+ * The proxy passes the host the browser used (with port) as X-Forwarded-Host.
+ */
+function sameOriginGuard(req, res, next) {
+  const site = req.headers['sec-fetch-site'];
+  if (site && site !== 'same-origin' && site !== 'none') {
+    return res.status(403).json({ error: 'cross-origin request refused' });
+  }
+  const origin = req.headers.origin;
+  if (origin && origin !== ALLOWED_ORIGIN) {
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    let originHost = null;
+    try { originHost = new URL(origin).host; } catch (e) { /* malformed Origin */ }
+    if (!originHost || originHost !== host) {
+      return res.status(403).json({ error: 'cross-origin request refused' });
+    }
+  }
+  next();
+}
+
+const MAX_LOGID_LENGTH = 128;
+const MAX_NOTE_LENGTH = 500;
+
 function corsMiddleware(req, res, next) {
   if (ALLOWED_ORIGIN) {
     res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -185,6 +214,13 @@ async function transitionAlarm(pool, req, res, { fromStatuses, toStatus, extraSe
   // mismatch there fails the whole request. A number has no such ambiguity.
   if (!Number.isFinite(logdateMs) || !isNonEmptyString(logid)) {
     return res.status(400).json({ error: 'logdate_ms (number) and logid are required' });
+  }
+  if (logid.length > MAX_LOGID_LENGTH) {
+    return res.status(400).json({ error: `logid longer than ${MAX_LOGID_LENGTH} characters` });
+  }
+  const note = req.body.resolution_note;
+  if (note !== undefined && note !== null && (typeof note !== 'string' || note.length > MAX_NOTE_LENGTH)) {
+    return res.status(400).json({ error: `resolution_note must be a string of at most ${MAX_NOTE_LENGTH} characters` });
   }
 
   let client;
@@ -236,12 +272,14 @@ async function transitionAlarm(pool, req, res, { fromStatuses, toStatus, extraSe
  */
 function createApp({ pool = createPool(), resolveIdentity = resolveGrafanaIdentity } = {}) {
   const app = express();
-  app.use(express.json());
+  app.disable('x-powered-by');
+  // an ack/resolve body is well under 1 kB
+  app.use(express.json({ limit: '8kb' }));
   app.use(corsMiddleware);
 
   const actorGate = requireActor({ resolveIdentity });
 
-  app.post('/alarms/ack', actorGate, (req, res) =>
+  app.post('/alarms/ack', sameOriginGuard, actorGate, (req, res) =>
     transitionAlarm(pool, req, res, {
       fromStatuses: ['OPEN'],
       toStatus: 'ACKNOWLEDGED',
@@ -250,7 +288,7 @@ function createApp({ pool = createPool(), resolveIdentity = resolveGrafanaIdenti
     })
   );
 
-  app.post('/alarms/resolve', actorGate, (req, res) =>
+  app.post('/alarms/resolve', sameOriginGuard, actorGate, (req, res) =>
     transitionAlarm(pool, req, res, {
       fromStatuses: ['OPEN', 'ACKNOWLEDGED'],
       toStatus: 'RESOLVED',
@@ -270,6 +308,19 @@ function createApp({ pool = createPool(), resolveIdentity = resolveGrafanaIdenti
     } catch (err) {
       res.status(503).json({ status: 'db unreachable' });
     }
+  });
+
+  // Body-parser and any other thrown error end here as JSON: Express's default
+  // handler answers with an HTML page that includes the stack trace unless
+  // NODE_ENV is production.
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 600 ? err.status : 500;
+    if (status >= 500) console.error(err);
+    const message = status === 413 ? 'request body too large'
+      : status === 400 ? 'malformed request body'
+      : 'internal error';
+    res.status(status).json({ error: message });
   });
 
   return { app, pool };

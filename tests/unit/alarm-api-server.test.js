@@ -93,17 +93,18 @@ async function startTestServer(appObj) {
   };
 }
 
-async function postJson(baseUrl, path, body, { withCookie = true } = {}) {
+async function postJson(baseUrl, path, body, { withCookie = true, headers = {}, raw } = {}) {
   const res = await fetch(`${baseUrl}${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(withCookie ? { Cookie: 'grafana_session=test-fixture-session' } : {}),
+      ...headers,
     },
-    body: JSON.stringify(body),
+    body: raw !== undefined ? raw : JSON.stringify(body),
   });
   const json = await res.json().catch(() => null);
-  return { status: res.status, json };
+  return { status: res.status, json, poweredBy: res.headers.get('x-powered-by') };
 }
 
 // --- unit-level: hasWritePermission -----------------------------------
@@ -382,6 +383,106 @@ test('actor identity: resolve also uses session actor, never client-supplied res
     // params: [toStatus, logdateMs, logid, fromStatuses, actor, resolution_note]
     assert.strictEqual(updateCall.params[4], 'bob');
     assert.strictEqual(updateCall.params[5], 'ok');
+  } finally {
+    await server.close();
+  }
+});
+
+// --- request hardening (same-origin writes, bounded input) -------------
+const okRow = { updateResult: { rowCount: 1, rows: [{ logid: 'L1', status: 'ACKNOWLEDGED' }] } };
+const ackBody = { logdate_ms: 1700000000000, logid: 'L1' };
+
+test('same-origin: cross-site browser request (Sec-Fetch-Site) -> 403, never reaches identity or DB', async () => {
+  const pool = makeFakePool(okRow);
+  let asked = false;
+  const server = await startTestServer(createApp({ pool, resolveIdentity: async () => { asked = true; return { actor: 'alice', orgRole: 'Editor' }; } }));
+  try {
+    for (const site of ['cross-site', 'same-site']) {
+      const { status } = await postJson(server.baseUrl, '/alarms/ack', ackBody, { headers: { 'Sec-Fetch-Site': site } });
+      assert.strictEqual(status, 403, site);
+    }
+    assert.strictEqual(asked, false);
+    assert.strictEqual(pool.calls.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('same-origin: Origin of another host -> 403; Origin matching the forwarded host -> 200', async () => {
+  const pool = makeFakePool(okRow);
+  const server = await startTestServer(createApp({ pool, resolveIdentity: fakeIdentity('alice', 'Editor') }));
+  try {
+    const bad = await postJson(server.baseUrl, '/alarms/ack', ackBody, { headers: { Origin: 'http://evil.example:3000', 'X-Forwarded-Host': 'ims.plant:3000' } });
+    assert.strictEqual(bad.status, 403);
+    const junk = await postJson(server.baseUrl, '/alarms/ack', ackBody, { headers: { Origin: 'null', 'X-Forwarded-Host': 'ims.plant:3000' } });
+    assert.strictEqual(junk.status, 403);
+    const good = await postJson(server.baseUrl, '/alarms/ack', ackBody, { headers: { Origin: 'http://ims.plant:3000', 'X-Forwarded-Host': 'ims.plant:3000', 'Sec-Fetch-Site': 'same-origin' } });
+    assert.strictEqual(good.status, 200);
+  } finally {
+    await server.close();
+  }
+});
+
+test('input bounds: logid over 128 chars -> 400, no DB call', async () => {
+  const pool = makeFakePool(okRow);
+  const server = await startTestServer(createApp({ pool, resolveIdentity: fakeIdentity('alice', 'Editor') }));
+  try {
+    const { status } = await postJson(server.baseUrl, '/alarms/ack', { logdate_ms: 1700000000000, logid: 'x'.repeat(129) });
+    assert.strictEqual(status, 400);
+    assert.strictEqual(pool.calls.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('input bounds: resolution_note must be a string of at most 500 chars', async () => {
+  const pool = makeFakePool({ updateResult: { rowCount: 1, rows: [{ logid: 'L1', status: 'RESOLVED' }] } });
+  const server = await startTestServer(createApp({ pool, resolveIdentity: fakeIdentity('alice', 'Editor') }));
+  try {
+    const obj = await postJson(server.baseUrl, '/alarms/resolve', { ...ackBody, resolution_note: { a: 1 } });
+    assert.strictEqual(obj.status, 400);
+    const long = await postJson(server.baseUrl, '/alarms/resolve', { ...ackBody, resolution_note: 'n'.repeat(501) });
+    assert.strictEqual(long.status, 400);
+    assert.strictEqual(pool.calls.length, 0);
+    const fine = await postJson(server.baseUrl, '/alarms/resolve', { ...ackBody, resolution_note: 'n'.repeat(500) });
+    assert.strictEqual(fine.status, 200);
+  } finally {
+    await server.close();
+  }
+});
+
+test('body limit: a body over 8 kB is refused (413) before any handler runs', async () => {
+  const pool = makeFakePool(okRow);
+  const server = await startTestServer(createApp({ pool, resolveIdentity: fakeIdentity('alice', 'Editor') }));
+  try {
+    const { status } = await postJson(server.baseUrl, '/alarms/ack', null, { raw: JSON.stringify({ ...ackBody, pad: 'p'.repeat(9000) }) });
+    assert.strictEqual(status, 413);
+    assert.strictEqual(pool.calls.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('malformed JSON body -> 400 JSON, no stack trace in the response', async () => {
+  const pool = makeFakePool(okRow);
+  const server = await startTestServer(createApp({ pool, resolveIdentity: fakeIdentity('alice', 'Editor') }));
+  try {
+    const res = await fetch(`${server.baseUrl}/alarms/ack`, { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: 'grafana_session=x' }, body: '{"logid":' });
+    const text = await res.text();
+    assert.strictEqual(res.status, 400);
+    assert.deepStrictEqual(JSON.parse(text), { error: 'malformed request body' });
+    assert.ok(!/at |node_modules/.test(text));
+  } finally {
+    await server.close();
+  }
+});
+
+test('headers: no X-Powered-By', async () => {
+  const pool = makeFakePool(okRow);
+  const server = await startTestServer(createApp({ pool, resolveIdentity: fakeIdentity('alice', 'Editor') }));
+  try {
+    const { poweredBy } = await postJson(server.baseUrl, '/alarms/ack', ackBody);
+    assert.strictEqual(poweredBy, null);
   } finally {
     await server.close();
   }
