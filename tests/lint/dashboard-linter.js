@@ -226,6 +226,13 @@ function lintDashboard(filePath) {
           error(file, pid, `Business Text inline handler interpolates a template value: ${m[0].slice(0, 80)}... -- use data-* and this.dataset`);
         }
       }
+      // Check 21: no inline JavaScript at all. grafana.ini's Content-Security-Policy
+      // uses a nonce with 'strict-dynamic', so browsers ignore 'unsafe-inline' and
+      // refuse on*="..." attributes and javascript: URLs -- the button silently does
+      // nothing. Attach one delegated listener in afterRender instead.
+      for (const m of content.matchAll(/\son[a-z]+\s*=\s*["']|href\s*=\s*["']\s*javascript:/gi)) {
+        error(file, pid, `Business Text inline JavaScript "${m[0].trim()}" is blocked by the CSP -- use a delegated listener in afterRender`);
+      }
     }
 
     // Check 11: Panel Design Tokens (PANEL_TOKENS.md)
