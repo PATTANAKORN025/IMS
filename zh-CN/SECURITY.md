@@ -49,7 +49,7 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 | 1 | `.env.example` 中的每个值都是公开的 | 高 | 已知 | 任何真实部署之前，为每个密钥生成新值（见[管理员手册](docs/admin/ADMIN_MANUAL.md#投产前安全检查清单)） |
 | 2 | nginx 统一入口使用明文 HTTP | 中 | 已知 | 在 `ims-proxy` 前方或内部终止 TLS，之后再开启 `GF_SECURITY_COOKIE_SECURE` 与 HSTS |
 | 3 | SNMP v2c community string 以明文按设备存放在 `public.devices` 中 | 中 | 已知 | 将生产设备迁移到 SNMPv3（authPriv） |
-| 4 | Grafana HTML 清理已关闭（`GF_PANELS_DISABLE_SANITIZE_HTML=true`），因为 Business Text 仪表板需要运行 JavaScript | 中 | 已知 | 只把 Editor 角色授予可信人员。模板会转义所有数据值，`dashboard-linter` 拒绝 `{{{ }}}` 以及 `on*=` 处理器中的值 |
+| 4 | Grafana HTML 清理已关闭（`monitoring/grafana/grafana.ini` 中 `[panels] disable_sanitize_html = true`），因为 Business Text 仪表板需要运行 JavaScript | 中 | 已知 | 只把 Editor 角色授予可信人员。模板会转义所有数据值，`dashboard-linter` 拒绝 `{{{ }}}` 以及 `on*=` 处理器中的值 |
 | 5 | `/ldi-telemetry` 与 `/inject` 可通过统一入口访问，仅由 Node-RED 中的 `x-api-key` 校验保护 | 中 | 已知 | 对 `INGEST_API_KEY` 保密并定期轮换；用防火墙限制端口 |
 | 6 | CI 密钥扫描只检查工作区而非历史；历史中有一个旧 `.env`（凭据已轮换） | 低 | 已知 | 扫描会阻断构建且镜像版本已固定；`scripts/pre-commit.js` 拒绝提交任何 `.env` |
 | — | TimescaleDB 端口暴露在主机上 | — | **已解决** | 基础 `docker-compose.yaml` 已注释 TimescaleDB 主机端口；数据库仅限内部网络 |
@@ -61,6 +61,10 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 | — | 各服务以超级用户连接数据库 | — | **已解决** | Node-RED 使用 `nodered_writer`，archiver 使用 `observability_archiver`，alarm-api 使用 `alarm_api_writer`，Grafana 使用 `grafana_reader`，各自仅有所需权限 |
 | — | `/alert-webhook` 接受任何请求 | — | **已解决** | 要求 `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` |
 | — | Grafana image renderer 镜像为 `latest` | — | **已解决** | 固定为 `v5.11.1` |
+| — | 通过统一入口无需登录即可读取 Grafana `/metrics` 以及 `/api/health` 中的版本和 commit | — | **已解决** | nginx 对 `/metrics` 返回 404；设置 `[auth.anonymous] hide_version = true`（该键此前放错了 section） |
+| — | 一键即可把仪表板快照发布到 `snapshots.raintank.io`，或无需登录公开分享仪表板 | — | **已解决** | `[snapshots] external_enabled = false`，`[public_dashboards] enabled = false` |
+| — | 可从 UI 安装插件，且启动时插件会浮动到最新版本 | — | **已解决** | `plugin_admin_enabled = false`；`preinstall_sync` 固定所用的两个面板版本；未使用的默认插件已禁用 |
+| — | 没有 Content-Security-Policy 和密码策略，并会访问 grafana.com 与 gravatar.com | — | **已解决** | 启用带每请求 nonce 的 CSP、`password_policy = true`，关闭 analytics、更新检查、news 与 gravatar |
 
 ---
 

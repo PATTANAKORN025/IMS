@@ -88,6 +88,14 @@
   - 不再安装未使用的 Grafana 插件。
   - 初始化脚本不再硬编码数据库名与所有者名。
 
+### Grafana 配置（2026-09-30）
+- **`monitoring/grafana/grafana.ini`** 成为唯一配置来源，compose 只传入密钥和各部署不同的值。此前有 3 个键被 Grafana 静默忽略（`[security]` 下的 `hide_version` 与 `disable_sanitize_html`，以及 `hide_new_plugins`），首页仪表板路径也指向不存在的文件。
+- **关闭暴露面：** 未登录时 `/api/health` 不再显示版本和 commit；nginx 拒绝 `/metrics`；关闭外部快照（`snapshots.raintank.io`）与公开仪表板。
+- **浏览器加固：** 启用带每请求 nonce 和 `frame-ancestors 'self'` 的 Content-Security-Policy；不再访问 gravatar、grafana.com 新闻、analytics 与更新检查。
+- **账户：** 新密码和修改后的密码必须符合 Grafana 密码策略；禁止创建组织；会话时长显式配置。
+- **插件：** 启动前通过 `preinstall_sync` 按固定版本安装，关闭 UI 插件管理，并禁用未使用的默认插件，启动时除这两个固定面板外无需联网。
+- **Provisioning：** 无法再从 UI 删除已 provision 的仪表板；移除从未获得连接参数的 Mentor LDI 数据源。renderer 回调使用 Grafana 容器端口而非主机端口。
+
 ### 安全加固（2026-09-29 第三轮）
 - **PgBouncer：** 客户端改用 `scram-sha-256` 认证取代 `plain`，密码不再以明文在 Docker 网络中传输。密码错误时返回 `SASL authentication failed`。
 - **容器：** 除 pgAdmin 外的所有服务都以 `no-new-privileges` 运行。pgAdmin 可能需要文件能力来绑定 80 端口，因此未包含。

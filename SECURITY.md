@@ -49,7 +49,7 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 | 1 | Every value in `.env.example` is public | High | Known | Generate new values for every secret before any real deployment (see [Admin Manual](docs/admin/ADMIN_MANUAL.md#pre-production-security-checklist)) |
 | 2 | nginx front door serves plain HTTP | Medium | Known | Terminate TLS in front of, or inside, `ims-proxy`; only then set `GF_SECURITY_COOKIE_SECURE` and HSTS |
 | 3 | SNMP v2c community strings stored per device in `public.devices` (plain text) | Medium | Known | Move production devices to SNMPv3 (authPriv) |
-| 4 | Grafana HTML sanitizing is off (`GF_PANELS_DISABLE_SANITIZE_HTML=true`), because the Business Text dashboards run JavaScript | Medium | Known | Give the Editor role only to trusted people. Templates escape every data value, and `dashboard-linter` rejects `{{{ }}}` and values inside `on*=` handlers |
+| 4 | Grafana HTML sanitizing is off (`[panels] disable_sanitize_html = true` in `monitoring/grafana/grafana.ini`), because the Business Text dashboards run JavaScript | Medium | Known | Give the Editor role only to trusted people. Templates escape every data value, and `dashboard-linter` rejects `{{{ }}}` and values inside `on*=` handlers |
 | 5 | `/ldi-telemetry` and `/inject` are reachable through the front door and protected only by the `x-api-key` check in Node-RED | Medium | Known | Keep `INGEST_API_KEY` secret and rotated; restrict the port with a firewall |
 | 6 | The CI secret scan checks the working tree, not history; an old `.env` (credentials since rotated) is in history | Low | Known | The scan blocks and its image is pinned; `scripts/pre-commit.js` refuses to commit any `.env` |
 | — | TimescaleDB port exposed on the host | — | **Resolved** | The base `docker-compose.yaml` comments out host port exposure for TimescaleDB; database is internal only |
@@ -61,6 +61,10 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 | — | Services connected to the database as the superuser | — | **Resolved** | Node-RED uses `nodered_writer`, the archiver `observability_archiver`, alarm-api `alarm_api_writer`, Grafana `grafana_reader`; each has grants only on what it uses |
 | — | `/alert-webhook` accepted any request | — | **Resolved** | It requires `Authorization: Bearer <ALERT_WEBHOOK_TOKEN>` |
 | — | Grafana image renderer image `latest` | — | **Resolved** | Pinned to `v5.11.1` |
+| — | Grafana `/metrics` and the version and commit in `/api/health` were readable without a login through the front door | — | **Resolved** | nginx returns 404 for `/metrics`; `[auth.anonymous] hide_version = true` (the key had been set in the wrong section) |
+| — | One click could publish a dashboard snapshot to `snapshots.raintank.io`, or share a dashboard publicly without a login | — | **Resolved** | `[snapshots] external_enabled = false`, `[public_dashboards] enabled = false` |
+| — | Plugins could be installed from the UI and floated to the latest version at start | — | **Resolved** | `plugin_admin_enabled = false`; `preinstall_sync` pins the two panels in use; unused default plugins are disabled |
+| — | No Content-Security-Policy, no password policy, phone-home to grafana.com and gravatar.com | — | **Resolved** | CSP with a per-request nonce, `password_policy = true`, analytics, update checks, news and gravatar off |
 
 ---
 

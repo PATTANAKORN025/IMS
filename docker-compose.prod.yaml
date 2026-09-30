@@ -22,7 +22,7 @@ services:
       # the proxy serves plain HTTP, and a Secure cookie is never sent back over
       # HTTP from a non-localhost address -- every login would loop and alarm-api
       # auth would fail. Turn both on only once the proxy terminates TLS.
-      # GF_PANELS_DISABLE_SANITIZE_HTML stays as in the base file: the Business
+      # HTML sanitizing stays off as set in monitoring/grafana/grafana.ini: the Business
       # Text dashboards (Alarm Console ack/resolve, drilling fleet, VCP wall) need it.
     deploy:
       resources:

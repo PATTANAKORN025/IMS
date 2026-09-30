@@ -88,6 +88,14 @@
   - ไม่ติดตั้ง Grafana plugin ที่ไม่ได้ใช้แล้ว
   - init script ไม่ hardcode ชื่อฐานข้อมูลและ owner อีก
 
+### การตั้งค่า Grafana (2026-09-30)
+- **`monitoring/grafana/grafana.ini`** เป็นแหล่งค่าเดียว ส่วน compose ส่งเฉพาะความลับและค่าที่ต่างกันแต่ละ deployment มี 3 key ที่ Grafana ข้ามไปเงียบๆ (`hide_version` และ `disable_sanitize_html` ใต้ `[security]` และ `hide_new_plugins`) และ path ของแดชบอร์ดหน้าแรกชี้ไปไฟล์ที่ไม่มีอยู่
+- **ปิดข้อมูลที่เปิดเผย:** `/api/health` ไม่แสดงเวอร์ชันและ commit เมื่อไม่ login, nginx ปฏิเสธ `/metrics` และปิด snapshot ภายนอก (`snapshots.raintank.io`) กับ public dashboard
+- **ความปลอดภัยฝั่ง browser:** Content-Security-Policy พร้อม nonce ต่อ request และ `frame-ancestors 'self'` เลิกเรียก gravatar, ข่าวจาก grafana.com, analytics และการตรวจอัปเดต
+- **บัญชีผู้ใช้:** รหัสผ่านใหม่หรือที่เปลี่ยนต้องผ่าน password policy ของ Grafana ห้ามสร้าง org และระบุอายุ session ชัดเจน
+- **Plugin:** ติดตั้งจาก `preinstall_sync` แบบล็อกเวอร์ชันก่อน start ปิดการจัดการ plugin จาก UI และปิด plugin ค่าเริ่มต้นที่ไม่ได้ใช้ การ start จึงไม่ต้องใช้อินเทอร์เน็ตนอกจาก panel 2 ตัวที่ล็อกไว้
+- **Provisioning:** ลบแดชบอร์ดที่ provision ผ่าน UI ไม่ได้แล้ว และถอด data source Mentor LDI ที่ไม่เคยได้รับค่าการเชื่อมต่อ ส่วน renderer callback ใช้พอร์ตใน container ของ Grafana แทนพอร์ตของ host
+
 ### การเสริมความปลอดภัย (2026-09-29 รอบที่สาม)
 - **PgBouncer:** client ยืนยันตัวตนด้วย `scram-sha-256` แทน `plain` รหัสผ่านจึงไม่วิ่งเป็นข้อความธรรมดาในเครือข่าย Docker อีก รหัสผิดจะได้ `SASL authentication failed`
 - **คอนเทนเนอร์:** ทุก service ยกเว้น pgAdmin รันด้วย `no-new-privileges` ส่วน pgAdmin ยกเว้นไว้เพราะอาจต้องใช้ file capability เพื่อ bind พอร์ต 80

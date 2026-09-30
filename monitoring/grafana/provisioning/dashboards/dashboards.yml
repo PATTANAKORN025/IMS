@@ -5,7 +5,7 @@ providers:
     orgId: 1
     folder: '01 · Drilling Operations (CNC)'
     type: file
-    disableDeletion: false
+    disableDeletion: true
     updateIntervalSeconds: 30
     allowUiUpdates: false
     options:
@@ -16,7 +16,7 @@ providers:
     orgId: 1
     folder: '02 · Lithography Operations (LDI PCB)'
     type: file
-    disableDeletion: false
+    disableDeletion: true
     updateIntervalSeconds: 30
     allowUiUpdates: false
     options:
@@ -27,7 +27,7 @@ providers:
     orgId: 1
     folder: '03 · Platform Infrastructure & NOC'
     type: file
-    disableDeletion: false
+    disableDeletion: true
     updateIntervalSeconds: 30
     allowUiUpdates: false
     options:
@@ -38,7 +38,7 @@ providers:
     orgId: 1
     folder: '04 · Plating Operations (VCP Line)'
     type: file
-    disableDeletion: false
+    disableDeletion: true
     updateIntervalSeconds: 30
     allowUiUpdates: false
     options:

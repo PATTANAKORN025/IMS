@@ -241,23 +241,15 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
       GRAFANA_DB_USER: ${GRAFANA_DB_USER:?GRAFANA_DB_USER required in .env}
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Everything else (security, plugins, sanitize, home dashboard, log level) is in
+      # monitoring/grafana/grafana.ini; only secrets and per-deployment values live here.
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
-      GF_SERVER_ENABLE_GZIP: "true"
-      # only the plugins a provisioned dashboard uses; clock/status panels were
-      # installed but referenced by no dashboard
       # contact point bearer token for Node-RED's /alert-webhook
       ALERT_WEBHOOK_TOKEN: ${ALERT_WEBHOOK_TOKEN:?set ALERT_WEBHOOK_TOKEN in .env}
-      GF_INSTALL_PLUGINS: "volkovlabs-echarts-panel,marcusolsson-dynamictext-panel"
       GF_RENDERING_SERVER_URL: http://renderer:8081/render
-      GF_RENDERING_CALLBACK_URL: http://grafana:${GRAFANA_PORT:-3000}/
+      # Grafana's own container port, not the host port GRAFANA_PORT publishes on
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
       GF_RENDERING_RENDERER_TOKEN: ${GRAFANA_RENDERER_TOKEN:?set GRAFANA_RENDERER_TOKEN in .env}
-      GF_PANELS_DISABLE_SANITIZE_HTML: "true"
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/infrastructure/ims-noc-overview.json
-      GF_SECURITY_COOKIE_SECURE: "false"
-      GF_SECURITY_STRICT_TRANSPORT_SECURITY: "false"
-      GF_LOG_LEVEL: "info"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
