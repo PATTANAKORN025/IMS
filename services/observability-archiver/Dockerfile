@@ -3,7 +3,7 @@
 # version is current that day. Installed once at build time instead.
 # It reaches Docker only through the read-only docker-socket-proxy service
 # (DOCKER_HOST), never the socket itself.
-FROM docker:27-cli
+FROM docker:29-cli
 
 RUN apk add --no-cache postgresql-client jq bash
 
