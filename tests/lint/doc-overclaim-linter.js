@@ -63,6 +63,16 @@ function isExemptPath(relFile) {
   // .github/, .git/, .cursor/, etc.) is AI-tool scratch/config, not
   // documentation this check is meant to police.
   if (relFile.split('/').some((seg) => seg.startsWith('.'))) return true;
+
+  // Historical records: evidence runs, audit snapshots, archives, changelogs
+  if (
+    relFile.includes('/evidence/') || relFile.startsWith('docs/evidence/') ||
+    relFile.includes('/audit/') || relFile.startsWith('docs/audit/') ||
+    relFile.includes('/archive/') || relFile.startsWith('docs/archive/')
+  ) {
+    return true;
+  }
+
   return EXEMPT_FILES.has(relFile);
 }
 
@@ -186,6 +196,36 @@ function main() {
         const n = parseInt(migCountMatch[1], 10);
         if (n !== realMigrations.count) {
           report(`claims ${n} sequenced migration files, real count is ${realMigrations.count}`);
+        }
+      }
+
+      // Shape 5: Total service count claims (e.g. "15 services in docker-compose.yaml", "start all 15 services").
+      const serviceMatch = line.match(/\b(\d+)\s+(?:services|containers|บริการ|个服务|个容器)\b[^.\n]{0,60}?\b(?:in\s+`?docker-compose|all\s+\d+|ทั้ง\s*\d+|全部\s*\d+|stack)/i)
+        || line.match(/(?:all|ทั้ง|全部|start|启动)\s*(?:all\s*)?(\d+)\s*(?:services|containers|บริการ|个服务|个容器)/i);
+      if (serviceMatch) {
+        const n = parseInt(serviceMatch[1], 10);
+        if (n !== realServices) {
+          report(`claims ${n} services, real count is ${realServices}`);
+        }
+      }
+
+      // Shape 6: Phantom database objects or deprecated role names.
+      const PHANTOMS = ['ldi_oee_1m', 'sys_metrics_1h', 'net_metrics_1h', 'archiver_reader'];
+      for (const phantom of PHANTOMS) {
+        if (line.includes(phantom)) {
+          report(`references obsolete or phantom database object "${phantom}"`);
+        }
+      }
+
+      // Shape 7: Ingest cURL example format in living docs (must be JSON array).
+      if ((relFile.endsWith('README.md') || relFile.endsWith('API_REFERENCE.md')) && line.includes('/ldi-telemetry') && line.includes("-d '{") && !line.includes("-d '[{")) {
+        report('ingest curl payload must send a JSON array [{...}], not a single object {...}');
+      }
+
+      // Shape 8: Alarm API ack/resolve cURL examples (identity inferred from session, not client body).
+      if ((relFile.endsWith('README.md') || relFile.endsWith('API_REFERENCE.md')) && (line.includes('/alarms/ack') || line.includes('/alarms/resolve'))) {
+        if (line.includes('acknowledged_by') || line.includes('resolved_by')) {
+          report('alarm-api curl example must not send acknowledged_by or resolved_by in body');
         }
       }
     });

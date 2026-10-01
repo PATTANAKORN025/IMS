@@ -29,7 +29,7 @@ flowchart TB
    AM["Alertmanager\n127.0.0.1:9093"]
    PGB["PgBouncer\ninternal only"]
    TSDB["TimescaleDB\ninternal only"]
-   PGADMIN["pgAdmin\n:5050, all interfaces"]
+   PGADMIN["pgAdmin\n127.0.0.1:5050"]
    SNMPSIM["SNMP simulator\ninternal only"]
    BLACKBOX["Blackbox exporter\n127.0.0.1:9115"]
   end
@@ -54,7 +54,7 @@ flowchart TB
  FUTURE["Future: real SECS/GEM equipment\n(not built)"] -.->|"NEW boundary, not yet designed"| NODERED
 ```
 
-**边界 1——主机 ↔ Docker 网络。** 有两个服务监听主机的所有网络接口：`proxy` 服务（nginx，`${GRAFANA_PORT:-3000}`）与 `pgadmin`（`5050`）。Node-RED、Prometheus、Alertmanager 与 Blackbox exporter 发布的端口仅绑定在 `127.0.0.1`。Grafana、alarm-api 与 Factory Twin 过去都发布过各自的端口；如今三者都位于 `proxy` 之后，因此所有面向浏览器的请求——无论读写——都经过同一个入口。PgBouncer、TimescaleDB、SNMP 模拟器与 image renderer 从不暴露给主机——只使用 Docker 内部 DNS。`pgadmin` 是例外，在实验环境之外仍需主机防火墙限制或绑定到 `127.0.0.1`（见 `SECURITY.md`）。`observability-archiver` 挂载了 Docker 套接字；`:ro` 标志并不能限制 Docker API 调用，因此该容器在主机上实际上具有特权。
+**边界 1——主机 ↔ Docker 网络。** 唯一监听外部网络接口的服务是 `proxy` 服务（nginx，`${GRAFANA_PORT:-3000}`）。`pgadmin`（`5050`）、Node-RED、Prometheus、Alertmanager 与 Blackbox exporter 发布的端口均绑定在 `127.0.0.1` 本地回环。Grafana、alarm-api 与 Factory Twin 均位于 `proxy` 之后，因此所有面向浏览器的请求统一经过唯一入口。PgBouncer、TimescaleDB、SNMP 模拟器与 image renderer 从不暴露给主机——只使用 Docker 内部 DNS。`observability-archiver` 通过内部网络的 `ims-docker-socket-proxy` 访问 Docker 守护进程，并具备受控的只读权限。
 
 **边界 1a——以 Grafana 会话作为写入路径的凭据。** `alarm-api`（`services/alarm-api`）是本栈中唯一会从 Grafana 仪表板改变状态的服务（`IMS LDI - Alarm Console` 的确认/解决按钮，写入 `public.ldi_alarm_lifecycle`）。它没有自己的登录：`proxy` 的 `/alarm-api/` location 在转发任何内容之前，都会针对 Grafana 自身的 `/api/user` 发起一次 `auth_request` 子请求，因此只有调用方已持有有效 Grafana 会话时，请求才能到达 alarm-api——这与操作员查看仪表板本就需要的登录相同，而不是另一套需要管理的凭据。`/factory-twin-3d/` location 使用同一闸门。alarm-api 以 `alarm_api_writer` 角色（迁移 078）连接 Postgres，该角色仅对 `ldi_alarm_lifecycle` 拥有 `SELECT`+`UPDATE` 权限——既不是超级用户，也不是 `grafana_reader`。随后 alarm-api 会自行识别调用方：它向 Grafana 查询 `/api/user`（登录名）和 `/api/user/orgs`（在当前组织中的角色），并把该登录名记录为操作人。请求体中提交的 `acknowledged_by` / `resolved_by` 会被忽略，Viewer 会收到 403；只有 Editor、Admin 或 Grafana 服务器管理员可以确认或解决告警。`tests/unit/alarm-api-server.test.js` 覆盖了这些行为，并已经通过 nginx 对 Grafana 13.1.2 做过端到端验证。
 

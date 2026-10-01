@@ -35,7 +35,7 @@ make doctor
 # 4. ประกอบโฟลว์และเริ่มต้นรันคอนเทนเนอร์ทั้งหมด
 make up
 
-# 5. ตรวจสอบสถานะความพร้อมของทั้ง 14 เซอร์วิส
+# 5. ตรวจสอบสถานะความพร้อมของทั้ง 16 เซอร์วิส
 make verify
 ```
 
@@ -81,15 +81,27 @@ cp .env.example .env
 
 | ชื่อตัวแปร | จำเป็น | ตัวอย่างค่าเริ่มต้น | คำอธิบาย |
 |:-----------|:-------|:--------------------|:---------|
+| `POSTGRES_DB` | ใช่ | `ims` | ชื่อฐานข้อมูลหลักสำหรับจัดเก็บข้อมูล Telemetry |
 | `POSTGRES_USER` | ใช่ | `ims_admin` | บัญชีผู้ดูแลระบบของ TimescaleDB |
-| `POSTGRES_PASSWORD` | ใช่ | *รหัสผ่านที่ปลอดภัย* | รหัสผ่านผู้ดูแลระบบ TimescaleDB |
-| `POSTGRES_DB` | ใช่ | `ims_telemetry` | ชื่อฐานข้อมูลหลักสำหรับจัดเก็บข้อมูล Telemetry |
-| `GF_SECURITY_ADMIN_USER` | ใช่ | `admin` | ชื่อผู้ใช้สำหรับดูแลระบบ Grafana |
-| `GF_SECURITY_ADMIN_PASSWORD` | ใช่ | *รหัสผ่าน Grafana* | รหัสผ่านผู้ดูแลระบบ Grafana |
-| `INGEST_API_KEY` | ใช่ | *รหัสผ่านรับข้อมูล* | โทเคนสำหรับเรียกใช้งาน `POST /ldi-telemetry` |
-| `NODE_RED_CREDENTIAL_SECRET` | ใช่ | *คีย์เข้ารหัสโฟลว์* | คีย์ AES สำหรับเข้ารหัสข้อมูลรับรองใน Node-RED |
-| `ALERTMANAGER_LINE_TOKEN` | ไม่บังคับ | *LineToken...* | โทเคน LINE Notify สำหรับส่งการแจ้งเตือน |
-| `ALERTMANAGER_TEAMS_WEBHOOK` | ไม่บังคับ | `https://...` | เว็บบุ๊กรับแจ้งเตือนของ Microsoft Teams |
+| `POSTGRES_PASSWORD` | ใช่ | *สร้างรหัสผ่านที่รัดกุม* | รหัสผ่านผู้ดูแลระบบ TimescaleDB |
+| `GRAFANA_ADMIN_USER` | ใช่ | `admin` | ชื่อผู้ใช้สำหรับดูแลระบบ Grafana (`GF_SECURITY_ADMIN_USER`) |
+| `GRAFANA_ADMIN_PASSWORD` | ใช่ | *สร้างรหัสผ่านที่รัดกุม* | รหัสผ่านผู้ดูแลระบบ Grafana (`GF_SECURITY_ADMIN_PASSWORD`) |
+| `GRAFANA_DB_USER` | ใช่ | `grafana_reader` | ผู้ใช้ฐานข้อมูลแบบอ่านอย่างเดียวสำหรับ Grafana |
+| `GRAFANA_DB_PASSWORD` | ใช่ | *สร้างรหัสผ่านที่รัดกุม* | รหัสผ่านฐานข้อมูลแบบอ่านอย่างเดียวสำหรับ Grafana |
+| `NODERED_DB_PASSWORD` | ใช่ | *สร้างรหัสผ่านที่รัดกุม* | รหัสผ่านสำหรับบทบาท `nodered_writer` (migration 087) |
+| `ARCHIVER_DB_PASSWORD` | ใช่ | *สร้างรหัสผ่านที่รัดกุม* | รหัสผ่านสำหรับบทบาท `observability_archiver` (migration 087) |
+| `ALARM_API_DB_PASSWORD` | ใช่ | *สร้างรหัสผ่านที่รัดกุม* | รหัสผ่านสำหรับบทบาท `alarm_api_writer` |
+| `INGEST_API_KEY` | ใช่ | *สร้างโทเคนสุ่ม* | โทเคน API สำหรับยืนยันตัวตน `POST /ldi-telemetry` และ `/inject` |
+| `NODE_RED_CREDENTIAL_SECRET` | ใช่ | *สร้างโทเคนสุ่ม* | คีย์ AES สำหรับเข้ารหัสข้อมูลรับรองใน Node-RED flow |
+| `NODE_RED_ADMIN_USER` | ใช่ | `admin` | ชื่อผู้ใช้สำหรับหน้าเว็บแก้ไข Node-RED |
+| `NODE_RED_ADMIN_PASSWORD_HASH` | ใช่ | *bcrypt hash* | รหัสผ่านแฮช bcrypt สำหรับเข้าสู่ระบบ Node-RED |
+| `ALERT_WEBHOOK_TOKEN` | ใช่ | *สร้างโทเคนสุ่ม* | โทเคนยืนยันตัวตนสำหรับ Webhook รับการแจ้งเตือน |
+| `LINE_CHANNEL_ACCESS_TOKEN` | ไม่บังคับ | *Token...* | Access Token ของ LINE Messaging API |
+| `LINE_USER_ID` | ไม่บังคับ | *UserId...* | รหัสผู้รับหรือกลุ่มใน LINE |
+| `TEAMS_WEBHOOK_URL` | ไม่บังคับ | `https://...` | Webhook URL ของ Microsoft Teams |
+| `PGADMIN_DEFAULT_EMAIL` | ใช่ | `admin@example.com` | อีเมลเข้าสู่ระบบ pgAdmin |
+| `PGADMIN_DEFAULT_PASSWORD` | ใช่ | *สร้างรหัสผ่านที่รัดกุม* | รหัสผ่านเข้าสู่ระบบ pgAdmin |
+| `GRAFANA_RENDERER_TOKEN` | ใช่ | *สร้างโทเคนสุ่ม* | โทเคนลับสำหรับบริการ Grafana Image Renderer |
 
 > [!CAUTION]
 > **นโยบายความปลอดภัยของข้อมูลลับ (Strict Secret Policy)**: ให้อ้างอิงตัวแปรสภาพแวดล้อมด้วยชื่อตัวแปรเท่านั้นในเอกสารและการส่งงาน การตั้งค่า Docker Compose ทุกจุดจะบังคับใช้ไวยากรณ์ `${VARIABLE:?set VARIABLE in .env}` เพื่อป้องกันการลืมตั้งค่ารหัสผ่าน
@@ -101,6 +113,11 @@ cp .env.example .env
 คำสั่งใน `Makefile` ของ IMS ครอบคลุมการทำงานทั่วไปในชีวิตประจำวันทั้งหมด:
 
 ```bash
+# คำแนะนำและการตรวจสอบเกตคุณภาพ
+make help             # แสดงรายการเป้าหมาย Makefile ทั้งหมดพร้อมคำอธิบาย
+make check            # รันชุดตรวจสอบก่อนคอมมิตแบบเต็ม (scripts/pre-commit.js)
+make check-env        # ตรวจสอบตัวแปรที่จำเป็นใน .env และตรวจการรั่วไหลของ secret
+
 # ควบคุมการทำงานของคอนเทนเนอร์
 make up               # รวมไฟล์โฟลว์และเริ่มต้นรันคอนเทนเนอร์ทั้งหมดในพื้นหลัง
 make up-prod          # รันคอนเทนเนอร์ด้วยการตั้งค่าแบบ Production Overlay
@@ -192,7 +209,7 @@ nodered_data/flows/
 
 ```bash
 # ส่งคำสั่งไมเกรชันเข้าสู่ TimescaleDB ผ่าน docker exec
-docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/086-add-custom-telemetry.sql
+docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/092-add-custom-telemetry.sql
 ```
 
 ### การใช้งาน Continuous Aggregates (CAGGs)
@@ -202,10 +219,10 @@ docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/08
 ```sql
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```

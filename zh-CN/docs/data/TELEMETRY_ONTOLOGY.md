@@ -41,7 +41,7 @@
 来自光学曝光设备的高频时序遥测数据。
 
 - **摄入路径 (Ingestion Path)**: `POST /ldi-telemetry` (通过 Nginx 反向代理)
-- **目标超表 (Destination Hypertable)**: `public.ldi_data` (1 小时分区 Chunk 间隔)
+- **目标超表 (Destination Hypertable)**: `public.ldi_data` (1 天分区 Chunk 间隔)
 
 ### JSON 摄入有效载荷示例
 
@@ -127,7 +127,7 @@
 
 ## 4. 垂直连续电镀线 (VCP) 遥测结构
 
-化学药水槽传感器监测、行车传送事件与整流器电气输出参数。
+化学药水槽传感器监测、输送线运行速度与整流器电气输出参数。
 
 - **存储位置**: `eap_backup` 数据库 (数据表: `public.vcp_upp`)
 
@@ -186,18 +186,19 @@
 | `public.ldi_data` | `public.ldi_data_1m` | 1 分钟 | 每 1 分钟 | 14 天 |
 | `public.ldi_data` | `public.ldi_data_15m` | 15 分钟 | 每 15 分钟 | 90 天 |
 | `public.ldi_data` | `public.ldi_data_1h` | 1 小时 | 每 1 小时 | 2 年 |
-| `public.sys_metrics` | `public.sys_metrics_1h` | 1 小时 | 每 1 小时 | 2 年 |
-| `public.net_metrics` | `public.net_metrics_1h` | 1 小时 | 每 1 小时 | 2 年 |
+| `public.sys_metrics` | `public.sys_hourly` | 1 小时 | 每 1 小时 | 可配置策略 |
+| `public.net_metrics` | `public.net_hourly` | 1 小时 | 每 1 小时 | 可配置策略 |
+| `public.ldi_metrics` | `public.ldi_hourly` | 1 小时 | 每 1 小时 | 可配置策略 |
 
 ```sql
 -- 针对 15 分钟持续聚合视图的典型分析 SQL 查询
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature,
   ROUND(avg_scan_speed::numeric, 2) AS scan_speed
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```

@@ -60,7 +60,7 @@ jq '.components[] | {name: .name, version: .version, type: .type}' sbom-alarm-ap
 
 ## 3. การกำกับดูแล Base Image คอนเทนเนอร์และการล็อกรหัส Digest (Pinning)
 
-เพื่อป้องกันปัญหาแท็กเปลี่ยนแปลงได้ (Tag Drift เช่น การใช้ `:latest` หรือการถูกสับเปลี่ยนอิมเมจต้นทางโดยไม่รู้ตัว) ทุกคอนฟิกสำหรับสภาพแวดล้อมจริง (`docker-compose.yml`, `docker-compose.prod.yml`) ต้องระบุรหัส Cryptographic SHA-256 Digest ที่ไม่สามารถแก้ไขได้เสมอ:
+เพื่อป้องกันปัญหาแท็กเปลี่ยนแปลงได้ (Tag Drift เช่น การใช้ `:latest` หรือการถูกสับเปลี่ยนอิมเมจต้นทางโดยไม่รู้ตัว) ทุกคอนฟิกสำหรับสภาพแวดล้อมจริง (`docker-compose.yaml`, `docker-compose.prod.yaml`) ต้องระบุรหัส Cryptographic SHA-256 Digest ที่ไม่สามารถแก้ไขได้เสมอ:
 
 ```yaml
 # รูปแบบการล็อก Image Digest ที่ปลอดภัย

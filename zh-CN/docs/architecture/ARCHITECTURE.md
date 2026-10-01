@@ -31,7 +31,7 @@ flowchart TB
  subgraph LDI ["LDI 制造遥测流水线 (主要，生产级)"]
   SIM["ldi_simulator.json\nOrnstein-Uhlenbeck 实时模拟器\n2s 周期, 10 台机台"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\n限流与反向代理"]
   PROXY --> ING["ldi_ingestion.json\n鉴权检查 -> INSERT"]
-  ING --> LDIDATA[("public.ldi_data\n超表，1h 数据块")]
+  ING --> LDIDATA[("public.ldi_data\n超表，1 天数据块")]
   ALMSIM["ldi_alarm_simulator.json\n条件驱动 + 噪声\n10s 周期"] --> ALARMLOG[("public.ldi_alarm_log")]
   ALARMAPI["ims-alarm-api :4000\n确认与解决状态流转"] --> ALARMLC[("public.ldi_alarm_lifecycle")]
  end
@@ -88,10 +88,10 @@ flowchart TB
 | `snmpsim` | (snmpsim) | 为传统流水线提供开发/测试目标的模拟 SNMP 代理 |
 | `db-migrate` | `ims-db-migrate` | 一次性迁移执行器（`scripts/migrate-entrypoint.sh`），在完成前阻止 `node-red` 与 `alarm-api` 启动 |
 | `factory-twin-3d` | `ims-factory-twin-3d` | 一楼数字孪生（Express，内部端口 4100）。无主机端口；只能经 `proxy` 在 `/factory-twin-3d/` 访问，受同一 `auth_request` 闸门保护。只读：不向数据库写入任何内容。 |
-| `observability-archiver` | `ims-observability-archiver` | 定期将容器/数据库可观测性快照归档到 `./ops-logs`；以只读方式挂载 Docker 套接字。 |
+| `observability-archiver` | `ims-observability-archiver` | 定期将容器/数据库可观测性快照归档到 `./ops-logs`；通过 `ims-docker-socket-proxy` 访问 Docker API。 |
 | `pgadmin` | `ims-pgadmin4` | 数据库管理界面（`dpage/pgadmin4`），不在运行时数据路径上。 |
 
-仅限内部的服务（TimescaleDB、PgBouncer、SNMP 模拟器、Grafana、alarm-api、factory-twin-3d、renderer）从不直接暴露给主机。主机端口如下：`proxy` 位于 `${GRAFANA_PORT:-3000}`（所有接口——唯一的 UI 入口，前置 Grafana、alarm-api、孪生服务以及 Node-RED 的 `/ldi-telemetry` + `/inject`），`pgadmin` 位于 `5050`（所有接口），Node-RED（1880）、Prometheus（9090）、Alertmanager（9093）与 Blackbox（9115）仅绑定在 `127.0.0.1`。
+仅限内部的服务（TimescaleDB、PgBouncer、SNMP 模拟器、Grafana、alarm-api、factory-twin-3d、renderer）从不直接暴露给主机。主机端口如下：`proxy` 位于 `${GRAFANA_PORT:-3000}`（外部唯一的 UI 入口，前置 Grafana、alarm-api、孪生服务以及 Node-RED 的 `/ldi-telemetry` + `/inject`），而 `pgadmin`（5050）、Node-RED（1880）、Prometheus（9090）、Alertmanager（9093）与 Blackbox（9115）均绑定在 `127.0.0.1` 本地回环。
 
 ---
 

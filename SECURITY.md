@@ -81,7 +81,7 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 - [x] Node-RED editor requires an admin password hash and binds to `127.0.0.1`
 - [x] Grafana has no host port; the `proxy` service (nginx) is the single UI entry point on port 3000, fronting Grafana, `alarm-api`, the Factory Twin and the LDI ingest endpoints, and gating `alarm-api` and the twin behind an `auth_request` check against Grafana's own session (see `docs/architecture/SECURITY_MODEL.md`)
 - [ ] Replace every value copied from `.env.example` with a newly generated secret
-- [ ] Restrict pgAdmin (`5050`) to the host or an administration network
+- [x] pgAdmin (`5050`) bound to `127.0.0.1` loopback only
 - [ ] Add TLS in front of the nginx front door
 - [ ] Enable SNMPv3 for production devices (replacing v2c)
 
@@ -108,7 +108,7 @@ The CI private-data scanner (`tests/lint/private-data-leak-scanner.js`) matches 
 | Control | Implementation |
 | --- | --- |
 | **Container isolation** | Docker bridge networks (`ims-internal`, `ims-monitoring`); services communicate by DNS name |
-| **Minimal host exposure** | Only the nginx front door (3000) and pgAdmin (5050) listen on all interfaces; Node-RED, Prometheus, Alertmanager and Blackbox bind to `127.0.0.1`; TimescaleDB and PgBouncer have no host port exposure |
+| **Minimal host exposure** | Only the nginx front door (3000) listens on external interfaces; pgAdmin (5050), Node-RED, Prometheus, Alertmanager and Blackbox bind to `127.0.0.1` loopback; TimescaleDB and PgBouncer have no host port exposure |
 | **Authenticated ingest** | `/ldi-telemetry` and `/inject` require the `x-api-key` header to match `INGEST_API_KEY` |
 | **Secrets management** | `.env` (gitignored) injected through Docker Compose `${VAR:?}` required variables; nothing is read from a `secrets/` directory |
 

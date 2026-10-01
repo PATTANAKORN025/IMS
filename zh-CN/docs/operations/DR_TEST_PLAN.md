@@ -58,9 +58,9 @@ sequenceDiagram
   SRE->>Script: ./scripts/dr-test.sh full-recreate --confirm-destroy
   Script->>Docker: docker compose down -v (彻底清除全部持久化卷)
   Script->>Docker: docker compose up -d (全新拉起容器技术栈)
-  Script->>DB: 顺序执行迁移脚本 database/migrations/*.sql (013 至 086)
+  Script->>DB: 顺序执行迁移脚本 database/migrations/*.sql (001 至 091)
   Script->>DB: 导入已验证的原始时序数据
-  Script-->>SRE: 状态: PASS 验证通过 (全部 14 个核心容器健康就绪)
+  Script-->>SRE: 状态: PASS 验证通过 (全部 16 个核心容器健康就绪)
 ```
 
 ---

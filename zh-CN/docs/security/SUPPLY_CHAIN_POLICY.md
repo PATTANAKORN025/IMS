@@ -60,7 +60,7 @@ jq '.components[] | {name: .name, version: .version, type: .type}' sbom-alarm-ap
 
 ## 3. 容器基础镜像治理与 Digest 锁定机制 (Pinning)
 
-为防止可变标签污染（Tag Drift，例如使用 `:latest` 导致的非受控镜像漂移或恶意替换），所有面向生产环境的编排配置 (`docker-compose.yml`, `docker-compose.prod.yml`) 均必须显式锁定不可变的 SHA-256 镜像加密 Digest：
+为防止可变标签污染（Tag Drift，例如使用 `:latest` 导致的非受控镜像漂移或恶意替换），所有面向生产环境的编排配置 (`docker-compose.yaml`, `docker-compose.prod.yaml`) 均必须显式锁定不可变的 SHA-256 镜像加密 Digest：
 
 ```yaml
 # 严格锁定镜像摘要的最佳实践

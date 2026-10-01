@@ -29,7 +29,7 @@ flowchart TB
    AM["Alertmanager\n127.0.0.1:9093"]
    PGB["PgBouncer\ninternal only"]
    TSDB["TimescaleDB\ninternal only"]
-   PGADMIN["pgAdmin\n:5050, all interfaces"]
+   PGADMIN["pgAdmin\n127.0.0.1:5050"]
    SNMPSIM["SNMP simulator\ninternal only"]
    BLACKBOX["Blackbox exporter\n127.0.0.1:9115"]
   end
@@ -54,7 +54,7 @@ flowchart TB
  FUTURE["Future: real SECS/GEM equipment\n(not built)"] -.->|"NEW boundary, not yet designed"| NODERED
 ```
 
-**Boundary 1 — Host ↔ Docker network.** Two services listen on every host interface: the `proxy` service (nginx, `${GRAFANA_PORT:-3000}`) and `pgadmin` (`5050`). Node-RED, Prometheus, Alertmanager and the Blackbox exporter publish ports bound to `127.0.0.1` only. Grafana, alarm-api and the Factory Twin used to publish their own ports; all three sit behind `proxy`, so every browser-facing request — read or write — goes through one front door. PgBouncer, TimescaleDB, the SNMP simulator and the image renderer are never exposed to the host — internal Docker DNS only. `pgadmin` is the exception that still needs a host firewall or a `127.0.0.1` binding outside a lab (see `SECURITY.md`). `observability-archiver` mounts the Docker socket; the `:ro` flag does not restrict Docker API calls, so that container is effectively privileged on the host.
+**Boundary 1 — Host ↔ Docker network.** The only service listening on external host interfaces is the `proxy` service (nginx, `${GRAFANA_PORT:-3000}`). `pgadmin` (`5050`), Node-RED, Prometheus, Alertmanager and the Blackbox exporter publish ports bound to `127.0.0.1` loopback only. Grafana, alarm-api and the Factory Twin sit behind `proxy`, so every browser-facing request — read or write — goes through one front door. PgBouncer, TimescaleDB, the SNMP simulator and the image renderer are never exposed to the host — internal Docker DNS only. `observability-archiver` connects to Docker through `ims-docker-socket-proxy` over the internal network with read-only endpoint permissions.
 
 **Boundary 1a — Grafana session as the write-path credential.** `alarm-api` (`services/alarm-api`) is the only service in this stack that mutates state from a Grafana dashboard (`IMS LDI - Alarm Console`'s Acknowledge/Resolve buttons, writing to `public.ldi_alarm_lifecycle`). It has no login of its own: `proxy`'s `/alarm-api/` location runs an `auth_request` subrequest against Grafana's own `/api/user` before forwarding anything, so a request only reaches alarm-api if the caller already holds a valid Grafana session — the same login an operator already has to see the dashboard, not a second credential to manage. The `/factory-twin-3d/` location uses the same gate. alarm-api connects to Postgres as `alarm_api_writer` (migration 078), a role scoped to `SELECT`+`UPDATE` on `ldi_alarm_lifecycle` only — not the superuser, not `grafana_reader`. alarm-api then identifies the caller itself. It asks Grafana for `/api/user` (the login) and `/api/user/orgs` (the role in the current organisation), and stores that login as the actor. It ignores any `acknowledged_by` / `resolved_by` sent in the request body, and answers 403 to a Viewer. Only Editor, Admin or a Grafana server admin may acknowledge or resolve. `tests/unit/alarm-api-server.test.js` covers this, and it was checked end to end through nginx against Grafana 13.1.2.
 

@@ -43,7 +43,7 @@
 
 ## 5. 开发工作流与命令 (Development Workflow & Commands)
 
-- `make up` — 构建 flows 并启动全部 15 个服务（无 compose profile；包含模拟器与 pgAdmin）
+- `make up` — 构建 flows 并启动全部 16 个服务（无 compose profile；包含模拟器与 pgAdmin）
 - `make up-prod` — 启动生产覆盖层 (production overlay)
 - `make restart` — 重启 Node-RED、Grafana、Alertmanager、Prometheus
 - `make verify` — 全面健康检查 (容器、DB、管道、告警)

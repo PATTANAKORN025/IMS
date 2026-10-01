@@ -81,7 +81,7 @@
 - [x] Node-RED editor ต้องมี hash รหัสผ่านผู้ดูแลและ bind ไว้ที่ `127.0.0.1`
 - [x] Grafana ไม่มีพอร์ตบน host; service `proxy` (nginx) เป็นทางเข้า UI เพียงทางเดียวที่พอร์ต 3000 เป็นด่านหน้าของ Grafana, `alarm-api`, Factory Twin และ endpoint รับข้อมูล LDI โดย `alarm-api` และทวินต้องผ่านการตรวจ `auth_request` กับ session ของ Grafana (ดู `docs/architecture/SECURITY_MODEL.md`)
 - [ ] แทนค่าทุกค่าที่คัดลอกจาก `.env.example` ด้วย secret ที่สร้างใหม่
-- [ ] จำกัด pgAdmin (`5050`) ไว้เฉพาะ host หรือเครือข่ายผู้ดูแลระบบ
+- [x] pgAdmin (`5050`) bind ไว้ที่ `127.0.0.1` loopback เท่านั้น
 - [ ] เพิ่ม TLS หน้าประตูหน้า nginx
 - [ ] เปิดใช้ SNMPv3 กับอุปกรณ์ที่ใช้งานจริง (แทน v2c)
 
@@ -108,7 +108,7 @@
 | มาตรการ | การนำไปใช้ |
 | --- | --- |
 | **การแยกคอนเทนเนอร์** | เครือข่าย Docker bridge (`ims-internal`, `ims-monitoring`); service สื่อสารกันด้วยชื่อ DNS |
-| **เปิดสู่ host ให้น้อยที่สุด** | มีเพียงประตูหน้า nginx (3000) และ pgAdmin (5050) ที่รับการเชื่อมต่อบนทุก interface ส่วน Node-RED, Prometheus, Alertmanager และ Blackbox bind ไว้ที่ `127.0.0.1` โดย TimescaleDB และ PgBouncer ไม่มีการเปิดพอร์ตสู่ host |
+| **เปิดสู่ host ให้น้อยที่สุด** | มีเพียงประตูหน้า nginx (3000) เท่านั้นที่รับการเชื่อมต่อภายนอก ส่วน pgAdmin (5050), Node-RED, Prometheus, Alertmanager และ Blackbox bind ไว้ที่ `127.0.0.1` loopback โดย TimescaleDB และ PgBouncer ไม่มีการเปิดพอร์ตสู่ host |
 | **การรับข้อมูลที่ยืนยันตัวตน** | `/ldi-telemetry` และ `/inject` ต้องส่ง header `x-api-key` ที่ตรงกับ `INGEST_API_KEY` |
 | **การจัดการ secret** | `.env` (อยู่ใน .gitignore) ส่งผ่านตัวแปรบังคับ `${VAR:?}` ของ Docker Compose ไม่มีการอ่านจากไดเรกทอรี `secrets/` |
 

@@ -31,7 +31,7 @@ flowchart TB
  subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
   SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\nrate-limit & reverse-proxy"]
   PROXY --> ING["ldi_ingestion.json\nauth check -> INSERT"]
-  ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
+  ING --> LDIDATA[("public.ldi_data\nhypertable, 1d chunks")]
   ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]
   ALARMAPI["ims-alarm-api :4000\nack/resolve mutations"] --> ALARMLC[("public.ldi_alarm_lifecycle")]
  end
@@ -88,10 +88,10 @@ flowchart TB
 | `snmpsim`           | (snmpsim)              | Simulated SNMP agent for the legacy pipeline's dev/test targets                                                                                                                                                                          |
 | `db-migrate`        | `ims-db-migrate`       | One-shot migration runner (`scripts/migrate-entrypoint.sh`), gates `node-red` and `alarm-api` startup                                                                                                                                    |
 | `factory-twin-3d`   | `ims-factory-twin-3d`  | Floor 1 digital twin (Express, port 4100 internal). No host port; reachable only via `proxy` at `/factory-twin-3d/` behind the same `auth_request` gate. Read-only: writes nothing to the database. |
-| `observability-archiver` | `ims-observability-archiver` | Periodic archive of container/DB observability snapshots to `./ops-logs`; mounts the Docker socket read-only. |
+| `observability-archiver` | `ims-observability-archiver` | Periodic archive of container/DB observability snapshots to `./ops-logs`; accesses Docker API via `ims-docker-socket-proxy`. |
 | `pgadmin`           | `ims-pgadmin4`         | Database administration UI (`dpage/pgadmin4`), not on the runtime data path. |
 
-Internal-only services (TimescaleDB, PgBouncer, SNMP simulator, Grafana, alarm-api, factory-twin-3d, renderer) are never exposed to the host directly. Host ports: `proxy` on `${GRAFANA_PORT:-3000}` (all interfaces — the single UI entry point, fronting Grafana, alarm-api, the twin and Node-RED's `/ldi-telemetry` + `/inject`), `pgadmin` on `5050` (all interfaces), and Node-RED (1880), Prometheus (9090), Alertmanager (9093) and Blackbox (9115) bound to `127.0.0.1` only.
+Internal-only services (TimescaleDB, PgBouncer, SNMP simulator, Grafana, alarm-api, factory-twin-3d, renderer) are never exposed to the host directly. Host ports: `proxy` on `${GRAFANA_PORT:-3000}` (the single external UI entry point, fronting Grafana, alarm-api, the twin and Node-RED's `/ldi-telemetry` + `/inject`), with `pgadmin` (5050), Node-RED (1880), Prometheus (9090), Alertmanager (9093) and Blackbox (9115) bound to `127.0.0.1` loopback only.
 
 ---
 

@@ -92,7 +92,7 @@ Use GitHub-flavored markdown alerts to visually highlight operational boundaries
 
 - **Maximum Depth**: Do not nest deeper than H3 (`###`). If deeper categorization is needed, use bold subheaders (`**Sub-step Name**`) or numbered lists.
 - **Title Case for Major Headings**: Capitalize primary words in H1 and H2 (`## 3. Container Base Image Governance`).
-- **File & Path References**: Always wrap paths, file names, environment variables, commands, and SQL tables in backticks (e.g., `public.ldi_data`, `docker-compose.yml`, `TIMESTAMPTZ`).
+- **File & Path References**: Always wrap paths, file names, environment variables, commands, and SQL tables in backticks (e.g., `public.ldi_data`, `docker-compose.yaml`, `TIMESTAMPTZ`).
 - **Mathematical Equations**: Format mathematical formulas with KaTeX notation:
   - Inline: `$\text{SLI} = \frac{A}{B} \times 100\%$`
   - Display block:

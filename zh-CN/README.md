@@ -135,7 +135,7 @@
 </td>
 <td align="center" width="33%">
  <h3>连续聚合 (Continuous Aggregates)</h3>
- TimescaleDB 自动计算小时、日、周汇总，确保 Grafana 在大时间范围内仍能亚秒级渲染。<br/><br/>
+ TimescaleDB 自动计算 1 分钟、15 分钟及 1 小时连续聚合汇总，确保 Grafana 在大时间范围内仍能亚秒级渲染。<br/><br/>
  **证据：** [cagg-policies-20260813.txt](../docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
@@ -196,7 +196,7 @@ _专为连接工厂硬件设备、第三方 MES 系统或编写自定义自动�
 curl -X POST http://localhost:3000/ldi-telemetry \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ${INGEST_API_KEY}" \
-  -d '{
+  -d '[{
     "time": "2026-09-28T04:00:00Z",
     "factory": "F1",
     "process": "LDI",
@@ -219,7 +219,7 @@ curl -X POST http://localhost:3000/ldi-telemetry \
     "pe_1": 1.1,
     "je_1": 2.2,
     "log_id": "LOG-10001"
-  }'
+  }]'
 ```
 
 #### 2. 告警生命周期状态流转 (确认与解决)
@@ -227,13 +227,13 @@ curl -X POST http://localhost:3000/ldi-telemetry \
 
 ```bash
 # 步骤 1：确认活动告警（通过 Nginx 代理前置入口流转 OPEN -> ACKNOWLEDGED）
+# 调用者身份从 Grafana 会话 Cookie 中自动提取与校验
 curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
   -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "acknowledged_by": "operator-01"
+    "logid": "LOG-10001"
   }'
 
 # 步骤 2：彻底解决告警并记录根因（状态由 ACKNOWLEDGED 流转至 RESOLVED）
@@ -243,7 +243,6 @@ curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",
-    "resolved_by": "engineer-02",
     "resolution_note": "已更换气动滤芯，并验证真空负压恢复至标准公差范围内。"
   }'
 ```
@@ -294,7 +293,10 @@ ORDER BY bucket ASC;
 
 | 命令 | 说明 |
 | --- | --- |
+| `make help` | 列出 Makefile 所有可用目标与说明 |
 | `make doctor` | 检查前置条件（docker、compose、node） |
+| `make check` | 执行完整的提交前门禁验证 (`pre-commit.js`) |
+| `make check-env` | 校验 .env 必填配置并扫描历史泄漏 |
 | `make up` | 构建 flows，然后启动全部 16 个服务（含模拟器） |
 | `make up-prod` | 同上，并叠加 `docker-compose.prod.yaml` 资源配置 |
 | `make down` / `make restart` | 停止整个栈 / 重启 node-red、grafana、alertmanager、prometheus |
@@ -302,7 +304,7 @@ ORDER BY bucket ASC;
 | `make verify` | 全面健康检查（容器、数据库、流水线、告警） |
 | `make build-flows` / `make validate-flows` | 将 `nodered_data/flows/*.json` 合并为 `flows.json` / 校验其有效性 |
 | `make snapshot-flows` / `make deploy-flows` | 备份 `flows.json` / 将拆分的 flows 提交到 Node-RED |
-| `make test-unit` | 4 个核心解析器/边界单元测试文件 |
+| `make test-unit` | tests/unit/ 下的全量独立单元测试套件 |
 | `make test-load` | K6 流水线压力测试（`TARGET_SERVERS`，默认 100） |
 | `make test-visual` / `make test-visual-ldi` | 基于 Playwright 的仪表板截图回归 |
 | `make validate-dashboards` | 在仪表板 JSON 中搜索损坏的十六进制颜色码 |
@@ -369,7 +371,7 @@ flowchart LR
 2. **遍历（walk）** — 顺序异步批量遍历（`session.subtree`，`maxRepetitions: 50`），单一 UDP 套接字避免交换机侧丢包。熔断器在连续失败 2 次后断开，并自动以 HALF_OPEN 状态探测恢复。
 3. **解析** — `sre_parser` 在 flow context 中保存每台设备的状态（`dev_state_<deviceId>`），并将数据行缓存在 `batch_buf_<deviceId>` 中。设备故障时，离线心跳（`_walker: "offline"`）会立即将所有指标置零。
 4. **存储** — 按定时器独立刷写：每类表（sys/net/ldi）仅在自身缓冲区有数据时才执行插入，部分 walker 失败不会阻塞无关数据的写入。
-5. **连续聚合** — TimescaleDB 刷新策略的执行间隔从每分钟（`ldi_data_1m`、`ldi_oee_1m`）到每 6 小时（周汇总）不等；基础设施的日、周 CAGG 基于小时 CAGG 汇总（见 [Data Flow](docs/architecture/DATA_FLOW.md)）。实际保留期（对照运行中的数据库核实，而非依据迁移历史——两者之间的偏差记录在 `docs/architecture/DATA_RETENTION.md`）：原始 `sys_metrics`/`net_metrics`/`ldi_metrics` 30 天，`ldi_data` 180 天，小时汇总 2 年。
+5. **连续聚合** — TimescaleDB 刷新策略运行于 7 个连续聚合（`ldi_data_1m`、`ldi_data_15m`、`ldi_data_1h`、`ldi_data_hourly`、`sys_hourly`、`net_hourly`、`ldi_hourly`；参见 [Data Flow](docs/architecture/DATA_FLOW.md)）。实际保留期（经由运行中数据库验证，参见 `docs/architecture/DATA_RETENTION.md`）：原始表 `sys_metrics`/`net_metrics`/`ldi_metrics` 30 天，`ldi_data` 180 天，`ldi_data_1h` 与 `ldi_data_hourly` 2 年（3 个 `*_hourly` 连续聚合当前未配置自动保留策略）。
 6. **可视化** — 四个 Grafana 文件夹共 22 个仪表板：01 钻孔（4 个：机群总览、班次产量、单机排查、异常与根因分析），02 LDI（10 个：管理层总览、操作员 Andon、工厂数字孪生、机群指挥中心、单机快照、工程分析与 SPC、告警控制台、告警响应 MTTA/MTTR、告警字典、数据就绪度），03 平台与 NOC（5 个：NOC 总览、工程下钻、AIOps 容量、采集延迟、元监控），04 VCP 电镀（3 个：产线总览、操作控制台、实时墙屏）。
 7. **告警** — Prometheus 抓取 `/metrics`，Alertmanager 附带 runbook 链接路由到 LINE Messaging API 与 MS Teams（实际投递需要运维人员自行配置凭据，默认有意不提供）。Z-Score 异常通过 Grafana 对 TimescaleDB 的 SQL 查询计算。
 

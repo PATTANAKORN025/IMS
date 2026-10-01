@@ -60,7 +60,7 @@ jq '.components[] | {name: .name, version: .version, type: .type}' sbom-alarm-ap
 
 ## 3. Container Base Image Governance & Digest Pinning
 
-To prevent mutable tag pollution (`:latest` drift or unauthorized upstream image replacements), all production deployment configurations (`docker-compose.yml`, `docker-compose.prod.yml`) must pin images to their immutable SHA-256 cryptographically verified digest:
+To prevent mutable tag pollution (`:latest` drift or unauthorized upstream image replacements), all production deployment configurations (`docker-compose.yaml`, `docker-compose.prod.yaml`) must pin images to their immutable SHA-256 cryptographically verified digest:
 
 ```yaml
 # Strict Image Digest Pinning Pattern

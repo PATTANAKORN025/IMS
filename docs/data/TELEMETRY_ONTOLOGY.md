@@ -41,7 +41,7 @@ To guarantee interoperability and prevent ambiguity across diverse hardware manu
 High-frequency time-series telemetry delivered from optical exposure machines.
 
 - **Ingestion Path**: `POST /ldi-telemetry` (via Nginx reverse proxy)
-- **Destination Hypertable**: `public.ldi_data` (1-hour chunk intervals)
+- **Destination Hypertable**: `public.ldi_data` (1-day chunk intervals)
 
 ### JSON Ingestion Payload
 
@@ -127,7 +127,7 @@ Drilling fleet events, tool wear metrics, and spindle vibration readings.
 
 ## 4. Vertical Continuous Plating (VCP) Telemetry Schema
 
-Chemical bath sensor telemetry, hoist movement events, and rectifier electrical parameters.
+Chemical bath sensor telemetry, conveyor line speed parameters, and rectifier electrical parameters.
 
 - **Storage Location**: `eap_backup` database (table: `public.vcp_upp`)
 
@@ -186,18 +186,19 @@ To accelerate queries across millions of historical rows, raw hypertables are pr
 | `public.ldi_data` | `public.ldi_data_1m` | 1 Minute | Every 1 minute | 14 Days |
 | `public.ldi_data` | `public.ldi_data_15m` | 15 Minutes | Every 15 minutes | 90 Days |
 | `public.ldi_data` | `public.ldi_data_1h` | 1 Hour | Every 1 hour | 2 Years |
-| `public.sys_metrics` | `public.sys_metrics_1h` | 1 Hour | Every 1 hour | 2 Years |
-| `public.net_metrics` | `public.net_metrics_1h` | 1 Hour | Every 1 hour | 2 Years |
+| `public.sys_metrics` | `public.sys_hourly` | 1 Hour | Every 1 hour | Configurable |
+| `public.net_metrics` | `public.net_hourly` | 1 Hour | Every 1 hour | Configurable |
+| `public.ldi_metrics` | `public.ldi_hourly` | 1 Hour | Every 1 hour | Configurable |
 
 ```sql
 -- Analytical query against 15-minute continuous aggregate
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature,
   ROUND(avg_scan_speed::numeric, 2) AS scan_speed
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```

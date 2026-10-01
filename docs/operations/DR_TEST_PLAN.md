@@ -58,9 +58,9 @@ sequenceDiagram
   SRE->>Script: ./scripts/dr-test.sh full-recreate --confirm-destroy
   Script->>Docker: docker compose down -v (Wipe all data volumes)
   Script->>Docker: docker compose up -d (Spin up fresh containers)
-  Script->>DB: Apply database/migrations/*.sql (013 to 086)
+  Script->>DB: Apply database/migrations/*.sql (001 to 091)
   Script->>DB: Restore raw telemetry data from verified backup
-  Script-->>SRE: Status: PASS (All 14 containers healthy, migrations applied)
+  Script-->>SRE: Status: PASS (All 16 containers healthy, migrations applied)
 ```
 
 ---

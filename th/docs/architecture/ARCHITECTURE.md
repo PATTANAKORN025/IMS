@@ -31,7 +31,7 @@ flowchart TB
  subgraph LDI ["ไปป์ไลน์การผลิต LDI (หลัก, ใช้งานจริง)"]
   SIM["ldi_simulator.json\nตัวจำลองสด Ornstein-Uhlenbeck\nทุก 2 วินาที, 10 เครื่อง"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\nจำกัดอัตราส่ง & รีเวิร์สพร็อกซี"]
   PROXY --> ING["ldi_ingestion.json\nตรวจสิทธิ์ -> INSERT"]
-  ING --> LDIDATA[("public.ldi_data\nไฮเปอร์เทเบิล, ชิ้นละ 1 ชม.")]
+  ING --> LDIDATA[("public.ldi_data\nไฮเปอร์เทเบิล, ชิ้นละ 1 วัน")]
   ALMSIM["ldi_alarm_simulator.json\nตามเงื่อนไข + สัญญาณรบกวน\nทุก 10 วินาที"] --> ALARMLOG[("public.ldi_alarm_log")]
   ALARMAPI["ims-alarm-api :4000\nเปลี่ยนสถานะ ack/resolve"] --> ALARMLC[("public.ldi_alarm_lifecycle")]
  end
@@ -88,10 +88,10 @@ flowchart TB
 | `snmpsim` | (snmpsim) | SNMP agent จำลองสำหรับเป้าหมายพัฒนา/ทดสอบของไปป์ไลน์แบบเดิม |
 | `db-migrate` | `ims-db-migrate` | ตัวรัน migration แบบครั้งเดียว (`scripts/migrate-entrypoint.sh`) กั้นการเริ่มของ `node-red` และ `alarm-api` |
 | `factory-twin-3d` | `ims-factory-twin-3d` | ดิจิทัลทวินชั้น 1 (Express พอร์ต 4100 ภายใน) ไม่มีพอร์ตบน host เข้าถึงผ่าน `proxy` ที่ `/factory-twin-3d/` หลังด่าน `auth_request` เดียวกัน อ่านอย่างเดียว: ไม่เขียนอะไรลงฐานข้อมูล |
-| `observability-archiver` | `ims-observability-archiver` | เก็บ snapshot ด้าน observability ของคอนเทนเนอร์/ฐานข้อมูลลง `./ops-logs` เป็นระยะ และ mount Docker socket แบบอ่านอย่างเดียว |
+| `observability-archiver` | `ims-observability-archiver` | เก็บ snapshot ด้าน observability ของคอนเทนเนอร์/ฐานข้อมูลลง `./ops-logs` เป็นระยะ และเชื่อมต่อ Docker API ผ่าน `ims-docker-socket-proxy` |
 | `pgadmin` | `ims-pgadmin4` | หน้าจอจัดการฐานข้อมูล (`dpage/pgadmin4`) ไม่อยู่บนเส้นทางข้อมูลขณะรัน |
 
-service ที่ใช้ภายในเท่านั้น (TimescaleDB, PgBouncer, ตัวจำลอง SNMP, Grafana, alarm-api, factory-twin-3d, renderer) ไม่เปิดสู่ host โดยตรง พอร์ตบน host มีดังนี้: `proxy` ที่ `${GRAFANA_PORT:-3000}` (ทุก interface — ทางเข้า UI เพียงทางเดียว เป็นด่านหน้าของ Grafana, alarm-api, ทวิน และ `/ldi-telemetry` + `/inject` ของ Node-RED), `pgadmin` ที่ `5050` (ทุก interface) ส่วน Node-RED (1880), Prometheus (9090), Alertmanager (9093) และ Blackbox (9115) bind ไว้ที่ `127.0.0.1` เท่านั้น
+service ที่ใช้ภายในเท่านั้น (TimescaleDB, PgBouncer, ตัวจำลอง SNMP, Grafana, alarm-api, factory-twin-3d, renderer) ไม่เปิดสู่ host โดยตรง พอร์ตบน host มีดังนี้: `proxy` ที่ `${GRAFANA_PORT:-3000}` (ทางเข้า UI ภายนอกเพียงทางเดียว เป็นด่านหน้าของ Grafana, alarm-api, ทวิน และ `/ldi-telemetry` + `/inject` ของ Node-RED) โดย `pgadmin` (5050), Node-RED (1880), Prometheus (9090), Alertmanager (9093) และ Blackbox (9115) bind ไว้ที่ `127.0.0.1` loopback เท่านั้น
 
 ---
 

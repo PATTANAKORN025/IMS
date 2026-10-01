@@ -58,9 +58,9 @@ sequenceDiagram
   SRE->>Script: ./scripts/dr-test.sh full-recreate --confirm-destroy
   Script->>Docker: docker compose down -v (ลบข้อมูลและ Volume ทั้งหมด)
   Script->>Docker: docker compose up -d (สร้างคอนเทนเนอร์ขึ้นมาใหม่ทั้งหมด)
-  Script->>DB: รันไมเกรชันฐานข้อมูล database/migrations/*.sql (013 ถึง 086)
+  Script->>DB: รันไมเกรชันฐานข้อมูล database/migrations/*.sql (001 ถึง 091)
   Script->>DB: Restore ข้อมูลโทรมาตรดิบกลับเข้าสู่ฐานข้อมูล
-  Script-->>SRE: สถานะ: PASS ผ่านเกณฑ์ (คอนเทนเนอร์ทั้ง 14 ตัวสมบูรณ์และพร้อมใช้งาน)
+  Script-->>SRE: สถานะ: PASS ผ่านเกณฑ์ (คอนเทนเนอร์ทั้ง 16 ตัวสมบูรณ์และพร้อมใช้งาน)
 ```
 
 ---

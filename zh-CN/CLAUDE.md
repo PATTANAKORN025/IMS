@@ -82,9 +82,9 @@ Grafana 本身**不对外**发布独立端口。当某服务在容器内直连�
 
 ### 容器清单（Containers）
 
-`docker-compose.yaml` 中定义了 15 个服务，容器均以 `ims-*` 命名：`timescaledb`、`pgbouncer`、`db-migrate`（一次性迁移运行器，通过 `scripts/migrate-entrypoint.sh` 执行，为唯一规范运行器）、`node-red`、`grafana`、`renderer`（Grafana 图像渲染器）、`proxy`、`prometheus`、`alertmanager`、`blackbox-exporter`、`snmpsim`、`alarm-api`、`factory-twin-3d`、`observability-archiver`、`pgadmin`。
+`docker-compose.yaml` 中定义了 16 个服务，容器均以 `ims-*` 命名：`timescaledb`、`pgbouncer`、`db-migrate`（一次性迁移运行器，通过 `scripts/migrate-entrypoint.sh` 执行，为唯一规范运行器）、`node-red`、`grafana`、`renderer`（Grafana 图像渲染器）、`proxy`、`prometheus`、`alertmanager`、`blackbox-exporter`、`snmpsim`、`alarm-api`、`factory-twin-3d`、`observability-archiver`、`docker-socket-proxy`、`pgadmin`。
 
-基础 Compose 文件**没有使用 `profiles:` 进行过滤**——`make up` 和 `make up-prod` 均会启动全部 15 个服务，包括 SNMP 模拟器和 pgAdmin。除 nginx 统一入口外，`pgadmin` 是唯一在所有接口上发布端口的服务（`5050:80`）；其余发布端口均绑定于 `127.0.0.1`。
+基础 Compose 文件**没有使用 `profiles:` 进行过滤**——`make up` 和 `make up-prod` 均会启动全部 16 个服务，包括 SNMP 模拟器和 pgAdmin。`docker-compose.dev.yaml`（唯一将 `snmpsim` 置于 `dev` 配置文件的文件）未被任何 Makefile 目标引用。`pgadmin` 绑定至本地回环 (`127.0.0.1:5050:80`)；除 nginx 统一入口外，其余发布端口均绑定于 `127.0.0.1`。
 
 机密数据来源于 `.env`，采用 `${VAR:?message}` 强制环境变量语法——`.env.example` 列出了所有键。示例值为公开信息，切勿在一次性测试环境之外复用。
 

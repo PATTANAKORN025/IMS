@@ -41,7 +41,7 @@
 ข้อมูล Telemetry ความถี่สูง (High-frequency time-series) ส่งจากเครื่องสร้างภาพลวดลายวงจรด้วยเลเซอร์ตรง (Optical Exposure Machines)
 
 - **เส้นทางการรับข้อมูล (Ingestion Path)**: `POST /ldi-telemetry` (ผ่าน Nginx reverse proxy)
-- **ตาราง Hypertable ปลายทาง**: `public.ldi_data` (กำหนด chunk interval 1 ชั่วโมง)
+- **ตาราง Hypertable ปลายทาง**: `public.ldi_data` (กำหนด chunk interval 1 วัน)
 
 ### ตัวอย่าง JSON Ingestion Payload
 
@@ -127,7 +127,7 @@
 
 ## 4. โครงสร้าง Telemetry สายชุบทองแดงแนวดิ่ง (Vertical Continuous Plating - VCP)
 
-ข้อมูลเซนเซอร์ในบ่อชุบเคมี, การเคลื่อนที่ของชุดแขวนบอร์ด (Hoist) และพารามิเตอร์ทางไฟฟ้าของเรกติไฟเออร์
+ข้อมูลเซนเซอร์ในบ่อชุบเคมี, ความเร็วสายพานลำเลียง และพารามิเตอร์ทางไฟฟ้าของเรกติไฟเออร์
 
 - **ตำแหน่งจัดเก็บข้อมูล**: ฐานข้อมูล `eap_backup` (ตาราง: `public.vcp_upp`)
 
@@ -186,18 +186,19 @@
 | `public.ldi_data` | `public.ldi_data_1m` | 1 นาที | ทุก 1 นาที | 14 วัน |
 | `public.ldi_data` | `public.ldi_data_15m` | 15 นาที | ทุก 15 นาที | 90 วัน |
 | `public.ldi_data` | `public.ldi_data_1h` | 1 ชั่วโมง | ทุก 1 ชั่วโมง | 2 ปี |
-| `public.sys_metrics` | `public.sys_metrics_1h` | 1 ชั่วโมง | ทุก 1 ชั่วโมง | 2 ปี |
-| `public.net_metrics` | `public.net_metrics_1h` | 1 ชั่วโมง | ทุก 1 ชั่วโมง | 2 ปี |
+| `public.sys_metrics` | `public.sys_hourly` | 1 ชั่วโมง | ทุก 1 ชั่วโมง | กำหนดได้ตามนโยบาย |
+| `public.net_metrics` | `public.net_hourly` | 1 ชั่วโมง | ทุก 1 ชั่วโมง | กำหนดได้ตามนโยบาย |
+| `public.ldi_metrics` | `public.ldi_hourly` | 1 ชั่วโมง | ทุก 1 ชั่วโมง | กำหนดได้ตามนโยบาย |
 
 ```sql
 -- ตัวอย่างคำสั่ง SQL วิเคราะห์ข้อมูลผ่าน Continuous Aggregate 15 นาที
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature,
   ROUND(avg_scan_speed::numeric, 2) AS scan_speed
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```

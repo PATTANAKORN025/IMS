@@ -35,7 +35,7 @@ make doctor
 # 4. Build flows and start the full development stack
 make up
 
-# 5. Verify service health across all 14 containers
+# 5. Verify service health across all 16 containers
 make verify
 ```
 
@@ -89,7 +89,7 @@ cp .env.example .env
 | `GRAFANA_DB_USER` | Yes | `grafana_reader` | Read-only TimescaleDB user for Grafana datasources. |
 | `GRAFANA_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Read-only database password for Grafana. |
 | `NODERED_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Password for `nodered_writer` role (migration 087). |
-| `ARCHIVER_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Password for `archiver_reader` role (migration 087). |
+| `ARCHIVER_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Password for `observability_archiver` role (migration 087). |
 | `ALARM_API_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Password for `alarm_api_writer` role. |
 | `INGEST_API_KEY` | Yes | *GenerateSecureToken* | API key required for `POST /ldi-telemetry` & `/inject`. |
 | `NODE_RED_CREDENTIAL_SECRET` | Yes | *GenerateSecureToken* | AES encryption key for Node-RED flow credentials. |
@@ -113,6 +113,11 @@ cp .env.example .env
 The IMS `Makefile` provides standardized targets for all daily development operations:
 
 ```bash
+# Help and Verification Gates
+make help             # List every Makefile target with descriptions
+make check            # Run full pre-commit verification gate (scripts/pre-commit.js)
+make check-env        # Strict .env secret validation and git leak audit
+
 # Start and Stop
 make up               # Build split flows and start all containers in background
 make up-prod          # Start production stack with prod overlay configuration
@@ -204,7 +209,7 @@ All telemetry data resides in TimescaleDB (PostgreSQL 16 with TimescaleDB extens
 
 ```bash
 # Execute a new migration against TimescaleDB through docker exec
-docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/086-add-custom-telemetry.sql
+docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/092-add-custom-telemetry.sql
 ```
 
 ### Continuous Aggregates (CAGGs)
@@ -214,10 +219,10 @@ High-performance dashboard queries must target pre-computed Continuous Aggregate
 ```sql
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```

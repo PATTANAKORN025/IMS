@@ -81,7 +81,7 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 - [x] Node-RED 编辑器需要管理员密码哈希，并绑定在 `127.0.0.1`
 - [x] Grafana 没有主机端口；`proxy` 服务（nginx）是端口 3000 上唯一的 UI 入口，前置 Grafana、`alarm-api`、Factory Twin 以及 LDI 接入端点，并让 `alarm-api` 与孪生服务先通过基于 Grafana 会话的 `auth_request` 检查（见 `docs/architecture/SECURITY_MODEL.md`）
 - [ ] 用新生成的密钥替换从 `.env.example` 复制来的每一个值
-- [ ] 将 pgAdmin（`5050`）限制在主机本地或管理网络
+- [x] pgAdmin（`5050`）仅绑定在 `127.0.0.1` 本地回环
 - [ ] 在 nginx 统一入口前增加 TLS
 - [ ] 为生产设备启用 SNMPv3（替代 v2c）
 
@@ -108,7 +108,7 @@ CI 中的私有数据扫描器（`tests/lint/private-data-leak-scanner.js`）**�
 | 控制措施 | 实现方式 |
 | --- | --- |
 | **容器隔离** | Docker bridge 网络（`ims-internal`、`ims-monitoring`）；服务之间通过 DNS 名称通信 |
-| **最小化主机暴露** | 只有 nginx 统一入口（3000）与 pgAdmin（5050）监听所有接口；Node-RED、Prometheus、Alertmanager 与 Blackbox 绑定在 `127.0.0.1`；TimescaleDB 与 PgBouncer 无主机端口暴露 |
+| **最小化主机暴露** | 只有 nginx 统一入口（3000）监听外部接口；pgAdmin（5050）、Node-RED、Prometheus、Alertmanager 与 Blackbox 均绑定在 `127.0.0.1` 本地回环；TimescaleDB 与 PgBouncer 无主机端口暴露 |
 | **接入认证** | `/ldi-telemetry` 与 `/inject` 要求请求头 `x-api-key` 与 `INGEST_API_KEY` 一致 |
 | **密钥管理** | `.env`（已被 gitignore 忽略）通过 Docker Compose 的必填变量 `${VAR:?}` 注入；不会从 `secrets/` 目录读取任何内容 |
 

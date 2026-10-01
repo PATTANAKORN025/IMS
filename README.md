@@ -135,7 +135,7 @@
 </td>
 <td align="center" width="33%">
  <h3>Continuous Aggregation</h3>
- Hourly, daily, and weekly rollups automatically calculated by TimescaleDB to maintain sub-second Grafana rendering times over large time ranges.<br/><br/>
+ 1-minute, 15-minute, and 1-hour continuous rollups automatically calculated by TimescaleDB to maintain sub-second Grafana rendering times over large time ranges.<br/><br/>
  **Verified:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
@@ -196,7 +196,7 @@ Push time-series manufacturing metrics directly to the Node-RED ingestion pipeli
 curl -X POST http://localhost:3000/ldi-telemetry \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ${INGEST_API_KEY}" \
-  -d '{
+  -d '[{
     "time": "2026-09-28T04:00:00Z",
     "factory": "F1",
     "process": "LDI",
@@ -219,7 +219,7 @@ curl -X POST http://localhost:3000/ldi-telemetry \
     "pe_1": 1.1,
     "je_1": 2.2,
     "log_id": "LOG-10001"
-  }'
+  }]'
 ```
 
 #### 2. Alarm Lifecycle Transitions (Acknowledge & Resolve)
@@ -227,13 +227,13 @@ Interact with the `alarm-api` service to change state on active factory alarms (
 
 ```bash
 # Step 1: Acknowledge an active alarm (Transition OPEN -> ACKNOWLEDGED via Nginx proxy)
+# Caller identity is resolved automatically from the Grafana session cookie
 curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
   -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "acknowledged_by": "operator-01"
+    "logid": "LOG-10001"
   }'
 
 # Step 2: Permanently resolve an alarm (Transition ACKNOWLEDGED -> RESOLVED)
@@ -243,7 +243,6 @@ curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",
-    "resolved_by": "engineer-02",
     "resolution_note": "Replaced pneumatic filter; verified vacuum pressure within spec."
   }'
 ```
@@ -280,8 +279,8 @@ ORDER BY bucket ASC;
 
 - The nginx front door listens on plain HTTP (`${GRAFANA_PORT:-3000}` on the host, port 80 in the container); add TLS termination for production.
 - Alertmanager delivery to LINE/Teams stays silent until `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` and `TEAMS_WEBHOOK_URL` are set in `.env`.
-- Apart from the nginx front door, `pgadmin` is the only service that publishes a port (`5050`) on **all** interfaces; restrict it with a host firewall or bind it to `127.0.0.1` outside a lab.
-- The Makefile is mixed-shell: `backup`, `restore`, `test-load`, `snapshot-flows` and `deploy-flows` need a POSIX shell (Git Bash on Windows); `doctor` uses cmd-style redirection.
+- `pgadmin` binds to loopback (`127.0.0.1:5050`) for security; the nginx front door (3000) is the only service published externally.
+- `make` targets use standardized portable scripts: on Windows, `make verify` and `make backup` run PowerShell natively, while Linux and macOS use POSIX shell.
 
 </details>
 
@@ -294,7 +293,10 @@ Architectural claims are backed by test scripts and dated evidence files. `.gith
 
 | Command                    | Description                                                 |
 | -------------------------- | ----------------------------------------------------------- |
+| `make help`                | List all available Makefile targets                         |
 | `make doctor`              | Check prerequisites (docker, compose, node)                 |
+| `make check`               | Run full pre-commit verification gate (`pre-commit.js`)     |
+| `make check-env`           | Verify .env required keys and check against leaked secrets  |
 | `make up`                  | Build flows, then start all 16 services (simulator included) |
 | `make up-prod`             | Same, with the `docker-compose.prod.yaml` resource overlay  |
 | `make down` / `make restart` | Stop the stack / restart node-red, grafana, alertmanager, prometheus |
@@ -302,7 +304,7 @@ Architectural claims are backed by test scripts and dated evidence files. `.gith
 | `make verify`              | Full system health check (containers, DB, pipeline, alerts) |
 | `make build-flows` / `make validate-flows` | Merge `nodered_data/flows/*.json` into `flows.json` / assert it is valid |
 | `make snapshot-flows` / `make deploy-flows` | Back up `flows.json` / POST the split flows to Node-RED |
-| `make test-unit`           | The 4 core parser/boundary unit test files                  |
+| `make test-unit`           | All standalone unit test suites in tests/unit/              |
 | `make test-load`           | K6 pipeline stress test (`TARGET_SERVERS`, default 100)     |
 | `make test-visual` / `make test-visual-ldi` | Playwright dashboard screenshot regression   |
 | `make validate-dashboards` | Grep dashboard JSON for corrupted hex codes                 |
@@ -369,7 +371,7 @@ flowchart LR
 2. **Walking** — Sequential async bulk walks (`session.subtree` with `maxRepetitions: 50`). Single UDP socket eliminates switch-level packet drops. Circuit breaker trips after 2 failures with automatic HALF_OPEN probe.
 3. **Parsing** — `sre_parser` maintains per-device state in flow context (`dev_state_<deviceId>`), buffers rows in `batch_buf_<deviceId>`. Offline heartbeat (`_walker: "offline"`) immediately zeros all metrics on device failure.
 4. **Storage** — Timer-gated independent flushing: each table type (sys/net/ldi) inserts only if its buffer has rows. Partial walker failures don't block unrelated data writes.
-5. **Continuous Aggregation** — TimescaleDB refresh policies run from every minute (`ldi_data_1m`, `ldi_oee_1m`) to every 6 hours (weekly rollups); daily and weekly infrastructure CAGGs aggregate from the hourly ones (see [Data Flow](docs/architecture/DATA_FLOW.md)). Live retention (verified against the running database, not migration history -- see `docs/architecture/DATA_RETENTION.md` for a documented drift between the two): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30d, `ldi_data` 180d, hourly rollups 2yr.
+5. **Continuous Aggregation** — TimescaleDB refresh policies run across the 7 continuous aggregates (`ldi_data_1m`, `ldi_data_15m`, `ldi_data_1h`, `ldi_data_hourly`, `sys_hourly`, `net_hourly`, `ldi_hourly`). Live retention (verified against running database, see `docs/architecture/DATA_RETENTION.md`): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30d, `ldi_data` 180d, `ldi_data_1h` and `ldi_data_hourly` 2yr (the 3 `*_hourly` continuous aggregates currently have no automated retention policy).
 6. **Visualization** — 22 dashboards in four Grafana folders: 01 Drilling (4: fleet overview, shift production, machine investigation, anomaly & root cause), 02 LDI (10: executive overview, operator Andon, factory digital twin, fleet command center, machine snapshot, engineering analytics & SPC, alarm console, alarm response MTTA/MTTR, alarm dictionary, data readiness), 03 Platform & NOC (5: NOC overview, engineering drill-down, AIOps capacity, ingestion latency, meta-monitoring), 04 VCP plating (3: fleet overview, operations console, real-time wall).
 7. **Alerting** — Prometheus scrapes `/metrics`, Alertmanager routes to LINE Messaging API + MS Teams with runbook links (real delivery requires operator-configured credentials, absent by design). Z-Score anomalies via Grafana SQL over TimescaleDB.
 
@@ -449,7 +451,7 @@ IMS/
 │  ├── lib/                    # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
 │  └── settings.js
 ├── postgres/init/              # first-boot bootstrap SQL + grafana password script
-├── database/migrations/        # numbered forward-only migrations (max 086), applied by db-migrate
+├── database/migrations/        # numbered forward-only migrations (max 091), applied by db-migrate
 ├── services/
 │  ├── alarm-api/              # acknowledge/resolve write path (Express + pg)
 │  └── factory-twin-3d/        # Floor 1 digital twin (Express, lib/*.js + public/ viewer)

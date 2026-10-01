@@ -35,7 +35,7 @@ make doctor
 # 4. 构建拆分流程并启动全套开发容器栈
 make up
 
-# 5. 执行全系统 14 个容器健康检查
+# 5. 执行全系统 16 个容器健康检查
 make verify
 ```
 
@@ -81,15 +81,27 @@ cp .env.example .env
 
 | 变量名 | 必填 | 默认示例 | 说明 |
 |:-------|:-----|:---------|:-----|
+| `POSTGRES_DB` | 是 | `ims` | 遥测数据主库名称。 |
 | `POSTGRES_USER` | 是 | `ims_admin` | TimescaleDB 主管理用户。 |
-| `POSTGRES_PASSWORD` | 是 | *强安全密码* | TimescaleDB 数据库管理密码。 |
-| `POSTGRES_DB` | 是 | `ims_telemetry` | 遥测数据主库名称。 |
-| `GF_SECURITY_ADMIN_USER` | 是 | `admin` | Grafana 管理员账号。 |
-| `GF_SECURITY_ADMIN_PASSWORD` | 是 | *Grafana密码* | Grafana 管理员密码。 |
-| `INGEST_API_KEY` | 是 | *遥测写入密钥* | 调用 `POST /ldi-telemetry` 所需的授权令牌。 |
-| `NODE_RED_CREDENTIAL_SECRET` | 是 | *流程加密密钥* | 用于加密 Node-RED 凭据的 AES 密钥。 |
-| `ALERTMANAGER_LINE_TOKEN` | 选填 | *LineToken...* | 用于 LINE 通知分发的令牌。 |
-| `ALERTMANAGER_TEAMS_WEBHOOK` | 选填 | `https://...` | Microsoft Teams 接收 Webhook URL。 |
+| `POSTGRES_PASSWORD` | 是 | *生成强密码* | TimescaleDB 主管理密码。 |
+| `GRAFANA_ADMIN_USER` | 是 | `admin` | Grafana 管理员账号 (`GF_SECURITY_ADMIN_USER`)。 |
+| `GRAFANA_ADMIN_PASSWORD` | 是 | *生成强密码* | Grafana 管理员密码 (`GF_SECURITY_ADMIN_PASSWORD`)。 |
+| `GRAFANA_DB_USER` | 是 | `grafana_reader` | Grafana 数据源只读用户。 |
+| `GRAFANA_DB_PASSWORD` | 是 | *生成强密码* | Grafana 数据源只读密码。 |
+| `NODERED_DB_PASSWORD` | 是 | *生成强密码* | `nodered_writer` 角色密码（迁移 087）。 |
+| `ARCHIVER_DB_PASSWORD` | 是 | *生成强密码* | `observability_archiver` 角色密码（迁移 087）。 |
+| `ALARM_API_DB_PASSWORD` | 是 | *生成强密码* | `alarm_api_writer` 角色密码。 |
+| `INGEST_API_KEY` | 是 | *生成安全令牌* | `POST /ldi-telemetry` 与 `/inject` 鉴权密钥。 |
+| `NODE_RED_CREDENTIAL_SECRET` | 是 | *生成安全令牌* | 用于加密 Node-RED 流凭据的 AES 密钥。 |
+| `NODE_RED_ADMIN_USER` | 是 | `admin` | Node-RED Web 编辑器管理员账号。 |
+| `NODE_RED_ADMIN_PASSWORD_HASH` | 是 | *bcrypt hash* | Node-RED Web 编辑器鉴权的 bcrypt 哈希。 |
+| `ALERT_WEBHOOK_TOKEN` | 是 | *生成安全令牌* | 告警接入 Webhook 鉴权令牌。 |
+| `LINE_CHANNEL_ACCESS_TOKEN` | 选填 | *Token...* | LINE Messaging API 访问令牌。 |
+| `LINE_USER_ID` | 选填 | *UserId...* | LINE 目标用户或群组 ID。 |
+| `TEAMS_WEBHOOK_URL` | 选填 | `https://...` | Microsoft Teams 接收 Webhook 的 URL。 |
+| `PGADMIN_DEFAULT_EMAIL` | 是 | `admin@example.com` | pgAdmin 默认管理员邮箱。 |
+| `PGADMIN_DEFAULT_PASSWORD` | 是 | *生成强密码* | pgAdmin 管理员密码。 |
+| `GRAFANA_RENDERER_TOKEN` | 是 | *生成安全令牌* | Grafana 图像渲染服务鉴权令牌。 |
 
 > [!CAUTION]
 > **绝对保密准则 (Strict Secret Security)**：在所有文档、提交记录及日常交流中，仅能通过环境变量名进行指代。所有 Compose 配置文件均采用 `${VARIABLE:?set VARIABLE in .env}` 语法对必要配置进行严格断言。
@@ -101,6 +113,11 @@ cp .env.example .env
 IMS 的 `Makefile` 封装了日常开发与测试所需的高频标准化命令：
 
 ```bash
+# 帮助信息与质量门禁
+make help             # 列出 Makefile 所有可用目标与说明
+make check            # 执行完整的提交前门禁验证 (scripts/pre-commit.js)
+make check-env        # 严格校验 .env 必填配置并扫描历史泄漏
+
 # 容器启停控制
 make up               # 编译拆分流程并在后台启动全量容器服务栈
 make up-prod          # 使用生产叠加配置 (Production Overlay) 启动服务
@@ -192,7 +209,7 @@ Node-RED 中的 Function 节点运行在受限的 VM 沙箱环境中：
 
 ```bash
 # 通过 docker exec 直接向 TimescaleDB 灌入新迁移脚本
-docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/086-add-custom-telemetry.sql
+docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/092-add-custom-telemetry.sql
 ```
 
 ### 连续聚合视图 (CAGGs) 查询
@@ -202,10 +219,10 @@ docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/08
 ```sql
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```

@@ -276,7 +276,7 @@ Exact commands and failure symptoms live in
 ```text
 browser
   -> http://localhost:3000/factory-twin-3d/
-  -> ims-proxy (nginx:1.27-alpine, the only container publishing a host port)
+  -> ims-proxy (nginx:1.31-alpine, the only container publishing a host port)
        location /factory-twin-3d/  { auth_request /auth-check;
                                      proxy_pass http://factory-twin-3d:4100/; }
        location = /auth-check      { internal; proxy_pass http://grafana:3000/api/user; }

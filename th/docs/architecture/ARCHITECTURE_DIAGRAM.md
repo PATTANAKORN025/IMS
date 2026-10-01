@@ -86,8 +86,9 @@ C4Container
    Container(blackbox, "Blackbox Probes (ims-blackbox)", "Go", "ตรวจสอบ SLA ของ HTTP และการเชื่อมต่อเครือข่าย")
    Container(snmpsim, "SNMP Simulator (ims-snmpsim)", "Python", "จำลองอุปกรณ์ SNMP เซิร์ฟเวอร์และสวิตช์สำหรับการพัฒนาในเครื่อง")
    Container(archiver, "Observability Archiver (ims-observability-archiver)", "Bash", "บันทึกประวัติสุขภาพและเมทริกซ์เก็บไว้ใน ops-logs เป็นระยะ")
-   Container(db_migrate, "Migration Runner (ims-db-migrate)", "Bash / psql", "คอนเทนเนอร์แบบรันครั้งเดียวสำหรับรันสคริปต์ไมเกรชัน 001 ถึง 086")
-   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "หน้าต่างเว็บจัดการฐานข้อมูล (พอร์ต 5050)")
+   Container(db_migrate, "Migration Runner (ims-db-migrate)", "Bash / psql", "คอนเทนเนอร์แบบรันครั้งเดียวสำหรับรันสคริปต์ไมเกรชัน 001 ถึง 091)")
+    Container(sockproxy, "Docker Socket Proxy (ims-docker-socket-proxy)", "HAProxy / Alpine", "จำกัดสิทธิ์การเข้าถึง Docker daemon สำหรับ observability-archiver")
+   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "หน้าต่างเว็บจัดการฐานข้อมูล (พอร์ต 127.0.0.1:5050)")
  }
 
  Rel(user, proxy, "เข้าถึงหน้าจอและ API", "HTTPS / พอร์ต 3000")
@@ -239,8 +240,8 @@ sequenceDiagram
   Operator->>Browser: กดปุ่ม "Acknowledge" ที่การแจ้งเตือน LOG-10001
   Browser->>Proxy: POST /alarm-api/alarms/ack (แนบเซสชัน Cookie)
   Proxy->>Proxy: ตรวจสอบสิทธิ์ย่อย GET /auth-check ไปยัง Grafana (200 OK)
-  Proxy->>AlarmAPI: ส่งต่อ POST /alarms/ack {"logid": "LOG-10001", "acknowledged_by": "operator-01"}
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by='operator-01' WHERE status='OPEN'
+  Proxy->>AlarmAPI: ส่งต่อ POST /alarms/ack {"logdate_ms": 1790568000000, "logid": "LOG-10001"}
+  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by=session.user WHERE status='OPEN'
   DB-->>AlarmAPI: อัปเดตข้อมูลสำเร็จ (ส่งคืน 1 แถว)
   AlarmAPI-->>Proxy: 200 OK (ส่งคืนข้อมูล JSON ที่อัปเดต)
   Proxy-->>Browser: 200 OK (แดชบอร์ดเปลี่ยนสีสถานะเป็นสีส้ม Amber)
@@ -312,25 +313,19 @@ sequenceDiagram
 ```mermaid
 flowchart TD
   subgraph Ingestion ["ระดับการนำเข้าข้อมูลดิบ"]
-    RAW_LDI["public.ldi_data\n(ไฮเปอร์เทเบิล, ก้อนข้อมูลละ 1 ชม.)"]
+    RAW_LDI["public.ldi_data\n(ไฮเปอร์เทเบิล, ก้อนข้อมูลละ 1 วัน)"]
     RAW_INFRA["public.sys_metrics และ net_metrics\n(ไฮเปอร์เทเบิล, ก้อนข้อมูลละ 1 วัน)"]
     RAW_ALARM["public.ldi_alarm_log\n(ไฮเปอร์เทเบิล, ก้อนข้อมูลละ 7 วัน)"]
   end
 
-  subgraph CAGG_Tier1 ["ระดับที่ 1: การสรุปผลระดับนาที"]
-    CAGG_1M["public.ldi_data_1m\n(คำนวณใหม่ทุก 1 นาที สำหรับ 1 ชม. ล่าสุด)"]
-    CAGG_OEE_1M["public.ldi_oee_1m\n(สถานะความพร้อมของเครื่องจักรแบบเรียลไทม์)"]
+  subgraph CAGG_Tier1 ["ระดับ 1: สรุปข้อมูลความถี่สูง (High-Frequency Rollups)"]
+    CAGG_1M["public.ldi_data_1m\n(รีเฟรชทุก 1 นาที ขอบเขตย้อนหลัง 1 ชม.)"]
+    CAGG_15M["public.ldi_data_15m\n(รีเฟรชทุก 15 นาที)\nขับเคลื่อน Manufacturing และ Command Center"]
   end
 
-  subgraph CAGG_Tier2 ["ระดับที่ 2: การสรุปผลระดับ 15 นาทีและรายชั่วโมง"]
-    CAGG_15M["public.ldi_data_15m\n(คำนวณใหม่ทุก 15 นาที)\nใช้ใน Manufacturing & Command Center"]
-    CAGG_1H["public.ldi_data_1h\n(คำนวณใหม่ทุก 1 ชั่วโมง)\nใช้ในการวิเคราะห์ SPC และแนวโน้มระยะยาว"]
-    INFRA_1H["public.sys_metrics_1h และ net_metrics_1h\n(สรุปข้อมูลโครงสร้างพื้นฐานรายชั่วโมง)"]
-  end
-
-  subgraph CAGG_Tier3 ["ระดับที่ 3: การสรุปผลระดับวันและสัปดาห์"]
-    CAGG_1D["public.ldi_data_1d\n(คำนวณใหม่ทุก 6 ชั่วโมง)\nใช้ในการวางแผนความจุระยะยาว"]
-    CAGG_1W["public.ldi_data_1w\n(คำนวณใหม่ทุก 6 ชั่วโมง)\nคลังข้อมูลประวัติศาสตร์ผลผลิต"]
+  subgraph CAGG_Tier2 ["ระดับ 2: สรุปข้อมูลรายชั่วโมง (Hourly Rollups)"]
+    CAGG_1H["public.ldi_data_1h และ ldi_data_hourly\n(รีเฟรชทุก 1 ชม.)\nขับเคลื่อน SPC และการวิเคราะห์แนวโน้ม"]
+    INFRA_HOURLY["public.sys_hourly และ net_hourly\n(สรุปข้อมูลโครงสร้างพื้นฐานรายชั่วโมง)"]
   end
 
   subgraph Retention ["นโยบายการเก็บรักษาข้อมูล (ตรวจสอบจากระบบจริง)"]

@@ -36,7 +36,7 @@ C4Context
 
  System_Ext(ldi_mach, "LDI 激光曝光设备", "高精密直接成像曝光机，通过 HTTP/JSON 推送高频制造遥测。")
  System_Ext(cnc_drill, "CNC 数控钻孔机群", "机械钻孔机群将主轴转速、进给速率及机台事件写入 eap_backup。")
- System_Ext(vcp_lines, "VCP 连续电镀产线", "垂直连续电镀线记录化学药水槽参数及行车状态至 eap_backup。")
+ System_Ext(vcp_lines, "VCP 连续电镀产线", "垂直连续电镀线记录化学药水槽参数及输送线速度至 eap_backup。")
  System_Ext(servers, "Linux 生产服务器机群", "计算集群通过 SNMP v2c 提供 CPU、内存及磁盘利用率遥测。")
  System_Ext(switches, "Juniper 工业交换机", "交换网络通过 SNMP 提供接口吞吐字节数及端口丢包计数器。")
  System_Ext(line_teams, "LINE / MS Teams", "外部通知系统，负责向当班工程团队推送严重级别异常。")
@@ -86,8 +86,9 @@ C4Container
    Container(blackbox, "黑盒探针 (ims-blackbox)", "Go", "执行 HTTP/TCP 探针以验证系统服务 SLA。")
    Container(snmpsim, "SNMP 模拟器 (ims-snmpsim)", "Python", "本地开发环境下模拟 Linux 主机与交换机节点。")
    Container(archiver, "可观测性归档器 (ims-observability-archiver)", "Bash", "定期备份容器与数据库监控快照至 ops-logs。")
-   Container(db_migrate, "数据库迁移器 (ims-db-migrate)", "Bash / psql", "一次性执行脚本，顺序运行 001 至 086 迁移文件。")
-   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "Web 端数据库管理平台 (映射端口 5050)。")
+   Container(db_migrate, "数据库迁移器 (ims-db-migrate)", "Bash / psql", "一次性执行脚本，顺序运行 001 至 091 迁移文件。")
+    Container(sockproxy, "Docker Socket 代理 (ims-docker-socket-proxy)", "HAProxy / Alpine", "为 observability-archiver 提供受限的安全只读 Docker 守护进程访问。")
+   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "Web 端数据库管理平台 (映射端口 127.0.0.1:5050)。")
  }
 
  Rel(user, proxy, "访问界面与各服务接口", "HTTPS / 端口 3000")
@@ -239,8 +240,8 @@ sequenceDiagram
   Operator->>Browser: 针对告警 LOG-10001 点击 "确认" (Acknowledge)
   Browser->>Proxy: POST /alarm-api/alarms/ack (携带登录 Cookie)
   Proxy->>Proxy: 子请求 GET /auth-check 校验 Grafana 用户会话 (200 OK)
-  Proxy->>AlarmAPI: 转发 POST /alarms/ack {"logid": "LOG-10001", "acknowledged_by": "operator-01"}
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by='operator-01' WHERE status='OPEN'
+  Proxy->>AlarmAPI: 转发 POST /alarms/ack {"logdate_ms": 1790568000000, "logid": "LOG-10001"}
+  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by=session.user WHERE status='OPEN'
   DB-->>AlarmAPI: 数据库记录更新成功 (返回 1 行)
   AlarmAPI-->>Proxy: 200 OK (返回更新后的 JSON 实体)
   Proxy-->>Browser: 200 OK (仪表板将该告警显示更新为琥珀黄 Amber)
@@ -312,25 +313,19 @@ sequenceDiagram
 ```mermaid
 flowchart TD
   subgraph Ingestion ["原始遥测写入层"]
-    RAW_LDI["public.ldi_data\n(超表，每 1 小时一个数据块 Chunk)"]
+    RAW_LDI["public.ldi_data\n(超表，每 1 天一个数据块 Chunk)"]
     RAW_INFRA["public.sys_metrics 与 net_metrics\n(超表，每 1 天一个数据块 Chunk)"]
     RAW_ALARM["public.ldi_alarm_log\n(超表，每 7 天一个数据块 Chunk)"]
   end
 
-  subgraph CAGG_Tier1 ["第一层：分钟级预聚合"]
+  subgraph CAGG_Tier1 ["第一层：分钟级预聚合 (High-Frequency Rollups)"]
     CAGG_1M["public.ldi_data_1m\n(每 1 分钟计算一次最近 1 小时)"]
-    CAGG_OEE_1M["public.ldi_oee_1m\n(车间实时产线稼动率)"]
-  end
-
-  subgraph CAGG_Tier2 ["第二层：15 分钟与小时级聚合"]
     CAGG_15M["public.ldi_data_15m\n(每 15 分钟计算一次)\n供制造与指挥中心仪表板读取"]
-    CAGG_1H["public.ldi_data_1h\n(每 1 小时计算一次)\n供 SPC 分析及长期趋势大屏读取"]
-    INFRA_1H["public.sys_metrics_1h 与 net_metrics_1h\n(基础设施小时级汇总)"]
   end
 
-  subgraph CAGG_Tier3 ["第三层：天级与周级宏观归档"]
-    CAGG_1D["public.ldi_data_1d\n(每 6 小时计算一次)\n用于长期容量预测规划"]
-    CAGG_1W["public.ldi_data_1w\n(每 6 小时计算一次)\n良率历史归档"]
+  subgraph CAGG_Tier2 ["第二层：小时级聚合 (Hourly Rollups)"]
+    CAGG_1H["public.ldi_data_1h 与 ldi_data_hourly\n(每 1 小时计算一次)\n供 SPC 分析及长期趋势大屏读取"]
+    INFRA_HOURLY["public.sys_hourly 与 net_hourly\n(基础设施小时级汇总)"]
   end
 
   subgraph Retention ["生命周期保留策略 (实测系统配置)"]

@@ -29,7 +29,7 @@ flowchart TB
    AM["Alertmanager\n127.0.0.1:9093"]
    PGB["PgBouncer\ninternal only"]
    TSDB["TimescaleDB\ninternal only"]
-   PGADMIN["pgAdmin\n:5050, all interfaces"]
+   PGADMIN["pgAdmin\n127.0.0.1:5050"]
    SNMPSIM["SNMP simulator\ninternal only"]
    BLACKBOX["Blackbox exporter\n127.0.0.1:9115"]
   end
@@ -54,7 +54,7 @@ flowchart TB
  FUTURE["Future: real SECS/GEM equipment\n(not built)"] -.->|"NEW boundary, not yet designed"| NODERED
 ```
 
-**ขอบเขตที่ 1 — Host ↔ เครือข่าย Docker** มี 2 service ที่รับการเชื่อมต่อบนทุก interface ของ host คือ service `proxy` (nginx, `${GRAFANA_PORT:-3000}`) และ `pgadmin` (`5050`) ส่วน Node-RED, Prometheus, Alertmanager และ Blackbox exporter เปิดพอร์ตที่ bind ไว้กับ `127.0.0.1` เท่านั้น เดิม Grafana, alarm-api และ Factory Twin เคยเปิดพอร์ตของตัวเอง ปัจจุบันทั้งสามอยู่หลัง `proxy` ทุก request จาก browser — ทั้งอ่านและเขียน — จึงผ่านทางเข้าเดียว PgBouncer, TimescaleDB, ตัวจำลอง SNMP และ image renderer ไม่เคยเปิดสู่ host — ใช้ DNS ภายในของ Docker เท่านั้น `pgadmin` เป็นข้อยกเว้นที่ยังต้องกั้นด้วยไฟร์วอลล์ของ host หรือ bind ไว้ที่ `127.0.0.1` นอกห้องทดลอง (ดู `SECURITY.md`) ส่วน `observability-archiver` mount Docker socket ไว้ flag `:ro` ไม่ได้จำกัดการเรียก Docker API คอนเทนเนอร์นี้จึงมีสิทธิ์สูงบน host โดยปริยาย
+**ขอบเขตที่ 1 — Host ↔ เครือข่าย Docker** มีเพียง service `proxy` (nginx, `${GRAFANA_PORT:-3000}`) เท่านั้นที่รับการเชื่อมต่อบน external host interface ส่วน `pgadmin` (`5050`), Node-RED, Prometheus, Alertmanager และ Blackbox exporter เปิดพอร์ตที่ bind ไว้กับ `127.0.0.1` loopback เท่านั้น Grafana, alarm-api และ Factory Twin ล้วนอยู่หลัง `proxy` ทุก request จาก browser จึงผ่านทางเข้าเดียว PgBouncer, TimescaleDB, ตัวจำลอง SNMP และ image renderer ไม่เคยเปิดสู่ host — ใช้ DNS ภายในของ Docker เท่านั้น ส่วน `observability-archiver` เชื่อมต่อ Docker daemon ผ่าน `ims-docker-socket-proxy` ภายในเครือข่ายด้วยสิทธิ์อ่านอย่างเดียว
 
 **ขอบเขตที่ 1a — ใช้ session ของ Grafana เป็น credential ของเส้นทางเขียน** `alarm-api` (`services/alarm-api`) เป็น service เดียวใน stack นี้ที่เปลี่ยนสถานะข้อมูลจากแดชบอร์ด Grafana (ปุ่ม Acknowledge/Resolve ของ `IMS LDI - Alarm Console` ที่เขียนลง `public.ldi_alarm_lifecycle`) โดยไม่มีระบบล็อกอินของตัวเอง: location `/alarm-api/` ของ `proxy` จะส่ง subrequest `auth_request` ไปตรวจกับ `/api/user` ของ Grafana ก่อนส่งต่อทุกครั้ง request จึงไปถึง alarm-api ได้ก็ต่อเมื่อผู้เรียกมี session ของ Grafana ที่ถูกต้องอยู่แล้ว — เป็นการล็อกอินเดียวกับที่ผู้ปฏิบัติงานต้องใช้ดูแดชบอร์ด ไม่ใช่ credential ชุดที่สองที่ต้องจัดการเพิ่ม location `/factory-twin-3d/` ใช้ด่านเดียวกัน alarm-api เชื่อมต่อ Postgres ด้วย role `alarm_api_writer` (migration 078) ซึ่งจำกัดสิทธิ์เพียง `SELECT`+`UPDATE` บน `ldi_alarm_lifecycle` — ไม่ใช่ superuser และไม่ใช่ `grafana_reader` จากนั้น alarm-api จะระบุตัวผู้เรียกเองอีกชั้น โดยถาม Grafana ที่ `/api/user` (ชื่อ login) และ `/api/user/orgs` (role ในองค์กรปัจจุบัน) แล้วบันทึกชื่อ login นั้นเป็นผู้ดำเนินการ ค่า `acknowledged_by` / `resolved_by` ที่ส่งมาใน body จะถูกละเลย และ Viewer จะได้ 403 มีเพียง Editor, Admin หรือ Grafana server admin ที่ acknowledge หรือ resolve ได้ ทั้งหมดนี้ครอบคลุมโดย `tests/unit/alarm-api-server.test.js` และตรวจแบบ end to end ผ่าน nginx กับ Grafana 13.1.2 แล้ว
 

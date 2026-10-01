@@ -135,7 +135,7 @@
 </td>
 <td align="center" width="33%">
  <h3>Continuous Aggregates</h3>
- TimescaleDB สรุปข้อมูลรายชั่วโมง รายวัน และรายสัปดาห์โดยอัตโนมัติ ทำให้ Grafana แสดงผลได้ในระดับต่ำกว่าวินาทีแม้เลือกช่วงเวลากว้าง<br/><br/>
+ TimescaleDB สรุปข้อมูลต่อเนื่อง (1 นาที, 15 นาที, 1 ชั่วโมง) โดยอัตโนมัติ ทำให้ Grafana แสดงผลได้ในระดับต่ำกว่าวินาทีแม้เลือกช่วงเวลากว้าง<br/><br/>
  **หลักฐาน:** [cagg-policies-20260813.txt](../docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
@@ -196,7 +196,7 @@ _ออกแบบมาสำหรับวิศวกรเชื่อม�
 curl -X POST http://localhost:3000/ldi-telemetry \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ${INGEST_API_KEY}" \
-  -d '{
+  -d '[{
     "time": "2026-09-28T04:00:00Z",
     "factory": "F1",
     "process": "LDI",
@@ -219,7 +219,7 @@ curl -X POST http://localhost:3000/ldi-telemetry \
     "pe_1": 1.1,
     "je_1": 2.2,
     "log_id": "LOG-10001"
-  }'
+  }]'
 ```
 
 #### 2. เวิร์กโฟลว์จัดการสถานะการแจ้งเตือน (Acknowledge & Resolve)
@@ -227,13 +227,13 @@ curl -X POST http://localhost:3000/ldi-telemetry \
 
 ```bash
 # ขั้นตอนที่ 1: รับทราบการแจ้งเตือน (เปลี่ยนสถานะ OPEN -> ACKNOWLEDGED ผ่าน Nginx Proxy)
+# ตัวตนของผู้เรียกจะถูกดึงจาก Grafana session cookie โดยอัตโนมัติ
 curl -X POST http://localhost:3000/alarm-api/alarms/ack \
   -H "Content-Type: application/json" \
   -H "Cookie: grafana_session=YOUR_SESSION_COOKIE" \
   -d '{
     "logdate_ms": 1790568000000,
-    "logid": "LOG-10001",
-    "acknowledged_by": "operator-01"
+    "logid": "LOG-10001"
   }'
 
 # ขั้นตอนที่ 2: ปิดจบและแก้ไขปัญหาการแจ้งเตือน (เปลี่ยนสถานะ ACKNOWLEDGED -> RESOLVED)
@@ -243,7 +243,6 @@ curl -X POST http://localhost:3000/alarm-api/alarms/resolve \
   -d '{
     "logdate_ms": 1790568000000,
     "logid": "LOG-10001",
-    "resolved_by": "engineer-02",
     "resolution_note": "เปลี่ยนไส้กรองนิวแมติกและตรวจสอบแรงดันลมดูดให้อยู่ในสเปกเรียบร้อย"
   }'
 ```
@@ -294,7 +293,10 @@ ORDER BY bucket ASC;
 
 | คำสั่ง | คำอธิบาย |
 | --- | --- |
+| `make help` | แสดงรายการเป้าหมาย Makefile ทั้งหมด |
 | `make doctor` | ตรวจสิ่งที่ต้องติดตั้งไว้ก่อน (docker, compose, node) |
+| `make check` | รันชุดตรวจสอบก่อนคอมมิตแบบเต็ม (`pre-commit.js`) |
+| `make check-env` | ตรวจสอบตัวแปรที่จำเป็นใน .env และตรวจการรั่วไหลของ secret |
 | `make up` | build flows แล้วเริ่มครบ 16 service (รวมตัวจำลอง) |
 | `make up-prod` | เหมือน `make up` แต่ใช้ overlay ทรัพยากรจาก `docker-compose.prod.yaml` |
 | `make down` / `make restart` | หยุดทั้ง stack / รีสตาร์ต node-red, grafana, alertmanager, prometheus |
@@ -302,7 +304,7 @@ ORDER BY bucket ASC;
 | `make verify` | ตรวจสุขภาพทั้งระบบ (คอนเทนเนอร์ ฐานข้อมูล ไปป์ไลน์ การแจ้งเตือน) |
 | `make build-flows` / `make validate-flows` | รวม `nodered_data/flows/*.json` เป็น `flows.json` / ตรวจว่าไฟล์ถูกต้อง |
 | `make snapshot-flows` / `make deploy-flows` | สำรอง `flows.json` / ส่ง flow ที่แยกไฟล์ไว้ขึ้น Node-RED |
-| `make test-unit` | unit test หลัก 4 ไฟล์ของ parser และการตรวจขอบเขตค่า |
+| `make test-unit` | ชุด unit test ทั้งหมดใน tests/unit/ |
 | `make test-load` | stress test ไปป์ไลน์ด้วย K6 (`TARGET_SERVERS` ค่าเริ่มต้น 100) |
 | `make test-visual` / `make test-visual-ldi` | regression ภาพหน้าจอแดชบอร์ดด้วย Playwright |
 | `make validate-dashboards` | ค้นหารหัสสี hex ที่เสียหายใน JSON ของแดชบอร์ด |
@@ -369,7 +371,7 @@ flowchart LR
 2. **การ walk** — walk แบบ bulk อะซิงโครนัสทีละขั้น (`session.subtree` ด้วย `maxRepetitions: 50`) ใช้ UDP socket เดียวเพื่อไม่ให้สวิตช์ทิ้งแพ็กเก็ต circuit breaker จะตัดวงจรเมื่อผิดพลาด 2 ครั้ง และทดลองใหม่อัตโนมัติในสถานะ HALF_OPEN
 3. **การแยกวิเคราะห์ (parsing)** — `sre_parser` เก็บสถานะรายอุปกรณ์ไว้ใน flow context (`dev_state_<deviceId>`) และพักแถวข้อมูลไว้ใน `batch_buf_<deviceId>` heartbeat สถานะออฟไลน์ (`_walker: "offline"`) จะตั้งค่าตัวชี้วัดทั้งหมดเป็นศูนย์ทันทีเมื่ออุปกรณ์ล้มเหลว
 4. **การจัดเก็บ** — flush แยกอิสระตามตัวจับเวลา: ตารางแต่ละประเภท (sys/net/ldi) จะ insert ก็ต่อเมื่อบัฟเฟอร์ของตัวเองมีข้อมูล walker ที่ล้มเหลวบางตัวจึงไม่ขวางการเขียนข้อมูลส่วนอื่น
-5. **Continuous Aggregation** — นโยบาย refresh ของ TimescaleDB ทำงานตั้งแต่ทุกนาที (`ldi_data_1m`, `ldi_oee_1m`) ไปจนถึงทุก 6 ชั่วโมง (rollup รายสัปดาห์) CAGG รายวันและรายสัปดาห์ของฝั่งโครงสร้างพื้นฐานสรุปต่อจาก CAGG รายชั่วโมง (ดู [Data Flow](docs/architecture/DATA_FLOW.md)) ระยะเก็บข้อมูลจริง (ตรวจกับฐานข้อมูลที่รันอยู่ ไม่ได้อิงประวัติ migration — ดู `docs/architecture/DATA_RETENTION.md` ซึ่งบันทึกความคลาดเคลื่อนระหว่างสองแหล่งไว้): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30 วัน, `ldi_data` 180 วัน, rollup รายชั่วโมง 2 ปี
+5. **Continuous Aggregation** — นโยบาย refresh ของ TimescaleDB ทำงานครอบคลุม 7 continuous aggregates (`ldi_data_1m`, `ldi_data_15m`, `ldi_data_1h`, `ldi_data_hourly`, `sys_hourly`, `net_hourly`, `ldi_hourly`) ดู [Data Flow](docs/architecture/DATA_FLOW.md) ระยะเก็บข้อมูลจริง (ตรวจกับฐานข้อมูลที่รันอยู่ ดู `docs/architecture/DATA_RETENTION.md`): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30 วัน, `ldi_data` 180 วัน, `ldi_data_1h` และ `ldi_data_hourly` 2 ปี (ทั้งนี้ continuous aggregates 3 ตัวตระกูล `*_hourly` ยังไม่มีนโยบายลบข้อมูลอัตโนมัติ)
 6. **การแสดงผล** — 22 แดชบอร์ดในสี่โฟลเดอร์ของ Grafana: 01 งานเจาะ (4 ชุด: ภาพรวมกลุ่มเครื่อง, ผลผลิตรายกะ, การตรวจสอบรายเครื่อง, ความผิดปกติและสาเหตุราก), 02 LDI (10 ชุด: ภาพรวมผู้บริหาร, Andon สำหรับผู้ปฏิบัติงาน, Digital Twin ของโรงงาน, ศูนย์บัญชาการกลุ่มเครื่อง, Snapshot รายเครื่อง, วิเคราะห์วิศวกรรมและ SPC, คอนโซลแจ้งเตือน, การตอบสนองแจ้งเตือน MTTA/MTTR, พจนานุกรมแจ้งเตือน, ความพร้อมของข้อมูล), 03 แพลตฟอร์มและ NOC (5 ชุด: ภาพรวม NOC, Engineering Drill-Down, AIOps Capacity, Ingestion Latency, Meta-Monitoring), 04 งานชุบ VCP (3 ชุด: ภาพรวมกลุ่มสาย, คอนโซลปฏิบัติการ, จอแสดงผลเรียลไทม์)
 7. **การแจ้งเตือน** — Prometheus scrape `/metrics` แล้ว Alertmanager ส่งต่อไป LINE Messaging API และ MS Teams พร้อมลิงก์ runbook (การส่งจริงต้องให้ผู้ดูแลกำหนด credential เอง โดยตั้งใจไม่ใส่มาให้) ความผิดปกติแบบ Z-Score คำนวณด้วย SQL ของ Grafana บน TimescaleDB
 
@@ -449,7 +451,7 @@ IMS/
 │  ├── lib/                    # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
 │  └── settings.js
 ├── postgres/init/              # SQL bootstrap ตอนบูตครั้งแรก + สคริปต์รหัสผ่าน grafana
-├── database/migrations/        # migration แบบเดินหน้าอย่างเดียวตามลำดับเลข (สูงสุด 086) apply โดย db-migrate
+├── database/migrations/        # migration แบบเดินหน้าอย่างเดียวตามลำดับเลข (สูงสุด 091) apply โดย db-migrate
 ├── services/
 │  ├── alarm-api/              # เส้นทางเขียน acknowledge/resolve (Express + pg)
 │  └── factory-twin-3d/        # ดิจิทัลทวินชั้น 1 (Express, lib/*.js + ตัวแสดงผลใน public/)

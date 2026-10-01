@@ -36,7 +36,7 @@ C4Context
 
  System_Ext(ldi_mach, "LDI Manufacturing Machines", "High-precision Laser Direct Imaging exposure hardware delivering JSON telemetry.")
  System_Ext(cnc_drill, "CNC Drilling Machines", "Mechanical drilling fleet logging spindle rpm, feed rates, and machine events to eap_backup.")
- System_Ext(vcp_lines, "VCP Plating Lines", "Vertical Continuous Plating lines logging chemical bath telemetry and hoist speeds.")
+ System_Ext(vcp_lines, "VCP Plating Lines", "Vertical Continuous Plating lines logging chemical bath telemetry and conveyor line speeds.")
  System_Ext(servers, "Linux Server Fleet", "Production compute servers providing CPU, memory, and disk telemetry via SNMP v2c.")
  System_Ext(switches, "Juniper EX Switches", "Industrial Ethernet switches providing interface counters and optical power via SNMP.")
  System_Ext(line_teams, "LINE / MS Teams", "External incident dispatch channels notifying engineers of critical factory excursions.")
@@ -86,8 +86,9 @@ C4Container
    Container(blackbox, "Blackbox Probes (ims-blackbox)", "Go", "Probes HTTP/TCP endpoints to verify platform SLA.")
    Container(snmpsim, "SNMP Simulator (ims-snmpsim)", "Python", "Simulates Linux servers and network switches for local development.")
    Container(archiver, "Observability Archiver (ims-observability-archiver)", "Bash", "Archives telemetry snapshots and container metrics to ops-logs.")
-   Container(db_migrate, "Migration Runner (ims-db-migrate)", "Bash / psql", "One-shot container applying database migrations (001 to 086).")
-   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "Web database management console (host port 5050).")
+   Container(db_migrate, "Migration Runner (ims-db-migrate)", "Bash / psql", "One-shot container applying database migrations (001 to 091).")
+    Container(sockproxy, "Docker Socket Proxy (ims-docker-socket-proxy)", "HAProxy / Alpine", "Restricts Docker daemon access for observability-archiver.")
+   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "Web database management console (host port 127.0.0.1:5050).")
  }
 
  Rel(user, proxy, "Accesses UI and APIs", "HTTPS / Port 3000")

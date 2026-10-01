@@ -82,9 +82,9 @@ Grafana เอง**ไม่มี**พอร์ตเปิดตรงบน h
 
 ### คอนเทนเนอร์ (Containers)
 
-มี 15 บริการใน `docker-compose.yaml` คอนเทนเนอร์ทั้งหมดใช้ชื่อนำหน้า `ims-*`: `timescaledb`, `pgbouncer`, `db-migrate` (รันการย้ายฐานข้อมูลครั้งเดียวผ่าน `scripts/migrate-entrypoint.sh` ซึ่งเป็นตัวรันหลักเพียงตัวเดียว), `node-red`, `grafana`, `renderer` (Grafana image renderer), `proxy`, `prometheus`, `alertmanager`, `blackbox-exporter`, `snmpsim`, `alarm-api`, `factory-twin-3d`, `observability-archiver`, `pgadmin`
+มี 16 บริการใน `docker-compose.yaml` คอนเทนเนอร์ทั้งหมดใช้ชื่อนำหน้า `ims-*`: `timescaledb`, `pgbouncer`, `db-migrate` (รันการย้ายฐานข้อมูลครั้งเดียวผ่าน `scripts/migrate-entrypoint.sh` ซึ่งเป็นตัวรันหลักเพียงตัวเดียว), `node-red`, `grafana`, `renderer` (Grafana image renderer), `proxy`, `prometheus`, `alertmanager`, `blackbox-exporter`, `snmpsim`, `alarm-api`, `factory-twin-3d`, `observability-archiver`, `docker-socket-proxy`, `pgadmin`
 
-ไฟล์หลัก**ไม่มีการคัดกรองด้วย `profiles:`** — ทั้ง `make up` และ `make up-prod` ต่างเริ่มทำงานทั้ง 15 บริการ รวมถึง SNMP simulator และ pgAdmin `docker-compose.dev.yaml` (ไฟล์เดียวที่วาง `snmpsim` ไว้หลังโปรไฟล์ `dev`) ไม่ได้ถูกอ้างอิงโดยเป้าหมายใดใน Makefile นอกจากประตูหน้า nginx แล้ว `pgadmin` เป็นบริการเดียวที่เปิดสู่ทุก interface (`5050:80`); พอร์ตอื่นที่เปิดทั้งหมดผูกกับ `127.0.0.1`
+ไฟล์หลัก**ไม่มีการคัดกรองด้วย `profiles:`** — ทั้ง `make up` และ `make up-prod` ต่างเริ่มทำงานทั้ง 16 บริการ รวมถึง SNMP simulator และ pgAdmin `docker-compose.dev.yaml` (ไฟล์เดียวที่วาง `snmpsim` ไว้หลังโปรไฟล์ `dev`) ไม่ได้ถูกอ้างอิงโดยเป้าหมายใดใน Makefile `pgadmin` ผูกกับ loopback (`127.0.0.1:5050:80`); พอร์ตอื่นที่เปิดทั้งหมดนอกจากประตูหน้า nginx ผูกกับ `127.0.0.1`
 
 Secrets มาจาก `.env` ด้วยรูปแบบ `${VAR:?message}` — `.env.example` ระบุคีย์ทั้งหมด ค่าตัวอย่างเป็นสาธารณะ ห้ามนำกลับมาใช้ซ้ำนอกสภาพแวดล้อมทดสอบ
 

@@ -110,7 +110,7 @@ security/<topic>  # Security fixes (commit type is still fix)
 # Full pre-commit suite: every wired unit test, the tests/lint linters, dashboard + flow JSON validation
 node scripts/pre-commit.js
 
-# Only the 4 core parser/boundary unit tests
+# All standalone unit test suites in tests/unit/ and services/alarm-api/
 make test-unit
 
 # Individual linters
