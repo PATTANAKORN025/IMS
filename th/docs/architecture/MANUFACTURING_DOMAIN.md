@@ -28,57 +28,58 @@
 ## 1. แผนผังสถาปัตยกรรมการขยายโดเมนการผลิต (Domain Topology)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
-  subgraph FOUNDATION["ฐานรากแพลตฟอร์มส่วนกลาง (Zero-Modification Foundation)"]
-    DEV[("public.devices\nแคตตาล็อกอุปกรณ์และตัวตนเครื่องจักรหลัก")]
-    PGB["PgBouncer Transaction Pooler\n(พอร์ต 5432, AUTH: scram-sha-256)"]
-    CORE_LINT["ระบบตรวจสอบคุณภาพ CI & Linters\n(alarm-sync, query-budget, dashboard-linter)"]
+  accTitle: โดเมนกระบวนการและวิธีเพิ่มโดเมนใหม่
+  accDescr: LDI อยู่ในฐานข้อมูล ims โดยมีทะเบียนใน public.devices ส่วน Drilling และ VCP อยู่ใน eap_backup โดยทะเบียน Drilling อยู่ใน machine_master กระบวนการใหม่จะเพิ่มตาราง aggregate และแดชบอร์ดของตัวเองโดยไม่ต้องแก้แพลตฟอร์มส่วนกลาง
+  subgraph PLATFORM["แพลตฟอร์มส่วนกลาง"]
+    PGB["PgBouncer · SCRAM"]:::app
+    LINT["CI linter<br/>dashboard · query budget · alarm sync"]:::app
+    GRAF["Grafana · หนึ่งโฟลเดอร์ต่อโดเมน"]:::viz
   end
+  subgraph LDI["LDI · ฐานข้อมูล ims"]
+    LREG[("public.devices")]:::store
+    LTBL[("ldi_data · ldi_alarm_log")]:::store
+    LAGG[("ldi_data_1m · 15m · 1h · hourly")]:::store
+  end
+  subgraph DRL["Drilling · ฐานข้อมูล eap_backup"]
+    DREG[("machine_master")]:::store
+    DTBL[("machine_event · agent_log")]:::store
+    DVIEW[("drilling.event · drilling.telemetry")]:::store
+  end
+  subgraph VCP["VCP · ฐานข้อมูล eap_backup"]
+    VTBL[("vcp_upp · vcp_alarm · vcp_status_change")]:::store
+    VVIEW[("eap_api_vcp_* view")]:::store
+  end
+  subgraph NEW["กระบวนการใหม่ (ตัวอย่าง: AOI)"]
+    NTBL[("&lt;process&gt;_data · hypertable")]:::future
+    NAGG[("&lt;process&gt;_data_1m")]:::future
+  end
+  LREG --> LTBL --> LAGG --> GRAF
+  DREG --> DTBL --> DVIEW --> GRAF
+  VTBL --> VVIEW --> GRAF
+  NTBL -.-> NAGG -.-> GRAF
 
-  subgraph DOMAINS["โดเมนกระบวนการผลิตที่เพิ่มเข้ามา (Additive Process Domains)"]
-    subgraph D_LDI["โดเมน: กระบวนการฉายแสง LDI"]
-      LDI_TBL[("public.ldi_data (Hypertable)")]
-      LDI_ALM[("public.ldi_alarm_ms_code & log")]
-      LDI_CAGGS[("ldi_data_1m / 15m / 1h / ldi_data_hourly")]
-    end
-    subgraph D_DRL["โดเมน: ฝูงเครื่องเจาะ CNC Drilling"]
-      DRL_TBL[("eap_backup: public.machine_event")]
-      DRL_ALM[("eap_backup: public.agent_log")]
-      DRL_CAGGS[("คิวรีเชิงวิเคราะห์และ Views")]
-    end
-    subgraph D_VCP["โดเมน: สายชุบโลหะด้วยไฟฟ้า VCP"]
-      VCP_TBL[("eap_backup: public.vcp_upp (100k แถว)")]
-      VCP_ALM[("eap_backup: public.vcp_alarm & vcp_status_change")]
-      VCP_CAGGS[("วิว: eap_api_vcp_upp")]
-    end
-    subgraph D_FUTURE["โดเมน: กระบวนการผลิตในอนาคต (เช่น AOI / Etching)"]
-      NEW_TBL[("public.<process>_data (Hypertable)")]
-      NEW_ALM[("<process>_alarm_ms_code & log")]
-      NEW_CAGGS[("cagg_<process>_1m")]
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_app["บริการของ IMS"]:::app ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_future["ยังไม่ได้สร้าง"]:::future
     end
   end
-
-  subgraph DASHBOARDS["ระบบแดชบอร์ด Grafana (มาตรฐาน Grid-24)"]
-    LDI_DASH["แดชบอร์ด LDI (10)\n(Andon, Analytics, Manufacturing, Twin)"]
-    DRL_DASH["แดชบอร์ด Drilling (4)\n(Fleet, Investigation, Shift, Anomaly)"]
-    VCP_DASH["แดชบอร์ด VCP (3)\n(Wall, Console, Overview)"]
-    NEW_DASH["แดชบอร์ดกระบวนการใหม่\n(Andon, Analytics, Command)"]
-  end
-
-  DEV --> LDI_TBL
-  DEV --> DRL_TBL
-  DEV --> VCP_TBL
-  DEV -.-> NEW_TBL
-
-  LDI_TBL --> LDI_CAGGS --> LDI_DASH
-  DRL_TBL --> DRL_CAGGS --> DRL_DASH
-  VCP_TBL --> VCP_CAGGS --> VCP_DASH
-  NEW_TBL -.-> NEW_CAGGS -.-> NEW_DASH
-
-  style FOUNDATION fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style DOMAINS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
-  style DASHBOARDS fill:#1e293b,stroke:#10B981,color:#f8fafc
+  GRAF ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

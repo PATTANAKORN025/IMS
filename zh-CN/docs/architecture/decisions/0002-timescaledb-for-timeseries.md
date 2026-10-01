@@ -80,55 +80,51 @@
 ### 存储体系架构拓扑 (Storage Topology)
 
 ```mermaid
-flowchart TD
-  subgraph INGEST["数据接入层 (Ingestion Layer)"]
-    NR["Node-RED 接入流水线
-(HTTP POST / SNMP v2c)"]
-    EAP["EAP 工业设备数据生产者
-(CNC 钻孔机 / VCP 电镀线)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: ADR-0002 选定的存储架构
+  accDescr: Node-RED 经 PgBouncer 写入 TimescaleDB hypertable（1 天分块、连续聚合、7 天后压缩、按表保留）；Grafana、alarm-api 与 Prometheus 为使用方；钻孔与 VCP 数据位于独立的 eap_backup 数据库。
+  NR["Node-RED · HTTP 与 SNMP 采集"]:::flow
+  PGB["PgBouncer · 事务模式 · SCRAM"]:::app
+  subgraph TS["TimescaleDB · ims"]
+    HT[("hypertable · 1 天分块<br/>ldi_data · sys_metrics · net_metrics")]:::store
+    CA[("连续聚合<br/>1 分钟 · 15 分钟 · 1 小时 · hourly")]:::store
+    CO[("7 天后压缩<br/>按 eqp_id · device_id 分段")]:::store
+    RE[("保留期<br/>原始 30–180 天 · 聚合 30 天–2 年")]:::store
   end
+  EAPDB[("eap_backup · 钻孔与 VCP")]:::store
+  GRAF["Grafana · 22 个仪表板"]:::viz
+  ALARM["alarm-api"]:::app
+  PROM["Prometheus"]:::obs
+  NR --> PGB --> HT
+  HT --> CA
+  HT --> CO --> RE
+  CA --> GRAF
+  HT --> GRAF
+  EAPDB -->|"drilling-timescaledb"| GRAF
+  ALARM <-->|"事务"| PGB
+  NR -->|"/metrics"| PROM
 
-  subgraph POOL["连接池代理层 (Connection Pooling)"]
-    PGB["PgBouncer
-(事务模式, 端口 5432, AUTH: scram-sha-256)"]
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app ~~~ LG_store["数据存储"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["监控"]:::obs
+    end
   end
-
-  subgraph STORAGE["TimescaleDB 核心存储层 (public schema & eap_backup)"]
-    HT["超表集群 Hypertables
-(ldi_data, sys_metrics, net_metrics)
-切片时间跨度: 1 天"]
-    CAGG["持续聚合层 CAGGs
-(1m, 15m, 1h 汇总物化视图)
-启用实时联合查询"]
-    COMP["列式压缩数据切片
-分段依据: machine_id / device_id
-排序依据: time DESC"]
-    RET["生命周期自动清理引擎
-自动执行 drop_chunks > 90d / 180d"]
-    EAP_DB[("Secondary DB: eap_backup
-(CNC 钻孔与 VCP 电镀数据集)")]
-  end
-
-  subgraph CLIENTS["数据消费与呈现层"]
-    GRAF["Grafana 仪表盘群 (22 块)
-亚秒级 CAGG 历史分析查询"]
-    ALARM["报警生命周期 API 与 Webhook
-ACID 事务级状态变更"]
-    PROM["Prometheus / Alertmanager
-拉取 Node-RED :1880/metrics"]
-  end
-
-  NR -->|批量 SQL 写入| PGB
-  EAP -.->|直连同步| EAP_DB
-  PGB --> HT
-  HT --> CAGG
-  HT --> COMP
-  COMP --> RET
-  GRAF -->|高性能分析查询| CAGG
-  GRAF -->|实时切片查询| HT
-  GRAF -.->|查询 drilling-timescaledb| EAP_DB
-  ALARM <-->|ACID 事务操作| HT
-  NR -->|暴露 /metrics| PROM
+  PROM ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

@@ -28,51 +28,63 @@
 ## 1. ภาพรวมสถาปัตยกรรมอะแดปเตอร์ EAP (EAP Topology)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
-  subgraph SOURCES["อุปกรณ์ในโรงงานและโครงสร้าง IT/OT"]
-    S1["เครือข่ายและเซิร์ฟเวอร์ IT/OT\n(SNMP v2c Agent)"]
-    S2["เครื่องจักร LDI Photolithography\n(HTTP/JSON Batch Producer)"]
-    S3["เครื่องเจาะ CNC และสายชุบ VCP\n(ระบบบันทึกงานผลิต EAP)"]
-    S4["เครื่องจักรการผลิตในอนาคต\n(SECS-II / GEM HSMS Protocol)"]
-  end
-
-  subgraph ADAPTERS["ชั้นอะแดปเตอร์ Equipment Automation Program (EAP)"]
-    A1["อะแดปเตอร์ 1: SNMP Poller\n(รอบละ 30s, ingestion.json)"]
-    A2["อะแดปเตอร์ 2: HTTP Ingestion\n(POST /ldi-telemetry, ldi_ingestion.json)"]
-    A3["อะแดปเตอร์ 3: EAP Database Direct\n(eap_backup DB: machine_event, vcp_upp)"]
-    A4["อะแดปเตอร์ 4: สัญญา SECS/GEM\n(ข้อกำหนดในอนาคต)"]
-  end
-
-  subgraph REGISTRY["ระบบลงทะเบียนเครื่องจักรและฐานข้อมูล"]
-    DEV[("public.devices\nแคตตาล็อกเครื่องจักรหลัก")]
-    HT_SYS[("public.sys_metrics & net_metrics\nตาราง Hypertable ของ SNMP")]
-    HT_LDI[("public.ldi_data\nตาราง Hypertable ของ LDI")]
-    EAP_DB[("eap_backup DB\nmachine_event, vcp_upp, vcp_alarm")]
-    ALARM[("พจนานุกรมและประวัติการแจ้งเตือน\n(ldi_alarm_ms_code และ log)")]
-  end
-
-  subgraph VISUALIZATION["ระบบแสดงผลแดชบอร์ด Grafana"]
-    GRAF["Grafana 13 (22 แดชบอร์ด)\nคิวรีตรงผ่านพอร์ต :5432"]
-  end
-
-  S1 --> A1 --> DEV
-  A1 --> HT_SYS
-  S2 --> A2 --> DEV
-  A2 --> HT_LDI
-  A2 --> ALARM
-  S3 --> A3 --> EAP_DB
+  accTitle: adapter สำหรับเชื่อมต่ออุปกรณ์
+  accDescr: มี adapter อยู่ 3 แบบ: การ poll SNMP และการรับข้อมูล HTTP ใน Node-RED ซึ่งค้นหาเครื่องใน public.devices และการอ่านฐานข้อมูล eap_backup โดยตรง alarm ของ LDI มาจากตัวจำลอง alarm หรือการนำเข้าข้อมูลจริง ส่วน adapter SECS/GEM มีข้อกำหนดแต่ยังไม่ได้สร้าง
+  S1["เซิร์ฟเวอร์และสวิตช์ · SNMP v2c"]:::ext
+  S2["เครื่อง LDI · HTTP JSON"]:::ext
+  S3["ฐานข้อมูล EAP ของโรงงาน · Drilling และ VCP"]:::ext
+  S4["อุปกรณ์ SECS/GEM"]:::future
+  A1["Adapter 1 · SNMP poller<br/>ingestion.json · 30 วินาที"]:::flow
+  A2["Adapter 2 · การรับข้อมูล HTTP<br/>ldi_ingestion.json"]:::flow
+  A3["Adapter 3 · อ่านฐานข้อมูลโดยตรง<br/>data source drilling-timescaledb"]:::app
+  A4["Adapter 4 · SECS/GEM<br/>มีแค่ข้อกำหนด"]:::future
+  ASRC["แหล่งที่มาของ alarm<br/>ldi_alarm_simulator.json · import-real-data.sh"]:::flow
+  DEV[("public.devices<br/>ทะเบียนอุปกรณ์")]:::store
+  HSYS[("sys_metrics · net_metrics")]:::store
+  HLDI[("ldi_data")]:::store
+  ALM[("ldi_alarm_log · ldi_alarm_ms_code")]:::store
+  EAPDB[("eap_backup<br/>machine_event · vcp_upp · vcp_alarm")]:::store
+  GRAF["Grafana · 22 แดชบอร์ด"]:::viz
+  S1 --> A1 --> HSYS
+  S2 --> A2 --> HLDI
+  DEV -.->|"ค้นหา"| A1
+  DEV -.->|"ค้นหา"| A2
+  S3 -.->|"สำเนาที่กู้คืน"| EAPDB
+  EAPDB --> A3 --> GRAF
+  ASRC --> ALM
   S4 -.-> A4 -.-> DEV
+  HSYS --> GRAF
+  HLDI --> GRAF
+  ALM --> GRAF
 
-  HT_SYS --> GRAF
-  HT_LDI --> GRAF
-  EAP_DB -->|"drilling-timescaledb datasource"| GRAF
-  ALARM --> GRAF
-
-  style SOURCES fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style ADAPTERS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
-  style REGISTRY fill:#1e293b,stroke:#10B981,color:#f8fafc
-  style VISUALIZATION fill:#1e293b,stroke:#8B5CF6,color:#f8fafc
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["ระบบภายนอก"]:::ext ~~~ LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app ~~~ LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_viz["Grafana / UI"]:::viz
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_future["ยังไม่ได้สร้าง"]:::future
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  GRAF ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

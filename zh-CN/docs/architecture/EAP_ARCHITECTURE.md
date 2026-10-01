@@ -28,51 +28,63 @@
 ## 1. 多协议设备接入总体架构拓扑 (EAP Topology)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
-  subgraph SOURCES["车间现场与 IT/OT 硬件设备源"]
-    S1["IT/OT 基础设施与服务器\n(SNMP v2c Agent 代理)"]
-    S2["LDI 激光直接成像光刻机\n(HTTP/JSON 批量采集上报)"]
-    S3["CNC 钻孔设备与 VCP 电镀线\n(EAP 运行生产系统)"]
-    S4["未来生产车间机台\n(SECS-II / GEM HSMS 协议栈)"]
-  end
-
-  subgraph ADAPTERS["设备自动化程序 (EAP) 适配器层"]
-    A1["适配器 1: SNMP 轮询器\n(30 秒周期, ingestion.json)"]
-    A2["适配器 2: HTTP 接入网关\n(POST /ldi-telemetry, ldi_ingestion.json)"]
-    A3["适配器 3: EAP 业务数据库直连\n(eap_backup DB: machine_event, vcp_upp)"]
-    A4["适配器 4: SECS/GEM 标准契约\n(未来扩展规范)"]
-  end
-
-  subgraph REGISTRY["统一设备注册中心与存储层"]
-    DEV[("public.devices\n设备主元数据大表")]
-    HT_SYS[("public.sys_metrics & net_metrics\nSNMP 遥测时序超表")]
-    HT_LDI[("public.ldi_data\nLDI 光刻时序超表")]
-    EAP_DB[("eap_backup DB\nmachine_event, vcp_upp, vcp_alarm")]
-    ALARM[("报警主字典与事件流水\n(ldi_alarm_ms_code 与 log)")]
-  end
-
-  subgraph VISUALIZATION["Grafana 监控看板生态"]
-    GRAF["Grafana 13 (22 块看板)\n通过端口 :5432 直接 SQL 查询"]
-  end
-
-  S1 --> A1 --> DEV
-  A1 --> HT_SYS
-  S2 --> A2 --> DEV
-  A2 --> HT_LDI
-  A2 --> ALARM
-  S3 --> A3 --> EAP_DB
+  accTitle: 设备集成适配器
+  accDescr: 现有三种适配器：Node-RED 中的 SNMP 轮询与 HTTP 采集（在 public.devices 中查找机台），以及直接读取 eap_backup 数据库；LDI 告警来自告警模拟器或真实数据导入；SECS/GEM 适配器已有规范但尚未构建。
+  S1["服务器与交换机 · SNMP v2c"]:::ext
+  S2["LDI 机台 · HTTP JSON"]:::ext
+  S3["工厂 EAP 数据库 · 钻孔与 VCP"]:::ext
+  S4["SECS/GEM 设备"]:::future
+  A1["适配器 1 · SNMP 轮询<br/>ingestion.json · 30 秒"]:::flow
+  A2["适配器 2 · HTTP 采集<br/>ldi_ingestion.json"]:::flow
+  A3["适配器 3 · 直接读取数据库<br/>drilling-timescaledb 数据源"]:::app
+  A4["适配器 4 · SECS/GEM<br/>仅有规范"]:::future
+  ASRC["告警来源<br/>ldi_alarm_simulator.json · import-real-data.sh"]:::flow
+  DEV[("public.devices<br/>设备注册表")]:::store
+  HSYS[("sys_metrics · net_metrics")]:::store
+  HLDI[("ldi_data")]:::store
+  ALM[("ldi_alarm_log · ldi_alarm_ms_code")]:::store
+  EAPDB[("eap_backup<br/>machine_event · vcp_upp · vcp_alarm")]:::store
+  GRAF["Grafana · 22 个仪表板"]:::viz
+  S1 --> A1 --> HSYS
+  S2 --> A2 --> HLDI
+  DEV -.->|"查找"| A1
+  DEV -.->|"查找"| A2
+  S3 -.->|"恢复副本"| EAPDB
+  EAPDB --> A3 --> GRAF
+  ASRC --> ALM
   S4 -.-> A4 -.-> DEV
+  HSYS --> GRAF
+  HLDI --> GRAF
+  ALM --> GRAF
 
-  HT_SYS --> GRAF
-  HT_LDI --> GRAF
-  EAP_DB -->|"drilling-timescaledb 数据源直连"| GRAF
-  ALARM --> GRAF
-
-  style SOURCES fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style ADAPTERS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
-  style REGISTRY fill:#1e293b,stroke:#10B981,color:#f8fafc
-  style VISUALIZATION fill:#1e293b,stroke:#8B5CF6,color:#f8fafc
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["外部系统"]:::ext ~~~ LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app ~~~ LG_store["数据存储"]:::store ~~~ LG_viz["Grafana / UI"]:::viz
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_future["尚未构建"]:::future
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  GRAF ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

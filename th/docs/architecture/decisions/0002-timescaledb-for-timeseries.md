@@ -80,55 +80,51 @@
 ### แผนภาพสถาปัตยกรรมการจัดเก็บข้อมูล (Storage Topology)
 
 ```mermaid
-flowchart TD
-  subgraph INGEST["ชั้นการรับข้อมูล (Ingestion Layer)"]
-    NR["Node-RED Ingestion Pipeline
-(HTTP POST / SNMP v2c)"]
-    EAP["EAP Telemetry Producers
-(CNC Drilling / VCP Plating)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: สถาปัตยกรรมการจัดเก็บที่เลือกใน ADR-0002
+  accDescr: Node-RED เขียนผ่าน PgBouncer ลง hypertable ของ TimescaleDB ที่มี chunk 1 วัน continuous aggregate การบีบอัดหลัง 7 วัน และ retention ต่อตาราง โดยมี Grafana, alarm-api และ Prometheus เป็นผู้ใช้ข้อมูล ส่วนข้อมูล Drilling และ VCP อยู่ในฐานข้อมูล eap_backup ที่แยกต่างหาก
+  NR["Node-RED · รับข้อมูล HTTP และ SNMP"]:::flow
+  PGB["PgBouncer · transaction mode · SCRAM"]:::app
+  subgraph TS["TimescaleDB · ims"]
+    HT[("hypertable · chunk 1 วัน<br/>ldi_data · sys_metrics · net_metrics")]:::store
+    CA[("continuous aggregate<br/>1 นาที · 15 นาที · 1 ชม. · hourly")]:::store
+    CO[("บีบอัดหลัง 7 วัน<br/>segment by eqp_id · device_id")]:::store
+    RE[("retention<br/>ข้อมูลดิบ 30–180 วัน · aggregate 30 วัน–2 ปี")]:::store
   end
+  EAPDB[("eap_backup · Drilling และ VCP")]:::store
+  GRAF["Grafana · 22 แดชบอร์ด"]:::viz
+  ALARM["alarm-api"]:::app
+  PROM["Prometheus"]:::obs
+  NR --> PGB --> HT
+  HT --> CA
+  HT --> CO --> RE
+  CA --> GRAF
+  HT --> GRAF
+  EAPDB -->|"drilling-timescaledb"| GRAF
+  ALARM <-->|"transaction"| PGB
+  NR -->|"/metrics"| PROM
 
-  subgraph POOL["ชั้นจัดการการเชื่อมต่อ (Connection Pooling)"]
-    PGB["PgBouncer
-(Transaction Mode, port 5432, AUTH: scram-sha-256)"]
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app ~~~ LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["การเฝ้าระวัง"]:::obs
+    end
   end
-
-  subgraph STORAGE["ชั้น TimescaleDB (public schema & eap_backup)"]
-    HT["Hypertables
-(ldi_data, sys_metrics, net_metrics)
-Chunk Interval: 1 day"]
-    CAGG["Continuous Aggregates (CAGGs)
-(1m, 15m, 1h Rollups)
-เปิดใช้งาน Real-time Aggregation"]
-    COMP["Columnar Compressed Chunks
-Segmentby: machine_id / device_id
-Orderby: time DESC"]
-    RET["Retention Policy Engine
-ลบข้อมูลเก่าอัตโนมัติ drop_chunks > 90d / 180d"]
-    EAP_DB[("Secondary DB: eap_backup
-(ชุดข้อมูล Drilling & VCP)")]
-  end
-
-  subgraph CLIENTS["ชั้นการแสดงผลและการแจ้งเตือน"]
-    GRAF["Grafana Dashboards (22 แดชบอร์ด)
-คิวรีข้อมูลผ่าน CAGG ในระดับเสี้ยววินาที"]
-    ALARM["Alarm API & Webhooks
-อัปเดตสถานะการแจ้งเตือนแบบ ACID"]
-    PROM["Prometheus / Alertmanager
-ดึงเมทริกซ์จาก Node-RED :1880/metrics"]
-  end
-
-  NR -->|Batched SQL Inserts| PGB
-  EAP -.->|Direct Sync| EAP_DB
-  PGB --> HT
-  HT --> CAGG
-  HT --> COMP
-  COMP --> RET
-  GRAF -->|Fast Analytical Queries| CAGG
-  GRAF -->|Real-time Snapshot| HT
-  GRAF -.->|Query drilling-timescaledb| EAP_DB
-  ALARM <-->|ACID Transactions| HT
-  NR -->|Exposes /metrics| PROM
+  PROM ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

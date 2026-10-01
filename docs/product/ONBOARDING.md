@@ -24,13 +24,30 @@ Welcome to the **Industrial Monitoring System (IMS)** engineering team. IMS is a
 ### Architecture Overview
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-  EDGE["Industrial Edge\n(LDI, CNC, VCP, SNMP)"] -->|"HTTPS / SNMP"| INGEST["Ingestion Layer\n(Nginx Proxy & Node-RED)"]
-  INGEST -->|"Connection Pooling"| PGB["PgBouncer :5432"]
-  PGB -->|"Hypertable Writes"| TSDB["TimescaleDB (PostgreSQL 16)"]
-  TSDB -->|"Continuous Aggregates"| GRAFANA["Grafana 13\n(22 Provisioned Dashboards)"]
-  PROM["Prometheus & Alertmanager"] -->|"Webhooks"| NOTIF["LINE & Teams Incident Dispatch"]
+  accTitle: IMS at a glance
+  accDescr: Machines send data over HTTP or are polled over SNMP; nginx and Node-RED ingest it through PgBouncer into TimescaleDB; Grafana shows 22 dashboards; Prometheus, Alertmanager and Grafana alerts reach LINE and Teams through Node-RED.
+  EDGE["LDI · SNMP devices"]:::ext
+  IN["nginx :3000 → Node-RED"]:::flow
+  PGB["PgBouncer :5432"]:::app
+  TSDB[("TimescaleDB")]:::store
+  GRAF["Grafana · 22 dashboards"]:::viz
+  ALERT["Prometheus → Alertmanager"]:::obs
+  NOTIFY["LINE · Teams"]:::notify
+  EDGE -->|"HTTP · SNMP"| IN --> PGB --> TSDB --> GRAF
+  IN -->|"/metrics"| ALERT -->|"via Node-RED"| NOTIFY
+  GRAF -->|"alert rules via Node-RED"| NOTIFY
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

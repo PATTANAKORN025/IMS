@@ -24,48 +24,64 @@
 ทราฟฟิกทั้งหมดที่เข้าสู่พอร์ตหลักภายนอก (พอร์ตมาตรฐาน: `http://localhost:3000`) จะถูกจัดการโดย Nginx Reverse Proxy ประสิทธิภาพสูง ทำหน้าที่รับการเชื่อมต่อจากภายนอก, ควบคุมอัตราการส่งข้อมูลต่อไอพีต้นทาง (`limit_req zone=grafana_limit rate=100r/s burst=2500 nodelay`), จัดการบัฟเฟอร์ขนาดใหญ่ (`4 16k`) และส่งต่อคำขออย่างปลอดภัยไปยังเครือข่ายคอนเทนเนอร์ภายใน
 
 ```mermaid
-flowchart TD
-    subgraph External["ไคลเอนต์และอุปกรณ์ในโรงงาน"]
-        LDI["เครื่องจักรผลิต LDI"]
-        PLC["PLC และเซนเซอร์ในโรงงาน"]
-        OPS["วิศวกรและโอเปอเรเตอร์ NOC"]
-        PROM["ระบบตรวจสอบ Prometheus"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: การ route API ผ่านทางเข้าหลัก
+  accDescr: การเรียก HTTP จากภายนอกทุกครั้งเข้าที่ nginx พอร์ต 3000 และถูก route ตาม path โดย alarm-api และ twin ต้องมี session ของ Grafana ส่วน Alertmanager และ Grafana alerting เรียก webhook ของ Node-RED ภายในเครือข่าย Docker ไม่ผ่าน nginx
+  LDIM["เครื่อง LDI"]:::ext
+  LOAD["client สำหรับ load test"]:::ext
+  USERS["ผู้ปฏิบัติงาน · วิศวกร"]:::actor
+  PROXY["nginx :3000<br/>ims-proxy"]:::ingress
+  NR["node-red :1880"]:::flow
+  ALARM["alarm-api :4000"]:::app
+  GRAF["grafana :3000"]:::viz
+  TWIN["factory-twin-3d :4100"]:::app
+  AM["alertmanager"]:::obs
+  PGB["pgbouncer :5432"]:::app
+  TSDB[("timescaledb :5432")]:::store
+
+  LDIM -->|"POST /ldi-telemetry"| PROXY
+  LOAD -->|"POST /inject"| PROXY
+  USERS -->|"/ · /api/* · /alarm-api/* · /factory-twin-3d/*"| PROXY
+  PROXY -->|"/ldi-telemetry · /inject"| NR
+  PROXY -->|"/ · /api/*"| GRAF
+  PROXY -->|"/alarm-api/* · auth_request"| ALARM
+  PROXY -->|"/factory-twin-3d/* · auth_request"| TWIN
+  PROXY -.->|"/auth-check → /api/user"| GRAF
+  AM -->|"/alert-webhook · Bearer"| NR
+  GRAF -->|"/alert-webhook · Bearer"| NR
+  NR --> PGB
+  ALARM --> PGB
+  GRAF --> PGB
+  TWIN --> PGB
+  PGB --> TSDB
+
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["บุคคล"]:::actor ~~~ LG_ext["ระบบภายนอก"]:::ext ~~~ LG_ingress["ทางเข้า / เกตเวย์"]:::ingress ~~~ LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app
     end
-
-    subgraph FrontDoor["เกตเวย์ขาเข้า (พอร์ต 3000 / 80)"]
-        PROXY["Nginx Reverse Proxy\n(ims-proxy)"]
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["การเฝ้าระวัง"]:::obs ~~~ LG_store["ที่เก็บข้อมูล"]:::store
     end
-
-    subgraph InternalServices["เซอร์วิสแอปพลิเคชันภายใน"]
-        NR["ไปป์ไลน์รับข้อมูล Node-RED\n(:1880)"]
-        ALARM["API จัดการแจ้งเตือน Alarm\n(ims-alarm-api :4000)"]
-        GRAFANA["แดชบอร์ดแสดงผล Grafana\n(ims-grafana :3000)"]
-        AM["ระบบแจ้งเตือน Alertmanager\n(ims-alertmanager :9093)"]
-        TWIN["3D Factory Twin POC\n(ims-factory-twin-3d :4100)"]
-    end
-
-    subgraph StorageLayer["ระบบฐานข้อมูลและการจัดเก็บ"]
-        PGB["PgBouncer ตัวรวมการเชื่อมต่อ\n(:5432)"]
-        TSDB["TimescaleDB เก็บข้อมูลอนุกรมเวลา\n(:5432)"]
-    end
-
-    LDI -->|POST /ldi-telemetry| PROXY
-    PLC -->|POST /inject| PROXY
-    OPS -->|POST /alarm-api/alarms/*| PROXY
-    PROM -->|POST /alert-webhook| PROXY
-
-    PROXY -->|ส่งต่อ /ldi-telemetry| NR
-    PROXY -->|ส่งต่อ /inject| NR
-    PROXY -->|"ส่งต่อ /alarm-api/* (ตรวจสอบสิทธิ์)"| ALARM
-    PROXY -->|ส่งต่อ /api/* และ UI| GRAFANA
-    PROXY -->|"ส่งต่อ /factory-twin-3d/*"| TWIN
-
-    PROXY -.->|ตรวจสอบสิทธิ์ภายใน /auth-check| GRAFANA
-
-    NR -->|"บันทึกแบบกลุ่ม (Batched INSERT)"| PGB
-    ALARM -->|อัปเดต ldi_alarm_lifecycle| PGB
-    GRAFANA -->|คิวรีเชิงวิเคราะห์ / CAGGs| PGB
-    PGB --> TSDB
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  TSDB ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ### รูปแบบการพิสูจน์ตัวตนและการควบคุมสิทธิ์ (Authentication & Authorization)
@@ -275,12 +291,15 @@ curl -X POST http://localhost:3000/inject \
 สถานะของการแจ้งเตือนจะเปลี่ยนไปตามลำดับขั้นตอนที่แน่นอน:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-    [*] --> OPEN: ตรวจพบความผิดปกติจาก Telemetry
-    OPEN --> ACKNOWLEDGED: POST /alarms/ack (โอเปอเรเตอร์รับทราบ)
-    OPEN --> RESOLVED: POST /alarms/resolve (แก้ไขเสร็จทันที)
-    ACKNOWLEDGED --> RESOLVED: POST /alarms/resolve (บันทึกสาเหตุและปิดจบ)
-    RESOLVED --> [*]: ปิดสมบูรณ์
+  accTitle: สถานะใน lifecycle ของ alarm
+  accDescr: แถว alarm เริ่มที่ OPEN เมื่อ insert, POST /alarms/ack เปลี่ยนเป็น ACKNOWLEDGED, POST /alarms/resolve เปลี่ยน OPEN หรือ ACKNOWLEDGED เป็น RESOLVED และ RESOLVED เป็นสถานะสุดท้าย คำขอเพิ่มเติมจะได้ 409
+  [*] --> OPEN: insert alarm (trg_ldi_alarm_lifecycle_init)
+  OPEN --> ACKNOWLEDGED: POST /alarms/ack
+  OPEN --> RESOLVED: POST /alarms/resolve
+  ACKNOWLEDGED --> RESOLVED: POST /alarms/resolve
+  RESOLVED --> [*]: สถานะสุดท้าย · คำขอถัดไป 409
 ```
 
 ### ใครเรียกใช้ได้

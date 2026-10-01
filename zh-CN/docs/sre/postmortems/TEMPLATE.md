@@ -74,25 +74,24 @@ $$\text{错误预算消耗速率 (Burn Rate)} = \frac{\text{实际观测错误�
 所有时间戳必须同时以 **UTC 世界标准时间** 和 **ICT 泰国/中南半岛时间 (UTC+7)** 记录。
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: 示例事件时间线（请替换为真实内容）
+  accDescr: 连接池耗尽事件的示例时间线：告警发现、宣布事件、缓解与恢复。
   autonumber
   participant Mon as Prometheus / Alertmanager
-  participant OnCall as 值班 SRE 工程师
-  participant Pipe as Node-RED 写入流水线
+  participant On as 值班 SRE
+  participant Pipe as Node-RED
   participant DB as PgBouncer / TimescaleDB
-  participant IC as 事故应急指挥官 (IC)
-
-  Note over Mon,DB: 故障时序流转还原
-  Pipe->>DB: 设备恢复重连引发写入突发洪峰 (>120k events/sec)
-  DB-->>Pipe: 连接池耗尽饱和 (pool_size exhausted)
-  Pipe->>Pipe: Node-RED 内存缓冲队列急剧膨胀
-  Mon->>OnCall: 触发告警: IngestionLatencyHigh (P95 > 15s)
-  OnCall->>IC: 声明 SEV-1 级别故障并开启应急作战室
-  IC->>DB: 检查 PgBouncer 客户端及服务端连接状态
-  IC->>DB: 动态扩容连接池并执行重载热刷新
-  DB-->>Pipe: 恢复可用数据库连接，批量提交继续
-  Pipe-->>Mon: 积压队列出清，延迟重新回落至 < 500ms
-  IC->>OnCall: 故障止血成功，转入稳定观察期
+  participant IC as 事件指挥官
+  Note over Mon,IC: 仅为示例 — 请替换为真实时间线
+  Pipe->>DB: 突发写入
+  DB-->>Pipe: 连接池耗尽
+  Mon->>On: 告警触发
+  On->>IC: 宣布事件
+  IC->>DB: 检查连接池并缓解
+  DB-->>Pipe: 提交恢复
+  IC->>On: 已缓解，持续监控
 ```
 
 ### 详细事件流水记录
@@ -109,17 +108,26 @@ sequenceDiagram
 ## 5. 根本原因五问法分析 (5 Whys Root Cause Analysis)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TD
-  W1["1. 为什么 Grafana 监控大屏数据显示停滞？"] --> W2["2. 为什么遥测数据积压在 Node-RED 中？"]
-  W2 --> W3["3. 为什么 PgBouncer 拒绝客户端建立新连接？"]
-  W3 --> W4["4. 为什么 PgBouncer 连接池被完全耗尽？"]
-  W4 --> W5["5. 根本原因: Node-RED 数据库包装层在异常处理分支中遗漏了连接归还操作"]
-
-  style W1 fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style W2 fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style W3 fill:#1e293b,stroke:#FF8800,color:#f8fafc
-  style W4 fill:#1e293b,stroke:#FF8800,color:#f8fafc
-  style W5 fill:#1e293b,stroke:#FF003C,color:#f8fafc
+  accTitle: 示例 5 Whys（请替换为真实分析）
+  accDescr: 以根因结尾的五个为什么示例链。
+  W1["1 · 为什么仪表板数据陈旧？"]:::app
+  W2["2 · 为什么采集停滞？"]:::app
+  W3["3 · 为什么连接被拒绝？"]:::app
+  W4["4 · 为什么连接池耗尽？"]:::app
+  W5["5 · 根因：错误路径未释放连接"]:::notify
+  W1 --> W2 --> W3 --> W4 --> W5
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 1. **为什么 Grafana 监控大屏数据显示停滞？**  

@@ -26,40 +26,84 @@
 IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์ telemetry 2 ชุดที่ทำงานแยกจากกัน** ส่งข้อมูลเข้า TimescaleDB ชุดเดียวที่ใช้ร่วมกัน แสดงผลผ่าน **แดชบอร์ด Grafana 22 ชุด** และแจ้งเตือนผ่านทั้งระบบแจ้งเตือนในตัวของ Grafana และ Prometheus/Alertmanager
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
- subgraph LDI ["ไปป์ไลน์การผลิต LDI (หลัก, ใช้งานจริง)"]
-  SIM["ldi_simulator.json\nตัวจำลองสด Ornstein-Uhlenbeck\nทุก 2 วินาที, 10 เครื่อง"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\nจำกัดอัตราส่ง & รีเวิร์สพร็อกซี"]
-  PROXY --> ING["ldi_ingestion.json\nตรวจสิทธิ์ -> INSERT"]
-  ING --> LDIDATA[("public.ldi_data\nไฮเปอร์เทเบิล, ชิ้นละ 1 วัน")]
-  ALMSIM["ldi_alarm_simulator.json\nตามเงื่อนไข + สัญญาณรบกวน\nทุก 10 วินาที"] --> ALARMLOG[("public.ldi_alarm_log")]
-  ALARMAPI["ims-alarm-api :4000\nเปลี่ยนสถานะ ack/resolve"] --> ALARMLC[("public.ldi_alarm_lifecycle")]
- end
+  accTitle: ไปป์ไลน์ข้อมูลของ IMS
+  accDescr: ไปป์ไลน์ LDI (HTTP, เขียนผ่าน staging) และไปป์ไลน์ SNMP โครงสร้างพื้นฐาน เขียนลง TimescaleDB ข้อมูล Drilling และ VCP อยู่ในฐานข้อมูล eap_backup แยกต่างหาก และระบบแจ้งเตือนทั้งสองส่งผ่าน webhook ของ Node-RED
 
- subgraph LEGACY ["ไปป์ไลน์เดิม SNMP / โครงสร้างพื้นฐาน"]
-  DEV["เซิร์ฟเวอร์จริง 2 เครื่อง\n+ ตัวจำลอง SNMP"] -->|"SNMP v2c, โพลทุก 30 วินาที"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
-  NR --> SNMPDATA[("public.sys_metrics & net_metrics\nไฮเปอร์เทเบิล, ชิ้นละ 1 วัน")]
- end
+  subgraph LDI["ไปป์ไลน์การผลิต LDI"]
+    LDIM["เครื่อง LDI"]:::ext
+    SIM["ldi_simulator.json<br/>แบบจำลอง OU · 10 เครื่อง · 2 วินาที"]:::flow
+    PROXY["nginx :3000<br/>50 r/s, burst 100"]:::ingress
+    ING["ldi_ingestion.json<br/>API key → ตรวจสอบ → staging → insert"]:::flow
+    LDIDATA[("public.ldi_data<br/>hypertable · chunk 1 วัน")]:::store
+    ALMSIM["ldi_alarm_simulator.json<br/>ตามเงื่อนไข + noise · 10 วินาที"]:::flow
+    ALARMLOG[("public.ldi_alarm_log")]:::store
+    ALARMAPI["alarm-api :4000"]:::app
+    ALARMLC[("public.ldi_alarm_lifecycle")]:::store
+  end
 
- subgraph EAP ["การเชื่อมต่อเครื่องจักร (งานเจาะ CNC & ชุบ VCP)"]
-  MOCK["eap-mock-data.js\nตัวสร้างข้อมูลจำลอง"] --> EAPDB[("eap_backup DB\nmachine_event, vcp_upp")]
- end
+  subgraph INFRA["ไปป์ไลน์ SNMP โครงสร้างพื้นฐาน"]
+    DEV["เซิร์ฟเวอร์ สวิตช์<br/>SNMP simulator"]:::ext
+    NR["ingestion.json<br/>fork_5_ways → parser v9"]:::flow
+    SNMPDATA[("sys_metrics · net_metrics · ldi_metrics")]:::store
+  end
 
- LDIDATA --> GRAFANA["Grafana 13\n22 แดชบอร์ดใน 4 แผนก"]
- ALARMLOG --> GRAFANA
- ALARMLC --> GRAFANA
- SNMPDATA --> GRAFANA
- EAPDB --> GRAFANA
- NR -->|"เมตริก /metrics"| PROM["Prometheus"]
- BBOX["Blackbox Exporter"] --> PROM
- GRAFANA -->|"กฎแจ้งเตือนในตัว"| NRWEBHOOK["Node-RED /alert-webhook"]
- PROM --> AM["Alertmanager"] --> NRWEBHOOK
- NRWEBHOOK --> LINE["LINE Messaging API"]
- NRWEBHOOK --> TEAMS["MS Teams webhook"]
+  subgraph EAP["Drilling และ VCP"]
+    EAPDB[("eap_backup<br/>machine_event · vcp_upp")]:::store
+  end
 
- style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
- style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
- style EAP fill:#1e293b,stroke:#3B82F6,color:#e2e8f0
+  GRAFANA["Grafana 13<br/>22 แดชบอร์ด · 4 โฟลเดอร์"]:::viz
+  PROM["Prometheus"]:::obs
+  BBOX["Blackbox exporter"]:::obs
+  AM["Alertmanager"]:::obs
+  HOOK["alerting.json<br/>/alert-webhook"]:::flow
+  NOTIFY["LINE · MS Teams"]:::notify
+
+  LDIM -->|"POST /ldi-telemetry"| PROXY --> ING
+  SIM -->|"127.0.0.1:1880"| ING
+  ING --> LDIDATA
+  ALMSIM -->|"อ่านข้อมูลล่าสุด"| LDIDATA
+  ALMSIM --> ALARMLOG
+  ALARMAPI --> ALARMLC
+  DEV -->|"SNMP v2c · 30 s"| NR --> SNMPDATA
+  LDIDATA --> GRAFANA
+  ALARMLOG --> GRAFANA
+  ALARMLC --> GRAFANA
+  SNMPDATA --> GRAFANA
+  EAPDB -->|"drilling-timescaledb"| GRAFANA
+  NR -->|"/metrics"| PROM
+  BBOX --> PROM
+  PROM --> AM --> HOOK
+  GRAFANA -->|"กฎแจ้งเตือน"| HOOK
+  HOOK --> NOTIFY
+
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["ระบบภายนอก"]:::ext ~~~ LG_ingress["ทางเข้า / เกตเวย์"]:::ingress ~~~ LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app ~~~ LG_store["ที่เก็บข้อมูล"]:::store
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["การเฝ้าระวัง"]:::obs ~~~ LG_notify["การแจ้งเตือน"]:::notify
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 **เหตุผลที่มีไปป์ไลน์สองชุด:**

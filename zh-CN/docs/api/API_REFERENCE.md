@@ -24,48 +24,64 @@
 所有来自外部的客户端流量（默认统一接入网关：`http://localhost:3000`）均由高性能 Nginx 反向代理统一调度与终结。网关层负责应用来源 IP 限流策略 (`limit_req zone=grafana_limit rate=100r/s burst=2500 nodelay`)、配置大尺寸客户端请求头缓冲区 (`4 16k`)，并安全路由至隔离的内部容器网络。
 
 ```mermaid
-flowchart TD
-    subgraph External["外部客户端与工业现场"]
-        LDI["LDI 制造设备"]
-        PLC["车间现场 PLC / 传感器"]
-        OPS["NOC 运维与工艺工程师"]
-        PROM["Prometheus 监控探针"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: 经由统一入口的 API 路由
+  accDescr: 所有外部 HTTP 调用都从 3000 端口进入 nginx 并按路径路由；alarm-api 与 twin 需要 Grafana 会话；Alertmanager 与 Grafana 告警在 Docker 网络内部直接访问 Node-RED webhook，不经过 nginx。
+  LDIM["LDI 机台"]:::ext
+  LOAD["压测客户端"]:::ext
+  USERS["操作员 · 工程师"]:::actor
+  PROXY["nginx :3000<br/>ims-proxy"]:::ingress
+  NR["node-red :1880"]:::flow
+  ALARM["alarm-api :4000"]:::app
+  GRAF["grafana :3000"]:::viz
+  TWIN["factory-twin-3d :4100"]:::app
+  AM["alertmanager"]:::obs
+  PGB["pgbouncer :5432"]:::app
+  TSDB[("timescaledb :5432")]:::store
+
+  LDIM -->|"POST /ldi-telemetry"| PROXY
+  LOAD -->|"POST /inject"| PROXY
+  USERS -->|"/ · /api/* · /alarm-api/* · /factory-twin-3d/*"| PROXY
+  PROXY -->|"/ldi-telemetry · /inject"| NR
+  PROXY -->|"/ · /api/*"| GRAF
+  PROXY -->|"/alarm-api/* · auth_request"| ALARM
+  PROXY -->|"/factory-twin-3d/* · auth_request"| TWIN
+  PROXY -.->|"/auth-check → /api/user"| GRAF
+  AM -->|"/alert-webhook · Bearer"| NR
+  GRAF -->|"/alert-webhook · Bearer"| NR
+  NR --> PGB
+  ALARM --> PGB
+  GRAF --> PGB
+  TWIN --> PGB
+  PGB --> TSDB
+
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["人员"]:::actor ~~~ LG_ext["外部系统"]:::ext ~~~ LG_ingress["入口 / 网关"]:::ingress ~~~ LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app
     end
-
-    subgraph FrontDoor["入口统一网关 (端口 3000 / 80)"]
-        PROXY["Nginx 反向代理\n(ims-proxy)"]
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["监控"]:::obs ~~~ LG_store["数据存储"]:::store
     end
-
-    subgraph InternalServices["隔离的应用服务网络"]
-        NR["Node-RED 接入流水线\n(:1880)"]
-        ALARM["告警生命周期服务\n(ims-alarm-api :4000)"]
-        GRAFANA["Grafana 可视化平台\n(ims-grafana :3000)"]
-        AM["Alertmanager 告警路由\n(ims-alertmanager :9093)"]
-        TWIN["3D 数字孪生 POC\n(ims-factory-twin-3d :4100)"]
-    end
-
-    subgraph StorageLayer["数据持久化层"]
-        PGB["PgBouncer 连接池\n(:5432)"]
-        TSDB["TimescaleDB 时序数据库\n(:5432)"]
-    end
-
-    LDI -->|POST /ldi-telemetry| PROXY
-    PLC -->|POST /inject| PROXY
-    OPS -->|POST /alarm-api/alarms/*| PROXY
-    PROM -->|POST /alert-webhook| PROXY
-
-    PROXY -->|转发 /ldi-telemetry| NR
-    PROXY -->|转发 /inject| NR
-    PROXY -->|"转发 /alarm-api/* (鉴权校验)"| ALARM
-    PROXY -->|转发 /api/* 及 UI 界面| GRAFANA
-    PROXY -->|"转发 /factory-twin-3d/*"| TWIN
-
-    PROXY -.->|内部会话鉴权 /auth-check| GRAFANA
-
-    NR -->|"批量写入 (Batched INSERT)"| PGB
-    ALARM -->|更新 ldi_alarm_lifecycle| PGB
-    GRAFANA -->|分析查询 / CAGGs| PGB
-    PGB --> TSDB
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  TSDB ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ### 身份认证与权限隔离机制 (Authentication Models)
@@ -274,12 +290,15 @@ curl -X POST http://localhost:3000/inject \
 告警状态遵循严格的确定性有限状态机逻辑：
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-    [*] --> OPEN: 遥测引擎检测到异常
-    OPEN --> ACKNOWLEDGED: POST /alarms/ack (操作员确认)
-    OPEN --> RESOLVED: POST /alarms/resolve (就地即时排除)
-    ACKNOWLEDGED --> RESOLVED: POST /alarms/resolve (填写根本原因并解决)
-    RESOLVED --> [*]: 告警归档关闭
+  accTitle: 告警生命周期状态
+  accDescr: 告警行插入时为 OPEN；POST /alarms/ack 变为 ACKNOWLEDGED；POST /alarms/resolve 将 OPEN 或 ACKNOWLEDGED 变为 RESOLVED；RESOLVED 为终态，后续请求返回 409。
+  [*] --> OPEN: 插入告警 (trg_ldi_alarm_lifecycle_init)
+  OPEN --> ACKNOWLEDGED: POST /alarms/ack
+  OPEN --> RESOLVED: POST /alarms/resolve
+  ACKNOWLEDGED --> RESOLVED: POST /alarms/resolve
+  RESOLVED --> [*]: 终态 · 后续请求 409
 ```
 
 ### 调用权限

@@ -28,57 +28,58 @@
 ## 1. 制造工序横向扩展架构拓扑 (Domain Topology)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
-  subgraph FOUNDATION["核心平台公共基石 (无需改动的稳定底座)"]
-    DEV[("public.devices\n统一硬件设备身份与元数据总表")]
-    PGB["PgBouncer 事务模式连接池\n(端口 5432, AUTH: scram-sha-256)"]
-    CORE_LINT["CI 自动化门禁与合规检查套件\n(alarm-sync, query-budget, dashboard-linter)"]
+  accTitle: 工艺域及新增方式
+  accDescr: LDI 位于 ims 数据库，注册表为 public.devices；钻孔与 VCP 位于 eap_backup，钻孔注册表为 machine_master；新工艺只需新增自己的表、聚合和仪表板，无需修改共享平台。
+  subgraph PLATFORM["共享平台"]
+    PGB["PgBouncer · SCRAM"]:::app
+    LINT["CI 检查<br/>dashboard · query budget · alarm sync"]:::app
+    GRAF["Grafana · 每个域一个文件夹"]:::viz
   end
+  subgraph LDI["LDI · 数据库 ims"]
+    LREG[("public.devices")]:::store
+    LTBL[("ldi_data · ldi_alarm_log")]:::store
+    LAGG[("ldi_data_1m · 15m · 1h · hourly")]:::store
+  end
+  subgraph DRL["钻孔 · 数据库 eap_backup"]
+    DREG[("machine_master")]:::store
+    DTBL[("machine_event · agent_log")]:::store
+    DVIEW[("drilling.event · drilling.telemetry")]:::store
+  end
+  subgraph VCP["VCP · 数据库 eap_backup"]
+    VTBL[("vcp_upp · vcp_alarm · vcp_status_change")]:::store
+    VVIEW[("eap_api_vcp_* 视图")]:::store
+  end
+  subgraph NEW["新工艺（示例：AOI）"]
+    NTBL[("&lt;process&gt;_data · hypertable")]:::future
+    NAGG[("&lt;process&gt;_data_1m")]:::future
+  end
+  LREG --> LTBL --> LAGG --> GRAF
+  DREG --> DTBL --> DVIEW --> GRAF
+  VTBL --> VVIEW --> GRAF
+  NTBL -.-> NAGG -.-> GRAF
 
-  subgraph DOMAINS["增量生产制造工序领域 (独立时序超表群)"]
-    subgraph D_LDI["工序领域: LDI 激光光刻曝光"]
-      LDI_TBL[("public.ldi_data (时序超表)")]
-      LDI_ALM[("public.ldi_alarm_ms_code 与 log")]
-      LDI_CAGGS[("ldi_data_1m / 15m / 1h / ldi_data_hourly")]
-    end
-    subgraph D_DRL["工序领域: CNC 数控钻孔设备群"]
-      DRL_TBL[("eap_backup: public.machine_event")]
-      DRL_ALM[("eap_backup: public.agent_log")]
-      DRL_CAGGS[("直接 SQL 分析查询与视图")]
-    end
-    subgraph D_VCP["工序领域: VCP 垂直连续电镀生产线"]
-      VCP_TBL[("eap_backup: public.vcp_upp (100k 行)")]
-      VCP_ALM[("eap_backup: public.vcp_alarm 与 vcp_status_change")]
-      VCP_CAGGS[("视图: eap_api_vcp_upp")]
-    end
-    subgraph D_FUTURE["未来新增工序 (如 AOI 检测 / 蚀刻)"]
-      NEW_TBL[("public.<process>_data (时序超表)")]
-      NEW_ALM[("<process>_alarm_ms_code 与 log")]
-      NEW_CAGGS[("cagg_<process>_1m")]
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_app["IMS 服务"]:::app ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_store["数据存储"]:::store ~~~ LG_future["尚未构建"]:::future
     end
   end
-
-  subgraph DASHBOARDS["Grafana 预配仪表盘集群 (严格遵循 Grid-24)"]
-    LDI_DASH["LDI 仪表盘组 (10)\n(安灯看版, 深度工程分析, 制造总览, 数字孪生)"]
-    DRL_DASH["钻孔仪表盘组 (4)\n(机群概览, 单机排查, 班次统计, 异常分析)"]
-    VCP_DASH["电镀仪表盘组 (3)\n(实时电视墙, 运行控制台, 总体概览)"]
-    NEW_DASH["新工序仪表盘组\n(现场看版, 工程分析, 指挥中心)"]
-  end
-
-  DEV --> LDI_TBL
-  DEV --> DRL_TBL
-  DEV --> VCP_TBL
-  DEV -.-> NEW_TBL
-
-  LDI_TBL --> LDI_CAGGS --> LDI_DASH
-  DRL_TBL --> DRL_CAGGS --> DRL_DASH
-  VCP_TBL --> VCP_CAGGS --> VCP_DASH
-  NEW_TBL -.-> NEW_CAGGS -.-> NEW_DASH
-
-  style FOUNDATION fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style DOMAINS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
-  style DASHBOARDS fill:#1e293b,stroke:#10B981,color:#f8fafc
+  GRAF ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

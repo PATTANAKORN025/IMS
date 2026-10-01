@@ -16,35 +16,36 @@
 ## 🗺️ 生态系统拓扑结构 (Ecosystem Topology)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 mindmap
-  root((IMS Ecosystem))
-    Macro(第一层：高管与车队指挥)
-      Easy Overview
-      NOC Overview
-      Mfg Command Center
-      Drilling Fleet Overview
-      VCP Overview
-    Predictive(第二层：系统健康)
-      Factory Digital Twin
-      Capacity Planning
-      Meta-Monitoring
-      Drilling Shift Production
-    Engineering(第三层：工程与深度分析)
-      Engineering Drill-Down
-      LDI Analytics
-      Ingestion Latency
-      Drilling Anomaly Analysis
-    Tactical(第四层：战术行动)
-      Machine Snapshot
-      Operator Andon
-      Data Readiness
-      Drilling Machine Investigation
-      VCP Realtime Wall
-      VCP Operations Console
-    Incident(第五层：事件管理)
-      Alarm Console
-      Alarm Response
-      Alarm Dictionary
+  root((IMS 仪表板))
+    T1(第 1 层 · 管理层与全局)
+      LDI 01 Fleet Executive Overview
+      Platform 01 NOC Overview
+      LDI 04 Manufacturing Fleet Command Center
+      Drilling 01 Fleet Digital Twin & Overview
+      VCP 01 Plating Fleet Overview
+    T2(第 2 层 · 系统健康)
+      LDI 03 Factory 3D Digital Twin
+      Platform 03 AIOps Capacity
+      Platform 05 Meta-Monitoring
+      Drilling 02 Shift Production & OEE
+    T3(第 3 层 · 深度分析)
+      Platform 02 Engineering Drill-Down
+      LDI 06 Engineering Analytics & SPC
+      Platform 04 Ingestion Latency
+      Drilling 04 Fleet Anomaly & RCA
+    T4(第 4 层 · 车间现场)
+      LDI 05 Machine Snapshot
+      LDI 02 Operator Andon
+      LDI 10 Data Readiness
+      Drilling 03 Machine Investigation
+      VCP 03 Real-Time Wall
+      VCP 02 Operations Console
+    T5(第 5 层 · 告警处理)
+      LDI 07 Alarm Console
+      LDI 08 Alarm Response
+      LDI 09 Alarm Dictionary
 ```
 
 > [!TIP]

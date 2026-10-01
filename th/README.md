@@ -319,55 +319,93 @@ ORDER BY bucket ASC;
 ## สถาปัตยกรรม
 
 ```mermaid
-flowchart LR
-  subgraph Collection ["การเก็บข้อมูล"]
-    J["สวิตช์เครือข่าย"] -->|SNMP v2c| W["Node-RED\ningestion.json"]
-    S["เซิร์ฟเวอร์"] -->|SNMP v2c| W
-    L["เครื่องจักร LDI"] -->|"HTTP POST /ldi-telemetry\n(ผ่าน Nginx Proxy)"| LI["Node-RED\nldi_ingestion.json"]
-    EAP["งานเจาะและชุบ"] -.->|"ซิงค์ตรง"| EDB[("eap_backup DB\nmachine_event, vcp_upp")]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: ภาพรวมระบบ IMS
+  accDescr: ข้อมูลจากอุปกรณ์ SNMP เครื่อง LDI และฐานข้อมูล EAP ของโรงงาน ผ่าน nginx และ Node-RED เข้าสู่ TimescaleDB แสดงผลใน Grafana 22 แดชบอร์ด และการแจ้งเตือนส่งถึง LINE และ Teams ผ่าน Node-RED
+
+  subgraph SRC["แหล่งข้อมูล"]
+    SNMPDEV["เซิร์ฟเวอร์และสวิตช์<br/>SNMP v2c agent"]:::ext
+    LDIM["เครื่อง LDI"]:::ext
+    EAPSRC["ฐานข้อมูล EAP ของโรงงาน<br/>Drilling และ VCP"]:::ext
   end
 
-  subgraph Processing ["ไปป์ไลน์สตรีมมิง V10"]
-    W -->|fork_5_ways| CPU[CPU Walker]
-    W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
-    W -->|fork_5_ways| STO[Storage Walker]
-    W -->|fork_5_ways| TMP[Temp Walker]
-    CPU --> P["Stateful Parser\nsre_parser v10"]
-    NET --> P
-    STO --> P
-    TMP --> P
-    LI -->|"Write-Ahead Staging\ningest_staging"| STG["บันทึกลงไฮเปอร์เทเบิลแบบชุด\nคืนหน่วยความจำชัดเจน"]
+  USERS["ผู้ปฏิบัติงานและวิศวกร<br/>เบราว์เซอร์"]:::actor
+  PROXY["nginx :3000<br/>ทางเข้าเดียวของระบบ"]:::ingress
+
+  subgraph NR["Node-RED"]
+    NR_LDI["ldi_ingestion.json<br/>API key · ตรวจสอบ · staging"]:::flow
+    NR_SIM["ldi_simulator.json<br/>ldi_alarm_simulator.json"]:::flow
+    NR_SNMP["ingestion.json<br/>walker SNMP 5 ตัว → parser v9"]:::flow
+    NR_ALERT["alerting.json<br/>/alert-webhook"]:::flow
   end
 
-  subgraph Storage ["การจัดเก็บ"]
-    P -->|"Batch INSERT (nodered_writer)"| B["PgBouncer :5432\nSCRAM-SHA-256 Pool"]
-    STG -->|"Batch INSERT (nodered_writer)"| B
-    B --> T[("TimescaleDB :5432\nสคีมา public")]
-    T --> CAGG["CAGGs\n1m → 15m → 1h / รายชั่วโมง"]
+  PGB["PgBouncer :5432<br/>SCRAM · transaction pool"]:::app
+  TSDB[("TimescaleDB · ims<br/>hypertable + CAGG")]:::store
+  EAPDB[("TimescaleDB · eap_backup<br/>machine_event · vcp_*")]:::store
+
+  subgraph APPS["แอปพลิเคชัน"]
+    GRAF["Grafana 13<br/>22 แดชบอร์ด"]:::viz
+    ALARM["alarm-api<br/>ack / resolve"]:::app
+    TWIN["factory-twin-3d"]:::app
   end
 
-  subgraph Visualization ["การแสดงผล"]
-    CAGG --> G2["Grafana 13\nแดชบอร์ดการผลิต 10 ชุด"]
-    T --> G1["Grafana 13\nแดชบอร์ดโครงสร้างพื้นฐาน 5 ชุด"]
-    EDB -->|"drilling-timescaledb"| G3["Grafana 13\nแดชบอร์ดงานเจาะ CNC 4 ชุด"]
-    EDB -->|"drilling-timescaledb"| G4["Grafana 13\nแดชบอร์ดงานชุบ VCP 3 ชุด"]
-    T --> FT["Factory Twin 3D\n+ Alarm API"]
+  subgraph MON["การเฝ้าระวังและแจ้งเตือน"]
+    PROM["Prometheus"]:::obs
+    BBOX["Blackbox exporter"]:::obs
+    AM["Alertmanager"]:::obs
   end
+  NOTIFY["LINE · MS Teams"]:::notify
 
-  subgraph Alerting ["การแจ้งเตือน"]
-    W -->|"ดึง /metrics"| PR["Prometheus\nประเมินกฎแจ้งเตือน"]
-    PR --> AM["Alertmanager\nInhibition Rules"]
-    AM --> WH["Node-RED\n/alert-webhook"]
-    G1 -->|"การแจ้งเตือนในตัว"| WH
-    G2 -->|"การแจ้งเตือนในตัว"| WH
-    WH --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
+  SNMPDEV -->|"SNMP v2c · 30 s"| NR_SNMP
+  LDIM -->|"POST /ldi-telemetry"| PROXY
+  PROXY -->|"/ldi-telemetry · /inject"| NR_LDI
+  NR_SIM -->|"127.0.0.1:1880"| NR_LDI
+  NR_SNMP -->|"nodered_writer"| PGB
+  NR_LDI -->|"nodered_writer"| PGB
+  PGB --> TSDB
+  EAPSRC -.->|"สำเนาที่กู้คืน"| EAPDB
+  USERS -->|"HTTP :3000"| PROXY
+  PROXY --> GRAF
+  PROXY -->|"auth_request"| ALARM
+  PROXY -->|"auth_request"| TWIN
+  TSDB --> GRAF
+  EAPDB -->|"drilling-timescaledb"| GRAF
+  ALARM --> PGB
+  TWIN --> PGB
+  NR_SNMP -->|"/metrics"| PROM
+  BBOX --> PROM
+  PROM --> AM
+  AM -->|"Bearer token"| NR_ALERT
+  GRAF -->|"กฎแจ้งเตือน · Bearer token"| NR_ALERT
+  NR_ALERT --> NOTIFY
+
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["บุคคล"]:::actor ~~~ LG_ext["ระบบภายนอก"]:::ext ~~~ LG_ingress["ทางเข้า / เกตเวย์"]:::ingress ~~~ LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["การเฝ้าระวัง"]:::obs ~~~ LG_notify["การแจ้งเตือน"]:::notify
+    end
+    LEGEND_0 ~~~ LEGEND_1
   end
-
-  style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
-  style Processing fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
-  style Storage fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
-  style Visualization fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
-  style Alerting fill:#1a1f2e,stroke:#EF4444,color:#e2e8f0
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 <details>

@@ -102,12 +102,16 @@ Use GitHub-flavored markdown alerts to visually highlight operational boundaries
 
 ## 5. Visual Architecture Diagrams (Mermaid)
 
-Technical architectures, sequence lifecycles, and data state transitions must be visualized using Mermaid diagrams embedded directly in Markdown:
+Architecture, sequences and state machines are drawn as Mermaid diagrams embedded in Markdown. Every diagram follows one standard; `tests/lint/mermaid-lint.js` (pre-commit and CI) and `scripts/check-mermaid-render.js` (CI, headless browser) enforce it.
 
-- **Supported Chart Types**: `flowchart TD`, `flowchart LR`, `sequenceDiagram`, `stateDiagram-v2`.
-- **Label Quoting**: Always quote node labels containing special characters, brackets, or ports:
-  `A["PgBouncer (:5432)"] --> B[("TimescaleDB (public)")]`
-- **Standalone `.mermaid` Files**: For system-wide architecture overviews, maintain a matching raw `.mermaid` definition in `docs/architecture/` (e.g., `ims-system-architecture.mermaid`) for external rendering in automated CI pipelines.
+- **Model**: the C4 levels for structure (context → containers → components, in `docs/architecture/ARCHITECTURE_DIAGRAM.md`), sequence diagrams for runtime behaviour, state diagrams for lifecycles. Arrows always show the direction data moves.
+- **Facts come from the code**: every service, port, file, table, status code and interval in a diagram must exist in compose, the flows, the migrations or the live database. The lint rejects a `*.json` / `*.js` / `*.sh` / `*.sql` name that is not in the repository and a `public.<name>` no migration creates. Do not hard-code counts that drift (rows, queries).
+- **One visual language**: the first line of every block is the shared `INIT` from `scripts/lib/mermaid-theme.js` (readable on GitHub's light and dark page). Colour nodes only through the semantic classes in `CLASS_DEFS` (`actor`, `ext`, `ingress`, `app`, `flow`, `store`, `viz`, `obs`, `notify`, `future`) and add a legend when classes are used, so meaning never depends on colour alone.
+- **Accessibility**: declare `accTitle` and `accDescr` in every diagram (mindmap is the only exempt type; it cannot parse them).
+- **Readability**: keep diagrams under about 1,600 px wide (the render check warns above 2,400 px): prefer `flowchart TB`, at most about five nodes per rank, short labels with `<br/>` line breaks, and split a view rather than cramming it.
+- **Syntax traps**: quote labels with special characters (`A["PgBouncer (:5432)"]`, `-->|"label (x)"|`); never put `;` in sequence-diagram text (it ends the statement); a subgraph's `direction` is ignored when its nodes link outside it.
+- **Three languages, one structure**: the th/ and zh-CN/ mirrors must have the same diagrams in the same order with the same node ids; only labels are translated.
+- **Standalone `.mermaid` file**: `docs/architecture/ims-system-architecture.mermaid` must equal the overview diagram in `README.md` (the lint compares them).
 
 ---
 

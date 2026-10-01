@@ -48,12 +48,15 @@
 告警生命周期的状态跃迁由 PostgreSQL 服务端触发器 `trg_ldi_alarm_lifecycle_guard` 进行强一致性保证：
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-    [*] --> OPEN: 告警事件触发生成 (trg_ldi_alarm_lifecycle_init)
-    OPEN --> ACKNOWLEDGED: POST /alarm-api/alarms/ack (操作员认领 + 时间戳)
-    OPEN --> RESOLVED: POST /alarm-api/alarms/resolve (直接闭环修复)
-    ACKNOWLEDGED --> RESOLVED: POST /alarm-api/alarms/resolve (处置人 + 修复备注)
-    RESOLVED --> [*]: 终态归档 (禁止任何后续 UPDATE 修改)
+  accTitle: 告警生命周期状态（迁移 077）
+  accDescr: 告警行插入时为 OPEN；POST /alarms/ack 变为 ACKNOWLEDGED；POST /alarms/resolve 将 OPEN 或 ACKNOWLEDGED 变为 RESOLVED；RESOLVED 为终态，后续请求返回 409。
+  [*] --> OPEN: 插入告警 (trg_ldi_alarm_lifecycle_init)
+  OPEN --> ACKNOWLEDGED: POST /alarms/ack
+  OPEN --> RESOLVED: POST /alarms/resolve
+  ACKNOWLEDGED --> RESOLVED: POST /alarms/resolve
+  RESOLVED --> [*]: 终态 · 后续请求 409
 ```
 
 ### 状态定义与触发器约束

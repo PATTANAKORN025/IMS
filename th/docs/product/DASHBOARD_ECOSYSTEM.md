@@ -16,35 +16,36 @@
 ## 🗺️ แผนผังระบบนิเวศ (Ecosystem Topology)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 mindmap
-  root((IMS Ecosystem))
-    Macro(ระดับที่ 1: ผู้บริหารและภาพรวม)
-      Easy Overview
-      NOC Overview
-      Mfg Command Center
-      Drilling Fleet Overview
-      VCP Overview
-    Predictive(ระดับที่ 2: สุขภาพระบบ)
-      Factory Digital Twin
-      Capacity Planning
-      Meta-Monitoring
-      Drilling Shift Production
-    Engineering(ระดับที่ 3: วิเคราะห์เชิงลึก)
-      Engineering Drill-Down
-      LDI Analytics
-      Ingestion Latency
-      Drilling Anomaly Analysis
-    Tactical(ระดับที่ 4: ปฏิบัติการหน้างาน)
-      Machine Snapshot
-      Operator Andon
-      Data Readiness
-      Drilling Machine Investigation
-      VCP Realtime Wall
-      VCP Operations Console
-    Incident(ระดับที่ 5: จัดการอุบัติการณ์)
-      Alarm Console
-      Alarm Response
-      Alarm Dictionary
+  root((แดชบอร์ด IMS))
+    T1(ระดับ 1 · ผู้บริหารและภาพรวม)
+      LDI 01 Fleet Executive Overview
+      Platform 01 NOC Overview
+      LDI 04 Manufacturing Fleet Command Center
+      Drilling 01 Fleet Digital Twin & Overview
+      VCP 01 Plating Fleet Overview
+    T2(ระดับ 2 · สุขภาพระบบ)
+      LDI 03 Factory 3D Digital Twin
+      Platform 03 AIOps Capacity
+      Platform 05 Meta-Monitoring
+      Drilling 02 Shift Production & OEE
+    T3(ระดับ 3 · วิเคราะห์เชิงลึก)
+      Platform 02 Engineering Drill-Down
+      LDI 06 Engineering Analytics & SPC
+      Platform 04 Ingestion Latency
+      Drilling 04 Fleet Anomaly & RCA
+    T4(ระดับ 4 · หน้างาน)
+      LDI 05 Machine Snapshot
+      LDI 02 Operator Andon
+      LDI 10 Data Readiness
+      Drilling 03 Machine Investigation
+      VCP 03 Real-Time Wall
+      VCP 02 Operations Console
+    T5(ระดับ 5 · จัดการ alarm)
+      LDI 07 Alarm Console
+      LDI 08 Alarm Response
+      LDI 09 Alarm Dictionary
 ```
 
 > [!TIP]

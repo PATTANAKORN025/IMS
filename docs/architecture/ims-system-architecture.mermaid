@@ -1,87 +1,87 @@
-%% Industrial Monitoring System (IMS) - Complete System Architecture Topology
-%% File: docs/architecture/ims-system-architecture.mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: IMS system overview
+  accDescr: Telemetry from SNMP devices, LDI machines and the plant EAP database flows through nginx and Node-RED into TimescaleDB, is shown in 22 Grafana dashboards, and alerts reach LINE and Teams through Node-RED.
 
-flowchart TD
-  subgraph EdgeLayer ["Edge Layer: Physical Machines, Sensors & Compute"]
-    LDI["LDI Manufacturing Machines\n(HTTP/JSON Telemetry)"]
-    CNC["CNC Drilling Machines\n(eap_backup Event Logs)"]
-    VCP["VCP Plating Lines\n(eap_backup Sensor & Bath Logs)"]
-    SRV["Linux Server Fleet\n(SNMP v2c Compute Metrics)"]
-    SW["Juniper EX Switches\n(SNMP v2c Interface Counters)"]
-    SIM["SNMP Simulator (ims-snmpsim)\n(Local Development Agent)"]
+  subgraph SRC["Sources"]
+    SNMPDEV["Servers & switches<br/>SNMP v2c agents"]:::ext
+    LDIM["LDI machines"]:::ext
+    EAPSRC["Plant EAP database<br/>drilling & VCP"]:::ext
   end
 
-  subgraph GatewayLayer ["Gateway & Security Layer: Port 3000 / 80"]
-    PROXY["Nginx Reverse Proxy (ims-proxy)\nRate Limit: 100r/s | Burst: 2500\nClient Header Buffers: 4 16k"]
+  USERS["Operators & engineers<br/>browser"]:::actor
+  PROXY["nginx :3000<br/>single front door"]:::ingress
+
+  subgraph NR["Node-RED"]
+    NR_LDI["ldi_ingestion.json<br/>API key · validate · staging"]:::flow
+    NR_SIM["ldi_simulator.json<br/>ldi_alarm_simulator.json"]:::flow
+    NR_SNMP["ingestion.json<br/>5 SNMP walkers → v9 parser"]:::flow
+    NR_ALERT["alerting.json<br/>/alert-webhook"]:::flow
   end
 
-  subgraph IngestionLayer ["Ingestion & Transformation Pipeline"]
-    NR["Node-RED Pipeline (ims-node-red :1880)\ningestion.json | ldi_ingestion.json\nalerting.json | simulators"]
-    BBOX["Blackbox Exporter (ims-blackbox :9115)\nSLA & HTTP/TCP Probes"]
+  PGB["PgBouncer :5432<br/>SCRAM · transaction pool"]:::app
+  TSDB[("TimescaleDB · ims<br/>hypertables + CAGGs")]:::store
+  EAPDB[("TimescaleDB · eap_backup<br/>machine_event · vcp_*")]:::store
+
+  subgraph APPS["Applications"]
+    GRAF["Grafana 13<br/>22 dashboards"]:::viz
+    ALARM["alarm-api<br/>ack / resolve"]:::app
+    TWIN["factory-twin-3d"]:::app
   end
 
-  subgraph PersistenceLayer ["Persistence Tier"]
-    PGB["PgBouncer Pooler (ims-pgbouncer :5432)\nTransaction Pooling | AUTH: scram-sha-256"]
-    TSDB[("TimescaleDB (ims-timescaledb :5432)\nHypertables: ldi_data, sys_metrics, net_metrics, ldi_alarm_log\nCAGGs: 1m, 15m, 1h, Hourly\nSecondary DB: eap_backup")]
-    DBMIG["Migration Runner (ims-db-migrate)\nMigrations 001 - 091"]
-    ARCH["Observability Archiver\n(ims-observability-archiver)"]
-    PGADMIN["PgAdmin 4 (ims-pgadmin4 :5050)\nDatabase Web Management"]
+  subgraph MON["Monitoring & alerting"]
+    PROM["Prometheus"]:::obs
+    BBOX["Blackbox exporter"]:::obs
+    AM["Alertmanager"]:::obs
   end
+  NOTIFY["LINE · MS Teams"]:::notify
 
-  subgraph VisualizationLayer ["Visualization & Application Tier"]
-    GRAFANA["Grafana 13 (ims-grafana :3000)\n22 Dashboards across 4 Domains\nCyberpunk HUD | Grid-24 Layout"]
-    ALARM_API["Alarm API (ims-alarm-api :4000)\nLeast-Privilege: alarm_api_writer\nLifecycle State: OPEN -> ACK -> RESOLVED"]
-    TWIN["Factory Twin 3D (ims-factory-twin-3d :4100)\nFloor 1 Digital Twin POC"]
-    RENDERER["Image Renderer (ims-grafana-renderer :8081)\nChromium Headless PNG Snapshots"]
-  end
-
-  subgraph AlertingLayer ["Observability & Incident Dispatch"]
-    PROM["Prometheus (ims-prometheus :9090)\nMetrics Scraping & Rule Evaluation"]
-    AM["Alertmanager (ims-alertmanager :9093)\nDeduplication, Grouping & Inhibition"]
-    LINE["LINE Messaging API\nExternal Operator Alerts"]
-    TEAMS["Microsoft Teams\nIncoming Webhook Adaptive Cards"]
-  end
-
-  %% Ingress Routing
-  LDI -->|POST /ldi-telemetry| PROXY
-  PROXY -->|Forward /ldi-telemetry| NR
-  PROXY -->|Forward /inject| NR
-  SRV -->|UDP 161 Poll| NR
-  SW -->|UDP 161 Poll| NR
-  SIM -->|UDP 161 Poll| NR
-
-  %% Gateway Auth Sub-requests & Proxied Routes
-  PROXY -->|Forward UI & API| GRAFANA
-  PROXY -->|"Forward /alarm-api/* (Auth Checked)"| ALARM_API
-  PROXY -->|"Forward /factory-twin-3d/* (Auth Checked)"| TWIN
-  PROXY -.->|Internal /auth-check sub-request| GRAFANA
-
-  %% Persistence Connections
-  NR -->|"Batched INSERTs (10s)"| PGB
-  ALARM_API -->|UPDATE ldi_alarm_lifecycle| PGB
-  GRAFANA -->|CAGG Analytical Queries| PGB
+  SNMPDEV -->|"SNMP v2c · 30 s"| NR_SNMP
+  LDIM -->|"POST /ldi-telemetry"| PROXY
+  PROXY -->|"/ldi-telemetry · /inject"| NR_LDI
+  NR_SIM -->|"127.0.0.1:1880"| NR_LDI
+  NR_SNMP -->|"nodered_writer"| PGB
+  NR_LDI -->|"nodered_writer"| PGB
   PGB --> TSDB
-  CNC -.->|"Log Sync (eap_backup)"| TSDB
-  VCP -.->|"Sensor Sync (eap_backup)"| TSDB
+  EAPSRC -.->|"restored copy"| EAPDB
+  USERS -->|"HTTP :3000"| PROXY
+  PROXY --> GRAF
+  PROXY -->|"auth_request"| ALARM
+  PROXY -->|"auth_request"| TWIN
+  TSDB --> GRAF
+  EAPDB -->|"drilling-timescaledb"| GRAF
+  ALARM --> PGB
+  TWIN --> PGB
+  NR_SNMP -->|"/metrics"| PROM
+  BBOX --> PROM
+  PROM --> AM
+  AM -->|"Bearer token"| NR_ALERT
+  GRAF -->|"alert rules · Bearer token"| NR_ALERT
+  NR_ALERT --> NOTIFY
 
-  %% Support & Admin
-  DBMIG -->|Initial Migrations| TSDB
-  ARCH -.->|Snapshot Logging| TSDB
-  PGADMIN -.->|Admin Query| TSDB
-  GRAFANA -->|Render Request| RENDERER
-
-  %% Alerting Flow
-  NR -->|"Metrics Scrape /metrics"| PROM
-  PROM -->|Fire Alerts| AM
-  AM -->|POST /alert-webhook| NR
-  GRAFANA -->|Native Alerts /alert-webhook| NR
-  NR -->|HTTPS API Push| LINE
-  NR -->|HTTPS Webhook POST| TEAMS
-
-  %% Styling
-  style EdgeLayer fill:#111827,stroke:#3B82F6,color:#F3F4F6
-  style GatewayLayer fill:#1e1e38,stroke:#00F2FE,color:#F3F4F6
-  style IngestionLayer fill:#1a1f2e,stroke:#F59E0B,color:#F3F4F6
-  style PersistenceLayer fill:#13221d,stroke:#10B981,color:#F3F4F6
-  style VisualizationLayer fill:#1f132e,stroke:#8B5CF6,color:#F3F4F6
-  style AlertingLayer fill:#2a1419,stroke:#EF4444,color:#F3F4F6
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["Person"]:::actor ~~~ LG_ext["External system"]:::ext ~~~ LG_ingress["Ingress / gateway"]:::ingress ~~~ LG_flow["Node-RED flow"]:::flow ~~~ LG_app["IMS service"]:::app
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_store["Data store"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["Monitoring"]:::obs ~~~ LG_notify["Notification"]:::notify
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3

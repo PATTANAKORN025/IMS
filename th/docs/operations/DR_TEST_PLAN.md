@@ -26,41 +26,43 @@
 ## 1. วงจรชีวิตและลำดับขั้นตอนการซ้อมกู้คืนระบบ (DR Drill Sequences)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: การซ้อมกู้คืนระบบ
+  accDescr: การซ้อม 3 แบบที่รันโดย scripts/dr-test.sh: สำรองและกู้คืนลงฐานข้อมูลชั่วคราวพร้อมตรวจจำนวนแถว, kill คอนเทนเนอร์หนึ่งตัวและจับเวลาการรีสตาร์ต และการสร้างใหม่ทั้งหมดแบบทำลายข้อมูลซึ่งต้องใช้ --confirm-destroy
   autonumber
-  actor SRE as วิศวกร SRE
-  participant Script as scripts/dr-test.sh
-  participant DB as ims-timescaledb
-  participant TestDB as ฐานข้อมูลชั่วคราว ims_dr_test
-  participant Docker as Docker Engine Daemon
-
-  Note over SRE,Docker: การซ้อมที่ 1: ตรวจสอบการสำรองและกู้คืนข้อมูล (Backup & Restore)
-  SRE->>Script: ./scripts/dr-test.sh backup-restore
-  Script->>DB: ดึงจำนวนแถวก่อนสำรอง (Pre-count)
-  Script->>DB: สตรีมคำสั่ง pg_dump บันทึกลง backup.sql
-  Script->>DB: ดึงจำนวนแถวหลังสำรอง (Post-count)
-  Script->>TestDB: CREATE DATABASE ims_dr_test พร้อม Restore ข้อมูล
-  Script->>TestDB: SELECT count(*) FROM ldi_data
-  Script->>Script: ตรวจสอบเงื่อนไข: Count(Pre) <= Restored <= Count(Post)
-  Script->>TestDB: DROP DATABASE ims_dr_test ลบทิ้ง
-  Script-->>SRE: สถานะ: PASS ผ่านเกณฑ์ (จำนวนแถวอยู่ในช่วงที่ถูกต้อง)
-
-  Note over SRE,Docker: การซ้อมที่ 2: การฟื้นตัวเมื่อคอนเทนเนอร์เดี่ยวหยุดทำงาน (Container Loss)
-  SRE->>Script: ./scripts/dr-test.sh container-loss timescaledb
-  Script->>Docker: สั่ง kill คอนเทนเนอร์ ims-timescaledb ทันที
-  Docker-->>Script: คอนเทนเนอร์หยุดทำงาน (Exit 137)
-  Script->>Docker: ตรวจสอบสถานะคอนเทนเนอร์ทุก 2 วินาที (Timeout: 120s)
-  Docker->>Docker: นโยบาย restart: unless-stopped เริ่มทำงาน
-  Script->>Docker: ตรวจสอบสถานะจนกลายเป็น 'Up (healthy)'
-  Script-->>SRE: สถานะ: PASS ผ่านเกณฑ์ (กู้คืนสำเร็จในเวลา < 25 วินาที)
-
-  Note over SRE,Docker: การซ้อมที่ 3: การสร้างระบบใหม่ทั้งหมดจากศูนย์ (Full-Stack Recreate)
-  SRE->>Script: ./scripts/dr-test.sh full-recreate --confirm-destroy
-  Script->>Docker: docker compose down -v (ลบข้อมูลและ Volume ทั้งหมด)
-  Script->>Docker: docker compose up -d (สร้างคอนเทนเนอร์ขึ้นมาใหม่ทั้งหมด)
-  Script->>DB: รันไมเกรชันฐานข้อมูล database/migrations/*.sql (001 ถึง 091)
-  Script->>DB: Restore ข้อมูลโทรมาตรดิบกลับเข้าสู่ฐานข้อมูล
-  Script-->>SRE: สถานะ: PASS ผ่านเกณฑ์ (คอนเทนเนอร์ทั้ง 16 ตัวสมบูรณ์และพร้อมใช้งาน)
+  actor S as SRE
+  participant R as scripts/dr-test.sh
+  participant D as ims-timescaledb
+  participant T as ims_dr_test
+  participant K as Docker
+  Note over S,K: Drill 1 · backup-restore
+  S->>R: dr-test.sh backup-restore
+  R->>D: นับแถวก่อน
+  R->>D: pg_dump
+  R->>D: นับแถวหลัง
+  R->>T: CREATE DATABASE + restore
+  R->>T: SELECT count(*) FROM ldi_data
+  R-->>S: PASS ถ้า ก่อน ≤ กู้คืน ≤ หลัง
+  R->>T: DROP DATABASE
+  Note over S,K: Drill 2 · container-loss
+  S->>R: dr-test.sh container-loss timescaledb
+  R->>K: docker kill ims-timescaledb
+  loop ทุก 2 วินาที สูงสุด 120 วินาที
+    R->>K: สถานะคอนเทนเนอร์?
+  end
+  alt restart policy ทำงาน
+    R-->>S: PASS · เวลาที่กู้คืน
+  else ไม่รีสตาร์ต (พบใน Docker Desktop)
+    R-->>S: FAIL · ใช้ scripts/container-watchdog.sh
+  end
+  Note over S,K: Drill 3 · full-recreate (ลบ volume)
+  S->>R: dr-test.sh full-recreate --confirm-destroy
+  R->>K: docker compose down -v
+  R->>K: docker compose up -d
+  Note over D: db-migrate รันทุก migration
+  R->>D: กู้คืนจาก backup ที่ตรวจแล้ว
+  R-->>S: PASS เมื่อคอนเทนเนอร์ครบ 16 ตัว
 ```
 
 ---

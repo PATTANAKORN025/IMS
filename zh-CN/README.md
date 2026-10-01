@@ -319,55 +319,93 @@ ORDER BY bucket ASC;
 ## 架构
 
 ```mermaid
-flowchart LR
-  subgraph Collection ["数据采集"]
-    J["网络交换机"] -->|SNMP v2c| W["Node-RED\ningestion.json"]
-    S["服务器"] -->|SNMP v2c| W
-    L["LDI 设备"] -->|"HTTP POST /ldi-telemetry\n(经由 Nginx 网关)"| LI["Node-RED\nldi_ingestion.json"]
-    EAP["钻孔与电镀工序"] -.->|"直接数据同步"| EDB[("eap_backup DB\nmachine_event, vcp_upp")]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: IMS 系统总览
+  accDescr: 来自 SNMP 设备、LDI 机台和工厂 EAP 数据库的遥测数据经 nginx 与 Node-RED 写入 TimescaleDB，在 22 个 Grafana 仪表板中展示，告警经 Node-RED 发送到 LINE 和 Teams。
+
+  subgraph SRC["数据源"]
+    SNMPDEV["服务器与交换机<br/>SNMP v2c agent"]:::ext
+    LDIM["LDI 机台"]:::ext
+    EAPSRC["工厂 EAP 数据库<br/>钻孔与 VCP"]:::ext
   end
 
-  subgraph Processing ["V10 流式流水线"]
-    W -->|fork_5_ways| CPU[CPU Walker]
-    W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
-    W -->|fork_5_ways| STO[Storage Walker]
-    W -->|fork_5_ways| TMP[Temp Walker]
-    CPU --> P["有状态解析器\nsre_parser v10"]
-    NET --> P
-    STO --> P
-    TMP --> P
-    LI -->|"预写暂存\ningest_staging"| STG["超表批量写入器\n显式 GC 内存回收"]
+  USERS["操作员与工程师<br/>浏览器"]:::actor
+  PROXY["nginx :3000<br/>唯一入口"]:::ingress
+
+  subgraph NR["Node-RED"]
+    NR_LDI["ldi_ingestion.json<br/>API key · 校验 · staging"]:::flow
+    NR_SIM["ldi_simulator.json<br/>ldi_alarm_simulator.json"]:::flow
+    NR_SNMP["ingestion.json<br/>5 个 SNMP walker → v9 解析器"]:::flow
+    NR_ALERT["alerting.json<br/>/alert-webhook"]:::flow
   end
 
-  subgraph Storage ["存储"]
-    P -->|"批量写入 (nodered_writer)"| B["PgBouncer :5432\nSCRAM-SHA-256 连接池"]
-    STG -->|"批量写入 (nodered_writer)"| B
-    B --> T[("TimescaleDB :5432\npublic schema")]
-    T --> CAGG["CAGGs\n1m → 15m → 1h / Hourly"]
+  PGB["PgBouncer :5432<br/>SCRAM · 事务池"]:::app
+  TSDB[("TimescaleDB · ims<br/>hypertable + CAGG")]:::store
+  EAPDB[("TimescaleDB · eap_backup<br/>machine_event · vcp_*")]:::store
+
+  subgraph APPS["应用"]
+    GRAF["Grafana 13<br/>22 个仪表板"]:::viz
+    ALARM["alarm-api<br/>确认 / 解决"]:::app
+    TWIN["factory-twin-3d"]:::app
   end
 
-  subgraph Visualization ["可视化"]
-    CAGG --> G2["Grafana 13\n10 个制造仪表板"]
-    T --> G1["Grafana 13\n5 个基础设施仪表板"]
-    EDB -->|"drilling-timescaledb"| G3["Grafana 13\n4 个 CNC 钻孔仪表板"]
-    EDB -->|"drilling-timescaledb"| G4["Grafana 13\n3 个 VCP 电镀仪表板"]
-    T --> FT["Factory Twin 3D\n+ Alarm API"]
+  subgraph MON["监控与告警"]
+    PROM["Prometheus"]:::obs
+    BBOX["Blackbox exporter"]:::obs
+    AM["Alertmanager"]:::obs
   end
+  NOTIFY["LINE · MS Teams"]:::notify
 
-  subgraph Alerting ["告警"]
-    W -->|"指标拉取 /metrics"| PR["Prometheus\n规则评估引擎"]
-    PR --> AM["Alertmanager\n抑制与去重规则"]
-    AM --> WH["Node-RED\n/alert-webhook"]
-    G1 -->|"原生告警规则"| WH
-    G2 -->|"原生告警规则"| WH
-    WH --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
+  SNMPDEV -->|"SNMP v2c · 30 s"| NR_SNMP
+  LDIM -->|"POST /ldi-telemetry"| PROXY
+  PROXY -->|"/ldi-telemetry · /inject"| NR_LDI
+  NR_SIM -->|"127.0.0.1:1880"| NR_LDI
+  NR_SNMP -->|"nodered_writer"| PGB
+  NR_LDI -->|"nodered_writer"| PGB
+  PGB --> TSDB
+  EAPSRC -.->|"恢复副本"| EAPDB
+  USERS -->|"HTTP :3000"| PROXY
+  PROXY --> GRAF
+  PROXY -->|"auth_request"| ALARM
+  PROXY -->|"auth_request"| TWIN
+  TSDB --> GRAF
+  EAPDB -->|"drilling-timescaledb"| GRAF
+  ALARM --> PGB
+  TWIN --> PGB
+  NR_SNMP -->|"/metrics"| PROM
+  BBOX --> PROM
+  PROM --> AM
+  AM -->|"Bearer token"| NR_ALERT
+  GRAF -->|"告警规则 · Bearer token"| NR_ALERT
+  NR_ALERT --> NOTIFY
+
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["人员"]:::actor ~~~ LG_ext["外部系统"]:::ext ~~~ LG_ingress["入口 / 网关"]:::ingress ~~~ LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_store["数据存储"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["监控"]:::obs ~~~ LG_notify["通知"]:::notify
+    end
+    LEGEND_0 ~~~ LEGEND_1
   end
-
-  style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
-  style Processing fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
-  style Storage fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
-  style Visualization fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
-  style Alerting fill:#1a1f2e,stroke:#EF4444,color:#e2e8f0
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 <details>

@@ -68,52 +68,55 @@
 ระบบเชื่อมต่อข้อมูลจากเครื่องเจาะ CNC ฝูงเครื่องจักร (เช่น `MOCK-DRL-001`) ผ่านระบบอัตโนมัติ EAP (Equipment Automation Program) สู่ระบบจัดเก็บข้อมูลอนุกรมเวลา TimescaleDB และส่งต่อมาประมวลผลบน Grafana Dashboard ดังแผนภาพ:
 
 ```mermaid
-flowchart TD
-    subgraph SHOPFLOOR[" ชั้นปฏิบัติการโรงงาน (Shopfloor Drilling Fleet) "]
-        M1["เครื่องเจาะ CNC #1<br/>(MOCK-DRL-001 / 6 Spindles)"]
-        M2["เครื่องเจาะ CNC #2<br/>(MOCK-DRL-002 / 6 Spindles)"]
-        MN["เครื่องเจาะ CNC #N...<br/>(MOCK-DRL-nnn / 6 Spindles)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: เส้นทางข้อมูลของ Drilling
+  accDescr: สถานี Drilling เขียน event log ที่ EAP agent ของโรงงานแยกเป็น machine_event ในฐานข้อมูล eap_backup โดย migration 085 และ 086 เพิ่ม index และ view drilling.* ที่แดชบอร์ด Drilling ทั้ง 4 ตัวใช้ query
+  M["สถานี Drilling<br/>MOCK-DRL-001 … nnn"]:::ext
+  AGENT["EAP agent ของโรงงาน<br/>แยก log → รหัสเหตุการณ์"]:::ext
+  subgraph DB["eap_backup"]
+    EV[("machine_event<br/>hypertable · chunk 1 วัน")]:::store
+    AL[("agent_log")]:::store
+    IX["index · migration 085"]:::app
+    VW[("drilling.event · drilling.telemetry · drilling.agent_status")]:::store
+  end
+  subgraph DASH["แดชบอร์ด Drilling"]
+    D1["01 Fleet Digital Twin & Overview · 001"]:::viz
+    D2["02 Shift Production & OEE · ims-drilling-history"]:::viz
+    D3["03 Machine Investigation · ims-drilling-machine-detail"]:::viz
+    D4["04 Fleet Anomaly & RCA · ims-drilling-5-anomaly"]:::viz
+  end
+  M -->|"event log"| AGENT
+  AGENT --> EV
+  AGENT -->|"heartbeat · error"| AL
+  EV --- IX
+  EV --> VW
+  AL --> VW
+  VW --> D1
+  VW --> D2
+  VW --> D3
+  VW --> D4
+
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["ระบบภายนอก"]:::ext ~~~ LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_app["บริการของ IMS"]:::app ~~~ LG_viz["Grafana / UI"]:::viz
     end
-
-    subgraph INGESTION[" ชั้นการรวบรวมข้อมูลโทรมาตร (EAP Ingestion Layer) "]
-        AGENT["EAP Local File Watcher & Parser<br/>(บันทึก Log และแกะข้อความ Event Code)"]
-        STATUS_FEED["เครื่องตรวจสอบสถานะ EAP<br/>(eap_status / agent_log)"]
-    end
-
-    subgraph STORAGE[" ชั้นฐานข้อมูลและประมวลผลอนุกรมเวลา (TimescaleDB: eap_backup) "]
-        direction TB
-        RAW_EVENT[("public.machine_event<br/>[Hypertable: 1-Day Chunks]")]
-        MIG085["ดัชนีประสิทธิภาพสูง (Migration 085)<br/>- ix_machine_event_eqp_code_time<br/>- ix_machine_event_anomalies"]
-        VIEW_SCHEMA["มุมมองมาตรฐาน (Migration 086)<br/>- drilling.event<br/>- drilling.agent_status<br/>- drilling.telemetry"]
-        RAW_EVENT --- MIG085
-        RAW_EVENT --- VIEW_SCHEMA
-    end
-
-    subgraph VISUALIZATION[" แดชบอร์ดตรวจสอบและสั่งการ (Grafana Drilling Operations) "]
-        D1["01 · Fleet Digital Twin & Overview<br/>(UID: 001)"]
-        D2["02 · Shift Production & OEE Tracking<br/>(UID: ims-drilling-history)"]
-        D3["03 · Machine Investigation & Diagnostics<br/>(UID: ims-drilling-machine-detail)"]
-        D4["04 · Fleet Anomaly & Root Cause Analysis<br/>(UID: ims-drilling-5-anomaly)"]
-    end
-
-    M1 & M2 & MN -->|บันทึกรหัสเหตุการณ์และพารามิเตอร์| AGENT
-    AGENT -->|สตรีมข้อมูลความเร็วสูง| RAW_EVENT
-    AGENT -->|รายงาน Heartbeat และข้อผิดพลาด| STATUS_FEED
-    STATUS_FEED --> STORAGE
-    VIEW_SCHEMA -->|SQL Lateral Queries| D1
-    VIEW_SCHEMA -->|Shift Aggregation| D2
-    VIEW_SCHEMA -->|Chronological Drilldown| D3
-    VIEW_SCHEMA -->|Anomaly & Pareto RCA| D4
-
-    classDef shopStyle fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,color:#0f172a;
-    classDef ingestStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
-    classDef storageStyle fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#14532d;
-    classDef visualStyle fill:#fefce8,stroke:#eab308,stroke-width:1.5px,color:#713f12;
-
-    class M1,M2,MN shopStyle;
-    class AGENT,STATUS_FEED ingestStyle;
-    class RAW_EVENT,MIG085,VIEW_SCHEMA storageStyle;
-    class D1,D2,D3,D4 visualStyle;
+  end
+  D4 ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -187,22 +190,22 @@ WHERE (
 ระบบ IMS Drilling จำแนกสถานะการทำงานของเครื่องจักรออกเป็น 6 สถานะหลัก ผ่านการประเมินรหัสเหตุการณ์ล่าสุดและช่วงเวลาที่ห่างจากการส่งข้อมูล:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-    [*] --> OFFLINE : ขาดการติดต่อเกิน 2 ชม.
-    [*] --> STANDBY : เปิดเครื่องแต่ยังไม่เริ่มงาน
-
-    STANDBY --> RUN : เริ่มโปรแกรม (0101 / 0112)
-    RUN --> TOOL_CHANGE : เปลี่ยนดอกสว่านอัตโนมัติ (0110)
-    TOOL_CHANGE --> RUN : ติดตั้งเสร็จและเริ่มเจาะต่อ (0112)
-    RUN --> STOP : จบงาน / กดหยุดเครื่อง (0108 / 0201)
-    STOP --> RUN : เริ่มงานรอบถัดไป (0101)
-
-    RUN --> ALARM : ดอกหัก / ระบบขัดข้อง (0408, 0409, ฯลฯ)
-    TOOL_CHANGE --> ALARM : แมกกาซีนค้าง / เลเซอร์วัดพลาด
-    ALARM --> STANDBY : ผู้ควบคุมปลด Alarm และ Reset เครื่อง (0204)
-
-    RUN --> OFFLINE : ขาดการส่งสัญญาณโทรมาตร (COMM LOSS)
-    STOP --> OFFLINE : ดับเครื่องจักร / ตัดกระแสไฟ
+  accTitle: สถานะของเครื่อง Drilling
+  accDescr: สถานะที่ได้จากรหัสเหตุการณ์ล่าสุด: RUN, TOOL_CHANGE, STOP, ALARM และ STANDBY เครื่องที่เงียบไป 2 ชั่วโมงเป็น OFFLINE (COMM LOSS)
+  [*] --> STANDBY: พร้อม รองาน
+  STANDBY --> RUN: 0101 · 0112
+  RUN --> TOOL_CHANGE: 0110
+  TOOL_CHANGE --> RUN: 0112
+  RUN --> STOP: 0108 · 0201
+  STOP --> RUN: 0101
+  RUN --> ALARM: ดอกหัก · เลเซอร์ · โอเวอร์โหลด
+  TOOL_CHANGE --> ALARM: collet · magazine ขัดข้อง
+  ALARM --> STANDBY: รีเซ็ต 0204
+  RUN --> OFFLINE: ไม่มีเหตุการณ์ 2 ชม.
+  STOP --> OFFLINE: ไม่มีเหตุการณ์ 2 ชม.
+  OFFLINE --> RUN: มีเหตุการณ์อีกครั้ง
 ```
 
 | สถานะ (State) | ระดับการแสดงผล (CSS Class) | นิยามทางเทคนิค | เงื่อนไขการตรวจจับในระบบ |
@@ -485,22 +488,25 @@ Spindle 6 Active  <=>  (Mask & 32) > 0   [บิตที่ 5: ค่าปร�
 เมื่อเกิดสัญญาณเตือนสีแดง (`state-alarm`) บนหน้าแดชบอร์ด ผู้ควบคุมเครื่องจักรต้องปฏิบัติตามแผนผังการตัดสินใจทันที:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TD
-    ALM_DETECT["ตรวจพบ Alarm บนแดชบอร์ด<br/>(State: ALARM สีแดง)"] --> CODE_CHECK{"ตรวจสอบรหัสเหตุการณ์<br/>(Event Code)"}
-
-    CODE_CHECK -->|"0408 / 0417 / 0218<br/>(Bit Breakage / BBD)"| OCAP_01["OCAP-DRL-01: ดอกสว่านหัก<br/>1. กดหยุดฉุกเฉิน / ยืนยันตำแหน่งหัวเจาะ<br/>2. ตรวจดูเศษดอกสว่านคาแผ่น PCB หรือไม่<br/>3. หากหักคาแผ่น: คัดแยกแผ่น PCB ติดป้าย Hold<br/>4. เปลี่ยนดอกสว่านใหม่ในช่องแมกกาซีน<br/>5. สั่งวัด BBD ซ้ำ และเริ่มรันงานต่อ"]
-
-    CODE_CHECK -->|"0409 / 0404 / 0410<br/>(Laser Error)"| OCAP_02["OCAP-DRL-02: เลเซอร์วัดดอกพลาด<br/>1. ตรวจดูคราบฝุ่นบนเลนส์ออปติกเซนเซอร์<br/>2. ใช้กระดาษเช็ดเลนส์และแอลกอฮอล์ทำความสะอาด<br/>3. ตรวจสอบว่าใส่เบอร์สว่านผิดช่องหรือไม่<br/>4. สั่งเครื่องวัดขนาดดอกสว่านซ้ำ"]
-
-    CODE_CHECK -->|"0424 / 0425<br/>(Shank / Collet)"| OCAP_03["OCAP-DRL-03: ปัญหาก้านดอก/หัวจับ<br/>1. ตรวจสอบว่าเสียบดอกสว่านลงสุดล็อกหรือไม่<br/>2. ตรวจสอบเศษฝุ่นหรือสิ่งอุดตันในร่อง Collet<br/>3. ทำความสะอาดปาก Collet ด้วยน้ำยาเฉพาะ<br/>4. ทดสอบเปิด-ปิด Collet ผ่านหน้าจอ CNC"]
-
-    CODE_CHECK -->|"รหัสอื่นๆ / อาการซ้ำเกิน 2 ครั้ง"| ESCALATE["ยกระดับปัญหาไปยังระดับที่ 2<br/>(แจ้งช่างซ่อมบำรุงประจำแผนก)"]
-
-    classDef opStyle fill:#fef2f2,stroke:#ef4444,stroke-width:1.5px,color:#991b1b;
-    classDef escStyle fill:#fffbeb,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-
-    class ALM_DETECT,CODE_CHECK,OCAP_01,OCAP_02,OCAP_03 opStyle;
-    class ESCALATE escStyle;
+  accTitle: การตอบสนองต่อ alarm ของ Drilling สำหรับพนักงานหน้างาน
+  accDescr: รหัสเหตุการณ์เป็นตัวกำหนด OCAP: ดอกหัก เลเซอร์ผิดพลาด หรือ collet ขัดข้อง รหัสที่ซ้ำหรือไม่รู้จักให้ส่งต่อฝ่ายซ่อมบำรุง
+  A["alarm บนแดชบอร์ด"]:::notify --> C{"รหัสเหตุการณ์"}
+  C -->|"0408 · 0417 · 0218"| O1["OCAP-DRL-01 ดอกหัก<br/>หยุด ตรวจแผ่น กักชิ้นงานถ้ามีเศษดอกฝัง เปลี่ยนดอก ตรวจ BBD"]:::app
+  C -->|"0409 · 0404 · 0410"| O2["OCAP-DRL-02 เลเซอร์ผิดพลาด<br/>ทำความสะอาดเลนส์ ตรวจขนาดดอก รันการตรวจเลเซอร์ใหม่"]:::app
+  C -->|"0424 · 0425"| O3["OCAP-DRL-03 collet ขัดข้อง<br/>ตรวจการนั่งของดอก ทำความสะอาด ทดสอบการจับ เปลี่ยนถ้าลื่น"]:::app
+  C -->|"ซ้ำเกิน 2 ครั้ง · ไม่รู้จัก"| E["ส่งต่อฝ่ายซ่อมบำรุง (ระดับ 2)"]:::actor
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 > [!WARNING]
@@ -557,17 +563,23 @@ flowchart TD
 ระบบโทรมาตรของ IMS Drilling มีกลไกการตรวจจับความผิดปกติของตัวส่งสัญญาณ 2 รูปแบบหลัก:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-    EVENT_STREAM["สตรีมข้อมูลโทรมาตร<br/>(drilling.event)"] --> WD{"ระบบเฝ้าระวัง<br/>(Watchdog Logic)"}
-
-    WD -->|"หยุดส่งข้อมูลเกิน 2 ชั่วโมง"| COMM_LOSS["ตรวจพบ: COMM LOSS (ออฟไลน์)<br/>1. ตรวจสอบเครือข่าย LAN สวิตช์<br/>2. ตรวจสอบโปรเซส EAP Agent บนเครื่องจักร<br/>3. ตรวจสอบโฟลเดอร์ Log Share"]
-    WD -->|"ค้างสถานะ RUN เกิน 60 นาที<br/>แต่ไม่พบจำนวน Hole ขยับ"| STALE_RUN["ตรวจพบ: STALE RUN (สถานะค้าง)<br/>1. ตัว Parser อ่านไฟล์ค้างหรือไฟล์ล็อก<br/>2. โปรแกรมเจาะหน้าเครื่องหยุดโดยไม่ส่ง Stop<br/>3. สั่ง Restart Agent Service"]
-
-    classDef wdStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
-    classDef warnStyle fill:#fffbeb,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-
-    class EVENT_STREAM,WD wdStyle;
-    class COMM_LOSS,STALE_RUN warnStyle;
+  accTitle: Watchdog ของข้อมูล Drilling
+  accDescr: เครื่องที่ไม่มีเหตุการณ์ 2 ชั่วโมงเป็น COMM LOSS ส่วนเครื่องที่เหตุการณ์ล่าสุดเป็นรหัสประเภท RUN และเก่ากว่า 1 ชั่วโมงเป็น STALE RUN
+  EV[("drilling.event")]:::store --> W{"อายุของเหตุการณ์ล่าสุด"}
+  W -->|"≥ 2 h"| CL["COMM LOSS<br/>ตรวจพอร์ตสวิตช์ EAP agent และสิทธิ์ของ share"]:::notify
+  W -->|"≥ 1 ชม. และรหัสล่าสุดเป็นประเภท RUN"| SR["STALE RUN<br/>parser ค้างหรือไม่ได้ส่งรหัสหยุด ให้รีสตาร์ต EAP agent"]:::obs
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 1. **การสูญเสียการสื่อสาร (COMM LOSS):**  

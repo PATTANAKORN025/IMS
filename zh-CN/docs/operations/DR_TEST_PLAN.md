@@ -26,41 +26,43 @@
 ## 1. 灾难恢复全流程演练时序 (Drill Sequences)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: 灾难恢复演练
+  accDescr: scripts/dr-test.sh 执行三项演练：备份并恢复到临时数据库并校验行数范围；杀掉一个容器并计时其重启；以及需要 --confirm-destroy 的破坏性全量重建。
   autonumber
-  actor SRE as SRE 工程师
-  participant Script as scripts/dr-test.sh
-  participant DB as ims-timescaledb
-  participant TestDB as 临时演练库 ims_dr_test
-  participant Docker as Docker Engine 守护进程
-
-  Note over SRE,Docker: 演练科目 1: 备份与临时环境还原校验 (Backup & Restore)
-  SRE->>Script: ./scripts/dr-test.sh backup-restore
-  Script->>DB: 获取快照前数据行数 (Pre-count)
-  Script->>DB: 流式执行 pg_dump 导出为 backup.sql
-  Script->>DB: 获取快照后数据行数 (Post-count)
-  Script->>TestDB: CREATE DATABASE ims_dr_test 并导入 SQL
-  Script->>TestDB: SELECT count(*) FROM ldi_data
-  Script->>Script: 断言校验: Count(Pre) <= Restored <= Count(Post)
-  Script->>TestDB: 销毁临时数据库 DROP DATABASE
-  Script-->>SRE: 状态: PASS 验证通过 (数据行数严格落在区间内)
-
-  Note over SRE,Docker: 演练科目 2: 单容器故障自愈恢复 (Container Loss)
-  SRE->>Script: ./scripts/dr-test.sh container-loss timescaledb
-  Script->>Docker: 强行终止容器 docker kill ims-timescaledb
-  Docker-->>Script: 容器异常退出 (状态: Exited 137)
-  Script->>Docker: 每 2 秒轮询容器状态 (超时上限: 120s)
-  Docker->>Docker: restart: unless-stopped 重启策略被触发
-  Script->>Docker: 确认容器状态转为 'Up (healthy)'
-  Script-->>SRE: 状态: PASS 验证通过 (< 25 秒内完成自愈)
-
-  Note over SRE,Docker: 演练科目 3: 全栈冷启动销毁重建 (Full-Stack Recreate)
-  SRE->>Script: ./scripts/dr-test.sh full-recreate --confirm-destroy
-  Script->>Docker: docker compose down -v (彻底清除全部持久化卷)
-  Script->>Docker: docker compose up -d (全新拉起容器技术栈)
-  Script->>DB: 顺序执行迁移脚本 database/migrations/*.sql (001 至 091)
-  Script->>DB: 导入已验证的原始时序数据
-  Script-->>SRE: 状态: PASS 验证通过 (全部 16 个核心容器健康就绪)
+  actor S as SRE
+  participant R as scripts/dr-test.sh
+  participant D as ims-timescaledb
+  participant T as ims_dr_test
+  participant K as Docker
+  Note over S,K: 演练 1 · backup-restore
+  S->>R: dr-test.sh backup-restore
+  R->>D: 之前的行数
+  R->>D: pg_dump
+  R->>D: 之后的行数
+  R->>T: CREATE DATABASE + restore
+  R->>T: SELECT count(*) FROM ldi_data
+  R-->>S: 若 之前 ≤ 恢复 ≤ 之后 则 PASS
+  R->>T: DROP DATABASE
+  Note over S,K: 演练 2 · container-loss
+  S->>R: dr-test.sh container-loss timescaledb
+  R->>K: docker kill ims-timescaledb
+  loop 每 2 秒，最多 120 秒
+    R->>K: 容器状态？
+  end
+  alt 重启策略生效
+    R-->>S: PASS · 恢复时间
+  else 未重启（Docker Desktop 上出现过）
+    R-->>S: FAIL · 使用 scripts/container-watchdog.sh
+  end
+  Note over S,K: 演练 3 · full-recreate（删除卷）
+  S->>R: dr-test.sh full-recreate --confirm-destroy
+  R->>K: docker compose down -v
+  R->>K: docker compose up -d
+  Note over D: db-migrate 应用全部迁移
+  R->>D: 从已验证的备份恢复
+  R-->>S: 16 个容器全部运行时 PASS
 ```
 
 ---

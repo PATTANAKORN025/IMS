@@ -74,25 +74,24 @@ Detection (TTD)      Acknowledgement (TTA)      Mitigation (TTM)      Full Resol
 All timestamps must be recorded in **UTC and Indochina Time (ICT / UTC+7)**.
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: Example incident timeline (replace with the real one)
+  accDescr: Illustrative timeline for a connection-pool exhaustion incident: detection by alert, declaration, mitigation and recovery.
   autonumber
   participant Mon as Prometheus / Alertmanager
-  participant OnCall as SRE On-Call
-  participant Pipe as Node-RED Ingestion Pipeline
+  participant On as On-call SRE
+  participant Pipe as Node-RED
   participant DB as PgBouncer / TimescaleDB
-  participant IC as Incident Commander
-
-  Note over Mon,DB: Incident Sequence Flow
-  Pipe->>DB: Ingestion Batch Bursts (>120k events/sec)
-  DB-->>Pipe: Connection Saturation (pool_size exhausted)
-  Pipe->>Pipe: Internal In-Memory Buffer Escalation
-  Mon->>OnCall: Alert Fired: IngestionLatencyHigh (P95 > 15s)
-  OnCall->>IC: Declare SEV-1 Incident & Open Bridge
-  IC->>DB: Inspect PgBouncer Client/Server Connections
-  IC->>DB: Apply Emergency Connection Scale & Flush Pool
-  DB-->>Pipe: Connections Available & Batch Commits Resume
-  Pipe-->>Mon: Buffer Cleared & Latency Returns to < 500ms
-  IC->>OnCall: Incident Mitigated - Monitoring Standby
+  participant IC as Incident commander
+  Note over Mon,IC: Illustrative example — replace with the real timeline
+  Pipe->>DB: insert burst
+  DB-->>Pipe: pool exhausted
+  Mon->>On: alert fires
+  On->>IC: declare incident
+  IC->>DB: inspect pools, apply mitigation
+  DB-->>Pipe: commits resume
+  IC->>On: mitigated, monitoring
 ```
 
 ### Detailed Event Log
@@ -109,17 +108,26 @@ sequenceDiagram
 ## 5. Root Cause Analysis (5 Whys)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TD
-  W1["1. Why did Grafana dashboards display stale telemetry?"] --> W2["2. Why was telemetry stalled in Node-RED?"]
-  W2 --> W3["3. Why was PgBouncer rejecting client connections?"]
-  W3 --> W4["4. Why did PgBouncer client pool exhaust?"]
-  W4 --> W5["5. Root Cause: Client connection pool leak in error-handling branch without explicit release"]
-
-  style W1 fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style W2 fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style W3 fill:#1e293b,stroke:#FF8800,color:#f8fafc
-  style W4 fill:#1e293b,stroke:#FF8800,color:#f8fafc
-  style W5 fill:#1e293b,stroke:#FF003C,color:#f8fafc
+  accTitle: Example 5 whys (replace with the real analysis)
+  accDescr: Illustrative chain of five whys ending in a root cause.
+  W1["1 · Why were dashboards stale?"]:::app
+  W2["2 · Why did ingestion stall?"]:::app
+  W3["3 · Why were connections refused?"]:::app
+  W4["4 · Why was the pool exhausted?"]:::app
+  W5["5 · Root cause: connection not released on an error path"]:::notify
+  W1 --> W2 --> W3 --> W4 --> W5
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 1. **Why did Grafana dashboards display stale telemetry?**  
