@@ -388,7 +388,7 @@ Spindle 6 Active  <=>  (Mask & 32) > 0   [บิตที่ 5: ค่าปร�
 3. **เวลาเดินเครื่อง (Online Time):** ดึงค่าเวลา `Online: hh:mm:ss` จากรหัสรายงานกะ `0209`
 4. **เวลาหยุดเครื่อง (Stop Time):** ดึงค่าเวลา `Stop: hh:mm:ss` จากรหัสรายงานกะ `0209`
 5. **อัตราความพร้อมเครื่องจักร (Equipment Availability Rate %):**
-   $$\text{Rate \%} = \frac{\text{Online Seconds} - \text{Stop Seconds}}{\text{Online Seconds}} \times 100$$
+   $$\text{Availability Rate} = \frac{\text{Online Seconds} - \text{Stop Seconds}}{\text{Online Seconds}} \times 100\%$$
 6. **สัญลักษณ์ `****`:** หมายถึง กะดังกล่าวยังไม่สิ้นสุดรอบเวลา หรือเป็นกะในอนาคตที่ยังไม่มีรายงานสรุป
 
 ---

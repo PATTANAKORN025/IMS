@@ -132,7 +132,7 @@ for (let i = 0; i < rawPayload.length; i++) {
 const columns = '("time", machine_id, pe1_intensity, pe2_intensity, thickness, temperature, lot_id)';
 const values = flatData.map((_, idx) => {
     const offset = idx * 7;
-    return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`;
+    return '($' + (offset + 1) + ', $' + (offset + 2) + ', $' + (offset + 3) + ', $' + (offset + 4) + ', $' + (offset + 5) + ', $' + (offset + 6) + ', $' + (offset + 7) + ')';
 }).join(', ');
 
 const query = `
@@ -205,7 +205,7 @@ flowchart LR
 v_ldi_rca_truth_test"]
 ```
 
-การแจ้งเตือนจะถูกบันทึกลงใน `public.ldi_alarm_log` และเชื่อมโยงกับรหัสใน `public.ldi_alarm_ms_code` ผ่าน Foreign Key โดยมีวิว `v_ldi_alarm_context` ทำหน้าที่เชื่อมข้อมูลโทรมาตรของเครื่องจักรในช่วง $\pm 5\text{ นาที}$ รอบเวลาที่เกิดเหตุการณ์ เพื่อส่งต่อให้ระบบวิเคราะห์รากเหง้าปัญหา (RCA) บนหน้าจอของผู้ควบคุม
+การแจ้งเตือนจะถูกบันทึกลงใน `public.ldi_alarm_log` และเชื่อมโยงกับรหัสใน `public.ldi_alarm_ms_code` ผ่าน Foreign Key โดยมีวิว `v_ldi_alarm_context` ทำหน้าที่เชื่อมข้อมูลโทรมาตรของเครื่องจักรในช่วง ±5 นาที รอบเวลาที่เกิดเหตุการณ์ เพื่อส่งต่อให้ระบบวิเคราะห์รากเหง้าปัญหา (RCA) บนหน้าจอของผู้ควบคุม
 
 ---
 

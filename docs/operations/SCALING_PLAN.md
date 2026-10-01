@@ -339,20 +339,20 @@ SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days');
 
 | Component                  | Small (10 machines) | Medium (100 machines) | Enterprise (1000 machines) |
 | -------------------------- | ------------------- | --------------------- | -------------------------- |
-| **Compute (Node-RED)**     | $50/mo              | $200/mo               | $1,000/mo                  |
-| **Database (TimescaleDB)** | $100/mo             | $500/mo               | $3,000/mo                  |
-| **Storage**                | $10/mo              | $50/mo                | $500/mo                    |
-| **Network**                | $20/mo              | $100/mo               | $500/mo                    |
-| **Total**                  | **$180/mo**         | **$850/mo**           | **$5,000/mo**              |
+| **Compute (Node-RED)**     | \$50/mo              | \$200/mo               | \$1,000/mo                  |
+| **Database (TimescaleDB)** | \$100/mo             | \$500/mo               | \$3,000/mo                  |
+| **Storage**                | \$10/mo              | \$50/mo                | \$500/mo                    |
+| **Network**                | \$20/mo              | \$100/mo               | \$500/mo                    |
+| **Total**                  | **\$180/mo**         | **\$850/mo**           | **\$5,000/mo**              |
 
 ### On-Premise Costs
 
 | Component              | Small      | Medium      | Enterprise  |
 | ---------------------- | ---------- | ----------- | ----------- |
-| **Server Hardware**    | $2,000     | $10,000     | $50,000     |
-| **Network Switch**     | $500       | $2,000      | $10,000     |
-| **Annual Maintenance** | $500       | $2,000      | $10,000     |
-| **Total Year 1**       | **$3,000** | **$14,000** | **$70,000** |
+| **Server Hardware**    | \$2,000     | \$10,000     | \$50,000     |
+| **Network Switch**     | \$500       | \$2,000      | \$10,000     |
+| **Annual Maintenance** | \$500       | \$2,000      | \$10,000     |
+| **Total Year 1**       | **\$3,000** | **\$14,000** | **\$70,000** |
 
 ### ROI Calculation
 

@@ -132,7 +132,7 @@ for (let i = 0; i < rawPayload.length; i++) {
 const columns = '("time", machine_id, pe1_intensity, pe2_intensity, thickness, temperature, lot_id)';
 const values = flatData.map((_, idx) => {
     const offset = idx * 7;
-    return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`;
+    return '($' + (offset + 1) + ', $' + (offset + 2) + ', $' + (offset + 3) + ', $' + (offset + 4) + ', $' + (offset + 5) + ', $' + (offset + 6) + ', $' + (offset + 7) + ')';
 }).join(', ');
 
 const query = `
@@ -206,7 +206,7 @@ Telemetry Window Join (+-5m)"]
 v_ldi_rca_truth_test"]
 ```
 
-Alarms flow into `public.ldi_alarm_log`, linking to `public.ldi_alarm_ms_code` by foreign key. Downstream views (`v_ldi_alarm_context`) automatically join machine telemetry within a $\pm 5\text{-minute}$ window around the alarm timestamp, feeding statistical root cause analysis into the operator console.
+Alarms flow into `public.ldi_alarm_log`, linking to `public.ldi_alarm_ms_code` by foreign key. Downstream views (`v_ldi_alarm_context`) automatically join machine telemetry within a ±5-minute window around the alarm timestamp, feeding statistical root cause analysis into the operator console.
 
 ---
 

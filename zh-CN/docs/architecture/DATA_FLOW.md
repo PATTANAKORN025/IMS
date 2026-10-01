@@ -132,7 +132,7 @@ for (let i = 0; i < rawPayload.length; i++) {
 const columns = '("time", machine_id, pe1_intensity, pe2_intensity, thickness, temperature, lot_id)';
 const values = flatData.map((_, idx) => {
     const offset = idx * 7;
-    return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`;
+    return '($' + (offset + 1) + ', $' + (offset + 2) + ', $' + (offset + 3) + ', $' + (offset + 4) + ', $' + (offset + 5) + ', $' + (offset + 6) + ', $' + (offset + 7) + ')';
 }).join(', ');
 
 const query = `
@@ -205,7 +205,7 @@ flowchart LR
 v_ldi_rca_truth_test"]
 ```
 
-报警事件实时写入 `public.ldi_alarm_log` 并通过外键关联合法报警字典 `public.ldi_alarm_ms_code`。下游视图 (`v_ldi_alarm_context`) 会以报警发生时间为中心，自动抓取机器前后 $\pm 5\text{ 分钟}$ 的遥测窗口数据，为现场工程师提供统计学根因分析依据。
+报警事件实时写入 `public.ldi_alarm_log` 并通过外键关联合法报警字典 `public.ldi_alarm_ms_code`。下游视图 (`v_ldi_alarm_context`) 会以报警发生时间为中心，自动抓取机器前后 ±5 分钟 的遥测窗口数据，为现场工程师提供统计学根因分析依据。
 
 ---
 

@@ -48,10 +48,11 @@
 * **丢失 / 丢弃的未缓冲遥测记录数:** `~X,XXX 条`
 * **受波及生产车间线体:** `[例如：LDI 曝光机 1–4 号线, CNC 数控钻孔机 01–12 号主轴]`
 * **SLO 错误预算消耗情况 (Error Budget Consumption):**
-  - 数据写入可用性 SLO (每月 $99.9\%$): 消耗了 30 天总预算的 **XX.X%**
-  - 查询响应耗时 SLO ($p95 < 500\text{ms}$): 消耗了总预算的 **YY.Y%**
+  - 数据写入可用性 SLO (每月 99.9%): 消耗了 30 天总预算的 **XX.X%**
+  - 查询响应耗时 SLO (P95 < 500ms): 消耗了总预算的 **YY.Y%**
 
-$$\text{错误预算消耗速率 (Burn Rate)} = \frac{\text{实际观测错误率}}{\text{允许错误率上限}} = \frac{1 - \text{SLI}}{1 - \text{SLO}}$$
+$$\text{Error Budget Burn Rate} = \frac{\text{Observed Error Rate}}{\text{Allowed Error Rate}} = \frac{1 - \text{SLI}}{1 - \text{SLO}}$$
+*(错误预算消耗速率 = 实际观测错误率 / 允许错误率上限)*
 
 ---
 

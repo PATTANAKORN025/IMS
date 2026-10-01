@@ -134,7 +134,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
 ```
 
-migration ทุกไฟล์เขียนให้รันซ้ำได้อย่างปลอดภัย (`CREATE ... IF NOT EXISTS` และบล็อก `DO $$ ... $$` ที่มีเงื่อนไขป้องกัน) การรัน `scripts/migrate.sh` ซ้ำกับฐานข้อมูลที่เป็นปัจจุบันแล้วจึงไม่เปลี่ยนแปลงอะไรเสมอ ดูหัวข้อ "Migration Governance" ใน `docs/architecture/ARCHITECTURE.md` เพื่อดูเหตุผลที่ตั้งใจให้มีตัวรัน migration เพียงตัวเดียว ไม่ใช่สามตัว
+migration ทุกไฟล์เขียนให้รันซ้ำได้อย่างปลอดภัย (`CREATE ... IF NOT EXISTS` และบล็อก `DO \$\$ ... \$\$` ที่มีเงื่อนไขป้องกัน) การรัน `scripts/migrate.sh` ซ้ำกับฐานข้อมูลที่เป็นปัจจุบันแล้วจึงไม่เปลี่ยนแปลงอะไรเสมอ ดูหัวข้อ "Migration Governance" ใน `docs/architecture/ARCHITECTURE.md` เพื่อดูเหตุผลที่ตั้งใจให้มีตัวรัน migration เพียงตัวเดียว ไม่ใช่สามตัว
 
 ---
 

@@ -48,8 +48,8 @@
 * **Dropped / Unbuffered Ingestion Events:** `~X,XXX events`
 * **Affected Equipment Lines:** `[e.g., LDI Photolithography Lines 1–4, CNC Drilling Spindles 01–12]`
 * **SLO Error Budget Consumption:**
-  - Ingestion Availability SLO ($99.9\%$ monthly): Consumed **XX.X%** of 30-day budget.
-  - Query Latency SLO ($p95 < 500\text{ms}$): Consumed **YY.Y%** of budget.
+  - Ingestion Availability SLO (99.9% monthly): Consumed **XX.X%** of 30-day budget.
+  - Query Latency SLO (P95 < 500ms): Consumed **YY.Y%** of budget.
 
 $$\text{Error Budget Burn Rate} = \frac{\text{Observed Error Rate}}{\text{Allowed Error Rate}} = \frac{1 - \text{SLI}}{1 - \text{SLO}}$$
 

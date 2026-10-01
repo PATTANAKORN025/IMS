@@ -134,7 +134,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
 ```
 
-所有迁移都按可重复执行的方式编写（`CREATE ... IF NOT EXISTS`、带条件保护的 `DO $$ ... $$` 块），因此对已是最新状态的数据库重新运行 `scripts/migrate.sh` 始终是安全的空操作。有意只保留一个迁移执行器（而不是三个）的原因，见 `docs/architecture/ARCHITECTURE.md` 的 "Migration Governance" 一节。
+所有迁移都按可重复执行的方式编写（`CREATE ... IF NOT EXISTS`、带条件保护的 `DO \$\$ ... \$\$` 块），因此对已是最新状态的数据库重新运行 `scripts/migrate.sh` 始终是安全的空操作。有意只保留一个迁移执行器（而不是三个）的原因，见 `docs/architecture/ARCHITECTURE.md` 的 "Migration Governance" 一节。
 
 ---
 

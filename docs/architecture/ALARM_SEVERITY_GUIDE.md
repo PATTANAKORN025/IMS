@@ -33,8 +33,8 @@ Every alarm code in `public.ldi_alarm_ms_code` is governed by a database `CHECK`
 
 | Severity Tier | Canonical Token | Hex Code | Visual Indicator | Operational Priority & Response Expectation |
 |:--------------|:----------------|:---------|:-----------------|:--------------------------------------------|
-| **Critical**  | `critical`      | `#EF4444` | Crimson Red      | Highest priority — immediate machine stop or product scrap risk. Response $< 2\text{ minutes}$. |
-| **Major**     | `warning`       | `#F59E0B` | Amber Yellow     | Significant equipment fault or parameter drift. Requires prompt intervention $< 15\text{ minutes}$. |
+| **Critical**  | `critical`      | `#EF4444` | Crimson Red      | Highest priority — immediate machine stop or product scrap risk. Response < 2 minutes. |
+| **Major**     | `warning`       | `#F59E0B` | Amber Yellow     | Significant equipment fault or parameter drift. Requires prompt intervention < 15 minutes. |
 | **Minor**     | `severity-minor`| `#EAB308` | Gold Yellow      | Low-impact warning or preventive maintenance notification. Response during shift window. |
 | **Warning**   | `accent`        | `#3B82F6` | Precision Blue   | Informational or advisory notice. Mapped to accent blue to avoid visual confusion with Major amber. |
 
@@ -70,7 +70,7 @@ IMS adopts vocabulary and concepts from **ANSI/ISA-18.2-2016** (Management of Al
 
 ### What Is Implemented
 - **Standardized 4-Tier Severity Hierarchy**: Structured taxonomy with explicit priority mappings.
-- **Operator Lifecycle State Machine**: Tracked state transitions (`OPEN` $\to$ `ACKNOWLEDGED` $\to$ `RESOLVED`).
+- **Operator Lifecycle State Machine**: Tracked state transitions (`OPEN` → `ACKNOWLEDGED` → `RESOLVED`).
 - **Audit-Traceable Acknowledgment**: REST API integration (`ims-alarm-api`) providing actor attribution and timestamps.
 - **Andon Board Visualization (ISA-101)**: High-contrast situational awareness displays on shop-floor kiosks.
 

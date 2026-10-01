@@ -134,7 +134,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
 ```
 
-All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded `DO $$ ... $$` blocks) so re-running `scripts/migrate.sh` against an already-current database is always a safe no-op. See `docs/architecture/ARCHITECTURE.md`'s "Migration Governance" section for why there is deliberately exactly one migration runner, not three.
+All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded `DO \$\$ ... \$\$` blocks) so re-running `scripts/migrate.sh` against an already-current database is always a safe no-op. See `docs/architecture/ARCHITECTURE.md`'s "Migration Governance" section for why there is deliberately exactly one migration runner, not three.
 
 ---
 

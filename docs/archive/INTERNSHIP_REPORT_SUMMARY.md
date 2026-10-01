@@ -308,8 +308,8 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 | Category                | Savings                | Calculation                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------- |
-| **Manual Monitoring**   | 20 hours/month         | 10 hours × 2 staff members × $25/hour                           |
-| **Downtime Prevention** | $5,000-50,000/incident | Industry average costs associated with critical server downtime |
+| **Manual Monitoring**   | 20 hours/month         | 10 hours × 2 staff members × \$25/hour                           |
+| **Downtime Prevention** | \$5,000-50,000/incident | Industry average costs associated with critical server downtime |
 | **Knowledge Transfer**  | Invaluable             | Permanent training infrastructure for all future interns        |
 
 ---

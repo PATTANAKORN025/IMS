@@ -48,10 +48,11 @@
 * **จำนวนข้อมูลโทรมาตรที่สูญหาย / ตกหล่น:** `~X,XXX รายการ`
 * **สายการผลิตที่ได้รับผลกระทบ:** `[เช่น สายการผลิต LDI Photolithography 1–4, หัวเจาะ CNC Drilling 01–12]`
 * **การใช้นโยบายงบประมาณข้อผิดพลาด (SLO Error Budget):**
-  - Ingestion Availability SLO ($99.9\%$ ต่อเดือน): ใช้งบประมาณไป **XX.X%** ของงบ 30 วัน
-  - Query Latency SLO ($p95 < 500\text{ms}$): ใช้งบประมาณไป **YY.Y%**
+  - Ingestion Availability SLO (99.9% ต่อเดือน): ใช้งบประมาณไป **XX.X%** ของงบ 30 วัน
+  - Query Latency SLO (P95 < 500ms): ใช้งบประมาณไป **YY.Y%**
 
-$$\text{อัตราการเผาผลาญ Error Budget (Burn Rate)} = \frac{\text{อัตราข้อผิดพลาดที่เกิดขึ้นจริง}}{\text{อัตราข้อผิดพลาดที่ยอมรับได้}} = \frac{1 - \text{SLI}}{1 - \text{SLO}}$$
+$$\text{Error Budget Burn Rate} = \frac{\text{Observed Error Rate}}{\text{Allowed Error Rate}} = \frac{1 - \text{SLI}}{1 - \text{SLO}}$$
+*(อัตราการเผาผลาญ Error Budget = อัตราข้อผิดพลาดที่เกิดขึ้นจริง / อัตราข้อผิดพลาดที่ยอมรับได้)*
 
 ---
 
