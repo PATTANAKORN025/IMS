@@ -19,7 +19,7 @@
 
 > **受众对象:** SRE / 运维工程师、数据工程师、系统架构师、QA 质量保证团队  
 > **遥测业务范围:** 涵盖四大工业领域 (IT/OT 基础设施网络、LDI 激光直接成像光刻、CNC 数控钻孔设备群、VCP 垂直连续电镀线)  
-> **数据源真实性出处:** 下文提及的全部数据表、视图、计算逻辑及持续聚合视图均经过 live 数据库 (`timescaledb_information.continuous_aggregates`)、迁移脚本 013–089 以及运行中 Node-RED 流水线的严格校验。
+> **数据源真实性出处:** 下文提及的全部数据表、视图、计算逻辑及持续聚合视图均经过 live 数据库 (`timescaledb_information.continuous_aggregates`)、迁移脚本 013–090 以及运行中 Node-RED 流水线的严格校验。
 
 ---
 
