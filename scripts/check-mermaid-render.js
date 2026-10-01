@@ -41,9 +41,27 @@ for (const f of files) {
   }
 }
 
+function findChromium() {
+  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
+  const candidates = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return undefined;
+}
+
 (async () => {
-  // CHROMIUM_PATH lets a machine reuse an already-installed Chromium
-  const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+  // CHROMIUM_PATH (or auto-detected system Chrome/Edge) lets a machine reuse an already-installed Chromium
+  const executablePath = findChromium();
+  const browser = await chromium.launch(executablePath ? { executablePath } : {});
   const page = await browser.newPage();
   await page.setContent('<html><body><div id="o"></div></body></html>');
   await page.addScriptTag({ path: MERMAID_JS });
