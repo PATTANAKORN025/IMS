@@ -415,7 +415,7 @@
       },
       "targets": [
         {
-          "expr": "count(ims_circuit_breaker_state == 1)",
+          "expr": "count(ims_circuit_breaker_state == 1) or vector(0)",
           "legendFormat": "OPEN",
           "refId": "A"
         }
@@ -515,7 +515,7 @@
       },
       "targets": [
         {
-          "expr": "count(ims_circuit_breaker_state == 2)",
+          "expr": "count(ims_circuit_breaker_state == 2) or vector(0)",
           "legendFormat": "HALF-OPEN",
           "refId": "A"
         }
@@ -603,7 +603,7 @@
       },
       "targets": [
         {
-          "expr": "count(ims_circuit_breaker_state == 0)",
+          "expr": "count(ims_circuit_breaker_state == 0) or vector(0)",
           "legendFormat": "CLOSED",
           "refId": "A"
         }

@@ -84,8 +84,8 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "WITH v AS (\n  SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
-        "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "query": "WITH v AS (\n  SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_machine_last_state\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
+        "definition": "WITH v AS (\n  SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_machine_last_state\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "current": {
           "selected": true,
           "text": "2",
@@ -107,8 +107,8 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "WITH v AS (\n  SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring})))\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
-        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring}))) ORDER BY eqp_id",
+        "query": "WITH v AS (\n  SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_machine_last_state WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring})))\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
+        "definition": "WITH v AS (\n  SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_machine_last_state WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring})))\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "current": {
           "selected": true,
           "text": "LDI-01",
@@ -116,29 +116,6 @@
         },
         "multi": false,
         "includeAll": false,
-        "options": [],
-        "refresh": 1,
-        "sort": 1,
-        "hide": 0,
-        "regex": "",
-        "skipUrlSync": false
-      },
-      {
-        "name": "mo",
-        "label": "MO",
-        "type": "query",
-        "datasource": {
-          "uid": "timescaledb"
-        },
-        "query": "WITH v AS (\n  SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
-        "definition": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY mo",
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
-        "multi": true,
-        "includeAll": true,
         "options": [],
         "refresh": 1,
         "sort": 1,

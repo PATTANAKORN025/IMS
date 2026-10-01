@@ -31,10 +31,12 @@ function makeFlowCtx() {
     return {
         get: (key) => { assertValidKey(key); return store[key] || null; },
         set: (key, val) => { assertValidKey(key); store[key] = val; },
+        // like Node-RED: stored entries come from keys(), never Object.keys(ctx)
+        keys: () => Object.keys(store),
     };
 }
 
-const { checkDevice, recordSuccess, recordFailure, getState } = require('../../nodered_data/lib/circuit-breaker');
+const { checkDevice, recordSuccess, recordFailure, getState, renderMetrics } = require('../../nodered_data/lib/circuit-breaker');
 
 let passed = 0, failed = 0;
 function test(name, fn) {
@@ -70,6 +72,24 @@ test('trip state for one space-containing device does not collide with another',
     recordFailure('LDI-A01', flowCtx);
     assert.strictEqual(getState('LDI-A01', flowCtx), 'OPEN');
     assert.strictEqual(getState('LDI-A02', flowCtx), 'CLOSED', 'a sibling device with a similar name must not share state');
+});
+
+console.log('circuit-breaker: Prometheus metrics');
+
+test('renderMetrics emits one state and one trips series per tracked device', () => {
+    const flowCtx = makeFlowCtx();
+    recordFailure('LDI-A01', flowCtx);
+    recordFailure('LDI-A01', flowCtx);
+    recordSuccess('SW-01', flowCtx);
+    const out = renderMetrics(flowCtx);
+    assert.match(out, /^# TYPE ims_circuit_breaker_state gauge$/m);
+    assert.match(out, /^ims_circuit_breaker_state\{device_id="LDI-A01"\} 1$/m);
+    assert.match(out, /^ims_circuit_breaker_state\{device_id="SW-01"\} 0$/m);
+    assert.match(out, /^ims_circuit_breaker_trips_total\{device_id="LDI-A01"\} 1$/m);
+});
+
+test('renderMetrics renders nothing before any device is tracked', () => {
+    assert.strictEqual(renderMetrics(makeFlowCtx()), '');
 });
 
 console.log(`\nResults: ${passed} passed, ${failed} failed`);
