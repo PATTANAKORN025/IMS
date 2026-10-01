@@ -42,6 +42,29 @@ function parseEnvFile(filePath) {
   return envMap;
 }
 
+// Every value .env.example has ever held is public: the repository is public
+// and keeps its history. A secret copied from an older example is as exposed
+// as one copied from the current file. Reads the history with git when it is
+// available; without git (an exported tarball) only the current file counts.
+function historicalExampleValues() {
+  const values = new Set();
+  let log;
+  try {
+    log = require('child_process').execFileSync(
+      'git', ['log', '-p', '--format=', '--', '.env.example'],
+      { cwd: ROOT_DIR, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch {
+    return values;
+  }
+  for (const line of log.split(/\r?\n/)) {
+    const m = line.match(/^[-+ ]([A-Z0-9_]+)=(.*)$/);
+    if (!m) continue;
+    const v = m[2].trim().replace(/^(['"])(.*)\1$/, '$2');
+    if (v.length >= 8) values.add(v);
+  }
+  return values;
+}
+
 // Every ${VAR:?msg} in a compose file is required: compose refuses to start
 // without it, and a container created before the key existed keeps running
 // with a bind-mounted script that now expects it (pgbouncer crash-looped this
@@ -88,6 +111,7 @@ function runCheck() {
   ];
 
   const violations = [];
+  const history = historicalExampleValues();
 
   for (const [key, val] of Object.entries(env)) {
     if (!SENSITIVE_PATTERN.test(key) || !val) continue;
@@ -95,6 +119,10 @@ function runCheck() {
     // 1. Matches .env.example default value
     if (example[key] && val === example[key] && val !== '') {
       violations.push({ key, reason: 'matches public .env.example value' });
+      continue;
+    }
+    if (history.has(val)) {
+      violations.push({ key, reason: 'matches a value published in .env.example git history' });
       continue;
     }
 
