@@ -52,7 +52,7 @@ k6 run tests/k6/db-write-stress.js \
  --env SERVER_COUNT=500 \
  --env WRITE_INTERVAL=5 \
  --env PGHOST=localhost \
- --env PGPORT=6432
+ --env PGPORT=5432
 ```
 
 ### Grafana 看板查询压测 (Grafana Query Stress)

@@ -153,26 +153,41 @@ IMS กำหนดสิทธิ์การเข้าถึงอย่า�
 
 #### รหัสตอบกลับ HTTP (Responses)
 
-- **`202 Accepted`**: ข้อมูลผ่านการตรวจสอบความถูกต้องและนำเข้าคิวเพื่อรอบันทึกลงฐานข้อมูลแล้ว
+- **`200 OK`**: ข้อมูลผ่านการตรวจสอบความถูกต้อง บันทึกลง staging ล่วงหน้า (`public.ingest_staging`) เสร็จสิ้น, บันทึกลงไฮเปอร์เทเบิล (`public.ldi_data`) สำเร็จ และลบข้อมูลออกจาก staging เรียบร้อย
   ```json
   {
-    "status": "accepted",
-    "timestamp": "2026-09-28T04:00:00.104Z",
-    "records_queued": 1
+    "message": "LDI Batch received",
+    "rows": 10
   }
   ```
-- **`400 Bad Request`**: โครงสร้าง JSON ไม่ถูกต้องหรือขาดฟิลด์บังคับ
+- **`400 Bad Request`**: โครงสร้าง JSON ไม่ถูกต้อง, เพย์โหลดไม่ใช่ JSON Array หรือขาดฟิลด์บังคับ (`eqp_id`, `log_id`)
   ```json
   {
-    "error": "Bad Request",
-    "message": "Missing mandatory field 'eqp_id'"
+    "error": "Payload must be a JSON array"
   }
   ```
 - **`401 Unauthorized`**: ขาด API Key หรือค่า `X-API-Key` ไม่ถูกต้อง
   ```json
   {
-    "error": "Unauthorized",
-    "message": "Invalid or missing X-API-Key token"
+    "error": "Unauthorized"
+  }
+  ```
+- **`413 Payload Too Large`**: จำนวนแถวในชุดข้อมูลเกินขีดจำกัดสูงสุด (500 แถว)
+  ```json
+  {
+    "error": "Batch too large: 520 rows, max 500 -- split it"
+  }
+  ```
+- **`502 Bad Gateway`**: บันทึกลง staging สำเร็จแต่เกิดข้อผิดพลาดในการบันทึกลงไฮเปอร์เทเบิล; ข้อมูลถูกคงไว้ใน `public.ingest_staging` เพื่อรอลองใหม่
+  ```json
+  {
+    "error": "Insert failed, batch staged for retry"
+  }
+  ```
+- **`503 Service Unavailable`**: การเชื่อมต่อฐานข้อมูลไม่พร้อมใช้งาน หรือการบันทึกลง staging ล้มเหลว; ปฏิเสธการรับข้อมูลชุดนี้
+  ```json
+  {
+    "error": "Staging failed, batch not accepted"
   }
   ```
 

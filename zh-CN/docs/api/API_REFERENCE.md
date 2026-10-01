@@ -152,26 +152,41 @@ IMS 在系统各边界之间采用多层防御的鉴权机制：
 
 #### HTTP 响应代码 (Responses)
 
-- **`202 Accepted`**: 载荷已通过格式校验，并已入列 Node-RED 内存缓冲以待批量入库。
+- **`200 OK`**: 批次通过架构校验，已写入预写暂存表 (`public.ingest_staging`)，成功提交至超表 (`public.ldi_data`)，且已删除暂存数据。
   ```json
   {
-    "status": "accepted",
-    "timestamp": "2026-09-28T04:00:00.104Z",
-    "records_queued": 1
+    "message": "LDI Batch received",
+    "rows": 10
   }
   ```
-- **`400 Bad Request`**: JSON 格式错误或缺失必填字段。
+- **`400 Bad Request`**: JSON 载荷格式错误，不是 JSON 数组，或缺少必填字段 (`eqp_id`, `log_id`)。
   ```json
   {
-    "error": "Bad Request",
-    "message": "Missing mandatory field 'eqp_id'"
+    "error": "Payload must be a JSON array"
   }
   ```
-- **`401 Unauthorized`**: 未提供 API Key 或 `X-API-Key` 令牌无效。
+- **`401 Unauthorized`**: 未提供 API Key 或 `X-API-Key` 鉴权令牌无效。
   ```json
   {
-    "error": "Unauthorized",
-    "message": "Invalid or missing X-API-Key token"
+    "error": "Unauthorized"
+  }
+  ```
+- **`413 Payload Too Large`**: 批量数据大小超出上限（单次最多 500 行）。
+  ```json
+  {
+    "error": "Batch too large: 520 rows, max 500 -- split it"
+  }
+  ```
+- **`502 Bad Gateway`**: 预写暂存成功但超表批量插入失败；批次保留在 `public.ingest_staging` 中以供自动重试。
+  ```json
+  {
+    "error": "Insert failed, batch staged for retry"
+  }
+  ```
+- **`503 Service Unavailable`**: 数据库连接池不可用或预写暂存写入失败；批次被拒绝。
+  ```json
+  {
+    "error": "Staging failed, batch not accepted"
   }
   ```
 

@@ -159,10 +159,11 @@ Node-RED ทำหน้าที่เป็นหัวใจหลักใ�
 
 ```
 nodered_data/flows/
-├── 01-snmp-poller.json       # รวบรวมข้อมูล SNMP และดึงตัวนับอินเทอร์เฟซเครือข่าย
-├── 02-ldi-ingest.json        # ตรวจสอบความถูกต้องของสคีมา /ldi-telemetry และพาร์สข้อมูล
-├── 03-alarm-engine.json      # ตรวจสอบเกณฑ์การแจ้งเตือนและส่งต่อไปยัง Alertmanager
-└── 04-storage-writer.json    # รวมการเชื่อมต่อ PgBouncer และบันทึกข้อมูลแบบกลุ่มลงฐานข้อมูล
+├── alerting.json             # จัดรูปแบบข้อความแจ้งเตือนและส่งต่อไปยัง LINE / Teams Webhook
+├── ingestion.json            # โพล SNMP, แคชทะเบียนอุปกรณ์, ระบบตัดวงจร Circuit Breaker, บันทึก snmp_data
+├── ldi_alarm_simulator.json  # ระบบจำลองสถานการณ์ความผิดปกติและการทดสอบวงจรแจ้งเตือน LDI
+├── ldi_ingestion.json        # ตรวจสอบสิทธิ์และสคีมา /ldi-telemetry, บันทึกลง staging และ ldi_data
+└── ldi_simulator.json        # ระบบจำลองข้อมูลโทรมาตรสดแบบสโตแคสติกสำหรับ 10 เครื่อง LDI
 ```
 
 1. **การปรับใช้โฟลว์ (Deploy)**:

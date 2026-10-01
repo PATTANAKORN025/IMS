@@ -94,6 +94,26 @@ function getRealDashboardCounts() {
   return { infra, manufacturing, drilling, vcp, total: infra + manufacturing + drilling + vcp };
 }
 
+function getRealDashboardUids() {
+  const base = path.join(ROOT, 'monitoring', 'grafana', 'dashboards');
+  const uids = new Set();
+  function walk(dir) {
+    if (!fs.existsSync(dir)) return;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (e.isFile() && e.name.endsWith('.json') && !e.name.startsWith('ims-sandbox-')) {
+        try {
+          const j = JSON.parse(fs.readFileSync(full, 'utf8'));
+          if (j.uid) uids.add(j.uid);
+        } catch {}
+      }
+    }
+  }
+  walk(base);
+  return uids;
+}
+
 function getRealServiceCount() {
   const text = fs.readFileSync(path.join(ROOT, 'docker-compose.yaml'), 'utf8');
   const lines = text.split('\n');
@@ -138,6 +158,7 @@ function main() {
   const dash = getRealDashboardCounts();
   const realServices = getRealServiceCount();
   const realMigrations = getRealMigrationInfo();
+  const realUids = getRealDashboardUids();
 
   console.log('IMS Doc Over-Claim Linter');
   console.log('='.repeat(50));
@@ -226,6 +247,20 @@ function main() {
       if ((relFile.endsWith('README.md') || relFile.endsWith('API_REFERENCE.md')) && (line.includes('/alarms/ack') || line.includes('/alarms/resolve'))) {
         if (line.includes('acknowledged_by') || line.includes('resolved_by')) {
           report('alarm-api curl example must not send acknowledged_by or resolved_by in body');
+        }
+      }
+
+      // Shape 9: Obsolete PgBouncer internal port :6432
+      if (line.includes(':6432') || line.includes('PGPORT=6432')) {
+        report('references obsolete PgBouncer port 6432 (canonical port is 5432)');
+      }
+
+      // Shape 10: Broken /d/<uid> dashboard links
+      const dMatches = line.matchAll(/\/d\/([a-zA-Z0-9_-]+)/g);
+      for (const m of dMatches) {
+        const uid = m[1];
+        if (!realUids.has(uid)) {
+          report(`references non-existent dashboard UID "/d/${uid}"`);
         }
       }
     });

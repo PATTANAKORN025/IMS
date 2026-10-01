@@ -106,7 +106,7 @@ Technical architectures, sequence lifecycles, and data state transitions must be
 
 - **Supported Chart Types**: `flowchart TD`, `flowchart LR`, `sequenceDiagram`, `stateDiagram-v2`.
 - **Label Quoting**: Always quote node labels containing special characters, brackets, or ports:
-  `A["PgBouncer (:6432)"] --> B[("TimescaleDB (public)")]`
+  `A["PgBouncer (:5432)"] --> B[("TimescaleDB (public)")]`
 - **Standalone `.mermaid` Files**: For system-wide architecture overviews, maintain a matching raw `.mermaid` definition in `docs/architecture/` (e.g., `ims-system-architecture.mermaid`) for external rendering in automated CI pipelines.
 
 ---

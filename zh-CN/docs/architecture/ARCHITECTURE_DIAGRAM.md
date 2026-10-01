@@ -430,7 +430,7 @@ flowchart LR
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # 2. 检查 PgBouncer 连接池客户端及服务端连接复用状态
-docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
+docker exec -i ims-timescaledb psql -U ims_admin -p 5432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
 
 # 3. 检查 TimescaleDB 内部各超表的数据块分布与压缩率
 docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "

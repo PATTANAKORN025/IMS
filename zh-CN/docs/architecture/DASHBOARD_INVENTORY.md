@@ -11,7 +11,7 @@
 > (`node scripts/generate-dashboard-inventory.js --check`) 会在
 > 此文件与当前仪表板内容不匹配时使构建失败。
 >
-> 最后生成时间：2026-09-28 | 仪表板总数：22 | 面板总数：225
+> 最后生成时间：2026-10-01 | 仪表板总数：22 | 面板总数：225
 
 ## 01 · 钻孔车间运营 (Drilling Operations) (4)
 

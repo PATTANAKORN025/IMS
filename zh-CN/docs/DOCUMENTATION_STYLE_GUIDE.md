@@ -105,7 +105,7 @@ c:\Projects\IMS
 
 - **支持图表类型**: `flowchart TD`, `flowchart LR`, `sequenceDiagram`, `stateDiagram-v2`。
 - **节点文本转义**: 含有括号、端口号等特殊字符的节点必须加双引号转义：
-  `A["PgBouncer (:6432)"] --> B[("TimescaleDB (public)")]`
+  `A["PgBouncer (:5432)"] --> B[("TimescaleDB (public)")]`
 - **独立 `.mermaid` 文件备份**: 针对系统级大架构图，需在 `docs/architecture/` 同步维护独立的 `.mermaid` 文件（如 `ims-system-architecture.mermaid`），以便 CI 自动渲染。
 
 ---

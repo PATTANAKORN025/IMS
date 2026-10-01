@@ -10,12 +10,15 @@ IMS (Industrial Monitoring System) — แพลตฟอร์มการต�
 
 ## คำสั่งการทำงาน (Commands)
 
-การดำเนินงานประจำวันใช้ `make`. **Makefile มีคำสั่ง mixed-shell ไม่ได้เป็น portable ข้ามระบบทั้งหมด**: มีเพียง `verify` ที่แยกตาม `$(OS)` ส่วน `doctor` ใช้รูปแบบ cmd `2>NUL`; `deploy-flows` ต้องใช้ `jq` พร้อม bash process substitution `<(...)`; ส่วน `backup`, `restore`, `test-load`, `snapshot-flows` ต้องใช้ POSIX shell บน Windows ให้รันคำสั่งเหล่านี้จาก Git Bash
+การดำเนินงานประจำวันใช้ `make`; การรัน `make` เปล่าๆ จะแสดงทุกคำสั่งพร้อมคำอธิบาย (`scripts/make-help.js` อ่านคอมเมนต์ `## `) คำสั่ง `verify` และ `backup` แยกตาม `$(OS)` และรันสคริปต์ PowerShell บน Windows ส่วนคำสั่ง `restore`, `test-load`, `test-visual-ldi` และ `snapshot-flows` ต้องใช้ POSIX shell: บน Windows ให้รันจาก Git Bash
 
 | คำสั่ง | หน้าที่ |
 | --- | --- |
+| `make` / `make help` | แสดงรายการคำสั่งทั้งหมดพร้อมคำอธิบาย |
 | `make doctor` | ตรวจสอบข้อกำหนดเบื้องต้น (docker, compose, node) |
-| `make up` | `build-flows` แล้วรัน `docker compose up -d` บนไฟล์หลัก |
+| `make check` | รันเกตเวย์ pre-commit เต็มรูปแบบ (`scripts/pre-commit.js`) |
+| `make check-env` | ตรวจสอบไฟล์ `.env` แบบเข้มงวด: ตรวจคีย์ที่ขาดหายและค่าตัวอย่างสาธารณะ |
+| `make up` | `build-flows`, ตรวจ `.env` แล้วรัน `docker compose up -d` บนไฟล์หลัก |
 | `make up-prod` | เริ่มต้นด้วย `docker-compose.prod.yaml` overlay (จำกัด resource ระดับ production) |
 | `make down` / `make restart` / `make logs` | หยุด / รีสตาร์ทคอนเทนเนอร์หลัก / ดูบันทึก Node-RED |
 | `make verify` | ตรวจสุขภาพระบบเต็มรูปแบบ — คอนเทนเนอร์, ฐานข้อมูล, ไปป์ไลน์, การแจ้งเตือน |
@@ -24,10 +27,10 @@ IMS (Industrial Monitoring System) — แพลตฟอร์มการต�
 | `make deploy-flows` | POST โฟลว์ที่รวมแล้วไปยัง Node-RED ที่ `127.0.0.1:1880` |
 | `make snapshot-flows` | สำรอง `flows.json` ไปยัง `backups/` ก่อน deploy |
 | `make validate-dashboards` | ค้นหาโค้ดสี hex ที่เสียหายในแดชบอร์ด |
-| `make test-unit` | ชุดทดสอบยูนิต 4 ตัวหลักสำหรับ parser และขอบเขตระบบ |
+| `make test-unit` | รันทุกชุดทดสอบใน `tests/unit/*.test.js` |
 | `make test-load` | การทดสอบโหลด k6 (`tests/k6/pipeline-stress.js`) |
 | `make test-visual` / `make test-visual-ldi` | ตรวจสอบความถดถอยของภาพหน้าจอแดชบอร์ดด้วย Playwright |
-| `make backup` / `make restore FILE=<path>` | สำรอง / กู้คืนฐานข้อมูล |
+| `make backup` / `make restore FILE=<path>` | สำรอง DB dump `.sql.gz` ไปยัง `backups/` / กู้คืนฐานข้อมูล |
 
 ### การรันการทดสอบเดี่ยว (Running a single test)
 
@@ -55,7 +58,7 @@ node scripts/production-assurance.js --profile=full --allow-container-kill
 
 ### Pre-commit / CI
 
-`.husky/pre-commit` รัน `node scripts/pre-commit.js`: unit tests, linters ใน `tests/lint/`, การตรวจสอบ JSON ของทุกแดชบอร์ด และ flow JSON validation `.github/workflows/ci.yml` รันชุดคล้ายกันร่วมกับ gitleaks, การตรวจสอบ compose, lint ของ config/rule ใน Prometheus และสแกนเนอร์ข้อมูลลับรั่วไหล **ทั้งสองส่วนระบุ path ของแต่ละการทดสอบไว้ตายตัว** — ไฟล์ใหม่ใน `tests/unit/` จะไม่ถูกดึงอัตโนมัติ ต้องเพิ่มเข้าไปใน `scripts/pre-commit.js` และ `.github/workflows/ci.yml` ข้อความ commit ตรวจสอบตามมาตรฐาน Conventional Commits (`commitlint.config.js`)
+`.husky/pre-commit` รัน `node scripts/pre-commit.js`: unit tests, linters ใน `tests/lint/`, การตรวจสอบ JSON ของทุกแดชบอร์ด และ flow JSON validation `.github/workflows/ci.yml` รันชุดคล้ายกันร่วมกับ gitleaks, การตรวจสอบ compose, lint ของ config/rule ใน Prometheus และสแกนเนอร์ข้อมูลลับรั่วไหล `scripts/pre-commit.js` จะค้นหาและรันไฟล์ `tests/unit/*.test.js` ทั้งหมดโดยอัตโนมัติ ส่วน linter ใน `tests/lint/` ยังคงระบุไว้ชัดเจน: หากเพิ่ม linter ใหม่ให้เพิ่มใน `scripts/pre-commit.js` ข้อความ commit ตรวจสอบตามมาตรฐาน Conventional Commits (`commitlint.config.js`)
 
 ## สถาปัตยกรรม (Architecture)
 

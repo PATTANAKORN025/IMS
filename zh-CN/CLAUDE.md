@@ -10,12 +10,15 @@ IMS（Industrial Monitoring System，工业监控系统）——一个 OT/IT 遥
 
 ## 常用命令（Commands）
 
-日常运维通过 `make` 执行。**Makefile 混合了不同 Shell 的语法，并非完全跨平台**：仅 `verify` 会根据 `$(OS)` 分支。`doctor` 使用 CMD 风格的 `2>NUL`；`deploy-flows` 需要 `jq` 以及 Bash 进程替换 `<(...)`；`backup`、`restore`、`test-load`、`snapshot-flows` 需要 POSIX Shell。在 Windows 环境下，请在 Git Bash 中运行这些命令。
+日常运维通过 `make` 执行；单执行 `make` 会打印所有目标及其说明（`scripts/make-help.js` 读取 `## ` 注释）。`verify` 和 `backup` 根据 `$(OS)` 分支并在 Windows 上执行 PowerShell 脚本。`restore`、`test-load`、`test-visual-ldi` 与 `snapshot-flows` 需要 POSIX Shell，在 Windows 上请从 Git Bash 运行。
 
 | 命令 | 功能说明 |
 | --- | --- |
+| `make` / `make help` | 列出所有命令目标及其说明 |
 | `make doctor` | 检查前置依赖（docker, compose, node） |
-| `make up` | 先执行 `build-flows`，然后在基础文件上运行 `docker compose up -d` |
+| `make check` | 运行完整的 pre-commit 门禁校验（`scripts/pre-commit.js`） |
+| `make check-env` | 严格检查 `.env` 文件：检查缺失的必要密钥及公开示例值 |
+| `make up` | 先执行 `build-flows`，校验 `.env`，然后在基础文件上运行 `docker compose up -d` |
 | `make up-prod` | 使用 `docker-compose.prod.yaml` 覆盖层启动（生产资源配额限制） |
 | `make down` / `make restart` / `make logs` | 停止 / 重启核心容器 / 查看 Node-RED 日志 |
 | `make verify` | 全系统健康检查——容器、数据库、数据流水线、告警 |
@@ -24,10 +27,10 @@ IMS（Industrial Monitoring System，工业监控系统）——一个 OT/IT 遥
 | `make deploy-flows` | 将合并后的流 POST 发送至 `127.0.0.1:1880` 的 Node-RED |
 | `make snapshot-flows` | 部署前备份 `flows.json` 至 `backups/` 目录 |
 | `make validate-dashboards` | 扫描仪表板中是否存在损坏的 Hex 颜色代码 |
-| `make test-unit` | 针对解析器与系统边界的 4 项核心单元测试 |
+| `make test-unit` | 运行 `tests/unit/*.test.js` 中的每一个单元测试 |
 | `make test-load` | k6 压力测试（`tests/k6/pipeline-stress.js`） |
 | `make test-visual` / `make test-visual-ldi` | 基于 Playwright 的仪表板截图回归测试 |
-| `make backup` / `make restore FILE=<path>` | 数据库转储 / 恢复 |
+| `make backup` / `make restore FILE=<path>` | 数据库转储至 `backups/*.sql.gz` / 恢复 |
 
 ### 运行单项测试（Running a single test）
 
@@ -55,7 +58,7 @@ node scripts/production-assurance.js --profile=full --allow-container-kill
 
 ### Pre-commit / CI
 
-`.husky/pre-commit` 会运行 `node scripts/pre-commit.js`：包含单元测试、`tests/lint/` 下的代码校验器、各仪表板的 JSON 校验以及流 JSON 校验。`.github/workflows/ci.yml` 运行大致相同的测试集合，外加 gitleaks、Compose 校验、Prometheus 配置/规则校验以及私有数据泄露扫描器。**两处均硬编码了单个测试路径**——`tests/unit/` 中的新文件不会自动被收录，必须手动添加到 `scripts/pre-commit.js` 与 `.github/workflows/ci.yml` 中。提交信息必须符合 Conventional Commits 规范（由 `commitlint.config.js` 检查）。
+`.husky/pre-commit` 会运行 `node scripts/pre-commit.js`：包含单元测试、`tests/lint/` 下的代码校验器、各仪表板的 JSON 校验以及流 JSON 校验。`.github/workflows/ci.yml` 运行大致相同的测试集合，外加 gitleaks、Compose 校验、Prometheus 配置/规则校验以及私有数据泄露扫描器。`scripts/pre-commit.js` 会自动发现并运行所有 `tests/unit/*.test.js` 文件。`tests/lint/` 中的代码检查器仍明确列出：若新增 linter，需添加到 `scripts/pre-commit.js`。提交信息必须符合 Conventional Commits 规范（由 `commitlint.config.js` 检查）。
 
 ## 系统架构（Architecture）
 

@@ -95,7 +95,7 @@ flowchart TD
 
   subgraph STORAGE["TimescaleDB Tier (public schema)"]
     HT["Hypertables
-(ldi_data, ldi_data, snmp_data)
+(ldi_data, snmp_data)
 Chunk Interval: 1 day"]
     CAGG["Continuous Aggregates (CAGGs)
 (1m, 15m, 1h Rollups)
@@ -163,7 +163,7 @@ SELECT add_compression_policy('public.ldi_data', INTERVAL '7 days');
 ### 3. Continuous Aggregate (CAGG) with Real-Time Aggregation
 ```sql
 -- 1-Minute continuous aggregate rollup view
-CREATE MATERIALIZED VIEW public.cagg_ldi_metrics_1m
+CREATE MATERIALIZED VIEW public.ldi_data_1m
 WITH (timescaledb.continuous) AS
 SELECT
   time_bucket('1 minute', "time") AS bucket,
@@ -177,12 +177,12 @@ GROUP BY bucket, machine_id
 WITH NO DATA;
 
 -- Real-time aggregation: merge raw uncompressed chunks with precomputed materialized data
-ALTER MATERIALIZED VIEW public.cagg_ldi_metrics_1m 
+ALTER MATERIALIZED VIEW public.ldi_data_1m 
 SET (timescaledb.materialized_only = false);
 
 -- Automated continuous aggregate refresh schedule
 SELECT add_continuous_aggregate_policy(
-  'public.cagg_ldi_metrics_1m',
+  'public.ldi_data_1m',
   start_offset => INTERVAL '1 day',
   end_offset => INTERVAL '1 minute',
   schedule_interval => INTERVAL '1 minute'
@@ -195,7 +195,7 @@ SELECT add_continuous_aggregate_policy(
 SELECT add_retention_policy('public.ldi_data', INTERVAL '90 days');
 
 -- Retain aggregated rollups for long-term trending (2 years)
-SELECT add_retention_policy('public.cagg_ldi_metrics_1m', INTERVAL '730 days');
+SELECT add_retention_policy('public.ldi_data_1m', INTERVAL '730 days');
 ```
 
 ### 5. Execution Plan Benchmark (Raw vs CAGG)
@@ -209,11 +209,11 @@ WHERE machine_id = 'LDI-01' AND "time" >= NOW() - INTERVAL '7 days'
 GROUP BY h ORDER BY h;
 
 -- Querying identical 7-day range against Continuous Aggregate:
--- Result: Index Scan on cagg_ldi_metrics_1m materialized table (~12ms)
+-- Result: Index Scan on ldi_data_1m materialized table (~12ms)
 -- Performance Improvement: 104x faster execution!
 EXPLAIN ANALYZE
 SELECT bucket AS time, avg_thickness
-FROM public.cagg_ldi_metrics_1m
+FROM public.ldi_data_1m
 WHERE machine_id = 'LDI-01' AND bucket >= NOW() - INTERVAL '7 days'
 ORDER BY bucket;
 ```

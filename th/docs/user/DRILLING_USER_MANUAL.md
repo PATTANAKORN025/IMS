@@ -285,20 +285,6 @@ Spindle 6 Active  <=>  (Mask & 32) > 0   [บิตที่ 5: ค่าปร�
 
 เพื่อสนับสนุนการวิเคราะห์หาสาเหตุรากเหง้า (Root Cause Analysis - RCA) ระบบ IMS ได้กำหนดโครงสร้าง SQL CASE Statement ในการจัดกลุ่มรหัสเตือนหลายร้อยรหัส ออกเป็น **11 หมวดหมู่มาตรฐานระดับสากล**:
 
-```mermaid
-pie title "สัดส่วนสาเหตุความผิดปกติในแผนกเจาะ (Fleet Anomaly Distribution)"
-    "Laser Diameter & Length" : 32
-    "Shank & Collet Anomaly" : 24
-    "Bit Breakage / BBD" : 18
-    "Tool Life Reached" : 9
-    "Mechanical & Axis Drive" : 6
-    "Spindle Inverter & Coolant" : 4
-    "Pneumatic Low Pressure" : 3
-    "Tool Magazine Fault" : 2
-    "Spindle Overload / Overheat" : 1
-    "Emergency Stop (E-Stop)" : 1
-```
-
 | หมวดหมู่ (Anomaly Category) | รหัสเหตุการณ์ที่เกี่ยวข้อง | คำค้นหาในข้อความ (Regex Match) | คำอธิบายอาการทางวิศวกรรม |
 | :--- | :--- | :--- | :--- |
 | **`bit_breakage`**<br/>(ดอกสว่านหัก / BBD) | `0408`, `0417`, `0120`, `0218` | `broken`, `bbd`, `bit broken` | เซนเซอร์แสง BBD (Broken Bit Detector) หรือระบบสัมผัส ตรวจพบว่าดอกสว่านหักระหว่างเจาะ |

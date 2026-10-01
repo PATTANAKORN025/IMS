@@ -52,7 +52,7 @@ k6 run tests/k6/db-write-stress.js \
  --env SERVER_COUNT=500 \
  --env WRITE_INTERVAL=5 \
  --env PGHOST=localhost \
- --env PGPORT=6432
+ --env PGPORT=5432
 ```
 
 ### Grafana Query Stress
@@ -124,7 +124,7 @@ Results are saved to `tests/k6/*-results.json`:
 | `CONCURRENT_USERS` | 50                      | Number of concurrent query users |
 | `TARGET_SERVERS`   | 100                     | Servers for pipeline test        |
 | `PGHOST`           | localhost               | PostgreSQL host                  |
-| `PGPORT`           | 6432                    | PgBouncer port                   |
+| `PGPORT`           | 5432                    | PgBouncer port                   |
 | `GRAFANA_URL`      | <http://localhost:3000> | Grafana URL                      |
 | `NODERED_URL`      | <http://localhost:1880> | Node-RED URL                     |
 

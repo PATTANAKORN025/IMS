@@ -65,12 +65,52 @@ flowchart TD
 - **STANDBY**（青灰色 `#64748B`）：待机状态
 - **OFFLINE**（深灰色 `#1E293B`）：超过 2 小时未接收到遥测数据（COMM LOSS）
 
+```mermaid
+stateDiagram-v2
+    [*] --> OFFLINE : 超过 2 小时未接收到遥测数据
+    [*] --> STANDBY : 待机就绪，等待加工指令
+
+    STANDBY --> RUN : 启动加工循环 (0101 / 0112)
+    RUN --> TOOL_CHANGE : 自动换刀动作 (0110)
+    TOOL_CHANGE --> RUN : 换刀完成，恢复加工 (0112)
+    RUN --> STOP : 程序运行结束或暂停 (0108 / 0201)
+    STOP --> RUN : 开始下一加工循环 (0101)
+
+    RUN --> ALARM : 断刀或设备故障停机 (0408, 0409 等)
+    TOOL_CHANGE --> ALARM : 夹头卡死或刀库定位异常
+    ALARM --> STANDBY : 故障清除并手动复位 (0204)
+
+    RUN --> OFFLINE : 遥测中断超过 2 小时 (COMM LOSS)
+    STOP --> OFFLINE : 设备关机断电
+```
+
 ### 2.2 主轴掩码计算 (Spindle 1–6 Bitmask)
 机台通过代码 `0211`（`spindle ON: <mask>`）以二进制位掩码表示各主轴启用状态：
 $$\text{主轴 } N \text{ 启用} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
 - **63** (`111111`): 全部 6 轴同时加工
 - **31** (`011111`): 停用第 6 轴
 - **0** (`000000`): 全轴停用
+
+```mermaid
+flowchart TD
+    M["主轴掩码整数值<br/>来自代码 0211 (例如 63)"] --> D{"按位解码器<br/>(Mask & 2^(N-1)) > 0"}
+    D --> S1["主轴 1: 第 0 位 (权重 1)"]
+    D --> S2["主轴 2: 第 1 位 (权重 2)"]
+    D --> S3["主轴 3: 第 2 位 (权重 4)"]
+    D --> S4["主轴 4: 第 3 位 (权重 8)"]
+    D --> S5["主轴 5: 第 4 位 (权重 16)"]
+    D --> S6["主轴 6: 第 5 位 (权重 32)"]
+
+    S1 --> G1{"是否启用?"}
+    S2 --> G2{"是否启用?"}
+    S3 --> G3{"是否启用?"}
+    S4 --> G4{"是否启用?"}
+    S5 --> G5{"是否启用?"}
+    S6 --> G6{"是否启用?"}
+
+    G1 -->|是| C1["🟢 绿色 (启用中)"]
+    G1 -->|否| C2["⚪ 暗灰 (停用)"]
+```
 
 ### 2.3 11 类标准根因归类
 1. **断刀 / BBD 报警 (`bit_breakage`)**: `0408`, `0417`, `0120`, `0218`
@@ -113,6 +153,17 @@ $$\text{主轴 } N \text{ 启用} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
 ---
 
 ## 5. 数据库运维与技术故障诊断 (Database Runbook & Diagnostics)
+
+```mermaid
+flowchart LR
+    EVENT_STREAM["遥测数据流<br/>(drilling.event)"] --> WD{"看门狗评估引擎"}
+
+    WD -->|"超过 2 小时无数据"| COMM_LOSS["COMM LOSS (离线)<br/>1. 检查现场交换机端口。<br/>2. 检查本地 EAP 文件代理服务。<br/>3. 检查网络共享目录读写权限。"]
+    WD -->|"RUN 状态超过 60 分钟<br/>且孔数无递增"| STALE_RUN["STALE RUN (假死冻结)<br/>1. 日志解析器锁死。<br/>2. 设备已停机但未上报 Stop 代码。<br/>3. 重启本地 EAP 代理服务。"]
+
+    classDef wdStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
+    class EVENT_STREAM,COMM_LOSS,STALE_RUN wdStyle;
+```
 
 - **通讯丢失监控 (COMM LOSS)**: 超过 2 小时无新事件产生，机台标记为 OFFLINE，排查网络端口与 EAP 代理。
 - **停滞监控 (STALE RUN)**: 机台保持 RUN 状态超过 60 分钟且孔数未递增，排查解析器锁死或机台未上报停机代码。

@@ -433,7 +433,7 @@ Verify the active system architecture directly from your terminal:
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # 2. Check PgBouncer connection pool client and server allocation
-docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
+docker exec -i ims-timescaledb psql -U ims_admin -p 5432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
 
 # 3. Inspect TimescaleDB hypertable chunk distribution and compression status
 docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "

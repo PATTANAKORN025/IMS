@@ -79,7 +79,7 @@ make verify
 1. **NOC Overview (`/d/ims-noc-overview`)**:
    - ตรวจสอบภาพรวม Telemetry ของทั้งโรงงาน เช่น อุณหภูมิ, ความเร็วการสแกน หรือความคลาดเคลื่อนของการมาร์กเกอร์
    - คลิกเลือกที่ตัวชี้วัดเพื่อเชื่อมโยง Data Link ไปยังหน้าเจาะลึกรายเครื่องจักร
-2. **LDI Command Center & SPC (`/d/ims-ldi-fleet-command-center`)**:
+2. **ศูนย์บัญชาการการผลิต LDI (Manufacturing Fleet Command Center) (`/d/ims-ldi-manufacturing`)**:
    - กรองตาม `$machine_id` (เช่น `LDI-01` ถึง `LDI-10`)
    - วิเคราะห์ดัชนีสมรรถนะกระบวนการผลิต ($C_p, C_{pk}$) และ Z-score แบบเรียลไทม์ผ่าน TimescaleDB Continuous Aggregates
 3. **Alarm Console (`/d/ims-ldi-alarm-console`)**:

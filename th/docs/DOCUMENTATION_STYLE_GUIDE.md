@@ -105,7 +105,7 @@ c:\Projects\IMS
 
 - **ชนิดแผนภาพที่รองรับ**: `flowchart TD`, `flowchart LR`, `sequenceDiagram`, `stateDiagram-v2`
 - **การใส่เครื่องหมายคำพูดในป้ายกำกับ**: ต้องครอบข้อความในโหนดที่มีอักขระพิเศษ, วงเล็บ หรือพอร์ตเครือข่ายด้วยเครื่องหมายคำพูดเสมอ:
-  `A["PgBouncer (:6432)"] --> B[("TimescaleDB (public)")]`
+  `A["PgBouncer (:5432)"] --> B[("TimescaleDB (public)")]`
 - **ไฟล์นิยามแบบแยกอิสระ `.mermaid`**: สำหรับแผนภาพภาพรวมของระบบ ให้จัดทำไฟล์ดิบ `.mermaid` ควบคู่กันไว้ใน `docs/architecture/` (เช่น `ims-system-architecture.mermaid`) เพื่อนำไปเรนเดอร์ในไปป์ไลน์ CI ได้อย่างสะดวก
 
 ---

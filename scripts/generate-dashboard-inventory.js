@@ -22,6 +22,8 @@ const path = require('path');
 
 const DASHBOARD_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');
 const OUT_FILE = path.join(process.cwd(), 'docs', 'architecture', 'DASHBOARD_INVENTORY.md');
+const TH_FILE = path.join(process.cwd(), 'th', 'docs', 'architecture', 'DASHBOARD_INVENTORY.md');
+const ZH_FILE = path.join(process.cwd(), 'zh-CN', 'docs', 'architecture', 'DASHBOARD_INVENTORY.md');
 
 // ims-easy-overview doesn't have "ldi" in its uid but is entirely an LDI
 // fleet dashboard (see its description) -- categorize by an explicit
@@ -88,7 +90,8 @@ function generate() {
 
   const now = new Date().toISOString().slice(0, 10);
 
-  return `# Dashboard Inventory
+  return {
+    content: `# Dashboard Inventory
 
 > **Generated file — do not hand-edit.** Regenerate with:
 > \`node scripts/generate-dashboard-inventory.js\`
@@ -118,18 +121,95 @@ ${table(infra)}
 ## 04 · Plating Operations / VCP Line (${vcp.length})
 
 ${table(vcp)}
-`;
+`,
+    rows,
+    now,
+  };
+}
+
+function updateLocalized(filePath, rows, dateStr, lang) {
+  if (!fs.existsSync(filePath)) return null;
+  let text = fs.readFileSync(filePath, 'utf8');
+  const totalDash = rows.length;
+  const totalPanels = rows.reduce((s, r) => s + r.panels, 0);
+
+  if (lang === 'th') {
+    text = text.replace(
+      /สร้างล่าสุด: \d{4}-\d{2}-\d{2} \| แดชบอร์ดทั้งหมด: \d+ \| พาเนลทั้งหมด: \d+/,
+      `สร้างล่าสุด: ${dateStr} | แดชบอร์ดทั้งหมด: ${totalDash} | พาเนลทั้งหมด: ${totalPanels}`
+    );
+  } else if (lang === 'zh') {
+    text = text.replace(
+      /最后生成时间：\d{4}-\d{2}-\d{2} \| 仪表板总数：\d+ \| 面板总数：\d+/,
+      `最后生成时间：${dateStr} | 仪表板总数：${totalDash} | 面板总数：${totalPanels}`
+    );
+  }
+
+  const uidMap = new Map(rows.map((r) => [r.uid, r.panels]));
+  const lines = text.split('\n');
+  const updatedLines = lines.map((line) => {
+    const match = line.match(/^\|\s*`([^`]+)`\s*\|\s*([^|]+)\|\s*(\d+)\s*\|\s*(.*)\|$/);
+    if (match) {
+      const uid = match[1];
+      const title = match[2];
+      const desc = match[4];
+      if (uidMap.has(uid)) {
+        return `| \`${uid}\` | ${title}| ${uidMap.get(uid)} | ${desc}|`;
+      }
+    }
+    return line;
+  });
+
+  return updatedLines.join('\n');
+}
+
+function checkLocalized(filePath, rows, lang) {
+  if (!fs.existsSync(filePath)) {
+    console.error(`Missing localized inventory file: ${path.relative(process.cwd(), filePath)}`);
+    return false;
+  }
+  const text = fs.readFileSync(filePath, 'utf8');
+  const totalDash = rows.length;
+  const totalPanels = rows.reduce((s, r) => s + r.panels, 0);
+
+  const metaPattern = lang === 'th'
+    ? /สร้างล่าสุด: \d{4}-\d{2}-\d{2} \| แดชบอร์ดทั้งหมด: (\d+) \| พาเนลทั้งหมด: (\d+)/
+    : /最后生成时间：\d{4}-\d{2}-\d{2} \| 仪表板总数：(\d+) \| 面板总数：(\d+)/;
+
+  const m = text.match(metaPattern);
+  if (!m || parseInt(m[1], 10) !== totalDash || parseInt(m[2], 10) !== totalPanels) {
+    console.error(`Metadata totals mismatch in ${path.relative(process.cwd(), filePath)}`);
+    return false;
+  }
+
+  const uidMap = new Map(rows.map((r) => [r.uid, r.panels]));
+  for (const line of text.split('\n')) {
+    const match = line.match(/^\|\s*`([^`]+)`\s*\|\s*([^|]+)\|\s*(\d+)\s*\|\s*(.*)\|$/);
+    if (match) {
+      const uid = match[1];
+      const panels = parseInt(match[3], 10);
+      if (uidMap.has(uid) && uidMap.get(uid) !== panels) {
+        console.error(`Panel count mismatch for ${uid} in ${path.relative(process.cwd(), filePath)}: expected ${uidMap.get(uid)}, found ${panels}`);
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 function main() {
-  const content = generate();
+  const { content, rows, now } = generate();
   const checkMode = process.argv.includes('--check');
 
   if (checkMode) {
     const existing = fs.existsSync(OUT_FILE) ? fs.readFileSync(OUT_FILE, 'utf8') : null;
     const strip = (s) => (s || '').replace(/\r\n/g, '\n').replace(/Last generated: \d{4}-\d{2}-\d{2}/, 'Last generated: DATE').trim();
-    if (strip(existing) === strip(content)) {
-      console.log('Dashboard inventory is up to date.');
+    const enOk = strip(existing) === strip(content);
+    const thOk = checkLocalized(TH_FILE, rows, 'th');
+    const zhOk = checkLocalized(ZH_FILE, rows, 'zh');
+
+    if (enOk && thOk && zhOk) {
+      console.log('Dashboard inventory is up to date across all languages.');
       process.exit(0);
     }
     console.error('Dashboard inventory is OUT OF DATE.');
@@ -143,6 +223,18 @@ function main() {
   fs.mkdirSync(path.dirname(OUT_FILE), { recursive: true });
   fs.writeFileSync(OUT_FILE, content);
   console.log(`Wrote ${path.relative(process.cwd(), OUT_FILE)}`);
+
+  const updatedTh = updateLocalized(TH_FILE, rows, now, 'th');
+  if (updatedTh) {
+    fs.writeFileSync(TH_FILE, updatedTh);
+    console.log(`Wrote ${path.relative(process.cwd(), TH_FILE)}`);
+  }
+
+  const updatedZh = updateLocalized(ZH_FILE, rows, now, 'zh');
+  if (updatedZh) {
+    fs.writeFileSync(ZH_FILE, updatedZh);
+    console.log(`Wrote ${path.relative(process.cwd(), ZH_FILE)}`);
+  }
 }
 
 main();

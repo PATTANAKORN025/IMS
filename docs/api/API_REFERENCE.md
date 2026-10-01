@@ -153,26 +153,41 @@ Directly streams structured machine execution metrics, alignment offsets, exposu
 
 #### HTTP Response Codes
 
-- **`202 Accepted`**: Payload passed schema validation and was enqueued into Node-RED memory buffer for bulk insertion.
+- **`200 OK`**: Batch passed schema validation, was written to write-ahead staging (`public.ingest_staging`), committed to hypertable (`public.ldi_data`), and deleted from staging.
   ```json
   {
-    "status": "accepted",
-    "timestamp": "2026-09-28T04:00:00.104Z",
-    "records_queued": 1
+    "message": "LDI Batch received",
+    "rows": 10
   }
   ```
-- **`400 Bad Request`**: Malformed JSON syntax or missing mandatory fields.
+- **`400 Bad Request`**: Malformed JSON payload, payload is not a JSON array, or items missing mandatory fields (`eqp_id`, `log_id`).
   ```json
   {
-    "error": "Bad Request",
-    "message": "Missing mandatory field 'eqp_id'"
+    "error": "Payload must be a JSON array"
   }
   ```
-- **`401 Unauthorized`**: Missing or invalid `X-API-Key` header.
+- **`401 Unauthorized`**: Missing or invalid `X-API-Key` authentication header.
   ```json
   {
-    "error": "Unauthorized",
-    "message": "Invalid or missing X-API-Key token"
+    "error": "Unauthorized"
+  }
+  ```
+- **`413 Payload Too Large`**: Batch size exceeds maximum ingestion limit (500 rows).
+  ```json
+  {
+    "error": "Batch too large: 520 rows, max 500 -- split it"
+  }
+  ```
+- **`502 Bad Gateway`**: Staging succeeded but hypertable insertion failed; batch retained in `public.ingest_staging` for recovery retry.
+  ```json
+  {
+    "error": "Insert failed, batch staged for retry"
+  }
+  ```
+- **`503 Service Unavailable`**: Database pool unavailable or write-ahead staging insertion failed; batch rejected.
+  ```json
+  {
+    "error": "Staging failed, batch not accepted"
   }
   ```
 

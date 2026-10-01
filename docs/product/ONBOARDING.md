@@ -79,7 +79,7 @@ When a manufacturing excursion or infrastructure alert fires:
 1. **NOC Overview (`/d/ims-noc-overview`)**:
    - Inspect the aggregate plant telemetry for thermal, scan speed, or registration outliers.
    - Click any highlighted metric to follow the Grafana Data Link directly to the equipment drill-down.
-2. **LDI Command Center & SPC (`/d/ims-ldi-fleet-command-center`)**:
+2. **LDI Manufacturing Fleet Command Center (`/d/ims-ldi-manufacturing`)**:
    - Filter by `$machine_id` (e.g., `LDI-01` through `LDI-10`).
    - Analyze process capability indices ($C_p, C_{pk}$) and rolling 3-sigma Z-scores calculated dynamically over TimescaleDB Continuous Aggregates.
 3. **Alarm Console (`/d/ims-ldi-alarm-console`)**:

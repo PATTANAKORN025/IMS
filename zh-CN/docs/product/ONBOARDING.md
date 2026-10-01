@@ -79,7 +79,7 @@ make verify
 1. **NOC 全景大屏 (`/d/ims-noc-overview`)**:
    - 检查全厂设备的温度、扫描速度或对齐误差整体态势。
    - 点击高亮异常指标，通过 Grafana Data Link 直接跳转到对应设备下钻面板。
-2. **LDI 指挥中心与 SPC 分析 (`/d/ims-ldi-fleet-command-center`)**:
+2. **LDI 制造集群指挥中心 (`/d/ims-ldi-manufacturing`)**:
    - 切换 `$machine_id` 过滤单台设备（如 `LDI-01` 至 `LDI-10`）。
    - 查看由 TimescaleDB 连续聚合动态计算的过程能力指数 ($C_p, C_{pk}$) 以及 3-sigma Z-Score。
 3. **告警控制台 (`/d/ims-ldi-alarm-console`)**:

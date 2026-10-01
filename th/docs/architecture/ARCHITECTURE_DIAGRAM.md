@@ -429,7 +429,7 @@ flowchart LR
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # 2. ตรวจสอบจำนวนการเชื่อมต่อใน Pool ของ PgBouncer
-docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
+docker exec -i ims-timescaledb psql -U ims_admin -p 5432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
 
 # 3. ตรวจสอบการกระจายตัวของ Chunks และขนาดการบีบอัดข้อมูลใน TimescaleDB
 docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "

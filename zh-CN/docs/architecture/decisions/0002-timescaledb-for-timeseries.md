@@ -95,7 +95,7 @@ flowchart TD
 
   subgraph STORAGE["TimescaleDB 核心存储层 (public schema)"]
     HT["超表集群 Hypertables
-(ldi_data, ldi_data, snmp_data)
+(ldi_data, snmp_data)
 切片时间跨度: 1 天"]
     CAGG["持续聚合层 CAGGs
 (1m, 15m, 1h 汇总物化视图)
@@ -163,7 +163,7 @@ SELECT add_compression_policy('public.ldi_data', INTERVAL '7 days');
 ### 3. 持续聚合视图 (CAGG) 与实时查询配置
 ```sql
 -- 创建 1 分钟颗粒度的持续聚合汇总视图
-CREATE MATERIALIZED VIEW public.cagg_ldi_metrics_1m
+CREATE MATERIALIZED VIEW public.ldi_data_1m
 WITH (timescaledb.continuous) AS
 SELECT
   time_bucket('1 minute', "time") AS bucket,
@@ -177,12 +177,12 @@ GROUP BY bucket, machine_id
 WITH NO DATA;
 
 -- 开启实时聚合：自动将最新的未压缩原始数据与已物化的聚合数据实时合并
-ALTER MATERIALIZED VIEW public.cagg_ldi_metrics_1m 
+ALTER MATERIALIZED VIEW public.ldi_data_1m 
 SET (timescaledb.materialized_only = false);
 
 -- 设置持续聚合后台自动刷新周期策略
 SELECT add_continuous_aggregate_policy(
-  'public.cagg_ldi_metrics_1m',
+  'public.ldi_data_1m',
   start_offset => INTERVAL '1 day',
   end_offset => INTERVAL '1 minute',
   schedule_interval => INTERVAL '1 minute'
@@ -195,7 +195,7 @@ SELECT add_continuous_aggregate_policy(
 SELECT add_retention_policy('public.ldi_data', INTERVAL '90 days');
 
 -- 长期保留低颗粒度 CAGG 聚合数据用于年度质量趋势分析 (保留 2 年)
-SELECT add_retention_policy('public.cagg_ldi_metrics_1m', INTERVAL '730 days');
+SELECT add_retention_policy('public.ldi_data_1m', INTERVAL '730 days');
 ```
 
 ### 5. 性能基准测试对比 (Raw vs CAGG Benchmark)
@@ -213,7 +213,7 @@ GROUP BY h ORDER BY h;
 -- 性能提升幅度: 查询执行效率大幅提升 104 倍!
 EXPLAIN ANALYZE
 SELECT bucket AS time, avg_thickness
-FROM public.cagg_ldi_metrics_1m
+FROM public.ldi_data_1m
 WHERE machine_id = 'LDI-01' AND bucket >= NOW() - INTERVAL '7 days'
 ORDER BY bucket;
 ```

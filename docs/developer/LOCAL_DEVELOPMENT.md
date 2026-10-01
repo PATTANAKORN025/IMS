@@ -159,10 +159,11 @@ To enable collaborative Git version control without merge conflicts on large JSO
 
 ```
 nodered_data/flows/
-├── 01-snmp-poller.json       # SNMP polling and interface counter extraction
-├── 02-ldi-ingest.json        # HTTP /ldi-telemetry schema validation and parsing
-├── 03-alarm-engine.json      # Threshold evaluations and Alertmanager dispatch
-└── 04-storage-writer.json    # PgBouncer connection and batched database inserts
+├── alerting.json             # Notification formatter and LINE / Teams webhook dispatch
+├── ingestion.json            # SNMP polling, device registry cache, circuit breaker, snmp_data writer
+├── ldi_alarm_simulator.json  # Anomaly injection and alarm lifecycle test simulator
+├── ldi_ingestion.json        # HTTP /ldi-telemetry validation, write-ahead staging, ldi_data batch writer
+└── ldi_simulator.json        # Live telemetry stochastic simulation for 10 LDI machines
 ```
 
 1. **Deploying Flows**:
