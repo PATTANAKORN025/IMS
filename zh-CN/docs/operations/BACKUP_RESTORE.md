@@ -27,7 +27,7 @@
 
 | 命令 | 脚本 | 作用 |
 | --- | --- | --- |
-| `make backup` | `scripts/backup-db.sh` | 以 `ims_admin` 身份对 `ims` 执行 `pg_dump`，输出到 `./backups/ims_backup_<timestamp>.sql` 后用 `gzip` 压缩；删除 `./backups` 中超过 30 天的 `*.sql.gz`。 |
+| `make backup` | `scripts/backup-db.sh`（Windows：`scripts/backup-db.ps1`） | 在容器内执行 `pg_dump -Z 6`，再用 `docker cp` 复制到 `./backups/ims_backup_<timestamp>.sql.gz`；删除 `./backups` 中超过 30 天的转储。 |
 | `make restore FILE=<path>` | `scripts/restore-db.sh` | 先要求确认，然后把解压后的转储通过 `psql` 导入**正在使用的** `ims` 数据库。 |
 | `./scripts/dr-test.sh backup-restore` | `scripts/dr-test.sh` | 备份 `ims`，恢复到一次性数据库 `ims_dr_test` 并进行比对，从不触及生产数据库。 |
 | `./scripts/dr-verify-restore.sh …` | `scripts/dr-verify-restore.sh` | 比对两个数据库的表、列、索引、约束、触发器、扩展、连续聚合和策略，并检查行数区间；有任何差异时以非零状态退出。 |
@@ -44,7 +44,7 @@ make backup                       # 或：bash scripts/backup-db.sh
 ls -lh backups/                   # ims_backup_YYYYmmdd_HHMMSS.sql.gz
 ```
 
-`backup-db.sh` 使用 `.env.example` 中的默认值：角色 `ims_admin`、数据库 `ims`。如果 `.env` 使用了其他名称，请修改脚本，或用相同参数手动运行 `pg_dump`。
+`backup-db.sh`、`backup-db.ps1` 和 `restore-db.sh` 从 `.env` 读取 `POSTGRES_USER` 和 `POSTGRES_DB`（缺省为 `ims_admin` 和 `ims`）。转储在容器内写入并通过 `docker cp` 复制出来，不经过可能改变编码的主机管道。
 
 ---
 

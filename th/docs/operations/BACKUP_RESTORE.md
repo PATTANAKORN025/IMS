@@ -27,7 +27,7 @@
 
 | คำสั่ง | สคริปต์ | หน้าที่ |
 | --- | --- | --- |
-| `make backup` | `scripts/backup-db.sh` | รัน `pg_dump` ฐานข้อมูล `ims` ด้วย role `ims_admin` ไปที่ `./backups/ims_backup_<timestamp>.sql` แล้วบีบอัดด้วย `gzip` และลบไฟล์ `*.sql.gz` ใน `./backups` ที่เก่ากว่า 30 วัน |
+| `make backup` | `scripts/backup-db.sh` (Windows: `scripts/backup-db.ps1`) | รัน `pg_dump -Z 6` ภายใน container แล้ว `docker cp` ไปที่ `./backups/ims_backup_<timestamp>.sql.gz` และลบ dump ใน `./backups` ที่เก่ากว่า 30 วัน |
 | `make restore FILE=<path>` | `scripts/restore-db.sh` | ถามยืนยันก่อน แล้วส่งไฟล์ dump ที่คลายแล้วเข้า `psql` ของฐานข้อมูล `ims` **ที่ใช้งานจริง** |
 | `./scripts/dr-test.sh backup-restore` | `scripts/dr-test.sh` | สำรอง `ims` แล้วกู้คืนลงฐานข้อมูลชั่วคราว `ims_dr_test` เพื่อเปรียบเทียบ ไม่แตะฐานข้อมูลที่ใช้งานจริง |
 | `./scripts/dr-verify-restore.sh …` | `scripts/dr-verify-restore.sh` | เปรียบเทียบตาราง คอลัมน์ index constraint trigger extension continuous aggregate และ policy ระหว่างสองฐานข้อมูล พร้อมตรวจช่วงจำนวนแถว และจบด้วยสถานะไม่เป็นศูนย์เมื่อพบความต่างใด ๆ |
@@ -44,7 +44,7 @@ make backup                       # หรือ: bash scripts/backup-db.sh
 ls -lh backups/                   # ims_backup_YYYYmmdd_HHMMSS.sql.gz
 ```
 
-`backup-db.sh` ใช้ role `ims_admin` และฐานข้อมูล `ims` ตามค่าเริ่มต้นใน `.env.example` ถ้า `.env` ใช้ชื่ออื่น ให้แก้สคริปต์ หรือรัน `pg_dump` เองด้วย flag เดียวกัน
+`backup-db.sh`, `backup-db.ps1` และ `restore-db.sh` อ่าน `POSTGRES_USER` และ `POSTGRES_DB` จาก `.env` (ถ้าไม่มีใช้ `ims_admin` และ `ims`) dump ถูกเขียนภายใน container แล้วคัดลอกออกด้วย `docker cp` จึงไม่ผ่าน pipe ฝั่ง host ที่อาจแปลง encoding
 
 ---
 
