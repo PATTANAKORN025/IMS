@@ -89,25 +89,33 @@ function getState(deviceId, flowCtx) {
 }
 
 // Render Prometheus metrics for all tracked devices.
-// NOTE: Object.keys(flowCtx) does not actually enumerate Node-RED context
-// entries (that needs flowCtx.keys()) -- this was already non-functional
-// before this fix and is out of scope for the space-in-device-id bug this
-// change addresses; left as-is (still returns '', same as before) rather
-// than silently changing unrelated behavior.
+// A Node-RED context object exposes its stored entries through keys();
+// Object.keys() only lists the API methods (get, set, keys), which is why this
+// rendered nothing for years and the meta-monitoring panels and the
+// circuit-breaker alert never saw a series.
 function renderMetrics(flowCtx) {
     if (!flowCtx) return '';
     try {
-        const lines = [];
-        const keys = Object.keys(flowCtx);
+        const keys = typeof flowCtx.keys === 'function' ? flowCtx.keys() : Object.keys(flowCtx);
+        const state = [], trips = [];
         for (const key of keys) {
             if (!key.startsWith('cb_')) continue;
-            const state = flowCtx.get(key);
-            if (!state) continue;
-            const deviceId = state.id || key.substring(3);
-            lines.push('ims_circuit_breaker_state{device_id="' + deviceId + '"} ' + state.state);
-            lines.push('ims_circuit_breaker_trips_total{device_id="' + deviceId + '"} ' + (state.trips || 0));
+            const s = flowCtx.get(key);
+            if (!s) continue;
+            // Prometheus label values escape backslash and double quote
+            const deviceId = String(s.id || key.substring(3)).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+            state.push('ims_circuit_breaker_state{device_id="' + deviceId + '"} ' + s.state);
+            trips.push('ims_circuit_breaker_trips_total{device_id="' + deviceId + '"} ' + (s.trips || 0));
         }
-        return lines.join('\n');
+        if (!state.length) return '';
+        return [
+            '# HELP ims_circuit_breaker_state Circuit breaker state per device (0=closed, 1=open, 2=half_open)',
+            '# TYPE ims_circuit_breaker_state gauge',
+            ...state,
+            '# HELP ims_circuit_breaker_trips_total Times the breaker opened per device',
+            '# TYPE ims_circuit_breaker_trips_total counter',
+            ...trips,
+        ].join('\n');
     } catch (e) {
         return '';
     }

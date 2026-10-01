@@ -193,7 +193,7 @@
           "type": "postgres",
           "uid": "drilling-timescaledb"
         },
-        "query": "SELECT DISTINCT factory FROM public.eap_api_vcp_upp WHERE factory IS NOT NULL AND factory <> '' ORDER BY 1;",
+        "query": "/* skip scan over idx_vcp_upp_eqp_date: one index probe per line instead of a full scan of eap_api_vcp_upp; each line has one factory, its latest row carries it */ WITH RECURSIVE e AS ((SELECT equipment_id FROM public.eap_api_vcp_upp ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT u.equipment_id FROM public.eap_api_vcp_upp u WHERE u.equipment_id > e.equipment_id ORDER BY u.equipment_id LIMIT 1) FROM e WHERE e.equipment_id IS NOT NULL) SELECT DISTINCT l.factory FROM e CROSS JOIN LATERAL (SELECT factory FROM public.eap_api_vcp_upp u WHERE u.equipment_id = e.equipment_id ORDER BY u.log_date DESC LIMIT 1) l WHERE l.factory IS NOT NULL AND l.factory <> '' ORDER BY 1;",
         "refresh": 1,
         "multi": true,
         "includeAll": true,
