@@ -32,10 +32,31 @@ function parseEnvFile(filePath) {
     if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
     const eqIdx = trimmed.indexOf('=');
     const key = trimmed.slice(0, eqIdx).trim();
-    const val = trimmed.slice(eqIdx + 1).trim();
+    let val = trimmed.slice(eqIdx + 1).trim();
+    // docker compose strips one pair of matching surrounding quotes
+    if (val.length >= 2 && (val[0] === '"' || val[0] === "'") && val[val.length - 1] === val[0]) {
+      val = val.slice(1, -1);
+    }
     envMap[key] = val;
   }
   return envMap;
+}
+
+// Every ${VAR:?msg} in a compose file is required: compose refuses to start
+// without it, and a container created before the key existed keeps running
+// with a bind-mounted script that now expects it (pgbouncer crash-looped this
+// way on the live stack). Missing keys fail in every mode, not only --strict.
+function requiredComposeKeys() {
+  const keys = new Set();
+  for (const f of ['docker-compose.yaml', 'docker-compose.prod.yaml']) {
+    const p = path.join(ROOT_DIR, f);
+    if (!fs.existsSync(p)) continue;
+    const re = /\$\{([A-Z0-9_]+):\?/g;
+    let m;
+    const text = fs.readFileSync(p, 'utf8');
+    while ((m = re.exec(text)) !== null) keys.add(m[1]);
+  }
+  return [...keys].sort();
 }
 
 function runCheck() {
@@ -49,6 +70,14 @@ function runCheck() {
 
   const env = parseEnvFile(ENV_PATH);
   const example = parseEnvFile(EXAMPLE_PATH);
+
+  const missing = requiredComposeKeys().filter((k) => !env[k] && !process.env[k]);
+  if (missing.length > 0) {
+    console.error('❌ [CONFIG] Required keys missing or empty in .env (docker compose needs them):');
+    for (const k of missing) console.error(`   • ${k}`);
+    console.error('   Copy each key from .env.example and give it a strong random value.');
+    process.exit(1);
+  }
 
   const SENSITIVE_PATTERN = /(PASSWORD|SECRET|TOKEN|KEY|HASH)/i;
   const INSECURE_PATTERNS = [

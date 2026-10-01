@@ -1,10 +1,12 @@
 <#
 .SYNOPSIS
-    IMS TimescaleDB Automated Database Backup Script (Windows PowerShell)
+    IMS TimescaleDB database backup (Windows PowerShell)
 .DESCRIPTION
-    Dumps the PostgreSQL/TimescaleDB database from the running container,
-    compresses the output, and automatically purges archives older than 30 days.
-    Compatible with Windows Task Scheduler for daily automated backups.
+    Same output as scripts/backup-db.sh: pg_dump writes a gzipped plain-SQL
+    dump inside the container (-Z) and docker cp copies the file out. The dump
+    never passes through the PowerShell pipeline, which would re-encode it
+    (console code page, BOM, CRLF). Role and database come from .env.
+    Purges dumps older than the retention period. Task Scheduler friendly.
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\scripts\backup-db.ps1
 #>
@@ -17,62 +19,65 @@ param (
 
 $ErrorActionPreference = "Stop"
 
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$rootDir = Split-Path -Parent $scriptDir
+$rootDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $rootDir
+
+function Get-EnvValue([string]$Key, [string]$Default) {
+    if (Test-Path ".env") {
+        $line = Get-Content ".env" | Where-Object { $_ -match "^$Key=" } | Select-Object -Last 1
+        if ($line) {
+            $v = ($line -replace "^$Key=", "").Trim().Trim('"').Trim("'")
+            if ($v) { return $v }
+        }
+    }
+    return $Default
+}
+
+$dbUser = Get-EnvValue "POSTGRES_USER" "ims_admin"
+$dbName = Get-EnvValue "POSTGRES_DB" "ims"
+$container = "ims-timescaledb"
 
 if (-not (Test-Path $BackupDir)) {
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$dumpFileName = "ims_backup_${timestamp}.sql"
-$dumpFilePath = Join-Path $BackupDir $dumpFileName
-$zipFilePath = Join-Path $BackupDir "${dumpFileName}.zip"
+$fileName = "ims_backup_${timestamp}.sql.gz"
+$tmp = "/tmp/$fileName"
+$dest = Join-Path $BackupDir $fileName
 
-Write-Host "════════════════════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host " IMS Database Backup: $timestamp" -ForegroundColor Cyan
-Write-Host "════════════════════════════════════════════════════════════" -ForegroundColor Cyan
-
-# Verify container is running
-$containerRunning = docker ps --filter "name=ims-timescaledb" --filter "status=running" -q 2>$null
-if (-not $containerRunning) {
-    Write-Error "ERROR: ims-timescaledb container is not running. Aborting backup."
-    exit 1
+$running = docker ps -q --filter "name=^${container}$" --filter "status=running"
+if (-not $running) {
+    Write-Error "$container is not running. Aborting backup."
 }
 
-Write-Host "Creating PostgreSQL dump: $dumpFileName..." -ForegroundColor Yellow
-$dumpCmd = "docker exec -i ims-timescaledb pg_dump -U ims_admin ims"
-Invoke-Expression "$dumpCmd" | Out-File -FilePath $dumpFilePath -Encoding utf8
+Write-Host "Backing up $dbName to $dest..."
+try {
+    docker exec $container pg_dump -U $dbUser -d $dbName -Z 6 -f $tmp
+    if ($LASTEXITCODE -ne 0) { throw "pg_dump failed (exit $LASTEXITCODE)" }
 
-if ((Get-Item $dumpFilePath).Length -eq 0) {
-    Remove-Item -Path $dumpFilePath -Force
-    Write-Error "ERROR: Database dump produced an empty file. Backup failed."
-    exit 1
+    docker cp "${container}:${tmp}" $dest
+    if ($LASTEXITCODE -ne 0) { throw "docker cp failed (exit $LASTEXITCODE)" }
+}
+finally {
+    docker exec $container rm -f $tmp 2>$null | Out-Null
 }
 
-$rawSize = "{0:N2} MB" -f ((Get-Item $dumpFilePath).Length / 1MB)
-Write-Host "Dump complete ($rawSize). Compressing archive..." -ForegroundColor Green
+# gzip magic bytes 1F 8B
+$fs = [System.IO.File]::OpenRead((Resolve-Path $dest))
+try { $b0 = $fs.ReadByte(); $b1 = $fs.ReadByte() } finally { $fs.Dispose() }
+if ($b0 -ne 0x1F -or $b1 -ne 0x8B) {
+    Remove-Item $dest -Force
+    Write-Error "$dest is not a gzip file. Backup failed."
+}
 
-# Compress
-Compress-Archive -Path $dumpFilePath -DestinationPath $zipFilePath -Force
-Remove-Item -Path $dumpFilePath -Force
+$size = "{0:N2} MB" -f ((Get-Item $dest).Length / 1MB)
+Write-Host "Done: $dest ($size)"
 
-$zipSize = "{0:N2} MB" -f ((Get-Item $zipFilePath).Length / 1MB)
-Write-Host "Backup finalized: $zipFilePath ($zipSize)" -ForegroundColor Green
-
-# Retention cleanup (purge older than retention period)
-Write-Host "Purging backups older than $RetentionDays days..." -ForegroundColor Gray
 $cutoff = (Get-Date).AddDays(-$RetentionDays)
-$purged = 0
-
-Get-ChildItem -Path $BackupDir -Filter "ims_backup_*" | Where-Object {
-    $_.LastWriteTime -lt $cutoff
-} | ForEach-Object {
-    Write-Host "  Removing expired archive: $($_.Name)" -ForegroundColor DarkGray
-    Remove-Item $_.FullName -Force
-    $purged++
-}
-
-Write-Host "Backup process completed successfully. (Purged: $purged expired)" -ForegroundColor Cyan
-Write-Host "════════════════════════════════════════════════════════════" -ForegroundColor Cyan
+Get-ChildItem -Path $BackupDir -Filter "ims_backup_*" |
+    Where-Object { $_.LastWriteTime -lt $cutoff } |
+    ForEach-Object {
+        Write-Host "  Removing expired: $($_.Name)"
+        Remove-Item $_.FullName -Force
+    }

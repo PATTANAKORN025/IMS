@@ -27,7 +27,7 @@
 
 | Command | Script | What it does |
 | --- | --- | --- |
-| `make backup` | `scripts/backup-db.sh` | `pg_dump` of `ims` as `ims_admin` into `./backups/ims_backup_<timestamp>.sql`, then `gzip`. Deletes `*.sql.gz` older than 30 days in `./backups`. |
+| `make backup` | `scripts/backup-db.sh` (Windows: `scripts/backup-db.ps1`) | `pg_dump -Z 6` inside the container, then `docker cp` to `./backups/ims_backup_<timestamp>.sql.gz`. Deletes dumps older than 30 days in `./backups`. |
 | `make restore FILE=<path>` | `scripts/restore-db.sh` | Asks for confirmation, then pipes the gunzipped dump into `psql` against the **live** `ims` database. |
 | `./scripts/dr-test.sh backup-restore` | `scripts/dr-test.sh` | Backs up `ims`, restores into a throwaway database `ims_dr_test` and compares them. Never touches the live database. |
 | `./scripts/dr-verify-restore.sh …` | `scripts/dr-verify-restore.sh` | Compares tables, columns, indexes, constraints, triggers, extensions, continuous aggregates and policies between two databases, and brackets row counts. Exits non-zero on any mismatch. |
@@ -44,7 +44,7 @@ make backup                       # or: bash scripts/backup-db.sh
 ls -lh backups/                   # ims_backup_YYYYmmdd_HHMMSS.sql.gz
 ```
 
-`backup-db.sh` uses the role `ims_admin` and the database `ims`, the defaults in `.env.example`. If `.env` uses other names, edit the script or run `pg_dump` by hand with the same flags.
+`backup-db.sh`, `backup-db.ps1` and `restore-db.sh` read `POSTGRES_USER` and `POSTGRES_DB` from `.env` (falling back to `ims_admin` and `ims`). The dump is written inside the container and copied out with `docker cp`, so it never passes through a host pipe that could re-encode it.
 
 ---
 
