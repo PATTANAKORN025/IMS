@@ -86,8 +86,8 @@ stateDiagram-v2
 
 ### 2.2 主轴掩码计算 (Spindle 1–6 Bitmask)
 机台通过代码 `0211`（`spindle ON: <mask>`）以二进制位掩码表示各主轴启用状态：
-$$\text{Spindle } N \text{ Active} \iff (\text{Mask} \operatorname{AND} 2^{N-1}) > 0$$
-*(主轴 $N$ 启用当且仅当 $\text{Mask} \operatorname{AND} 2^{N-1} > 0$)*
+$$\text{Spindle } N \text{ Active} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
+*(主轴 $N$ 启用当且仅当 $(\text{Mask} \ \& \ 2^{N-1}) > 0$)*
 - **63** (`111111`): 全部 6 轴同时加工
 - **31** (`011111`): 停用第 6 轴
 - **0** (`000000`): 全轴停用

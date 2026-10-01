@@ -259,6 +259,8 @@ stateDiagram-v2
 
 ระบบ IMS ทำการถอดรหัสระดับบิต (Bitwise Operation) เพื่อควบคุมสีของดวงไฟสปินเดิล 6 ดวงบนหน้าแดชบอร์ด:
 
+$$\text{Spindle } N \text{ Active} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
+
 ```
 สูตรการตรวจสอบรายสปินเดิล:
 Spindle 1 Active  <=>  (Mask & 1)  > 0   [บิตที่ 0: ค่าประจำหลัก = 1]

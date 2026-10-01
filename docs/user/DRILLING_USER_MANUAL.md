@@ -255,7 +255,7 @@ Machines feature 6 independent high-speed spindles. Machines communicate active 
 
 The Grafana query applies bitwise operators (`&`) to render individual status circles:
 
-$$\text{Spindle } N \text{ Active} \iff (\text{Mask} \operatorname{AND} 2^{N-1}) > 0$$
+$$\text{Spindle } N \text{ Active} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
 
 | Decimal Mask | Binary (Bits 5..0) | Spindle 1 | Spindle 2 | Spindle 3 | Spindle 4 | Spindle 5 | Spindle 6 | Operational Significance |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
