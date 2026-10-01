@@ -24,42 +24,46 @@ The drilling and VCP dashboards read the `eap_backup` database. On the plant ser
 ## 1. Mock Data Pipeline & Verification Topology
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-flowchart TD
-  subgraph GEN["1. Synthetic Data Generator Engine"]
-    SCHEMA["database/mock/eap_backup-schema.sql
-Creates tables, views, marker table"]
-    MOCK_JS["scripts/mock/eap-mock-data.js
-Synthetic models: RPM, feed, spindle mask, bath temp"]
-    UNIT["tests/unit/eap-mock-data.test.js
-Pre-commit unit test suite"]
-  end
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: Synthetic eap_backup data and its verification
+  accDescr: The schema script and migrations 084 to 086 build the stand-in eap_backup database, the generator fills it with MOCK- rows, and the verifier runs every drilling and VCP panel query and the seven VCP alert queries against it.
+  SCHEMA["database/mock/eap_backup-schema.sql"]:::app
+  MIG["migrations 084–086"]:::app
+  GEN["scripts/mock/eap-mock-data.js<br/>--hours=168 --apply"]:::app
+  TEST["tests/unit/eap-mock-data.test.js"]:::app
+  DB[("eap_backup<br/>marker table mock_dataset · MOCK- prefix")]:::store
+  DASH["7 dashboards · drilling 4 · VCP 3"]:::viz
+  RULES["7 VCP alert rules"]:::obs
+  VERIFY["scripts/mock/verify-mock-dashboards.js<br/>every panel and alert query"]:::app
+  SCHEMA --> DB
+  MIG --> DB
+  GEN --> DB
+  TEST -.->|"checks the generator"| GEN
+  DB --> DASH
+  DB --> RULES
+  VERIFY -->|"runs queries"| DB
 
-  subgraph DB["2. Stand-in Database (eap_backup)"]
-    STANDIN[("eap_backup database
-Marker: public.mock_dataset
-Row prefix: MOCK-*")]
-    MIG["Migrations 084–086
-Applied cleanly via psql"]
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_app["IMS service"]:::app ~~~ LG_store["Data store"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["Monitoring"]:::obs
+    end
   end
-
-  subgraph CONSUMERS["3. Downstream Consumers & Quality Gate"]
-    DASH["Grafana Dashboards
-Drilling Operations (4)
-VCP Operations (3)"]
-    ALERTS["Grafana Alerting
-7 VCP Alert Rules"]
-    VERIFY["scripts/mock/verify-mock-dashboards.js
-34 panel queries + 7 alert queries verified"]
-  end
-
-  SCHEMA -->|Apply Schema| STANDIN
-  MOCK_JS -->|Generate --hours=168 --apply| STANDIN
-  MIG -->|Schema Updates| STANDIN
-  UNIT -.->|Verifies Logic| MOCK_JS
-  STANDIN --> DASH
-  STANDIN --> ALERTS
-  VERIFY -->|Test All 41 Queries| STANDIN
+  VERIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

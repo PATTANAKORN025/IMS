@@ -25,35 +25,56 @@
 The System Context diagram illustrates how human actors, physical manufacturing equipment, enterprise IT servers, network switches, and external notification platforms interact with the core IMS telemetry engine.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-C4Context
- title System Context Diagram for Industrial Monitoring System (IMS)
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 level 1: system context
+  accDescr: Four user roles use IMS through the browser; IMS receives LDI telemetry over HTTP, polls servers and switches over SNMP, reads the plant drilling and VCP database, and sends alerts to LINE and Microsoft Teams.
 
- Person(noc_op, "NOC Operator", "Monitors enterprise infrastructure health, server capacity, and network interface alarms.")
- Person(proc_eng, "Process Engineer", "Analyzes LDI manufacturing yield, Cpk distributions, and performs Root Cause Analysis (RCA).")
- Person(drill_eng, "Drilling Specialist", "Investigates CNC spindle vibration anomalies, hit counts, and tool wear life cycles.")
- Person(vcp_tech, "Plating Technician", "Monitors VCP line speed, bath temperatures, and rectifier current densities.")
+  subgraph PEOPLE["Users"]
+    NOC["NOC operator<br/>[Person]<br/>infrastructure health"]:::actor
+    PE["Process engineer<br/>[Person]<br/>LDI yield, SPC, RCA"]:::actor
+    DRL["Drilling specialist<br/>[Person]<br/>machine events, alarms"]:::actor
+    VCPT["Plating technician<br/>[Person]<br/>bath, current, line speed"]:::actor
+  end
 
- System_Ext(ldi_mach, "LDI Manufacturing Machines", "High-precision Laser Direct Imaging exposure hardware delivering JSON telemetry.")
- System_Ext(cnc_drill, "CNC Drilling Machines", "Mechanical drilling fleet logging spindle rpm, feed rates, and machine events to eap_backup.")
- System_Ext(vcp_lines, "VCP Plating Lines", "Vertical Continuous Plating lines logging chemical bath telemetry and conveyor line speeds.")
- System_Ext(servers, "Linux Server Fleet", "Production compute servers providing CPU, memory, and disk telemetry via SNMP v2c.")
- System_Ext(switches, "Juniper EX Switches", "Industrial Ethernet switches providing interface counters and optical power via SNMP.")
- System_Ext(line_teams, "LINE / MS Teams", "External incident dispatch channels notifying engineers of critical factory excursions.")
+  IMS["IMS<br/>[Software system]<br/>ingestion, storage, 22 dashboards, alerting"]:::app
 
- System(ims, "IMS Platform", "Central telemetry ingestion, connection-pooled TimescaleDB storage, and 22 Grafana HUD dashboards.")
+  subgraph EXT["External systems"]
+    LDIM["LDI machines<br/>[External]<br/>JSON over HTTP"]:::ext
+    NET["Servers & switches<br/>[External]<br/>SNMP v2c agents"]:::ext
+    EAPSRC["Plant EAP database<br/>[External]<br/>drilling & VCP records"]:::ext
+    MSG["LINE · Microsoft Teams<br/>[External]"]:::notify
+  end
 
- Rel(noc_op, ims, "Observes NOC and capacity dashboards", "HTTP / Port 3000")
- Rel(proc_eng, ims, "Inspects LDI Command Center and SPC analytics", "HTTP / Port 3000")
- Rel(drill_eng, ims, "Analyzes CNC fleet and anomaly dashboards", "HTTP / Port 3000")
- Rel(vcp_tech, ims, "Monitors VCP operations and real-time wall", "HTTP / Port 3000")
+  NOC -->|"HTTP :3000"| IMS
+  PE -->|"HTTP :3000"| IMS
+  DRL -->|"HTTP :3000"| IMS
+  VCPT -->|"HTTP :3000"| IMS
+  LDIM -->|"POST /ldi-telemetry · X-API-Key"| IMS
+  NET -->|"SNMP v2c · UDP 161 · polled"| IMS
+  EAPSRC -.->|"restored into eap_backup"| IMS
+  IMS -->|"HTTPS"| MSG
 
- Rel(ldi_mach, ims, "Streams manufacturing telemetry", "HTTP POST /ldi-telemetry")
- Rel(cnc_drill, ims, "Feeds event logs & machine status", "PostgreSQL / eap_backup")
- Rel(vcp_lines, ims, "Feeds bath parameters & sensor logs", "PostgreSQL / eap_backup")
- Rel(ims, servers, "Polls host performance metrics", "SNMP v2c / UDP 161")
- Rel(ims, switches, "Polls interface octets & error counters", "SNMP v2c / UDP 161")
- Rel(ims, line_teams, "Dispatches critical severity incidents", "HTTPS Webhooks")
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["Person"]:::actor ~~~ LG_app["IMS service"]:::app ~~~ LG_ext["External system"]:::ext ~~~ LG_notify["Notification"]:::notify
+    end
+  end
+  MSG ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -63,63 +84,96 @@ C4Context
 This diagram details all 16 services within the IMS Docker Compose topology, highlighting inter-container networking, host port bindings, and data paths.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-C4Container
- title Container Topology Diagram for IMS (16 Services)
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 level 2: the 16 containers
+  accDescr: All 16 Docker Compose services and how they connect: nginx is the only all-interfaces port; data services sit on ims-internal; monitoring on ims-monitoring; the archiver reaches Docker only through the socket proxy on the isolated ims-docker-api network.
 
- Person(user, "Engineers & Operators", "Accesses dashboards, twin, and alarm APIs via browser.")
- System_Ext(ext_dev, "Factory Edge Equipment", "LDI, CNC Drilling, VCP, Servers, Switches.")
+  USER["Users · browser"]:::actor
+  EDGE["LDI machines · SNMP devices"]:::ext
 
- System_Boundary(c1, "IMS Docker Networks (ims-internal, ims-monitoring, ims-docker-api)") {
-   Container(proxy, "Reverse Proxy (ims-proxy)", "Nginx Alpine", "Unified ingress, rate limiting, and session auth gate.")
-   Container(grafana, "Grafana 13 (ims-grafana)", "Go", "Hosts 22 Cyberpunk HUD dashboards across 4 operational domains.")
-   Container(alarm_api, "Alarm API (ims-alarm-api)", "Node.js Express", "Governs alarm lifecycle transitions (ack/resolve) on public.ldi_alarm_lifecycle.")
-   Container(twin_3d, "Factory Twin 3D (ims-factory-twin-3d)", "Node.js Express", "Read-only Floor 1 digital twin spatial rendering.")
-   Container(renderer, "Image Renderer (ims-grafana-renderer)", "Chromium", "Generates server-side PNG snapshots for alerts and scheduled reports.")
+  subgraph INGRESS["Host port 3000, all interfaces"]
+    PROXY["proxy · nginx 1.31<br/>ims-proxy"]:::ingress
+  end
 
-   Container(nodered, "Ingestion Pipeline (ims-node-red)", "Node.js / Node-RED", "Parallel walkers, telemetry parser, buffer queue, and alerting router.")
-   Container(pgbouncer, "Connection Pooler (ims-pgbouncer)", "C / PgBouncer", "Transaction pooling on port 5432 with SCRAM-SHA-256 auth.")
-   ContainerDb(timescaledb, "TimescaleDB (ims-timescaledb)", "PostgreSQL 16 + TimescaleDB", "Hypertables, continuous aggregates, alarm tables, and eap_backup DB.")
+  subgraph APP["Applications · ims-internal"]
+    GRAF["grafana 13.1.2<br/>22 dashboards"]:::viz
+    RENDER["renderer<br/>image renderer"]:::app
+    ALARM["alarm-api :4000<br/>Express"]:::app
+    TWIN["factory-twin-3d :4100<br/>Express"]:::app
+    NR["node-red :1880<br/>5 flow files"]:::flow
+    SNMPSIM["snmpsim<br/>simulated agents"]:::app
+  end
 
-   Container(prometheus, "Prometheus (ims-prometheus)", "Go", "Scrapes service metrics and evaluates alerting rules.")
-   Container(alertmanager, "Alertmanager (ims-alertmanager)", "Go", "Deduplicates, groups, and routes alert events to Node-RED.")
-   Container(blackbox, "Blackbox Probes (ims-blackbox)", "Go", "Probes HTTP/TCP/ICMP endpoints to verify platform SLA.")
-   Container(snmpsim, "SNMP Simulator (ims-snmpsim)", "Python", "Simulates Linux servers and network switches for local development.")
-   Container(archiver, "Observability Archiver (ims-observability-archiver)", "Bash", "Archives telemetry snapshots and container metrics to ops-logs.")
-   Container(db_migrate, "Migration Runner (ims-db-migrate)", "Bash / psql", "One-shot container applying database migrations (001 to 091).")
-   Container(sockproxy, "Docker Socket Proxy (ims-docker-socket-proxy)", "HAProxy / Alpine", "Restricts Docker daemon access on internal ims-docker-api.")
-   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "Web database management console (host port 127.0.0.1:5050).")
- }
+  subgraph DATA["Data · ims-internal"]
+    MIG["db-migrate<br/>one-shot, migrations 013–091"]:::app
+    PGB["pgbouncer :5432<br/>SCRAM"]:::app
+    TSDB[("timescaledb :5432<br/>ims · eap_backup")]:::store
+    PGADMIN["pgadmin<br/>127.0.0.1:5050"]:::app
+  end
 
- Rel(user, proxy, "Accesses UI and APIs", "HTTP / Port 3000")
- Rel(ext_dev, proxy, "HTTP telemetry", "POST /ldi-telemetry")
- Rel(nodered, ext_dev, "Polls SNMP telemetry", "UDP 161")
- Rel(nodered, snmpsim, "Polls mock SNMP devices", "UDP 161")
+  subgraph MONNET["Monitoring · ims-monitoring"]
+    PROM["prometheus<br/>127.0.0.1:9090"]:::obs
+    AM["alertmanager<br/>127.0.0.1:9093"]:::obs
+    BBOX["blackbox-exporter<br/>127.0.0.1:9115"]:::obs
+  end
 
- Rel(proxy, grafana, "Proxies UI & Grafana APIs", "HTTP :3000")
- Rel(proxy, alarm_api, "Proxies /alarm-api/* (Auth Checked)", "HTTP :4000")
- Rel(proxy, twin_3d, "Proxies /factory-twin-3d/* (Auth Checked)", "HTTP :4100")
- Rel(proxy, nodered, "Proxies /ldi-telemetry & /inject", "HTTP :1880")
- Rel(proxy, grafana, "Internal session verify (/auth-check)", "HTTP :3000")
+  subgraph DOCKERAPI["ims-docker-api · internal, no egress"]
+    ARCH["observability-archiver<br/>also on ims-internal"]:::app
+    SOCK["docker-socket-proxy<br/>read-only endpoints"]:::app
+  end
 
- Rel(grafana, renderer, "Requests panel PNG render", "HTTP :8081")
- Rel(grafana, pgbouncer, "Queries CAGGs and views", "TCP :5432")
- Rel(grafana, timescaledb, "Queries eap_backup (drilling-timescaledb)", "TCP :5432")
- Rel(alarm_api, pgbouncer, "Updates alarm status (alarm_api_writer)", "TCP :5432")
- Rel(nodered, pgbouncer, "Batch INSERTs telemetry (nodered_writer)", "TCP :5432")
- Rel(pgbouncer, timescaledb, "Transaction connections (SCRAM)", "TCP :5432")
- Rel(db_migrate, timescaledb, "Applies schema migrations 001-091", "TCP :5432")
- Rel(pgadmin, timescaledb, "Database administration", "TCP :5432")
+  USER -->|"HTTP :3000"| PROXY
+  EDGE -->|"POST /ldi-telemetry"| PROXY
+  EDGE -->|"SNMP v2c"| NR
+  SNMPSIM -->|"SNMP v2c"| NR
+  PROXY --> GRAF
+  PROXY -->|"auth_request /alarm-api/"| ALARM
+  PROXY -->|"auth_request /factory-twin-3d/"| TWIN
+  PROXY -->|"/ldi-telemetry · /inject"| NR
+  GRAF <-->|"render request / callback"| RENDER
+  GRAF -->|"timescaledb"| PGB
+  GRAF -->|"drilling-timescaledb"| TSDB
+  ALARM -->|"alarm_api_writer"| PGB
+  TWIN --> PGB
+  NR -->|"nodered_writer"| PGB
+  ARCH -->|"observability_archiver"| TSDB
+  PGB --> TSDB
+  MIG --> TSDB
+  PGADMIN --> TSDB
+  NR -->|"/metrics"| PROM
+  BBOX -->|"probe results"| PROM
+  PROM --> AM
+  AM -->|"/alert-webhook"| NR
+  GRAF -->|"/alert-webhook"| NR
+  ARCH -->|"HTTP :2375"| SOCK
 
- Rel(prometheus, nodered, "Scrapes pipeline metrics", "HTTP :1880/metrics")
- Rel(prometheus, alertmanager, "Dispatches alerts", "HTTP :9093")
- Rel(prometheus, blackbox, "Executes HTTP/TCP/ICMP probes", "HTTP :9115")
- Rel(blackbox, timescaledb, "Probes TCP connect :5432", "TCP :5432")
- Rel(blackbox, pgbouncer, "Probes TCP connect :5432", "TCP :5432")
- Rel(alertmanager, nodered, "POSTs to /alert-webhook", "HTTP :1880")
- Rel(grafana, nodered, "Native alerts to /alert-webhook", "HTTP :1880")
-
- Rel(archiver, sockproxy, "Reads Docker metrics & events", "HTTP :2375 (ims-docker-api)")
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["Person"]:::actor ~~~ LG_ext["External system"]:::ext ~~~ LG_ingress["Ingress / gateway"]:::ingress ~~~ LG_flow["Node-RED flow"]:::flow ~~~ LG_app["IMS service"]:::app
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_store["Data store"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["Monitoring"]:::obs
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  SOCK ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -129,65 +183,81 @@ C4Container
 Details the internal components and data flow within the `ims-node-red` ingestion container:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-flowchart TD
-  subgraph IngressPoints ["Ingestion Triggers & Endpoints"]
-    TMR["Inject Timer (Every 30s)"]
-    HTTP_LDI["POST /ldi-telemetry\n(Ingress via Nginx)"]
-    HTTP_INJ["POST /inject\n(Generic Metrics)"]
-    AM_HOOK["POST /alert-webhook\n(Prometheus / Grafana Alerts)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 level 3: Node-RED components
+  accDescr: The five flow files in nodered_data/flows and what each one writes: SNMP polling with a circuit breaker and a file retry queue, LDI ingestion with a staged write, the two simulators, and alert delivery.
+
+  subgraph F1["ingestion.json"]
+    T30["Poll Fleet · every 30 s"]:::flow
+    REG["device registry<br/>public.devices · refresh 5 min"]:::flow
+    CB["circuit breaker<br/>open after 2 failures · 5 min cooldown"]:::flow
+    FORK["fork_5_ways<br/>CPU · storage · network · temp · LDI"]:::flow
+    PARSER["SRE AIOps Parser v9<br/>per-device state, batch buffer"]:::flow
+    RETRY["retry queue<br/>/data/retry_queue.json · drain 30 s"]:::flow
+    INJ["POST /inject<br/>load-test fleet generator"]:::flow
+    MET["GET /metrics<br/>ims_pipeline_* · ims_circuit_breaker_*"]:::flow
   end
 
-  subgraph SplitFlows ["Split Flow Modules (nodered_data/flows/)"]
-    subgraph FlowIngest ["ingestion.json"]
-      REG["Device Registry Cache\n(Reloads from public.devices every 5m)"]
-      CB["Circuit Breaker Engine\n(State: CLOSED / OPEN / HALF_OPEN)"]
-      FORK["fork_5_ways Walker Dispatch\n(CPU, Net, Storage, Temp, LDI)"]
-      PARSER["sre_parser v10\n(Per-device context, O(N) parsing)"]
-      BATCH_SNMP["Batch SQL Builder\n(INSERT INTO public.sys_metrics & net_metrics...)"]
-    end
-
-    subgraph FlowLdiIngest ["ldi_ingestion.json"]
-      AUTH_CHK["API Key Validator\n(Matches INGEST_API_KEY)"]
-      SCHEMA_VAL["JSON Array Schema Validator\n(22-field structural assertion)"]
-      STAGE_WRITE["Write-Ahead Staging\n(INSERT INTO public.ingest_staging)"]
-      LDI_WRITE["Batch Hypertable Writer\n(INSERT INTO public.ldi_data)"]
-      STAGE_DEL["Delete Staged Batch\n(DELETE FROM public.ingest_staging)"]
-      GC["Explicit Garbage Collection\n(flatData.length=0, msg.payload=null)"]
-    end
-
-    subgraph FlowSim ["ldi_simulator.json & ldi_alarm_simulator.json"]
-      SIM_LDI["Live Telemetry Simulator\n(OU Process, 10 Machines)"]
-      SIM_ALARM["Live Alarm Replay Engine\n(Excursion evaluation & injection)"]
-    end
-
-    subgraph FlowAlerting ["alerting.json"]
-      MSG_FMT["Notification Card Formatter\n(Builds JSON & Adaptive Cards)"]
-      LINE_API["LINE Messaging API Sender\n(Push Message with Auth Token)"]
-      TEAMS_API["MS Teams Webhook Sender\n(POST Adaptive Card)"]
-    end
+  subgraph F2["ldi_ingestion.json"]
+    LPOST["POST /ldi-telemetry"]:::flow
+    AUTH["X-API-Key check → 401"]:::flow
+    VAL["JSON array, 36 columns<br/>eqp_id + log_id required → 400 / 413"]:::flow
+    STG["stage batch → 503 on failure"]:::flow
+    INS["insert ldi_data → 502 on failure"]:::flow
+    DONE["delete staged row → 200"]:::flow
   end
 
-  subgraph PersistenceTier ["Persistence Tier"]
-    PGB["PgBouncer (:5432)\nTransaction Pooling | SCRAM-SHA-256"]
-    TSDB[("TimescaleDB (:5432)\npublic.sys_metrics & net_metrics\npublic.ldi_data\npublic.ingest_staging")]
+  subgraph F3["Simulators"]
+    SIMLDI["ldi_simulator.json<br/>tick 2 s · OU model"]:::flow
+    SIMALM["ldi_alarm_simulator.json<br/>tick 10 s · staged insert"]:::flow
   end
 
-  TMR --> REG --> CB --> FORK --> PARSER --> BATCH_SNMP --> PGB
-  HTTP_LDI --> AUTH_CHK --> SCHEMA_VAL --> STAGE_WRITE --> LDI_WRITE --> STAGE_DEL --> GC
-  LDI_WRITE --> PGB
-  STAGE_WRITE --> PGB
-  STAGE_DEL --> PGB
-  HTTP_INJ --> SCHEMA_VAL
+  subgraph F4["alerting.json"]
+    HOOK["POST /alert-webhook"]:::flow
+    BEARER["Bearer token check"]:::flow
+    FMT["format LINE message / Teams Adaptive Card"]:::flow
+  end
 
-  SIM_LDI -->|"Internal POST"| HTTP_LDI
-  SIM_ALARM --> PGB
+  PGB["PgBouncer :5432 · nodered_writer"]:::app
+  TSDB[("TimescaleDB · ims")]:::store
+  NOTIFY["LINE · MS Teams"]:::notify
+  PROM["Prometheus"]:::obs
 
+  T30 --> REG --> CB --> FORK --> PARSER
+  INJ --> FORK
+  PARSER -->|"sys_metrics · net_metrics · ldi_metrics"| PGB
+  PARSER -.->|"on insert failure"| RETRY
+  RETRY -->|"max 5 retries"| PGB
+  LPOST --> AUTH --> VAL --> STG --> INS --> DONE
+  STG -->|"ingest_staging"| PGB
+  INS -->|"ldi_data"| PGB
+  SIMLDI -->|"127.0.0.1:1880/ldi-telemetry"| LPOST
+  SIMALM -->|"ingest_staging · ldi_alarm_log · ldi_alarm_lifecycle"| PGB
+  HOOK --> BEARER --> FMT --> NOTIFY
   PGB --> TSDB
+  MET --> PROM
 
-  AM_HOOK --> MSG_FMT
-  MSG_FMT --> LINE_API
-  MSG_FMT --> TEAMS_API
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_flow["Node-RED flow"]:::flow ~~~ LG_app["IMS service"]:::app ~~~ LG_store["Data store"]:::store ~~~ LG_obs["Monitoring"]:::obs ~~~ LG_notify["Notification"]:::notify
+    end
+  end
+  PROM ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -197,51 +267,39 @@ flowchart TD
 Demonstrates the path of manufacturing telemetry from the physical exposure machine into continuous analytical views:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: LDI telemetry ingest with a staged write
+  accDescr: A batch is acknowledged only after it is committed: Node-RED stages it in ingest_staging, inserts it into ldi_data, then deletes the staged copy and returns 200; failures return 400, 401, 413, 503 or 502 and a failed insert leaves the staged copy for recovery.
   autonumber
-  participant Machine as LDI Exposure Machine
-  participant Proxy as Nginx Gateway (ims-proxy)
-  participant NodeRed as Ingestion Engine (ims-node-red)
-  participant PgBouncer as PgBouncer (:5432)
-  participant TimescaleDB as TimescaleDB (:5432)
-  participant Grafana as Grafana Dashboard (:3000)
-
-  Machine->>Proxy: POST /ldi-telemetry (JSON array + X-API-Key)
-  Proxy->>Proxy: Apply rate limiting (rate=50r/s burst=100 nodelay)
-  Proxy->>NodeRed: Forward payload to internal :1880/ldi-telemetry
-  NodeRed->>NodeRed: Validate API key & array schema (22 fields)
-
-  alt Validation Failure
-    NodeRed-->>Proxy: 400 Bad Request ("Payload must be a JSON array")
-    Proxy-->>Machine: 400 Bad Request
-  else Validation Success
-    NodeRed->>PgBouncer: Write-ahead staging: INSERT INTO public.ingest_staging
-    PgBouncer->>TimescaleDB: Write staging record
-    alt Staging DB Failure
-      NodeRed-->>Proxy: 503 Service Unavailable ("Staging failed, batch not accepted")
-      Proxy-->>Machine: 503 Service Unavailable
-    else Staging DB Success
-      NodeRed->>PgBouncer: Batch INSERT INTO public.ldi_data (1d chunk)
-      PgBouncer->>TimescaleDB: Write into hypertable public.ldi_data
-      alt Batch Insert Failure
-        NodeRed-->>Proxy: 502 Bad Gateway (Staged row retained for retry)
-        Proxy-->>Machine: 502 Bad Gateway
-      else Batch Insert Success
-        NodeRed->>PgBouncer: DELETE FROM public.ingest_staging WHERE id = staged_id
-        NodeRed->>NodeRed: Explicit GC (flatData.length = 0, msg.payload = null)
-        NodeRed-->>Proxy: 200 OK {"status": "success", "inserted": count}
-        Proxy-->>Machine: 200 OK
+  participant M as LDI machine
+  participant P as nginx (ims-proxy)
+  participant N as ldi_ingestion.json
+  participant B as PgBouncer
+  participant T as TimescaleDB
+  M->>P: POST /ldi-telemetry · X-API-Key · JSON array
+  Note over P: limit 50 r/s per client, burst 100
+  P->>N: forward to node-red:1880
+  alt bad key / bad body / too many rows
+    N-->>M: 401 · 400 · 413
+  else valid batch
+    N->>B: INSERT INTO ingest_staging RETURNING id
+    B->>T: write staged batch
+    alt staging fails
+      N-->>M: 503 · nothing accepted
+    else staged
+      N->>B: INSERT INTO ldi_data … ON CONFLICT DO NOTHING
+      B->>T: write rows (source timestamps)
+      alt insert fails
+        N->>B: UPDATE ingest_staging SET attempts + 1
+        N-->>M: 502 · staged copy kept
+      else committed
+        N->>B: DELETE FROM ingest_staging WHERE id
+        N-->>M: 200 OK
       end
     end
   end
-
-  Note over TimescaleDB: Continuous Aggregate policy triggers
-  TimescaleDB->>TimescaleDB: Materialize rollups into public.ldi_data_15m
-
-  Grafana->>PgBouncer: SELECT bucket AS time, avg_temperature FROM ldi_data_15m
-  PgBouncer->>TimescaleDB: Execute analytical query
-  TimescaleDB-->>Grafana: Return sub-second aggregated rows
-  Grafana-->>Grafana: Render Cyberpunk HUD time-series curve
+  Note over T: CAGG policy refreshes ldi_data_1m every minute
 ```
 
 ---
@@ -251,39 +309,33 @@ sequenceDiagram
 Illustrates the end-to-end operational flow of an alarm event from detection to verified engineering resolution:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: Alarm acknowledge and resolve
+  accDescr: An operator acknowledges and an engineer resolves an alarm from the Alarm Console; nginx checks the Grafana session before alarm-api updates ldi_alarm_lifecycle, and the actor is always the session login.
   autonumber
-  actor Operator as NOC Operator
-  actor Engineer as Maintenance Engineer
-  participant Browser as Browser Client
-  participant Proxy as Nginx Gateway (:3000)
-  participant AlarmAPI as Alarm API (ims-alarm-api :4000)
-  participant DB as TimescaleDB (public.ldi_alarm_lifecycle)
-
-  Note over DB: Telemetry engine records excursion (State: OPEN)
-
-  Operator->>Browser: Opens "IMS LDI - Alarm Console"
-  Browser->>Proxy: GET /d/ims-ldi-alarm-console
-  Proxy->>Browser: Serve dashboard with active OPEN alarms
-
-  Operator->>Browser: Clicks "Acknowledge" on Alarm LOG-10001
-  Browser->>Proxy: POST /alarm-api/alarms/ack (with session cookie)
-  Proxy->>Proxy: Sub-request GET /auth-check -> Grafana /api/user (200 OK)
-  Proxy->>AlarmAPI: Forward POST /alarms/ack {"logdate_ms": 1790568000000, "logid": "LOG-10001"}
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by=session.user WHERE status='OPEN'
-  DB-->>AlarmAPI: Row updated (1 row returned)
-  AlarmAPI-->>Proxy: 200 OK (Updated JSON record)
-  Proxy-->>Browser: 200 OK (Dashboard updates UI status to Amber)
-
-  Note over Engineer: Engineer inspects machine, cleans optical filter
-  Engineer->>Browser: Clicks "Resolve" with corrective action note
-  Browser->>Proxy: POST /alarm-api/alarms/resolve {"logdate_ms": 1790568000000, "logid": "LOG-10001", "resolution_note": "Replaced filter"}
-  Proxy->>Proxy: Sub-request GET /auth-check (200 OK)
-  Proxy->>AlarmAPI: Forward POST /alarms/resolve
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by=session.user, resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
-  DB-->>AlarmAPI: Row updated (1 row returned)
-  AlarmAPI-->>Proxy: 200 OK (Updated JSON record)
-  Proxy-->>Browser: 200 OK (Dashboard marks alarm RESOLVED in Green)
+  actor O as Operator / engineer
+  participant P as nginx
+  participant G as Grafana /api/user
+  participant A as alarm-api
+  participant D as ldi_alarm_lifecycle
+  Note over D: a new alarm row starts OPEN (trigger)
+  O->>P: POST /alarm-api/alarms/ack · {logdate_ms, logid}
+  P->>G: auth_request · session cookie
+  alt no valid session
+    P-->>O: 401
+  else Viewer role
+    A-->>O: 403
+  else Editor / Admin
+    P->>A: forward + login of the session
+    A->>D: UPDATE … SET status = 'ACKNOWLEDGED' WHERE status = 'OPEN'
+    A-->>O: 200 · or 409 if not OPEN
+  end
+  O->>P: POST /alarm-api/alarms/resolve · {logdate_ms, logid, resolution_note}
+  P->>G: auth_request
+  P->>A: forward
+  A->>D: UPDATE … SET status = 'RESOLVED' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
+  A-->>O: 200 · or 409 if already RESOLVED
 ```
 
 ---
@@ -293,46 +345,42 @@ sequenceDiagram
 Protects network switches from query amplification and connection collapse when edge hardware becomes unresponsive:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: SNMP circuit breaker
+  accDescr: Each 30-second poll checks the per-device breaker kept in Node-RED flow context: two consecutive failures open it, an open breaker skips the device, and after five minutes the next poll is let through as a single probe that closes or re-opens it.
   autonumber
-  participant Timer as Node-RED Scheduler (Every 30s)
-  participant Walker as SNMP Bulk Walker
-  participant Breaker as Circuit Breaker State
-  participant Target as Edge Device (Unresponsive)
-  participant DB as TimescaleDB (circuit_breaker_events)
-
-  Timer->>Walker: Trigger scheduled poll cycle
-  Walker->>Breaker: Query device state for target "SW-CORE-01"
-
-  alt Breaker State is CLOSED (Healthy)
-    Walker->>Target: Dispatch SNMP GETBULK request (UDP 161)
-    Target--xWalker: Timeout (No response after 5000ms)
-    Walker->>Breaker: Register poll failure (failureCount++)
-
-    alt failureCount < 2
-      Breaker-->>Walker: State remains CLOSED (Retry next cycle)
-    else failureCount >= 2
-      Breaker->>Breaker: Transition State -> OPEN (Trip breaker)
-      Breaker->>DB: Record Node Status = OFFLINE (Immediate zero-value telemetry)
-      Note over Breaker: Start 300s (5-minute) cooldown probe timer
+  participant T as Poll Fleet (30 s)
+  participant C as breaker · flow context cb_DEVICE
+  participant W as SNMP walker
+  participant D as device
+  participant P as Parser v9
+  T->>C: checkDevice()
+  alt CLOSED
+    C-->>W: allow
+    W->>D: GETBULK (UDP 161, timeout 6000 ms)
+    alt response
+      D-->>W: varbinds
+      W->>C: recordSuccess() · failures = 0
+      W->>P: metrics → batch insert
+    else timeout
+      W->>C: recordFailure() · failures + 1
+      Note over C: 2nd consecutive failure → OPEN, trips + 1
+      W->>P: offline heartbeat → zeroed metrics
     end
-
-  else Breaker State is OPEN (Tripped)
-    Breaker-->>Walker: Suppress poll (Protect edge network from packet floods)
-    Note over Walker: Skip SNMP transmission - retain safe zeroed metrics
-
-  else Cooldown Expired: Transition to HALF_OPEN (Probe Mode)
-    Breaker->>Walker: Allow single lightweight SNMP probe request
-    Walker->>Target: Dispatch probe GET request
-    alt Probe Succeeds
-      Target-->>Walker: Valid SNMP Response
-      Walker->>Breaker: Reset failureCount = 0 - Transition State -> CLOSED
-      Breaker->>DB: Record Node Status = ONLINE
-    else Probe Fails
-      Target--xWalker: Timeout
-      Walker->>Breaker: Re-trip State -> OPEN - Restart 300s cooldown timer
+  else OPEN, less than 5 min
+    C-->>T: skip device this cycle
+  else OPEN, 5 min elapsed
+    C->>C: HALF_OPEN
+    C-->>W: allow one probe
+    W->>D: GETBULK
+    alt probe succeeds
+      W->>C: recordSuccess() → CLOSED
+    else probe fails
+      W->>C: recordFailure() → OPEN
     end
   end
+  Note over C: exported as ims_circuit_breaker_state / _trips_total on GET /metrics
 ```
 
 ---
@@ -342,36 +390,52 @@ sequenceDiagram
 Illustrates the chunking boundaries, continuous aggregate hierarchies, and lifecycle retention policies:
 
 ```mermaid
-flowchart TD
-  subgraph Ingestion ["Ingestion Level"]
-    RAW_LDI["public.ldi_data\n(Hypertable, 1-Day Chunks)"]
-    RAW_INFRA["public.sys_metrics & net_metrics\n(Hypertables, 1-Day Chunks)"]
-    RAW_ALARM["public.ldi_alarm_log\n(Hypertable, 7-Day Chunks)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: Hypertables, continuous aggregates and retention
+  accDescr: Raw hypertables feed seven continuous aggregates; each box shows its refresh schedule and retention as configured in the live database. The three infrastructure hourly aggregates have no retention policy.
+
+  subgraph RAW["Raw hypertables"]
+    LDI[("ldi_data<br/>1-day chunks · compressed after 7 d · kept 180 d")]:::store
+    INF[("sys_metrics · net_metrics · ldi_metrics<br/>1-day chunks · compressed after 7 d · kept 30 d")]:::store
+    ALM[("ldi_alarm_log<br/>7-day chunks · kept 365 d")]:::store
   end
 
-  subgraph CAGG_Tier1 ["Tier 1: High-Frequency Rollups"]
-    CAGG_1M["public.ldi_data_1m\n(Refreshed every 1m, 1h window)"]
-    CAGG_15M["public.ldi_data_15m\n(Refreshed every 15m)\nPowers Manufacturing & Command Center"]
+  subgraph LDICAGG["LDI aggregates"]
+    C1M[("ldi_data_1m<br/>every 1 min · window 2 h · kept 30 d")]:::store
+    C15[("ldi_data_15m<br/>every 15 min · window 3 h · kept 90 d")]:::store
+    C1H[("ldi_data_1h<br/>every 1 h · window 1 d · kept 2 y")]:::store
+    CHR[("ldi_data_hourly<br/>every 1 h · window 3 d · real-time · kept 2 y")]:::store
   end
 
-  subgraph CAGG_Tier2 ["Tier 2: Hourly Rollups"]
-    CAGG_1H["public.ldi_data_1h & ldi_data_hourly\n(Refreshed every 1h)\nPowers SPC and Trend Visualizations"]
-    INFRA_HOURLY["public.sys_hourly & net_hourly\n(Infrastructure Hourly Summaries)"]
+  subgraph INFCAGG["Infrastructure aggregates"]
+    SH[("sys_hourly · net_hourly · ldi_hourly<br/>every 30 min · window 6 h · no retention policy")]:::store
   end
 
-  subgraph Retention ["Retention Policies (Verified Live Database)"]
-    RET_RAW["Raw Telemetry Retention: 30 Days (Infra) / 180 Days (LDI)"]
-    RET_HOURLY["Hourly Aggregates Retention: 2 Years"]
-    RET_ALARM["Alarm Log Retention: 365 Days"]
+  LDI --> C1M --> C15 --> C1H
+  LDI --> CHR
+  INF --> SH
+
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_store["Data store"]:::store
+    end
   end
-
-  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
-  RAW_INFRA --> INFRA_HOURLY
-
-  RAW_LDI -.-> RET_RAW
-  RAW_INFRA -.-> RET_RAW
-  RAW_ALARM -.-> RET_ALARM
-  CAGG_1H -.-> RET_HOURLY
+  SH ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -381,45 +445,67 @@ flowchart TD
 The 22 provisioned Grafana dashboards are organized into 4 distinct functional domains:
 
 ```mermaid
-flowchart LR
-  subgraph D1 ["01. CNC Drilling (4 Dashboards)"]
-    DR1["Fleet Overview"]
-    DR2["Shift Production"]
-    DR3["Machine Investigation"]
-    DR4["Anomaly Analysis"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: The 22 provisioned dashboards by folder
+  accDescr: Four Grafana folders with their dashboard titles and UIDs; drilling and VCP read the eap_backup database through the drilling-timescaledb data source, LDI and platform dashboards read the ims database through PgBouncer.
+  EAP[("eap_backup · drilling-timescaledb")]:::store
+  IMS[("ims · timescaledb via PgBouncer")]:::store
+  subgraph DRL["01 · Drilling (CNC)"]
+    DRL0["01 Fleet Digital Twin & Overview<br/><code>001</code>"]:::viz
+    DRL1["02 Shift Production & OEE Tracking<br/><code>ims-drilling-history</code>"]:::viz
+    DRL2["03 Machine Investigation & Spindle Diagnostics<br/><code>ims-drilling-machine-detail</code>"]:::viz
+    DRL3["04 Fleet Anomaly & Root Cause Analysis<br/><code>ims-drilling-5-anomaly</code>"]:::viz
   end
-
-  subgraph D2 ["02. LDI Manufacturing (10 Dashboards)"]
-    LDI1["Manufacturing Command Center"]
-    LDI2["Operator Andon Board"]
-    LDI3["Alarm Console"]
-    LDI4["Alarm Response (MTTA/MTTR)"]
-    LDI5["Alarm Dictionary"]
-    LDI6["Factory Digital Twin (Canvas)"]
-    LDI7["Engineering Analytics & SPC"]
-    LDI8["Machine Snapshot"]
-    LDI9["Data Readiness Gaps"]
-    LDI10["Easy Overview"]
+  EAP --> DRL
+  subgraph VCP["04 · Plating (VCP)"]
+    VCP0["01 Plating Fleet Overview & Process Analytics<br/><code>ims-vcp-overview</code>"]:::viz
+    VCP1["02 Plating Line Operations Console<br/><code>ims-vcp-operations-console</code>"]:::viz
+    VCP2["03 Real-Time Plating Line Wall Display<br/><code>ims-vcp-realtime-wall</code>"]:::viz
   end
-
-  subgraph D3 ["03. Platform & NOC (5 Dashboards)"]
-    NOC1["NOC Overview"]
-    NOC2["Engineering Drill-Down"]
-    NOC3["AIOps Capacity Forecast"]
-    NOC4["Pipeline Ingestion Latency"]
-    NOC5["Meta-Monitoring & Health"]
+  EAP --> VCP
+  subgraph LDI["02 · Lithography (LDI)"]
+    LDI0["01 Fleet Executive Overview<br/><code>ims-easy-overview</code>"]:::viz
+    LDI1["02 Operator Andon Board (Shopfloor Kiosk)<br/><code>ims-ldi-operator-andon</code>"]:::viz
+    LDI2["03 Factory 3D Digital Twin & Spatial Layout<br/><code>ims-ldi-factory-digital-twin</code>"]:::viz
+    LDI3["04 Manufacturing Fleet Command Center<br/><code>ims-ldi-manufacturing</code>"]:::viz
+    LDI4["05 Machine Deep-Dive Snapshot<br/><code>ims-ldi-machine-snapshot</code>"]:::viz
+    LDI5["06 Process Engineering Analytics & SPC<br/><code>ims-ldi-engineering-analytics</code>"]:::viz
+    LDI6["07 Live Alarm Management Console<br/><code>ims-ldi-alarm-console</code>"]:::viz
+    LDI7["08 Alarm Response Metrics & MTTA/MTTR<br/><code>ims-ldi-alarm-response</code>"]:::viz
+    LDI8["09 Alarm Code Dictionary & Corrective Actions<br/><code>ims-ldi-alarm-dictionary</code>"]:::viz
+    LDI9["10 Telemetry Signal Quality & Integration Readiness<br/><code>ldi-data-readiness</code>"]:::viz
   end
-
-  subgraph D4 ["04. VCP Plating (3 Dashboards)"]
-    VCP1["VCP Overview"]
-    VCP2["Operations Console"]
-    VCP3["Real-Time Wall"]
+  IMS --> LDI
+  subgraph PLT["03 · Platform & NOC"]
+    PLT0["01 Network Operations Center (NOC) Overview<br/><code>ims-noc-overview</code>"]:::viz
+    PLT1["02 Host & Network Infrastructure Engineering Drill-Down<br/><code>ims-engineering</code>"]:::viz
+    PLT2["03 AIOps Predictive Capacity & Resource Forecasting<br/><code>ims-capacity</code>"]:::viz
+    PLT3["04 Ingestion Pipeline Latency & Telemetry SLO<br/><code>ims-ingestion-latency</code>"]:::viz
+    PLT4["05 Pipeline Reliability & SRE Meta-Monitoring<br/><code>ims-meta-monitoring</code>"]:::viz
   end
+  IMS --> PLT
 
-  style D1 fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
-  style D2 fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
-  style D3 fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
-  style D4 fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_store["Data store"]:::store ~~~ LG_viz["Grafana / UI"]:::viz
+    end
+  end
+  PLT ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

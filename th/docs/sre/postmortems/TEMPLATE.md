@@ -75,25 +75,24 @@ $$\text{Error Budget Burn Rate} = \frac{\text{Observed Error Rate}}{\text{Allowe
 บันทึกเวลาทั้งหมดต้องระบุทั้งเวลาสากล **UTC** และเวลาประเทศไทย **ICT (UTC+7)**
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: ตัวอย่าง timeline ของเหตุการณ์ (ให้แทนด้วยของจริง)
+  accDescr: timeline ตัวอย่างของเหตุการณ์ connection pool เต็ม: ตรวจพบจากการแจ้งเตือน ประกาศเหตุการณ์ แก้ไข และกู้คืน
   autonumber
   participant Mon as Prometheus / Alertmanager
-  participant OnCall as วิศวกร SRE On-Call
-  participant Pipe as ไปป์ไลน์ Node-RED Ingestion
+  participant On as SRE เวร
+  participant Pipe as Node-RED
   participant DB as PgBouncer / TimescaleDB
-  participant IC as ผู้บัญชาการเหตุการณ์ (IC)
-
-  Note over Mon,DB: ลำดับการไหลของเหตุการณ์
-  Pipe->>DB: ข้อมูลส่งเข้ามาอย่างหนาแน่นแบบกะทันหัน (>120k events/sec)
-  DB-->>Pipe: การเชื่อมต่อเต็ม (pool_size exhausted)
-  Pipe->>Pipe: ข้อมูลค้างสะสมในหน่วยความจำของ Node-RED
-  Mon->>OnCall: แจ้งเตือน: IngestionLatencyHigh (P95 > 15s)
-  OnCall->>IC: ประกาศเหตุการณ์ระดับ SEV-1 และเปิดช่องทางแก้ไขด่วน
-  IC->>DB: ตรวจสอบการเชื่อมต่อของ PgBouncer
-  IC->>DB: ขยายขนาด Connection Pool ฉุกเฉินและสั่งรีโหลด
-  DB-->>Pipe: สามารถเชื่อมต่อได้ตามปกติและเริ่มบันทึกข้อมูลต่อ
-  Pipe-->>Mon: ข้อมูลในบัฟเฟอร์ถูกบันทึกหมด และ Latency กลับสู่ < 500ms
-  IC->>OnCall: ผลกระทบได้รับการบรรเทา และเฝ้าระวังต่อเนื่อง
+  participant IC as ผู้บัญชาการเหตุการณ์
+  Note over Mon,IC: ตัวอย่างเท่านั้น — ให้แทนด้วย timeline จริง
+  Pipe->>DB: insert จำนวนมากพร้อมกัน
+  DB-->>Pipe: pool เต็ม
+  Mon->>On: การแจ้งเตือนทำงาน
+  On->>IC: ประกาศเหตุการณ์
+  IC->>DB: ตรวจ pool และแก้ไข
+  DB-->>Pipe: commit กลับมาทำงาน
+  IC->>On: แก้ไขแล้ว เฝ้าติดตาม
 ```
 
 ### บันทึกเหตุการณ์ตามเวลาอย่างละเอียด
@@ -110,17 +109,26 @@ sequenceDiagram
 ## 5. การวิเคราะห์หาสาเหตุที่แท้จริง (5 Whys Root Cause Analysis)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TD
-  W1["1. ทำไมแดชบอร์ด Grafana จึงแสดงข้อมูลโทรมาตรค้าง?"] --> W2["2. ทำไมข้อมูลโทรมาตรจึงค้างอยู่ใน Node-RED?"]
-  W2 --> W3["3. ทำไม PgBouncer จึงปฏิเสธการเชื่อมต่อจากไคลเอนต์?"]
-  W3 --> W4["4. ทำไม Connection Pool ของ PgBouncer จึงเต็ม?"]
-  W4 --> W5["5. สาเหตุที่แท้จริง: โค้ดในส่วนจัดการ Error ขาดคำสั่งคืน Connection กลับสู่ Pool"]
-
-  style W1 fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style W2 fill:#1e293b,stroke:#00F2FE,color:#f8fafc
-  style W3 fill:#1e293b,stroke:#FF8800,color:#f8fafc
-  style W4 fill:#1e293b,stroke:#FF8800,color:#f8fafc
-  style W5 fill:#1e293b,stroke:#FF003C,color:#f8fafc
+  accTitle: ตัวอย่าง 5 Whys (ให้แทนด้วยการวิเคราะห์จริง)
+  accDescr: ตัวอย่างลำดับคำถาม 5 Whys จนถึงสาเหตุหลัก
+  W1["1 · ทำไมแดชบอร์ดไม่อัปเดต"]:::app
+  W2["2 · ทำไมการรับข้อมูลหยุด"]:::app
+  W3["3 · ทำไมการเชื่อมต่อถูกปฏิเสธ"]:::app
+  W4["4 · ทำไม pool เต็ม"]:::app
+  W5["5 · สาเหตุหลัก: ไม่คืน connection ในเส้นทาง error"]:::notify
+  W1 --> W2 --> W3 --> W4 --> W5
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 1. **ทำไมแดชบอร์ด Grafana จึงแสดงข้อมูลโทรมาตรค้าง?**  

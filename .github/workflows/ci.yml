@@ -84,6 +84,9 @@ jobs:
         # single-source-of-truth gate for panel counts/descriptions that
         # used to drift silently in hand-typed README/ARCHITECTURE tables.
 
+      - name: Mermaid Diagram Lint (theme, accessibility, syntax traps, real files/tables, mirrors)
+        run: node tests/lint/mermaid-lint.js
+
       - name: Lint Doc Over-Claims (dashboard/service/migration counts)
         run: node tests/lint/doc-overclaim-linter.js
         # Catches the exact drift class found in the 2026-08-13 doc audit --
@@ -455,6 +458,10 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      # every Mermaid block must actually render (no stack needed)
+      - name: Render Mermaid diagrams
+        run: node scripts/check-mermaid-render.js
 
       - name: Seed environment
         run: cp .env.example .env

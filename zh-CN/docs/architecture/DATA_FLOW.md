@@ -26,73 +26,87 @@
 ## 1. 端到端多领域数据流向总拓扑 (Pipeline Topology)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
-  subgraph SOURCES["1. 工业现场运行遥测源"]
-    SNMP_DEV["服务器 / 网络核心交换机\n(SNMP v2c 协议, 30 秒轮询)"]
-    LDI_DEV["LDI 激光直接成像光刻机\n(HTTP POST /ldi-telemetry, 2 秒)"]
-    DRL_DEV["CNC 数控钻孔机台群\n(机台事件与加工循环记录)"]
-    VCP_DEV["VCP 垂直连续电镀生产线\n(槽体传感器与工艺运行日志)"]
+  accTitle: 端到端数据流
+  accDescr: SNMP 与 LDI 数据经 Node-RED 和 PgBouncer 进入 ims 数据库，由 ingest_staging 保护 LDI 批次，并运行连续聚合与压缩；钻孔与 VCP 数据位于 eap_backup；Grafana 读取两者，告警经 Node-RED 发出。
+
+  SNMP["服务器 · 交换机<br/>SNMP v2c，每 30 秒轮询"]:::ext
+  LDIM["LDI 机台<br/>POST /ldi-telemetry"]:::ext
+  EAPSRC["工厂 EAP 数据库<br/>钻孔 · VCP"]:::ext
+
+  NRS["ingestion.json<br/>fork_5_ways → Parser v9"]:::flow
+  NRL["ldi_ingestion.json<br/>校验 → 暂存 → 写入"]:::flow
+  PGB["PgBouncer :5432<br/>事务池 · SCRAM"]:::app
+
+  subgraph IMSDB["数据库 ims"]
+    STG[("ingest_staging<br/>预写表")]:::store
+    HSYS[("sys_metrics · net_metrics · ldi_metrics<br/>hypertable，1 天分块")]:::store
+    HLDI[("ldi_data<br/>hypertable，1 天分块")]:::store
+    HALM[("ldi_alarm_log<br/>hypertable，7 天分块")]:::store
+    CAGG[("连续聚合<br/>ldi_data_1m → 15m → 1h · *_hourly")]:::store
+    COMP[("7 天后压缩的分块<br/>按 eqp_id · device_id 分段")]:::store
+  end
+  subgraph EAPDB["数据库 eap_backup"]
+    EDRL[("machine_event · agent_log")]:::store
+    EVCP[("vcp_upp · vcp_alarm · vcp_status_change")]:::store
   end
 
-  subgraph INGESTION["2. 数据接入与标准化清洗层 (Node-RED)"]
-    NR_INFRA["ingestion.json\nfork_5_ways -> sre_parser v10"]
-    NR_LDI["ldi_ingestion.json\nSchema 校验, 预写暂存, O(1) GC 内存回收"]
-  end
+  GRAF["Grafana · 22 个仪表板"]:::viz
+  PROM["Prometheus → Alertmanager"]:::obs
+  HOOK["alerting.json · /alert-webhook"]:::flow
+  NOTIFY["LINE · MS Teams"]:::notify
 
-  subgraph POOL["3. 数据库连接池代理层"]
-    PGB["PgBouncer 连接池\n(事务模式, 端口 5432, AUTH: scram-sha-256)"]
-  end
+  SNMP --> NRS
+  LDIM --> NRL
+  NRS -->|"nodered_writer"| PGB
+  NRL -->|"nodered_writer"| PGB
+  PGB --> STG
+  PGB --> HSYS
+  PGB --> HLDI
+  PGB --> HALM
+  HLDI --> CAGG
+  HSYS --> CAGG
+  HLDI --> COMP
+  HSYS --> COMP
+  EAPSRC -.->|"恢复副本"| EDRL
+  EAPSRC -.-> EVCP
+  CAGG --> GRAF
+  HLDI --> GRAF
+  HALM --> GRAF
+  EDRL -->|"drilling-timescaledb"| GRAF
+  EVCP -->|"drilling-timescaledb"| GRAF
+  NRS -->|"/metrics"| PROM
+  PROM --> HOOK
+  GRAF -->|"告警规则"| HOOK
+  HOOK --> NOTIFY
 
-  subgraph STORAGE["4. TimescaleDB 核心存储层 (仅限 public schema)"]
-    subgraph HYPER["原始高频超表群 Hypertables (1 天切片时间跨度)"]
-      HT_SYS[("sys_metrics & net_metrics")]
-      HT_LDI[("ldi_data 与 ldi_alarm_log")]
-      HT_STG[("ingest_staging")]
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["外部系统"]:::ext ~~~ LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app ~~~ LG_store["数据存储"]:::store ~~~ LG_viz["Grafana / UI"]:::viz
     end
-    subgraph EAP_DB["次级业务数据库: eap_backup"]
-      EAP_DRL[("machine_event 与 agent_log")]
-      EAP_VCP[("vcp_upp, vcp_alarm, vcp_status_change")]
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_obs["监控"]:::obs ~~~ LG_notify["通知"]:::notify
     end
-    subgraph CAGGS["持续聚合物化层 (Continuous Aggregates)"]
-      CAGG_1M[("1 分钟级汇总 (ldi_data_1m)")]
-      CAGG_15M[("15 分钟级汇总 (ldi_data_15m)")]
-      CAGG_1H[("1 小时级汇总与 ldi_data_hourly")]
-    end
-    subgraph COMPRESS["列式数据切片压缩"]
-      COL[("超过 7 天切片执行列压缩\n分段维度: machine_id / device_id")]
-    end
+    LEGEND_0 ~~~ LEGEND_1
   end
-
-  subgraph DISPATCH["5. 可视化呈现与警报分发层"]
-    GRAF["Grafana 监控大屏 (22 块)\n遵循 Grid-24, 亚秒级快速查询"]
-    PROM["Prometheus 指标拉取采集器"]
-    AM["Alertmanager 告警路由内核"]
-    WH["Node-RED /alert-webhook 适配器"]
-    NOTIF["LINE Messaging API 与 MS Teams 通知通道"]
-  end
-
-  SNMP_DEV --> NR_INFRA
-  LDI_DEV --> NR_LDI
-  DRL_DEV -.->|"直接同步"| EAP_DRL
-  VCP_DEV -.->|"直接同步"| EAP_VCP
-
-  NR_INFRA -->|"批量 SQL 写入 (nodered_writer)"| PGB
-  NR_LDI -->|"预写暂存与批量落盘 (nodered_writer)"| PGB
-
-  PGB --> HT_SYS
-  PGB --> HT_LDI
-  PGB --> HT_STG
-
-  HT_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
-  HT_LDI --> COL
-  HT_SYS --> COL
-
-  CAGGS --> GRAF
-  HYPER --> GRAF
-  EAP_DB -->|"drilling-timescaledb (直连 :5432)"| GRAF
-  PROM --> AM --> WH --> NOTIF
-  GRAF -->|"原生告警规则"| WH
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -160,27 +174,29 @@ return msg;
 入库至 `public.ldi_data` 的原始时序数据流经两个彼此独立的计算通道：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-  RAW[("ldi_data
-原始时序超表
-7 天后列压缩, 保留 180 天")]
-
-  RAW -->|"1 分钟聚合"| M1[("ldi_data_1m
-保留 30 天")]
-  M1 -->|"15 分钟聚合"| M15[("ldi_data_15m
-保留 90 天")]
-  M15 -->|"1 小时聚合"| M1H[("ldi_data_1h
-保留 2 年")]
-
-  RAW -->|"小时级特征指标实时聚合
-(avg_max_pe, peak_pe)
-实时聚合特性: 启用"| MHOURLY[("ldi_data_hourly
-保留 2 年")]
-
-  RAW -->|"物化刷新间隔 60 秒"| SPC["v_machine_spc_fleet
-v_ldi_rca_recent_window
-v_ldi_rca_truth_test"]
+  accTitle: LDI 汇总链
+  accDescr: ldi_data 依次汇总为 1 分钟、15 分钟和 1 小时聚合，另有独立的实时小时聚合；3 个 SPC 与 RCA 物化视图每分钟刷新。
+  RAW[("ldi_data<br/>180 天")]:::store
+  M1[("ldi_data_1m<br/>30 天")]:::store
+  M15[("ldi_data_15m<br/>90 天")]:::store
+  M1H[("ldi_data_1h<br/>2 年")]:::store
+  MH[("ldi_data_hourly<br/>实时 · 2 年")]:::store
+  MV["v_machine_spc_fleet<br/>v_ldi_rca_recent_window<br/>v_ldi_rca_truth_test"]:::store
+  RAW -->|"1 min"| M1 -->|"15 min"| M15 -->|"1 h"| M1H
+  RAW -->|"1 h"| MH
+  RAW -->|"每 60 秒刷新"| MV
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 * **级联多层预聚合 (`1m -> 15m -> 1h`):** 逐级汇总历史颗粒度，确保 Grafana 在加载大时间跨度 (7 天、30 天) 报表时实现亚秒级渲染。
@@ -191,18 +207,30 @@ v_ldi_rca_truth_test"]
 ## 4. 报警上下文关联合并与根因分析流水线 (RCA)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-  ALM_SIM["ldi_alarm_simulator.json"] --> ALOG[("ldi_alarm_log
-实时报警日志流
-保留 365 天")]
-  MASTER[("ldi_alarm_ms_code
-报警主字典表
-登记超 1,820+ 报警代码")] -.->|"外键约束: alarm_code"| ALOG
-  ALOG --> CTX["v_ldi_alarm_context
-自动匹配前后 +-5 分钟遥测视窗"]
-  CTX --> RCA["v_ldi_rca_recent_window
-v_ldi_rca_truth_test"]
+  accTitle: 告警与根因分析管道
+  accDescr: 告警模拟器写入 ldi_alarm_log，其 equipmentid 引用 devices；告警按代码关联告警主表，并关联此前 5 分钟的遥测，供 RCA 视图使用。
+  SIM["ldi_alarm_simulator.json"]:::flow
+  DEV[("devices")]:::store
+  LOG[("ldi_alarm_log<br/>365 天")]:::store
+  MASTER[("ldi_alarm_ms_code<br/>1,820 个代码")]:::store
+  CTX["v_ldi_alarm_context<br/>经 related_log_id 关联的读数，否则取此前 5 分钟内最新值"]:::store
+  RCA["v_ldi_rca_recent_window<br/>v_ldi_rca_truth_test"]:::store
+  SIM --> LOG
+  LOG -.->|"FK equipmentid"| DEV
+  MASTER -.->|"关联 errorcode = alarm_code"| CTX
+  LOG --> CTX --> RCA
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 报警事件实时写入 `public.ldi_alarm_log` 并通过外键关联合法报警字典 `public.ldi_alarm_ms_code`。下游视图 (`v_ldi_alarm_context`) 会以报警发生时间为中心，自动抓取机器前后 ±5 分钟 的遥测窗口数据，为现场工程师提供统计学根因分析依据。

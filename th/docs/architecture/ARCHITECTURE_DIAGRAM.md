@@ -25,35 +25,56 @@
 แผนภาพบริบทแสดงภาพรวมการมีปฏิสัมพันธ์ระหว่างผู้ใช้งาน, เครื่องจักรในกระบวนการผลิต, เครื่องแม่ข่ายโครงสร้างพื้นฐานไอที, สวิตช์เครือข่าย และระบบส่งข้อความภายนอก กับระบบ Telemetry หลักของ IMS
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-C4Context
- title แผนภาพบริบทของระบบ IMS (System Context Diagram)
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 ระดับ 1: บริบทของระบบ
+  accDescr: ผู้ใช้ 4 บทบาทใช้งาน IMS ผ่านเบราว์เซอร์ IMS รับข้อมูล LDI ผ่าน HTTP ดึงข้อมูลเซิร์ฟเวอร์และสวิตช์ผ่าน SNMP อ่านฐานข้อมูล Drilling และ VCP ของโรงงาน และส่งการแจ้งเตือนไปยัง LINE และ Microsoft Teams
 
- Person(noc_op, "โอเปอเรเตอร์ NOC", "เฝ้าระวังสุขภาพระบบ ประสิทธิภาพเซิร์ฟเวอร์ และการแจ้งเตือนพอร์ตเครือข่าย")
- Person(proc_eng, "วิศวกรกระบวนการผลิต", "วิเคราะห์ Yield ของ LDI, การกระจายตัวของค่า Cpk และค้นหาสาเหตุรากเหง้า (RCA)")
- Person(drill_eng, "ผู้เชี่ยวชาญงานเจาะ CNC", "วิเคราะห์ความสั่นสะเทือนของ Spindle, จำนวน Hit และอายุการใช้งานของดอกสว่าน")
- Person(vcp_tech, "ช่างเทคนิคงานชุบ VCP", "ติดตามความเร็วสายการผลิต, อุณหภูมิบ่อชุบ และกระแสไฟฟ้าของ Rectifier")
+  subgraph PEOPLE["ผู้ใช้งาน"]
+    NOC["ผู้ปฏิบัติงาน NOC<br/>[บุคคล]<br/>สุขภาพโครงสร้างพื้นฐาน"]:::actor
+    PE["วิศวกรกระบวนการ<br/>[บุคคล]<br/>LDI yield, SPC, RCA"]:::actor
+    DRL["ผู้เชี่ยวชาญ Drilling<br/>[บุคคล]<br/>เหตุการณ์และ alarm ของเครื่อง"]:::actor
+    VCPT["ช่างชุบ<br/>[บุคคล]<br/>bath, กระแส, ความเร็วไลน์"]:::actor
+  end
 
- System_Ext(ldi_mach, "เครื่องจักร LDI", "เครื่องจักรเปิดรับแสง LDI ความแม่นยำสูง ส่งข้อมูล Telemetry ผ่าน HTTP/JSON")
- System_Ext(cnc_drill, "เครื่องเจาะ CNC", "กลุ่มเครื่องเจาะส่งข้อมูลรอบหมุน, อัตราป้อน และประวัติเหตุการณ์เข้าสู่ eap_backup")
- System_Ext(vcp_lines, "สายชุบแผ่น VCP", "สายการผลิตชุบแผ่นต่อเนื่องส่งข้อมูลค่าพารามิเตอร์เคมีเข้าสู่ eap_backup")
- System_Ext(servers, "เครื่องแม่ข่าย Linux", "เซิร์ฟเวอร์ประมวลผลส่งข้อมูล CPU, RAM และ Disk ผ่านโพรโทคอล SNMP v2c")
- System_Ext(switches, "สวิตช์เครือข่าย Juniper", "สวิตช์เครือข่ายส่งข้อมูลสถิติทราฟฟิกและตัวนับความผิดพลาดผ่าน SNMP")
- System_Ext(line_teams, "LINE / MS Teams", "ระบบกระจายแจ้งเตือนเหตุการณ์ผิดปกติระดับวิกฤตไปยังทีมวิศวกรโรงงาน")
+  IMS["IMS<br/>[ระบบซอฟต์แวร์]<br/>รับข้อมูล จัดเก็บ 22 แดชบอร์ด แจ้งเตือน"]:::app
 
- System(ims, "แพลตฟอร์ม IMS", "ระบบรับข้อมูล Telemetry, ตัวรวบรวมการเชื่อมต่อฐานข้อมูล TimescaleDB และแดชบอร์ด Grafana 22 ตัว")
+  subgraph EXT["ระบบภายนอก"]
+    LDIM["เครื่อง LDI<br/>[ภายนอก]<br/>JSON ผ่าน HTTP"]:::ext
+    NET["เซิร์ฟเวอร์และสวิตช์<br/>[ภายนอก]<br/>SNMP v2c agent"]:::ext
+    EAPSRC["ฐานข้อมูล EAP ของโรงงาน<br/>[ภายนอก]<br/>ข้อมูล Drilling และ VCP"]:::ext
+    MSG["LINE · Microsoft Teams<br/>[ภายนอก]"]:::notify
+  end
 
- Rel(noc_op, ims, "เรียกดูแดชบอร์ด NOC และการพยากรณ์ความจุ", "HTTPS / พอร์ต 3000")
- Rel(proc_eng, ims, "ตรวจสอบ Command Center และการวิเคราะห์ SPC", "HTTPS / พอร์ต 3000")
- Rel(drill_eng, ims, "วิเคราะห์แดชบอร์ดกลุ่มเครื่องเจาะและความผิดปกติ", "HTTPS / พอร์ต 3000")
- Rel(vcp_tech, ims, "ติดตามการทำงานของ VCP และแดชบอร์ดติดผนัง", "HTTPS / พอร์ต 3000")
+  NOC -->|"HTTP :3000"| IMS
+  PE -->|"HTTP :3000"| IMS
+  DRL -->|"HTTP :3000"| IMS
+  VCPT -->|"HTTP :3000"| IMS
+  LDIM -->|"POST /ldi-telemetry · X-API-Key"| IMS
+  NET -->|"SNMP v2c · UDP 161 · ถูกดึงข้อมูล"| IMS
+  EAPSRC -.->|"กู้คืนเข้า eap_backup"| IMS
+  IMS -->|"HTTPS"| MSG
 
- Rel(ldi_mach, ims, "ส่งข้อมูล Telemetry แบบสตรีม", "HTTP POST /ldi-telemetry")
- Rel(cnc_drill, ims, "บันทึกประวัติเหตุการณ์และสถานะเครื่องจักร", "PostgreSQL / eap_backup")
- Rel(vcp_lines, ims, "บันทึกข้อมูลพารามิเตอร์เคมีและเซนเซอร์", "PostgreSQL / eap_backup")
- Rel(ims, servers, "ดึงข้อมูลสถิติสมรรถนะ", "SNMP v2c / UDP 161")
- Rel(ims, switches, "ดึงข้อมูลสถิติการรับส่งข้อมูลและพอร์ต", "SNMP v2c / UDP 161")
- Rel(ims, line_teams, "ส่งต่อการแจ้งเตือนความผิดปกติวิกฤต", "HTTPS Webhooks")
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["บุคคล"]:::actor ~~~ LG_app["บริการของ IMS"]:::app ~~~ LG_ext["ระบบภายนอก"]:::ext ~~~ LG_notify["การแจ้งเตือน"]:::notify
+    end
+  end
+  MSG ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -63,63 +84,96 @@ C4Context
 แผนภาพนี้แสดงรายละเอียดการทำงานของเซอร์วิสทั้ง 16 ตัวในเครือข่าย Docker Compose พร้อมการแมปพอร์ตและเส้นทางการรับส่งข้อมูล:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-C4Container
- title แผนภาพคอนเทนเนอร์ของระบบ IMS (16 เซอร์วิส)
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 ระดับ 2: คอนเทนเนอร์ 16 ตัว
+  accDescr: บริการ Docker Compose ทั้ง 16 ตัวและการเชื่อมต่อ: nginx เป็นพอร์ตเดียวที่เปิดทุก interface บริการข้อมูลอยู่บน ims-internal การเฝ้าระวังอยู่บน ims-monitoring และ archiver เข้าถึง Docker ผ่าน socket proxy บนเครือข่าย ims-docker-api ที่แยกออกเท่านั้น
 
- Person(user, "วิศวกรและผู้ปฏิบัติการ", "เข้าใช้งานแดชบอร์ด, Digital Twin และ API จัดการแจ้งเตือนผ่านเบราว์เซอร์")
- System_Ext(ext_dev, "อุปกรณ์และเครื่องจักรในโรงงาน", "LDI, CNC เจาะ, VCP ชุบ, เซิร์ฟเวอร์, สวิตช์")
+  USER["ผู้ใช้ · เบราว์เซอร์"]:::actor
+  EDGE["เครื่อง LDI · อุปกรณ์ SNMP"]:::ext
 
- System_Boundary(c1, "เครือข่าย Docker ภายในของ IMS (ims-internal, ims-monitoring, ims-docker-api)") {
-   Container(proxy, "Reverse Proxy (ims-proxy)", "Nginx Alpine", "เกตเวย์ขาเข้ารวมศูนย์, ควบคุมอัตราการส่งข้อมูล และตรวจสอบสิทธิ์เซสชัน")
-   Container(grafana, "Grafana 13 (ims-grafana)", "Go", "แสดงผลแดชบอร์ดธีม Cyberpunk HUD ทั้งหมด 22 ตัวใน 4 แผนกงาน")
-   Container(alarm_api, "Alarm API (ims-alarm-api)", "Node.js Express", "จัดการการเปลี่ยนสถานะแจ้งเตือน (ack/resolve) ใน public.ldi_alarm_lifecycle")
-   Container(twin_3d, "Factory Twin 3D (ims-factory-twin-3d)", "Node.js Express", "เรนเดอร์โมเดล 3D แบบจำลองโรงงานชั้น 1 (อ่านอย่างเดียว)")
-   Container(renderer, "Image Renderer (ims-grafana-renderer)", "Chromium", "สร้างภาพ PNG ของพาเนลสำหรับแนบไปกับการแจ้งเตือนและรายงาน")
+  subgraph INGRESS["พอร์ต host 3000 ทุก interface"]
+    PROXY["proxy · nginx 1.31<br/>ims-proxy"]:::ingress
+  end
 
-   Container(nodered, "ไปป์ไลน์รับข้อมูล (ims-node-red)", "Node.js / Node-RED", "รัน Walker แบบขนาน, พาร์สเซอร์ข้อมูล, คิวบัฟเฟอร์ และส่งต่อแจ้งเตือน")
-   Container(pgbouncer, "ตัวรวมการเชื่อมต่อ (ims-pgbouncer)", "C / PgBouncer", "พูลการเชื่อมต่อพอร์ต 5432 แบบ Transaction ด้วยการยืนยันตัวตน SCRAM-SHA-256")
-   ContainerDb(timescaledb, "TimescaleDB (ims-timescaledb)", "PostgreSQL 16 + TimescaleDB", "จัดเก็บข้อมูลไฮเปอร์เทเบิล, Continuous Aggregates, ประวัติการแจ้งเตือน และฐานข้อมูล eap_backup")
+  subgraph APP["แอปพลิเคชัน · ims-internal"]
+    GRAF["grafana 13.1.2<br/>22 แดชบอร์ด"]:::viz
+    RENDER["renderer<br/>image renderer"]:::app
+    ALARM["alarm-api :4000<br/>Express"]:::app
+    TWIN["factory-twin-3d :4100<br/>Express"]:::app
+    NR["node-red :1880<br/>ไฟล์โฟลว์ 5 ไฟล์"]:::flow
+    SNMPSIM["snmpsim<br/>agent จำลอง"]:::app
+  end
 
-   Container(prometheus, "Prometheus (ims-prometheus)", "Go", "เก็บรวบรวมเมทริกซ์และประเมินกฎการแจ้งเตือน")
-   Container(alertmanager, "Alertmanager (ims-alertmanager)", "Go", "ตัดข้อมูลแจ้งเตือนซ้ำ จัดกลุ่ม และส่งต่อไปยัง Node-RED")
-   Container(blackbox, "Blackbox Probes (ims-blackbox)", "Go", "ตรวจสอบ SLA ของ HTTP และการเชื่อมต่อเครือข่าย")
-   Container(snmpsim, "SNMP Simulator (ims-snmpsim)", "Python", "จำลองอุปกรณ์ SNMP เซิร์ฟเวอร์และสวิตช์สำหรับการพัฒนาในเครื่อง")
-   Container(archiver, "Observability Archiver (ims-observability-archiver)", "Bash", "บันทึกประวัติสุขภาพและเมทริกซ์เก็บไว้ใน ops-logs เป็นระยะ")
-   Container(db_migrate, "Migration Runner (ims-db-migrate)", "Bash / psql", "คอนเทนเนอร์แบบรันครั้งเดียวสำหรับรันสคริปต์ไมเกรชัน 001 ถึง 091)")
-   Container(sockproxy, "Docker Socket Proxy (ims-docker-socket-proxy)", "HAProxy / Alpine", "จำกัดสิทธิ์การเข้าถึง Docker daemon บนเครือข่ายภายใน ims-docker-api")
-   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "หน้าต่างเว็บจัดการฐานข้อมูล (พอร์ต 127.0.0.1:5050)")
- }
+  subgraph DATA["ข้อมูล · ims-internal"]
+    MIG["db-migrate<br/>รันครั้งเดียว, migration 013–091"]:::app
+    PGB["pgbouncer :5432<br/>SCRAM"]:::app
+    TSDB[("timescaledb :5432<br/>ims · eap_backup")]:::store
+    PGADMIN["pgadmin<br/>127.0.0.1:5050"]:::app
+  end
 
- Rel(user, proxy, "เข้าถึงหน้าจอและ API", "HTTP / พอร์ต 3000")
- Rel(ext_dev, proxy, "ส่งข้อมูล Telemetry ผ่าน HTTP", "POST /ldi-telemetry")
- Rel(nodered, ext_dev, "โพลข้อมูลผ่าน SNMP", "UDP 161")
- Rel(nodered, snmpsim, "โพลข้อมูลอุปกรณ์ SNMP จำลอง", "UDP 161")
+  subgraph MONNET["การเฝ้าระวัง · ims-monitoring"]
+    PROM["prometheus<br/>127.0.0.1:9090"]:::obs
+    AM["alertmanager<br/>127.0.0.1:9093"]:::obs
+    BBOX["blackbox-exporter<br/>127.0.0.1:9115"]:::obs
+  end
 
- Rel(proxy, grafana, "ส่งต่อหน้าเว็บและ API ของ Grafana", "HTTP :3000")
- Rel(proxy, alarm_api, "ส่งต่อ /alarm-api/* (ตรวจสอบสิทธิ์แล้ว)", "HTTP :4000")
- Rel(proxy, twin_3d, "ส่งต่อ /factory-twin-3d/* (ตรวจสอบสิทธิ์แล้ว)", "HTTP :4100")
- Rel(proxy, nodered, "ส่งต่อ /ldi-telemetry และ /inject", "HTTP :1880")
- Rel(proxy, grafana, "ตรวจสอบเซสชันภายใน (/auth-check)", "HTTP :3000")
+  subgraph DOCKERAPI["ims-docker-api · ภายใน ไม่มีทางออก"]
+    ARCH["observability-archiver<br/>อยู่บน ims-internal ด้วย"]:::app
+    SOCK["docker-socket-proxy<br/>endpoint อ่านอย่างเดียว"]:::app
+  end
 
- Rel(grafana, renderer, "ขอเรนเดอร์ภาพพาเนล", "HTTP :8081")
- Rel(grafana, pgbouncer, "คิวรีข้อมูล CAGGs และวิว", "TCP :5432")
- Rel(grafana, timescaledb, "คิวรี eap_backup (drilling-timescaledb)", "TCP :5432")
- Rel(alarm_api, pgbouncer, "อัปเดตสถานะแจ้งเตือน (สิทธิ์ alarm_api_writer)", "TCP :5432")
- Rel(nodered, pgbouncer, "บันทึกข้อมูลแบบชุด (nodered_writer)", "TCP :5432")
- Rel(pgbouncer, timescaledb, "ส่งต่อทรานแซกชัน (SCRAM)", "TCP :5432")
- Rel(db_migrate, timescaledb, "ประมวลผลไมเกรชันฐานข้อมูล 001-091", "TCP :5432")
- Rel(pgadmin, timescaledb, "บริหารจัดการฐานข้อมูล", "TCP :5432")
+  USER -->|"HTTP :3000"| PROXY
+  EDGE -->|"POST /ldi-telemetry"| PROXY
+  EDGE -->|"SNMP v2c"| NR
+  SNMPSIM -->|"SNMP v2c"| NR
+  PROXY --> GRAF
+  PROXY -->|"auth_request /alarm-api/"| ALARM
+  PROXY -->|"auth_request /factory-twin-3d/"| TWIN
+  PROXY -->|"/ldi-telemetry · /inject"| NR
+  GRAF <-->|"ขอ render / callback"| RENDER
+  GRAF -->|"timescaledb"| PGB
+  GRAF -->|"drilling-timescaledb"| TSDB
+  ALARM -->|"alarm_api_writer"| PGB
+  TWIN --> PGB
+  NR -->|"nodered_writer"| PGB
+  ARCH -->|"observability_archiver"| TSDB
+  PGB --> TSDB
+  MIG --> TSDB
+  PGADMIN --> TSDB
+  NR -->|"/metrics"| PROM
+  BBOX -->|"ผลการ probe"| PROM
+  PROM --> AM
+  AM -->|"/alert-webhook"| NR
+  GRAF -->|"/alert-webhook"| NR
+  ARCH -->|"HTTP :2375"| SOCK
 
- Rel(prometheus, nodered, "ดึงเมทริกซ์ไปป์ไลน์", "HTTP :1880/metrics")
- Rel(prometheus, alertmanager, "ส่งเหตุการณ์แจ้งเตือน", "HTTP :9093")
- Rel(prometheus, blackbox, "สั่งโพรบตรวจสอบ HTTP/TCP/ICMP", "HTTP :9115")
- Rel(blackbox, timescaledb, "โพรบการเชื่อมต่อ TCP :5432", "TCP :5432")
- Rel(blackbox, pgbouncer, "โพรบการเชื่อมต่อ TCP :5432", "TCP :5432")
- Rel(alertmanager, nodered, "ส่งเว็บบุ๊กไปยัง /alert-webhook", "HTTP :1880")
- Rel(grafana, nodered, "ส่งการแจ้งเตือนภายในไปที่ /alert-webhook", "HTTP :1880")
-
- Rel(archiver, sockproxy, "อ่านเมทริกซ์และเหตุการณ์ Docker", "HTTP :2375 (ims-docker-api)")
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["บุคคล"]:::actor ~~~ LG_ext["ระบบภายนอก"]:::ext ~~~ LG_ingress["ทางเข้า / เกตเวย์"]:::ingress ~~~ LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["การเฝ้าระวัง"]:::obs
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  SOCK ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -129,65 +183,81 @@ C4Container
 รายละเอียดโมดูลย่อยและการไหลของข้อมูลภายในคอนเทนเนอร์ `ims-node-red`:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-flowchart TD
-  subgraph IngressPoints ["จุดรับคำขอและตัวทริกเกอร์"]
-    TMR["ตัวจับเวลาโพล (ทุก 30 วินาที)"]
-    HTTP_LDI["POST /ldi-telemetry\n(รับผ่าน Nginx เกตเวย์)"]
-    HTTP_INJ["POST /inject\n(เมทริกซ์ทั่วไป)"]
-    AM_HOOK["POST /alert-webhook\n(รับแจ้งเตือนจาก Alertmanager)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 ระดับ 3: องค์ประกอบใน Node-RED
+  accDescr: ไฟล์โฟลว์ทั้ง 5 ไฟล์ใน nodered_data/flows และสิ่งที่แต่ละไฟล์เขียน: การดึง SNMP พร้อม circuit breaker และคิว retry แบบไฟล์ การรับข้อมูล LDI แบบเขียนผ่าน staging ตัวจำลองสองตัว และการส่งการแจ้งเตือน
+
+  subgraph F1["ingestion.json"]
+    T30["Poll Fleet · ทุก 30 วินาที"]:::flow
+    REG["ทะเบียนอุปกรณ์<br/>public.devices · รีเฟรช 5 นาที"]:::flow
+    CB["circuit breaker<br/>เปิดหลังล้มเหลว 2 ครั้ง · พัก 5 นาที"]:::flow
+    FORK["fork_5_ways<br/>CPU · storage · network · temp · LDI"]:::flow
+    PARSER["SRE AIOps Parser v9<br/>state ต่ออุปกรณ์ · บัฟเฟอร์ batch"]:::flow
+    RETRY["คิว retry<br/>/data/retry_queue.json · ระบาย 30 วินาที"]:::flow
+    INJ["POST /inject<br/>ตัวสร้างข้อมูล load test"]:::flow
+    MET["GET /metrics<br/>ims_pipeline_* · ims_circuit_breaker_*"]:::flow
   end
 
-  subgraph SplitFlows ["โมดูลโฟลว์ย่อย (nodered_data/flows/)"]
-    subgraph FlowIngest ["ingestion.json"]
-      REG["แคชทะเบียนอุปกรณ์\n(โหลดจาก public.devices ทุก 5 นาที)"]
-      CB["ระบบตัดวงจร Circuit Breaker\n(สถานะ: CLOSED / OPEN / HALF_OPEN)"]
-      FORK["แยกการโพล fork_5_ways\n(CPU, Net, Storage, Temp, LDI)"]
-      PARSER["พาร์สเซอร์ sre_parser v10\n(เก็บบริบทรายอุปกรณ์, O(N))"]
-      BATCH_SNMP["ตัวสร้าง SQL ชุดข้อมูล SNMP\n(INSERT INTO public.sys_metrics & net_metrics...)"]
-    end
-
-    subgraph FlowLdiIngest ["ldi_ingestion.json"]
-      AUTH_CHK["ตรวจสอบ API Key\n(เทียบกับ INGEST_API_KEY)"]
-      SCHEMA_VAL["ตรวจสอบโครงสร้าง JSON Array\n(ยืนยันสเปก 22 ฟิลด์)"]
-      STAGE_WRITE["การบันทึกลง Staging ล่วงหน้า\n(INSERT INTO public.ingest_staging)"]
-      LDI_WRITE["ตัวบันทึกลงไฮเปอร์เทเบิลแบบชุด\n(INSERT INTO public.ldi_data)"]
-      STAGE_DEL["ลบชุดข้อมูลใน Staging\n(DELETE FROM public.ingest_staging)"]
-      GC["คืนหน่วยความจำชัดเจน\n(flatData.length=0, msg.payload=null)"]
-    end
-
-    subgraph FlowSim ["ldi_simulator.json & ldi_alarm_simulator.json"]
-      SIM_LDI["ตัวจำลองข้อมูลโทรมาตรสด\n(OU Process, 10 เครื่องจักร)"]
-      SIM_ALARM["ระบบจำลองสัญญาณเตือนภัย\n(ประเมินความผิดปกติและฉีดเหตุการณ์)"]
-    end
-
-    subgraph FlowAlerting ["alerting.json"]
-      MSG_FMT["ตัวจัดรูปแบบการแจ้งเตือน\n(สร้าง Adaptive Cards และข้อความ)"]
-      LINE_API["ตัวส่ง LINE Messaging API\n(ส่งข้อความแจ้งเตือนพร้อม Auth Token)"]
-      TEAMS_API["ตัวส่งเว็บบุ๊ก MS Teams\n(POST Adaptive Card)"]
-    end
+  subgraph F2["ldi_ingestion.json"]
+    LPOST["POST /ldi-telemetry"]:::flow
+    AUTH["ตรวจ X-API-Key → 401"]:::flow
+    VAL["JSON array 36 คอลัมน์<br/>ต้องมี eqp_id + log_id → 400 / 413"]:::flow
+    STG["stage batch → 503 เมื่อล้มเหลว"]:::flow
+    INS["insert ldi_data → 502 เมื่อล้มเหลว"]:::flow
+    DONE["ลบแถว staging → 200"]:::flow
   end
 
-  subgraph PersistenceTier ["ระบบฐานข้อมูล"]
-    PGB["PgBouncer (:5432)\nTransaction Pooling | SCRAM-SHA-256"]
-    TSDB[("TimescaleDB (:5432)\npublic.sys_metrics & net_metrics\npublic.ldi_data\npublic.ingest_staging")]
+  subgraph F3["ตัวจำลอง"]
+    SIMLDI["ldi_simulator.json<br/>tick 2 วินาที · แบบจำลอง OU"]:::flow
+    SIMALM["ldi_alarm_simulator.json<br/>tick 10 วินาที · insert ผ่าน staging"]:::flow
   end
 
-  TMR --> REG --> CB --> FORK --> PARSER --> BATCH_SNMP --> PGB
-  HTTP_LDI --> AUTH_CHK --> SCHEMA_VAL --> STAGE_WRITE --> LDI_WRITE --> STAGE_DEL --> GC
-  LDI_WRITE --> PGB
-  STAGE_WRITE --> PGB
-  STAGE_DEL --> PGB
-  HTTP_INJ --> SCHEMA_VAL
+  subgraph F4["alerting.json"]
+    HOOK["POST /alert-webhook"]:::flow
+    BEARER["ตรวจ Bearer token"]:::flow
+    FMT["จัดรูปแบบข้อความ LINE / Teams Adaptive Card"]:::flow
+  end
 
-  SIM_LDI -->|"POST ภายใน"| HTTP_LDI
-  SIM_ALARM --> PGB
+  PGB["PgBouncer :5432 · nodered_writer"]:::app
+  TSDB[("TimescaleDB · ims")]:::store
+  NOTIFY["LINE · MS Teams"]:::notify
+  PROM["Prometheus"]:::obs
 
+  T30 --> REG --> CB --> FORK --> PARSER
+  INJ --> FORK
+  PARSER -->|"sys_metrics · net_metrics · ldi_metrics"| PGB
+  PARSER -.->|"เมื่อ insert ล้มเหลว"| RETRY
+  RETRY -->|"retry สูงสุด 5 ครั้ง"| PGB
+  LPOST --> AUTH --> VAL --> STG --> INS --> DONE
+  STG -->|"ingest_staging"| PGB
+  INS -->|"ldi_data"| PGB
+  SIMLDI -->|"127.0.0.1:1880/ldi-telemetry"| LPOST
+  SIMALM -->|"ingest_staging · ldi_alarm_log · ldi_alarm_lifecycle"| PGB
+  HOOK --> BEARER --> FMT --> NOTIFY
   PGB --> TSDB
+  MET --> PROM
 
-  AM_HOOK --> MSG_FMT
-  MSG_FMT --> LINE_API
-  MSG_FMT --> TEAMS_API
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app ~~~ LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_obs["การเฝ้าระวัง"]:::obs ~~~ LG_notify["การแจ้งเตือน"]:::notify
+    end
+  end
+  PROM ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -197,51 +267,39 @@ flowchart TD
 เส้นทางของข้อมูลการผลิตจากหัวเปิดรับแสงของเครื่องจักร LDI ไปจนถึงการแสดงผลบนหน้าจอแดชบอร์ดแบบ Sub-second:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: การรับข้อมูล LDI แบบเขียนผ่าน staging
+  accDescr: batch จะได้รับการตอบรับหลัง commit แล้วเท่านั้น: Node-RED บันทึกลง ingest_staging ก่อน แล้ว insert ลง ldi_data ลบสำเนา staging และตอบ 200 กรณีล้มเหลวตอบ 400, 401, 413, 503 หรือ 502 และหาก insert ล้มเหลวสำเนา staging จะยังอยู่เพื่อกู้คืน
   autonumber
-  participant Machine as เครื่องจักร LDI
-  participant Proxy as Nginx เกตเวย์ (ims-proxy)
-  participant NodeRed as ระบบรับข้อมูล (ims-node-red)
-  participant PgBouncer as PgBouncer (:5432)
-  participant TimescaleDB as TimescaleDB (:5432)
-  participant Grafana as แดชบอร์ด Grafana (:3000)
-
-  Machine->>Proxy: POST /ldi-telemetry (เพย์โหลด JSON Array + X-API-Key)
-  Proxy->>Proxy: จำกัดอัตราส่ง (rate=50r/s burst=100 nodelay)
-  Proxy->>NodeRed: ส่งต่อคำขอไปยัง :1880/ldi-telemetry ภายใน
-  NodeRed->>NodeRed: ตรวจสอบความถูกต้องของ API Key และสคีมา Array 22 ฟิลด์
-
-  alt การตรวจสอบข้อมูลล้มเหลว
-    NodeRed-->>Proxy: 400 Bad Request ("Payload must be a JSON array")
-    Proxy-->>Machine: 400 Bad Request
-  else การตรวจสอบข้อมูลผ่าน
-    NodeRed->>PgBouncer: บันทึกลง Staging ล่วงหน้า: INSERT INTO public.ingest_staging
-    PgBouncer->>TimescaleDB: บันทึกข้อมูลแถว Staging
-    alt บันทึก Staging ล้มเหลว
-      NodeRed-->>Proxy: 503 Service Unavailable ("Staging failed, batch not accepted")
-      Proxy-->>Machine: 503 Service Unavailable
-    else บันทึก Staging สำเร็จ
-      NodeRed->>PgBouncer: บันทึกแบบชุดลงไฮเปอร์เทเบิล: INSERT INTO public.ldi_data
-      PgBouncer->>TimescaleDB: บันทึกลงในไฮเปอร์เทเบิล public.ldi_data
-      alt บันทึกลงไฮเปอร์เทเบิลล้มเหลว
-        NodeRed-->>Proxy: 502 Bad Gateway (ข้อมูล Staging ถูกเก็บไว้เพื่อรอลองใหม่)
-        Proxy-->>Machine: 502 Bad Gateway
-      else บันทึกลงไฮเปอร์เทเบิลสำเร็จ
-        NodeRed->>PgBouncer: DELETE FROM public.ingest_staging WHERE id = staged_id
-        NodeRed->>NodeRed: คืนหน่วยความจำทันที (flatData.length = 0, msg.payload = null)
-        NodeRed-->>Proxy: 200 OK {"status": "success", "inserted": count}
-        Proxy-->>Machine: 200 OK
+  participant M as เครื่อง LDI
+  participant P as nginx (ims-proxy)
+  participant N as ldi_ingestion.json
+  participant B as PgBouncer
+  participant T as TimescaleDB
+  M->>P: POST /ldi-telemetry · X-API-Key · JSON array
+  Note over P: จำกัด 50 r/s ต่อ client, burst 100
+  P->>N: ส่งต่อไป node-red:1880
+  alt key ผิด / body ผิด / แถวเกิน
+    N-->>M: 401 · 400 · 413
+  else batch ถูกต้อง
+    N->>B: INSERT INTO ingest_staging RETURNING id
+    B->>T: เขียน batch ที่ stage
+    alt staging ล้มเหลว
+      N-->>M: 503 · ไม่รับข้อมูล
+    else stage แล้ว
+      N->>B: INSERT INTO ldi_data … ON CONFLICT DO NOTHING
+      B->>T: เขียนแถว (เวลาจากต้นทาง)
+      alt insert ล้มเหลว
+        N->>B: UPDATE ingest_staging SET attempts + 1
+        N-->>M: 502 · เก็บสำเนา staging ไว้
+      else commit แล้ว
+        N->>B: DELETE FROM ingest_staging WHERE id
+        N-->>M: 200 OK
       end
     end
   end
-
-  Note over TimescaleDB: ระบบ Continuous Aggregate คำนวณสรุปผลอัตโนมัติ
-  TimescaleDB->>TimescaleDB: สรุปผลล่วงหน้าลงใน public.ldi_data_15m
-
-  Grafana->>PgBouncer: SELECT bucket AS time, avg_temperature FROM ldi_data_15m
-  PgBouncer->>TimescaleDB: ประมวลผลคิวรีเชิงวิเคราะห์
-  TimescaleDB-->>Grafana: ส่งคืนแถวข้อมูลสรุปในเวลาเสี้ยววินาที
-  Grafana-->>Grafana: เรนเดอร์เส้นกราฟบน Cyberpunk HUD
+  Note over T: CAGG policy รีเฟรช ldi_data_1m ทุกนาที
 ```
 
 ---
@@ -251,39 +309,33 @@ sequenceDiagram
 ขั้นตอนการทำงานตั้งแต่ระบบตรวจพบความผิดปกติ การรับทราบโดยโอเปอเรเตอร์ จนถึงการแก้ไขปัญหาเสร็จสิ้น:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: การ acknowledge และ resolve alarm
+  accDescr: ผู้ปฏิบัติงาน acknowledge และวิศวกร resolve alarm จาก Alarm Console โดย nginx ตรวจ session ของ Grafana ก่อนที่ alarm-api จะอัปเดต ldi_alarm_lifecycle และผู้กระทำคือผู้ที่ล็อกอินใน session เสมอ
   autonumber
-  actor Operator as โอเปอเรเตอร์ NOC
-  actor Engineer as วิศวกรซ่อมบำรุง
-  participant Browser as เว็บบราวเซอร์
-  participant Proxy as Nginx เกตเวย์ (:3000)
-  participant AlarmAPI as Alarm API (ims-alarm-api :4000)
-  participant DB as TimescaleDB (public.ldi_alarm_lifecycle)
-
-  Note over DB: ระบบ Telemetry ตรวจพบค่าหลุดสเปก (สถานะ: OPEN)
-
-  Operator->>Browser: เปิดหน้าจอ "IMS LDI - Alarm Console"
-  Browser->>Proxy: GET /d/ims-ldi-alarm-console
-  Proxy->>Browser: ส่งหน้าแดชบอร์ดพร้อมรายการแจ้งเตือนสถานะ OPEN
-
-  Operator->>Browser: กดปุ่ม "Acknowledge" ที่การแจ้งเตือน LOG-10001
-  Browser->>Proxy: POST /alarm-api/alarms/ack (แนบเซสชัน Cookie)
-  Proxy->>Proxy: ตรวจสอบสิทธิ์ย่อย GET /auth-check ไปยัง Grafana (200 OK)
-  Proxy->>AlarmAPI: ส่งต่อ POST /alarms/ack {"logdate_ms": 1790568000000, "logid": "LOG-10001"}
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by=session.user WHERE status='OPEN'
-  DB-->>AlarmAPI: อัปเดตข้อมูลสำเร็จ (ส่งคืน 1 แถว)
-  AlarmAPI-->>Proxy: 200 OK (ส่งคืนข้อมูล JSON ที่อัปเดต)
-  Proxy-->>Browser: 200 OK (แดชบอร์ดเปลี่ยนสีสถานะเป็นสีส้ม Amber)
-
-  Note over Engineer: วิศวกรเข้าตรวจหน้างานและเปลี่ยนแผ่นกรองอากาศ
-  Engineer->>Browser: กดปุ่ม "Resolve" พร้อมกรอกบันทึกการแก้ไขปัญหา
-  Browser->>Proxy: POST /alarm-api/alarms/resolve {"logid": "LOG-10001", "resolved_by": "engineer-02", "resolution_note": "เปลี่ยนไส้กรอง"}
-  Proxy->>Proxy: ตรวจสอบสิทธิ์เซสชันผ่าน GET /auth-check (200 OK)
-  Proxy->>AlarmAPI: ส่งต่อ POST /alarms/resolve
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by=session.user, resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
-  DB-->>AlarmAPI: อัปเดตข้อมูลสำเร็จ
-  AlarmAPI-->>Proxy: 200 OK
-  Proxy-->>Browser: 200 OK (แดชบอร์ดแสดงสถานะแก้ไขแล้วเป็นสีเขียว Green)
+  actor O as ผู้ปฏิบัติงาน / วิศวกร
+  participant P as nginx
+  participant G as Grafana /api/user
+  participant A as alarm-api
+  participant D as ldi_alarm_lifecycle
+  Note over D: แถว alarm ใหม่เริ่มที่ OPEN (trigger)
+  O->>P: POST /alarm-api/alarms/ack · {logdate_ms, logid}
+  P->>G: auth_request · session cookie
+  alt ไม่มี session ที่ถูกต้อง
+    P-->>O: 401
+  else บทบาท Viewer
+    A-->>O: 403
+  else Editor / Admin
+    P->>A: ส่งต่อ + ชื่อผู้ใช้ของ session
+    A->>D: UPDATE … SET status = 'ACKNOWLEDGED' WHERE status = 'OPEN'
+    A-->>O: 200 · หรือ 409 ถ้าไม่ใช่ OPEN
+  end
+  O->>P: POST /alarm-api/alarms/resolve · {logdate_ms, logid, resolution_note}
+  P->>G: auth_request
+  P->>A: ส่งต่อ
+  A->>D: UPDATE … SET status = 'RESOLVED' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
+  A-->>O: 200 · หรือ 409 ถ้า RESOLVED แล้ว
 ```
 
 ---
@@ -293,46 +345,42 @@ sequenceDiagram
 ปกป้องสวิตช์เครือข่ายจากการส่งข้อมูลท่วมท้นเมื่ออุปกรณ์ปลายทางไม่ตอบสนอง:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: Circuit breaker ของ SNMP
+  accDescr: การ poll ทุก 30 วินาทีตรวจ breaker ของแต่ละอุปกรณ์ที่เก็บใน flow context ของ Node-RED: ล้มเหลวติดกัน 2 ครั้งจะเปิด breaker, breaker ที่เปิดจะข้ามอุปกรณ์ และหลัง 5 นาที poll ครั้งถัดไปจะเป็น probe หนึ่งครั้งเพื่อปิดหรือเปิด breaker อีกครั้ง
   autonumber
-  participant Timer as ตัวกำหนดเวลา Node-RED (ทุก 30 วินาที)
-  participant Walker as ตัวดึงข้อมูล SNMP Bulk Walker
-  participant Breaker as สถานะ Circuit Breaker
-  participant Target as อุปกรณ์ปลายทาง (ไม่ตอบสนอง)
-  participant DB as TimescaleDB (circuit_breaker_events)
-
-  Timer->>Walker: เริ่มรอบการดึงข้อมูลตามกำหนดเวลา
-  Walker->>Breaker: ตรวจสอบสถานะอุปกรณ์สำหรับ "SW-CORE-01"
-
-  alt สถานะ Breaker คือ CLOSED (ปกติ)
-    Walker->>Target: ส่งคำขอ SNMP GETBULK (UDP 161)
-    Target--xWalker: หมดเวลา (ไม่ตอบสนองภายใน 5000ms)
-    Walker->>Breaker: บันทึกความล้มเหลว (failureCount++)
-
-    alt failureCount < 2
-      Breaker-->>Walker: สถานะยังคงเป็น CLOSED (ลองใหม่รอบหน้า)
-    else failureCount >= 2
-      Breaker->>Breaker: เปลี่ยนสถานะ -> OPEN (ตัดวงจร)
-      Breaker->>DB: บันทึกสถานะโหนด = OFFLINE (ส่งค่าศูนย์ทันที)
-      Note over Breaker: เริ่มจับเวลา Cooldown 300 วินาที (5 นาที)
+  participant T as Poll Fleet (30 s)
+  participant C as breaker · flow context cb_DEVICE
+  participant W as SNMP walker
+  participant D as อุปกรณ์
+  participant P as Parser v9
+  T->>C: checkDevice()
+  alt CLOSED
+    C-->>W: อนุญาต
+    W->>D: GETBULK (UDP 161, timeout 6000 ms)
+    alt มีการตอบกลับ
+      D-->>W: varbinds
+      W->>C: recordSuccess() · failures = 0
+      W->>P: metrics → batch insert
+    else หมดเวลา
+      W->>C: recordFailure() · failures + 1
+      Note over C: ล้มเหลวครั้งที่ 2 ติดกัน → OPEN, trips + 1
+      W->>P: offline heartbeat → metrics เป็นศูนย์
     end
-
-  else สถานะ Breaker คือ OPEN (วงจรถูกตัด)
-    Breaker-->>Walker: ระงับการดึงข้อมูล (ป้องกันทราฟฟิกล้นเครือข่าย)
-    Note over Walker: ข้ามการส่ง SNMP - คงค่าเมตริกศูนย์ที่ปลอดภัย
-
-  else หมดเวลา Cooldown: เปลี่ยนสถานะเป็น HALF_OPEN (โหมดทดสอบ)
-    Breaker->>Walker: อนุญาตคำขอโพรบ SNMP ขนาดเล็ก 1 ครั้ง
-    Walker->>Target: ส่งคำขอทดสอบ GET
-    alt โพรบสำเร็จ
-      Target-->>Walker: ตอบกลับ SNMP ถูกต้อง
-      Walker->>Breaker: รีเซ็ต failureCount = 0 - เปลี่ยนสถานะ -> CLOSED
-      Breaker->>DB: บันทึกสถานะโหนด = ONLINE
-    else โพรบล้มเหลว
-      Target--xWalker: หมดเวลา
-      Walker->>Breaker: ตัดวงจรซ้ำ -> OPEN - เริ่มจับเวลา Cooldown 300 วินาทีใหม่
+  else OPEN ยังไม่ถึง 5 นาที
+    C-->>T: ข้ามอุปกรณ์รอบนี้
+  else OPEN ครบ 5 นาที
+    C->>C: HALF_OPEN
+    C-->>W: อนุญาต probe หนึ่งครั้ง
+    W->>D: GETBULK
+    alt probe สำเร็จ
+      W->>C: recordSuccess() → CLOSED
+    else probe ล้มเหลว
+      W->>C: recordFailure() → OPEN
     end
   end
+  Note over C: ส่งออกเป็น ims_circuit_breaker_state / _trips_total ที่ GET /metrics
 ```
 
 ---
@@ -340,36 +388,52 @@ sequenceDiagram
 ## 7. ลำดับชั้นการจัดเก็บข้อมูลและการรวมผลต่อเนื่อง (TimescaleDB Topology)
 
 ```mermaid
-flowchart TD
-  subgraph Ingestion ["ระดับการนำเข้าข้อมูลดิบ"]
-    RAW_LDI["public.ldi_data\n(ไฮเปอร์เทเบิล, ก้อนข้อมูลละ 1 วัน)"]
-    RAW_INFRA["public.sys_metrics และ net_metrics\n(ไฮเปอร์เทเบิล, ก้อนข้อมูลละ 1 วัน)"]
-    RAW_ALARM["public.ldi_alarm_log\n(ไฮเปอร์เทเบิล, ก้อนข้อมูลละ 7 วัน)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: Hypertable, continuous aggregate และ retention
+  accDescr: Hypertable ข้อมูลดิบป้อน continuous aggregate 7 ตัว แต่ละกล่องแสดงรอบการรีเฟรชและ retention ตามที่ตั้งไว้ในฐานข้อมูลจริง โดย aggregate รายชั่วโมงของโครงสร้างพื้นฐาน 3 ตัวไม่มี retention policy
+
+  subgraph RAW["Hypertable ข้อมูลดิบ"]
+    LDI[("ldi_data<br/>chunk 1 วัน · บีบอัดหลัง 7 วัน · เก็บ 180 วัน")]:::store
+    INF[("sys_metrics · net_metrics · ldi_metrics<br/>chunk 1 วัน · บีบอัดหลัง 7 วัน · เก็บ 30 วัน")]:::store
+    ALM[("ldi_alarm_log<br/>chunk 7 วัน · เก็บ 365 วัน")]:::store
   end
 
-  subgraph CAGG_Tier1 ["ระดับ 1: สรุปข้อมูลความถี่สูง (High-Frequency Rollups)"]
-    CAGG_1M["public.ldi_data_1m\n(รีเฟรชทุก 1 นาที ขอบเขตย้อนหลัง 1 ชม.)"]
-    CAGG_15M["public.ldi_data_15m\n(รีเฟรชทุก 15 นาที)\nขับเคลื่อน Manufacturing และ Command Center"]
+  subgraph LDICAGG["Aggregate ของ LDI"]
+    C1M[("ldi_data_1m<br/>ทุก 1 นาที · หน้าต่าง 2 ชม. · เก็บ 30 วัน")]:::store
+    C15[("ldi_data_15m<br/>ทุก 15 นาที · หน้าต่าง 3 ชม. · เก็บ 90 วัน")]:::store
+    C1H[("ldi_data_1h<br/>ทุก 1 ชม. · หน้าต่าง 1 วัน · เก็บ 2 ปี")]:::store
+    CHR[("ldi_data_hourly<br/>ทุก 1 ชม. · หน้าต่าง 3 วัน · real-time · เก็บ 2 ปี")]:::store
   end
 
-  subgraph CAGG_Tier2 ["ระดับ 2: สรุปข้อมูลรายชั่วโมง (Hourly Rollups)"]
-    CAGG_1H["public.ldi_data_1h และ ldi_data_hourly\n(รีเฟรชทุก 1 ชม.)\nขับเคลื่อน SPC และการวิเคราะห์แนวโน้ม"]
-    INFRA_HOURLY["public.sys_hourly และ net_hourly\n(สรุปข้อมูลโครงสร้างพื้นฐานรายชั่วโมง)"]
+  subgraph INFCAGG["Aggregate ของโครงสร้างพื้นฐาน"]
+    SH[("sys_hourly · net_hourly · ldi_hourly<br/>ทุก 30 นาที · หน้าต่าง 6 ชม. · ไม่มี retention policy")]:::store
   end
 
-  subgraph Retention ["นโยบายการเก็บรักษาข้อมูล (ตรวจสอบจากระบบจริง)"]
-    RET_RAW["ข้อมูลดิบ: 30 วัน (โครงสร้างพื้นฐาน) / 180 วัน (LDI)"]
-    RET_HOURLY["ข้อมูลสรุปรายชั่วโมง: 2 ปี"]
-    RET_ALARM["ประวัติการแจ้งเตือน: 365 วัน"]
+  LDI --> C1M --> C15 --> C1H
+  LDI --> CHR
+  INF --> SH
+
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_store["ที่เก็บข้อมูล"]:::store
+    end
   end
-
-  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
-  RAW_INFRA --> INFRA_HOURLY
-
-  RAW_LDI -.-> RET_RAW
-  RAW_INFRA -.-> RET_RAW
-  RAW_ALARM -.-> RET_ALARM
-  CAGG_1H -.-> RET_HOURLY
+  SH ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -379,45 +443,67 @@ flowchart TD
 แดชบอร์ด Grafana ทั้ง 22 ตัวถูกจัดหมวดหมู่อย่างเป็นระเบียบตาม 4 แผนกงาน:
 
 ```mermaid
-flowchart LR
-  subgraph D1 ["01. แผนกเจาะแผงวงจร CNC (4 แดชบอร์ด)"]
-    DR1["Fleet Overview"]
-    DR2["Shift Production"]
-    DR3["Machine Investigation"]
-    DR4["Anomaly Analysis"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: แดชบอร์ดที่ provision ทั้ง 22 ตัวแยกตามโฟลเดอร์
+  accDescr: โฟลเดอร์ Grafana 4 โฟลเดอร์พร้อมชื่อและ UID ของแดชบอร์ด โดย Drilling และ VCP อ่านฐานข้อมูล eap_backup ผ่าน data source drilling-timescaledb ส่วน LDI และ Platform อ่านฐานข้อมูล ims ผ่าน PgBouncer
+  EAP[("eap_backup · drilling-timescaledb")]:::store
+  IMS[("ims · timescaledb ผ่าน PgBouncer")]:::store
+  subgraph DRL["01 · Drilling (CNC)"]
+    DRL0["01 Fleet Digital Twin & Overview<br/><code>001</code>"]:::viz
+    DRL1["02 Shift Production & OEE Tracking<br/><code>ims-drilling-history</code>"]:::viz
+    DRL2["03 Machine Investigation & Spindle Diagnostics<br/><code>ims-drilling-machine-detail</code>"]:::viz
+    DRL3["04 Fleet Anomaly & Root Cause Analysis<br/><code>ims-drilling-5-anomaly</code>"]:::viz
   end
-
-  subgraph D2 ["02. แผนกเปิดรับแสง LDI (10 แดชบอร์ด)"]
-    LDI1["Manufacturing Command Center"]
-    LDI2["Operator Andon Board"]
-    LDI3["Alarm Console"]
-    LDI4["Alarm Response (MTTA/MTTR)"]
-    LDI5["Alarm Dictionary"]
-    LDI6["Factory Digital Twin (Canvas)"]
-    LDI7["Engineering Analytics & SPC"]
-    LDI8["Machine Snapshot"]
-    LDI9["Data Readiness Gaps"]
-    LDI10["Easy Overview"]
+  EAP --> DRL
+  subgraph VCP["04 · การชุบ (VCP)"]
+    VCP0["01 Plating Fleet Overview & Process Analytics<br/><code>ims-vcp-overview</code>"]:::viz
+    VCP1["02 Plating Line Operations Console<br/><code>ims-vcp-operations-console</code>"]:::viz
+    VCP2["03 Real-Time Plating Line Wall Display<br/><code>ims-vcp-realtime-wall</code>"]:::viz
   end
-
-  subgraph D3 ["03. โครงสร้างพื้นฐานและศูนย์ NOC (5 แดชบอร์ด)"]
-    NOC1["NOC Overview"]
-    NOC2["Engineering Drill-Down"]
-    NOC3["AIOps Capacity Forecast"]
-    NOC4["Pipeline Ingestion Latency"]
-    NOC5["Meta-Monitoring & Health"]
+  EAP --> VCP
+  subgraph LDI["02 · Lithography (LDI)"]
+    LDI0["01 Fleet Executive Overview<br/><code>ims-easy-overview</code>"]:::viz
+    LDI1["02 Operator Andon Board (Shopfloor Kiosk)<br/><code>ims-ldi-operator-andon</code>"]:::viz
+    LDI2["03 Factory 3D Digital Twin & Spatial Layout<br/><code>ims-ldi-factory-digital-twin</code>"]:::viz
+    LDI3["04 Manufacturing Fleet Command Center<br/><code>ims-ldi-manufacturing</code>"]:::viz
+    LDI4["05 Machine Deep-Dive Snapshot<br/><code>ims-ldi-machine-snapshot</code>"]:::viz
+    LDI5["06 Process Engineering Analytics & SPC<br/><code>ims-ldi-engineering-analytics</code>"]:::viz
+    LDI6["07 Live Alarm Management Console<br/><code>ims-ldi-alarm-console</code>"]:::viz
+    LDI7["08 Alarm Response Metrics & MTTA/MTTR<br/><code>ims-ldi-alarm-response</code>"]:::viz
+    LDI8["09 Alarm Code Dictionary & Corrective Actions<br/><code>ims-ldi-alarm-dictionary</code>"]:::viz
+    LDI9["10 Telemetry Signal Quality & Integration Readiness<br/><code>ldi-data-readiness</code>"]:::viz
   end
-
-  subgraph D4 ["04. แผนกชุบแผ่น VCP (3 แดชบอร์ด)"]
-    VCP1["VCP Overview"]
-    VCP2["Operations Console"]
-    VCP3["Real-Time Wall"]
+  IMS --> LDI
+  subgraph PLT["03 · Platform และ NOC"]
+    PLT0["01 Network Operations Center (NOC) Overview<br/><code>ims-noc-overview</code>"]:::viz
+    PLT1["02 Host & Network Infrastructure Engineering Drill-Down<br/><code>ims-engineering</code>"]:::viz
+    PLT2["03 AIOps Predictive Capacity & Resource Forecasting<br/><code>ims-capacity</code>"]:::viz
+    PLT3["04 Ingestion Pipeline Latency & Telemetry SLO<br/><code>ims-ingestion-latency</code>"]:::viz
+    PLT4["05 Pipeline Reliability & SRE Meta-Monitoring<br/><code>ims-meta-monitoring</code>"]:::viz
   end
+  IMS --> PLT
 
-  style D1 fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
-  style D2 fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
-  style D3 fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
-  style D4 fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_viz["Grafana / UI"]:::viz
+    end
+  end
+  PLT ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

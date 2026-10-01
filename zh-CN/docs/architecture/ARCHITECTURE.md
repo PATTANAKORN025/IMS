@@ -26,40 +26,84 @@
 IMS 是一个 Docker Compose 栈，包含**两条相互独立的遥测流水线**，共同写入同一个 TimescaleDB，通过 **22 个 Grafana 仪表板**进行可视化，并同时借助 Grafana 原生告警引擎与 Prometheus/Alertmanager 发出告警。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
- subgraph LDI ["LDI 制造遥测流水线 (主要，生产级)"]
-  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck 实时模拟器\n2s 周期, 10 台机台"] -->|"HTTP POST /ldi-telemetry"| PROXY["Nginx Proxy :3000\n限流与反向代理"]
-  PROXY --> ING["ldi_ingestion.json\n鉴权检查 -> INSERT"]
-  ING --> LDIDATA[("public.ldi_data\n超表，1 天数据块")]
-  ALMSIM["ldi_alarm_simulator.json\n条件驱动 + 噪声\n10s 周期"] --> ALARMLOG[("public.ldi_alarm_log")]
-  ALARMAPI["ims-alarm-api :4000\n确认与解决状态流转"] --> ALARMLC[("public.ldi_alarm_lifecycle")]
- end
+  accTitle: IMS 遥测管道
+  accDescr: LDI 管道（HTTP，先写 staging）与 SNMP 基础设施管道写入 TimescaleDB；钻孔与 VCP 数据位于独立的 eap_backup 数据库；两套告警引擎都经 Node-RED webhook 投递。
 
- subgraph LEGACY ["传统 SNMP / 基础设施流水线"]
-  DEV["2 台真实服务器\n+ SNMP 模拟器"] -->|"SNMP v2c, 30s 轮询"| NR["ingestion.json\nfork_5_ways 采集器 -> sre_parser"]
-  NR --> SNMPDATA[("public.sys_metrics & net_metrics\n超表，1 天数据块")]
- end
+  subgraph LDI["LDI 生产管道"]
+    LDIM["LDI 机台"]:::ext
+    SIM["ldi_simulator.json<br/>OU 模型 · 10 台 · 2 秒"]:::flow
+    PROXY["nginx :3000<br/>50 r/s，突发 100"]:::ingress
+    ING["ldi_ingestion.json<br/>API key → 校验 → staging → 写入"]:::flow
+    LDIDATA[("public.ldi_data<br/>hypertable · 1 天分块")]:::store
+    ALMSIM["ldi_alarm_simulator.json<br/>条件驱动 + 噪声 · 10 秒"]:::flow
+    ALARMLOG[("public.ldi_alarm_log")]:::store
+    ALARMAPI["alarm-api :4000"]:::app
+    ALARMLC[("public.ldi_alarm_lifecycle")]:::store
+  end
 
- subgraph EAP ["设备集成 (数控钻孔与 VCP 电镀)"]
-  MOCK["eap-mock-data.js\n合成数据生成器"] --> EAPDB[("eap_backup DB\nmachine_event, vcp_upp")]
- end
+  subgraph INFRA["SNMP 基础设施管道"]
+    DEV["服务器、交换机<br/>SNMP 模拟器"]:::ext
+    NR["ingestion.json<br/>fork_5_ways → 解析器 v9"]:::flow
+    SNMPDATA[("sys_metrics · net_metrics · ldi_metrics")]:::store
+  end
 
- LDIDATA --> GRAFANA["Grafana 13\n覆盖 4 大业务领域的 22 个仪表板"]
- ALARMLOG --> GRAFANA
- ALARMLC --> GRAFANA
- SNMPDATA --> GRAFANA
- EAPDB --> GRAFANA
- NR -->|"指标接口 /metrics"| PROM["Prometheus"]
- BBOX["Blackbox Exporter"] --> PROM
- GRAFANA -->|"原生告警规则"| NRWEBHOOK["Node-RED /alert-webhook"]
- PROM --> AM["Alertmanager"] --> NRWEBHOOK
- NRWEBHOOK --> LINE["LINE Messaging API"]
- NRWEBHOOK --> TEAMS["MS Teams webhook"]
+  subgraph EAP["钻孔与 VCP"]
+    EAPDB[("eap_backup<br/>machine_event · vcp_upp")]:::store
+  end
 
- style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
- style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
- style EAP fill:#1e293b,stroke:#3B82F6,color:#e2e8f0
+  GRAFANA["Grafana 13<br/>22 个仪表板 · 4 个文件夹"]:::viz
+  PROM["Prometheus"]:::obs
+  BBOX["Blackbox exporter"]:::obs
+  AM["Alertmanager"]:::obs
+  HOOK["alerting.json<br/>/alert-webhook"]:::flow
+  NOTIFY["LINE · MS Teams"]:::notify
+
+  LDIM -->|"POST /ldi-telemetry"| PROXY --> ING
+  SIM -->|"127.0.0.1:1880"| ING
+  ING --> LDIDATA
+  ALMSIM -->|"读取最新遥测"| LDIDATA
+  ALMSIM --> ALARMLOG
+  ALARMAPI --> ALARMLC
+  DEV -->|"SNMP v2c · 30 s"| NR --> SNMPDATA
+  LDIDATA --> GRAFANA
+  ALARMLOG --> GRAFANA
+  ALARMLC --> GRAFANA
+  SNMPDATA --> GRAFANA
+  EAPDB -->|"drilling-timescaledb"| GRAFANA
+  NR -->|"/metrics"| PROM
+  BBOX --> PROM
+  PROM --> AM --> HOOK
+  GRAFANA -->|"告警规则"| HOOK
+  HOOK --> NOTIFY
+
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["外部系统"]:::ext ~~~ LG_ingress["入口 / 网关"]:::ingress ~~~ LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app ~~~ LG_store["数据存储"]:::store
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["监控"]:::obs ~~~ LG_notify["通知"]:::notify
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 **为何存在两条流水线：**

@@ -26,73 +26,87 @@
 ## 1. ภาพรวมสถาปัตยกรรมไปป์ไลน์ข้อมูลแบบหลายโดเมน (Pipeline Topology)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
-  subgraph SOURCES["1. แหล่งกำเนิดข้อมูลโทรมาตรอุตสาหกรรม"]
-    SNMP_DEV["เซิร์ฟเวอร์ / สวิตช์เครือข่าย\n(SNMP v2c, ดึงข้อมูลทุก 30s)"]
-    LDI_DEV["เครื่องจักร LDI Photolithography\n(HTTP POST /ldi-telemetry, ทุก 2s)"]
-    DRL_DEV["เครื่องเจาะ CNC Drilling\n(สัญญาณเหตุการณ์และรอบการทำงาน)"]
-    VCP_DEV["สายชุบโลหะด้วยไฟฟ้า VCP\n(เซนเซอร์และบันทึกอุณหภูมิอ่าง)"]
+  accTitle: การไหลของข้อมูลตั้งแต่ต้นจนจบ
+  accDescr: ข้อมูล SNMP และ LDI เข้าผ่าน Node-RED และ PgBouncer สู่ฐานข้อมูล ims โดย ingest_staging ปกป้อง batch ของ LDI และมี continuous aggregate กับการบีบอัดทำงานอยู่ ข้อมูล Drilling และ VCP อยู่ใน eap_backup Grafana อ่านทั้งสองฐานข้อมูล และการแจ้งเตือนออกผ่าน Node-RED
+
+  SNMP["เซิร์ฟเวอร์ · สวิตช์<br/>SNMP v2c, poll ทุก 30 วินาที"]:::ext
+  LDIM["เครื่อง LDI<br/>POST /ldi-telemetry"]:::ext
+  EAPSRC["ฐานข้อมูล EAP ของโรงงาน<br/>Drilling · VCP"]:::ext
+
+  NRS["ingestion.json<br/>fork_5_ways → Parser v9"]:::flow
+  NRL["ldi_ingestion.json<br/>ตรวจสอบ → stage → insert"]:::flow
+  PGB["PgBouncer :5432<br/>transaction pool · SCRAM"]:::app
+
+  subgraph IMSDB["ฐานข้อมูล ims"]
+    STG[("ingest_staging<br/>ตาราง write-ahead")]:::store
+    HSYS[("sys_metrics · net_metrics · ldi_metrics<br/>hypertable, chunk 1 วัน")]:::store
+    HLDI[("ldi_data<br/>hypertable, chunk 1 วัน")]:::store
+    HALM[("ldi_alarm_log<br/>hypertable, chunk 7 วัน")]:::store
+    CAGG[("continuous aggregate<br/>ldi_data_1m → 15m → 1h · *_hourly")]:::store
+    COMP[("chunk ที่บีบอัดหลัง 7 วัน<br/>segment by eqp_id · device_id")]:::store
+  end
+  subgraph EAPDB["ฐานข้อมูล eap_backup"]
+    EDRL[("machine_event · agent_log")]:::store
+    EVCP[("vcp_upp · vcp_alarm · vcp_status_change")]:::store
   end
 
-  subgraph INGESTION["2. ชั้นการรับและแปลงข้อมูล (Node-RED Ingestion Tier)"]
-    NR_INFRA["ingestion.json\nfork_5_ways -> sre_parser v10"]
-    NR_LDI["ldi_ingestion.json\nตรวจสอบ Schema, Staging, คืนหน่วยความจำ O(1) GC"]
-  end
+  GRAF["Grafana · 22 แดชบอร์ด"]:::viz
+  PROM["Prometheus → Alertmanager"]:::obs
+  HOOK["alerting.json · /alert-webhook"]:::flow
+  NOTIFY["LINE · MS Teams"]:::notify
 
-  subgraph POOL["3. ชั้นจัดการการเชื่อมต่อฐานข้อมูล (Connection Pooling)"]
-    PGB["PgBouncer\n(โหมด Transaction, พอร์ต 5432, AUTH: scram-sha-256)"]
-  end
+  SNMP --> NRS
+  LDIM --> NRL
+  NRS -->|"nodered_writer"| PGB
+  NRL -->|"nodered_writer"| PGB
+  PGB --> STG
+  PGB --> HSYS
+  PGB --> HLDI
+  PGB --> HALM
+  HLDI --> CAGG
+  HSYS --> CAGG
+  HLDI --> COMP
+  HSYS --> COMP
+  EAPSRC -.->|"สำเนาที่กู้คืน"| EDRL
+  EAPSRC -.-> EVCP
+  CAGG --> GRAF
+  HLDI --> GRAF
+  HALM --> GRAF
+  EDRL -->|"drilling-timescaledb"| GRAF
+  EVCP -->|"drilling-timescaledb"| GRAF
+  NRS -->|"/metrics"| PROM
+  PROM --> HOOK
+  GRAF -->|"กฎแจ้งเตือน"| HOOK
+  HOOK --> NOTIFY
 
-  subgraph STORAGE["4. ชั้นจัดเก็บข้อมูล TimescaleDB (สคีมา public เท่านั้น)"]
-    subgraph HYPER["ตาราง Hypertables ข้อมูลดิบ (แบ่ง Chunk ละ 1 วัน)"]
-      HT_SYS[("sys_metrics & net_metrics")]
-      HT_LDI[("ldi_data & ldi_alarm_log")]
-      HT_STG[("ingest_staging")]
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["ระบบภายนอก"]:::ext ~~~ LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app ~~~ LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_viz["Grafana / UI"]:::viz
     end
-    subgraph EAP_DB["ฐานข้อมูลสำรอง: eap_backup"]
-      EAP_DRL[("machine_event & agent_log")]
-      EAP_VCP[("vcp_upp, vcp_alarm, vcp_status_change")]
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_obs["การเฝ้าระวัง"]:::obs ~~~ LG_notify["การแจ้งเตือน"]:::notify
     end
-    subgraph CAGGS["ตารางสรุปผลรวมต่อเนื่อง (Continuous Aggregates)"]
-      CAGG_1M[("สรุปผลรวมราย 1 นาที (ldi_data_1m)")]
-      CAGG_15M[("สรุปผลรวมราย 15 นาที (ldi_data_15m)")]
-      CAGG_1H[("สรุปผลรวมราย 1 ชั่วโมง & ldi_data_hourly")]
-    end
-    subgraph COMPRESS["การบีบอัดข้อมูลแบบ Columnar"]
-      COL[("บีบอัดข้อมูล Chunks ที่เก่าเกิน 7 วัน\nจัดกลุ่มตาม machine_id / device_id")]
-    end
+    LEGEND_0 ~~~ LEGEND_1
   end
-
-  subgraph DISPATCH["5. ชั้นการแสดงผลและการแจ้งเตือน (Visualization & Alerting)"]
-    GRAF["Grafana (22 แดชบอร์ด)\nUI มาตรฐาน Grid-24, คิวรีรวดเร็วในเสี้ยววินาที"]
-    PROM["Prometheus Scraper"]
-    AM["Alertmanager Engine"]
-    WH["Node-RED /alert-webhook"]
-    NOTIF["LINE Messaging API & MS Teams"]
-  end
-
-  SNMP_DEV --> NR_INFRA
-  LDI_DEV --> NR_LDI
-  DRL_DEV -.->|"ซิงค์ตรง"| EAP_DRL
-  VCP_DEV -.->|"ซิงค์ตรง"| EAP_VCP
-
-  NR_INFRA -->|"ส่ง Batch SQL (nodered_writer)"| PGB
-  NR_LDI -->|"Staging และ Batch (nodered_writer)"| PGB
-
-  PGB --> HT_SYS
-  PGB --> HT_LDI
-  PGB --> HT_STG
-
-  HT_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
-  HT_LDI --> COL
-  HT_SYS --> COL
-
-  CAGGS --> GRAF
-  HYPER --> GRAF
-  EAP_DB -->|"drilling-timescaledb (ต่อตรง :5432)"| GRAF
-  PROM --> AM --> WH --> NOTIF
-  GRAF -->|"การแจ้งเตือนภายใน"| WH
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -160,27 +174,29 @@ return msg;
 ข้อมูลโทรมาตรดิบในตาราง `public.ldi_data` จะถูกส่งต่อไปยัง 2 เส้นทางการสรุปผลรวมที่เป็นอิสระต่อกัน:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-  RAW[("ldi_data
-ข้อมูลโทรมาตรดิบ
-บีบอัดหลัง 7 วัน, เก็บ 180 วัน")]
-
-  RAW -->|"สรุปผลรวม 1 นาที"| M1[("ldi_data_1m
-เก็บข้อมูล 30 วัน")]
-  M1 -->|"สรุปผลรวม 15 นาที"| M15[("ldi_data_15m
-เก็บข้อมูล 90 วัน")]
-  M15 -->|"สรุปผลรวม 1 ชั่วโมง"| M1H[("ldi_data_1h
-เก็บข้อมูล 2 ปี")]
-
-  RAW -->|"วิเคราะห์ผลรวมรายชั่วโมงโดยตรง
-(avg_max_pe, peak_pe)
-Real-time Aggregation: เปิดใช้งาน"| MHOURLY[("ldi_data_hourly
-เก็บข้อมูล 2 ปี")]
-
-  RAW -->|"รีเฟรชข้อมูลทุก 60 วินาที"| SPC["v_machine_spc_fleet
-v_ldi_rca_recent_window
-v_ldi_rca_truth_test"]
+  accTitle: ลำดับการ rollup ของ LDI
+  accDescr: ldi_data ถูก rollup เป็น aggregate 1 นาที 15 นาที และ 1 ชั่วโมงต่อกันเป็นลำดับ และมี aggregate รายชั่วโมงแบบ real-time แยกอีกตัว และ materialized view ด้าน SPC และ RCA 3 ตัวรีเฟรชทุกนาที
+  RAW[("ldi_data<br/>180 วัน")]:::store
+  M1[("ldi_data_1m<br/>30 วัน")]:::store
+  M15[("ldi_data_15m<br/>90 วัน")]:::store
+  M1H[("ldi_data_1h<br/>2 ปี")]:::store
+  MH[("ldi_data_hourly<br/>real-time · 2 ปี")]:::store
+  MV["v_machine_spc_fleet<br/>v_ldi_rca_recent_window<br/>v_ldi_rca_truth_test"]:::store
+  RAW -->|"1 min"| M1 -->|"15 min"| M15 -->|"1 h"| M1H
+  RAW -->|"1 h"| MH
+  RAW -->|"รีเฟรชทุก 60 วินาที"| MV
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 * **การสรุปผลรวมต่อเนื่องแบบลดหลั่น (`1m -> 15m -> 1h`):** นำข้อมูลสรุปจากระดับที่เล็กกว่ามารวมต่อ เพื่อให้การเปิดดูกราฟระยะยาว (7 วัน, 30 วัน) บน Grafana ทำงานได้รวดเร็วในระดับเสี้ยววินาที
@@ -191,18 +207,30 @@ v_ldi_rca_truth_test"]
 ## 4. ไปป์ไลน์การประมวลผลการแจ้งเตือนและการวิเคราะห์หาสาเหตุที่แท้จริง (RCA)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-  ALM_SIM["ldi_alarm_simulator.json"] --> ALOG[("ldi_alarm_log
-สตรีมเหตุการณ์การแจ้งเตือน
-เก็บข้อมูล 365 วัน")]
-  MASTER[("ldi_alarm_ms_code
-พจนานุกรมรหัสแจ้งเตือนหลัก
-ลงทะเบียนแล้วกว่า 1,820+ รหัส")] -.->|"FK: alarm_code"| ALOG
-  ALOG --> CTX["v_ldi_alarm_context
-เชื่อมโยงโทรมาตรช่วงเวลา +-5 นาที"]
-  CTX --> RCA["v_ldi_rca_recent_window
-v_ldi_rca_truth_test"]
+  accTitle: ไปป์ไลน์ alarm และการหาสาเหตุ
+  accDescr: ตัวจำลอง alarm เขียน ldi_alarm_log ซึ่ง equipmentid อ้างอิงตาราง devices โดย alarm จะ join กับ alarm master ด้วยรหัส และกับข้อมูลในช่วง 5 นาทีก่อนหน้า ซึ่งป้อนให้ view ด้าน RCA
+  SIM["ldi_alarm_simulator.json"]:::flow
+  DEV[("devices")]:::store
+  LOG[("ldi_alarm_log<br/>365 วัน")]:::store
+  MASTER[("ldi_alarm_ms_code<br/>1,820 รหัส")]:::store
+  CTX["v_ldi_alarm_context<br/>ค่าที่อ้างผ่าน related_log_id หรือค่าล่าสุดใน 5 นาทีก่อนหน้า"]:::store
+  RCA["v_ldi_rca_recent_window<br/>v_ldi_rca_truth_test"]:::store
+  SIM --> LOG
+  LOG -.->|"FK equipmentid"| DEV
+  MASTER -.->|"join errorcode = alarm_code"| CTX
+  LOG --> CTX --> RCA
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 การแจ้งเตือนจะถูกบันทึกลงใน `public.ldi_alarm_log` และเชื่อมโยงกับรหัสใน `public.ldi_alarm_ms_code` ผ่าน Foreign Key โดยมีวิว `v_ldi_alarm_context` ทำหน้าที่เชื่อมข้อมูลโทรมาตรของเครื่องจักรในช่วง ±5 นาที รอบเวลาที่เกิดเหตุการณ์ เพื่อส่งต่อให้ระบบวิเคราะห์รากเหง้าปัญหา (RCA) บนหน้าจอของผู้ควบคุม
