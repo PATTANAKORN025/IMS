@@ -20,7 +20,8 @@ function run(label, cmd, timeout = 30000) {
     execSync(cmd, { stdio: 'pipe', timeout });
     console.log(`  PASS  ${label}`);
   } catch (e) {
-    console.error(`  FAIL  ${label}`);
+    console.error(`  FAIL  ${label}: ${e.message}`);
+    if (e.stdout) console.error(e.stdout.toString().split('\n').slice(0, 5).join('\n'));
     if (e.stderr) console.error(e.stderr.toString().split('\n').slice(0, 5).join('\n'));
     failed = true;
   }
@@ -112,6 +113,7 @@ run("Private Data Leak Scanner", "node tests/lint/private-data-leak-scanner.js")
 run("Alert Rule Linter", "node tests/lint/alert-rule-linter.js");
 run("Floor 1 Geometry Validator (skips cleanly if absent)", "node tests/lint/floor1-geometry-validator.js");
 run("Docs README Index", "node scripts/generate-docs-readme-index.js --check");
+run("Mermaid Diagram Linter", "node tests/lint/mermaid-linter.js");
 
 // 2. Validate dashboard JSON files
 const dashDir = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');

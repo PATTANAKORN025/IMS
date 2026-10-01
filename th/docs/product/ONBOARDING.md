@@ -27,7 +27,7 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart LR
   EDGE["อุปกรณ์อุตสาหกรรม\n(LDI, CNC, VCP, SNMP)"] -->|"HTTPS / SNMP"| INGEST["ชั้นรับข้อมูล Ingestion\n(Nginx Proxy & Node-RED)"]
-  INGEST -->|"Connection Pooling"| PGB["PgBouncer :6432"]
+  INGEST -->|"Connection Pooling"| PGB["PgBouncer :5432"]
   PGB -->|"บันทึกลง Hypertable"| TSDB["TimescaleDB (PostgreSQL 16)"]
   TSDB -->|"Continuous Aggregates"| GRAFANA["Grafana 13\n(22 แดชบอร์ดพร้อมใช้งาน)"]
   PROM["Prometheus & Alertmanager"] -->|"Webhooks"| NOTIF["LINE & Teams Incident Dispatch"]

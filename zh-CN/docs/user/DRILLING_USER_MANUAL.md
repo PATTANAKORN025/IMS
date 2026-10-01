@@ -63,7 +63,7 @@ flowchart TD
 - **TOOL_CHANGE**（橙色 `#F59E0B`）：自动换刀机构动作中（`0110`）
 - **STOP**（黄色 `#EAB308`）：加工完毕或手动停机（`0108`）
 - **STANDBY**（青灰色 `#64748B`）：待机状态
-- **OFFLINE**（深灰色 `#1E293B`）：超过 3 小时未接收到遥测数据（COMM LOSS）
+- **OFFLINE**（深灰色 `#1E293B`）：超过 2 小时未接收到遥测数据（COMM LOSS）
 
 ### 2.2 主轴掩码计算 (Spindle 1–6 Bitmask)
 机台通过代码 `0211`（`spindle ON: <mask>`）以二进制位掩码表示各主轴启用状态：
@@ -114,7 +114,7 @@ $$\text{主轴 } N \text{ 启用} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
 
 ## 5. 数据库运维与技术故障诊断 (Database Runbook & Diagnostics)
 
-- **通讯丢失监控 (COMM LOSS)**: 超过 3 小时无新事件产生，机台标记为 OFFLINE，排查网络端口与 EAP 代理。
+- **通讯丢失监控 (COMM LOSS)**: 超过 2 小时无新事件产生，机台标记为 OFFLINE，排查网络端口与 EAP 代理。
 - **停滞监控 (STALE RUN)**: 机台保持 RUN 状态超过 60 分钟且孔数未递增，排查解析器锁死或机台未上报停机代码。
 - **索引维护**:
   ```sql

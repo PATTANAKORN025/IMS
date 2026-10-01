@@ -29,51 +29,43 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph SOURCES["1. แหล่งกำเนิดข้อมูลโทรมาตรอุตสาหกรรม"]
-    SNMP_DEV["เซิร์ฟเวอร์ / สวิตช์เครือข่าย
-(SNMP v2c, ดึงข้อมูลทุก 30s)"]
-    LDI_DEV["เครื่องจักร LDI Photolithography
-(HTTP POST /ldi-telemetry, ทุก 2s)"]
-    DRL_DEV["เครื่องเจาะ CNC Drilling
-(สัญญาณ EAP Spindle & รอบการทำงาน)"]
-    VCP_DEV["สายชุบโลหะด้วยไฟฟ้า VCP
-(สัญญาณ EAP Rectifier & อุณหภูมิอ่าง)"]
+    SNMP_DEV["เซิร์ฟเวอร์ / สวิตช์เครือข่าย\n(SNMP v2c, ดึงข้อมูลทุก 30s)"]
+    LDI_DEV["เครื่องจักร LDI Photolithography\n(HTTP POST /ldi-telemetry, ทุก 2s)"]
+    DRL_DEV["เครื่องเจาะ CNC Drilling\n(สัญญาณเหตุการณ์และรอบการทำงาน)"]
+    VCP_DEV["สายชุบโลหะด้วยไฟฟ้า VCP\n(เซนเซอร์และบันทึกอุณหภูมิอ่าง)"]
   end
 
   subgraph INGESTION["2. ชั้นการรับและแปลงข้อมูล (Node-RED Ingestion Tier)"]
-    NR_INFRA["ingestion.json
-fork_5_ways -> sre_parser"]
-    NR_LDI["ldi_ingestion.json
-ตรวจสอบ Schema, คืนหน่วยความจำ O(1) GC"]
-    NR_EAP["eap_ingestion.json
-แปลงหน่วยข้อมูลและรวมกลุ่ม Batch"]
+    NR_INFRA["ingestion.json\nfork_5_ways -> sre_parser v10"]
+    NR_LDI["ldi_ingestion.json\nตรวจสอบ Schema, Staging, คืนหน่วยความจำ O(1) GC"]
   end
 
   subgraph POOL["3. ชั้นจัดการการเชื่อมต่อฐานข้อมูล (Connection Pooling)"]
-    PGB["PgBouncer
-(โหมด Transaction, พอร์ต 5432, AUTH: plain)"]
+    PGB["PgBouncer\n(โหมด Transaction, พอร์ต 5432, AUTH: scram-sha-256)"]
   end
 
   subgraph STORAGE["4. ชั้นจัดเก็บข้อมูล TimescaleDB (สคีมา public เท่านั้น)"]
     subgraph HYPER["ตาราง Hypertables ข้อมูลดิบ (แบ่ง Chunk ละ 1 วัน)"]
-      HT_SYS[("sys_metrics & net_metrics")]
+      HT_SYS[("snmp_data")]
       HT_LDI[("ldi_data & ldi_alarm_log")]
-      HT_DRL[("drilling_telemetry & spindle_metrics")]
-      HT_VCP[("vcp_telemetry & rectifier_metrics")]
+      HT_STG[("ingest_staging")]
+    end
+    subgraph EAP_DB["ฐานข้อมูลสำรอง: eap_backup"]
+      EAP_DRL[("machine_event & agent_log")]
+      EAP_VCP[("vcp_upp, vcp_alarm, vcp_status_change")]
     end
     subgraph CAGGS["ตารางสรุปผลรวมต่อเนื่อง (Continuous Aggregates)"]
-      CAGG_1M[("สรุปผลรวมราย 1 นาที (เช่น ldi_data_1m)")]
+      CAGG_1M[("สรุปผลรวมราย 1 นาที (ldi_data_1m)")]
       CAGG_15M[("สรุปผลรวมราย 15 นาที (ldi_data_15m)")]
       CAGG_1H[("สรุปผลรวมราย 1 ชั่วโมง & ldi_data_hourly")]
     end
     subgraph COMPRESS["การบีบอัดข้อมูลแบบ Columnar"]
-      COL[("บีบอัดข้อมูล Chunks ที่เก่าเกิน 7 วัน
-จัดกลุ่มตาม machine_id / device_id")]
+      COL[("บีบอัดข้อมูล Chunks ที่เก่าเกิน 7 วัน\nจัดกลุ่มตาม machine_id / device_id")]
     end
   end
 
   subgraph DISPATCH["5. ชั้นการแสดงผลและการแจ้งเตือน (Visualization & Alerting)"]
-    GRAF["Grafana (22 แดชบอร์ด)
-UI มาตรฐาน Grid-24, คิวรี CAGG ในเสี้ยววินาที"]
+    GRAF["Grafana (22 แดชบอร์ด)\nUI มาตรฐาน Grid-24, คิวรีรวดเร็วในเสี้ยววินาที"]
     PROM["Prometheus Scraper"]
     AM["Alertmanager Engine"]
     WH["Node-RED /alert-webhook"]
@@ -82,26 +74,25 @@ UI มาตรฐาน Grid-24, คิวรี CAGG ในเสี้ยว�
 
   SNMP_DEV --> NR_INFRA
   LDI_DEV --> NR_LDI
-  DRL_DEV --> NR_EAP
-  VCP_DEV --> NR_EAP
+  DRL_DEV -.->|"ซิงค์ตรง"| EAP_DRL
+  VCP_DEV -.->|"ซิงค์ตรง"| EAP_VCP
 
-  NR_INFRA -->|ส่ง Batch SQL| PGB
-  NR_LDI -->|ส่ง Batch SQL| PGB
-  NR_EAP -->|ส่ง Batch SQL| PGB
+  NR_INFRA -->|"ส่ง Batch SQL (nodered_writer)"| PGB
+  NR_LDI -->|"Staging และ Batch (nodered_writer)"| PGB
 
   PGB --> HT_SYS
   PGB --> HT_LDI
-  PGB --> HT_DRL
-  PGB --> HT_VCP
+  PGB --> HT_STG
 
   HT_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
   HT_LDI --> COL
-  HT_DRL --> COL
-  HT_VCP --> COL
+  HT_SYS --> COL
 
   CAGGS --> GRAF
   HYPER --> GRAF
+  EAP_DB -->|"drilling-timescaledb (ต่อตรง :5432)"| GRAF
   PROM --> AM --> WH --> NOTIF
+  GRAF -->|"การแจ้งเตือนภายใน"| WH
 ```
 
 ---

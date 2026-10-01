@@ -45,7 +45,7 @@ flowchart TD
     end
 
     subgraph StorageLayer["Data & Persistence Tier"]
-        PGB["PgBouncer Connection Pooler\n(:6432)"]
+        PGB["PgBouncer Connection Pooler\n(:5432)"]
         TSDB["TimescaleDB Telemetry Store\n(:5432)"]
     end
 
@@ -56,9 +56,9 @@ flowchart TD
 
     PROXY -->|Route /ldi-telemetry| NR
     PROXY -->|Route /inject| NR
-    PROXY -->|Route /alarm-api/* (Auth Checked)| ALARM
+    PROXY -->|"Route /alarm-api/* (Auth Checked)"| ALARM
     PROXY -->|Route /api/* & UI| GRAFANA
-    PROXY -->|Route /factory-twin-3d/*| TWIN
+    PROXY -->|"Route /factory-twin-3d/*"| TWIN
 
     PROXY -.->|Internal Auth Verify /auth-check| GRAFANA
 

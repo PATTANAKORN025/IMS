@@ -186,7 +186,7 @@ IMS evaluates equipment health into 6 definitive states based on event codes and
 
 ```mermaid
 stateDiagram-v2
-    [*] --> OFFLINE : No telemetry > 3 hours
+    [*] --> OFFLINE : No telemetry > 2 hours
     [*] --> STANDBY : Ready, awaiting job load
 
     STANDBY --> RUN : Cycle start (0101 / 0112)
@@ -199,7 +199,7 @@ stateDiagram-v2
     TOOL_CHANGE --> ALARM : Collet jam / magazine position fault
     ALARM --> STANDBY : Fault cleared & reset (0204)
 
-    RUN --> OFFLINE : Silent > 3 hours (COMM LOSS)
+    RUN --> OFFLINE : Silent > 2 hours (COMM LOSS)
     STOP --> OFFLINE : Power down
 ```
 
@@ -210,7 +210,7 @@ stateDiagram-v2
 | **TOOL_CHANGE**| `state-tool_change` (`#F59E0B` Amber) | Automatic Tool Changer (ATC) in motion | Event code `0110` (`ATC Txx -> Txx`) |
 | **STOP** | `state-stop` (`#EAB308` Yellow) | Program ended or machine paused | Event code `0108` (`Machine stop`) |
 | **STANDBY** | `state-standby` (`#64748B` Slate) | Powered on, idle, awaiting work | Event code `0101` with Standby/Reset evidence |
-| **OFFLINE** | `state-offline` (`#1E293B` Dark Slate) | Telemetry silent for > 3 hours | Equipment communication loss (COMM LOSS) |
+| **OFFLINE** | `state-offline` (`#1E293B` Dark Slate) | Telemetry silent for > 2 hours | Equipment communication loss (COMM LOSS) |
 
 ---
 
@@ -524,7 +524,7 @@ At **07:45** and **19:45** Bangkok time:
 flowchart LR
     EVENT_STREAM["Telemetry Stream<br/>(drilling.event)"] --> WD{"Watchdog Evaluator"}
 
-    WD -->|"No message for > 3 hours"| COMM_LOSS["COMM LOSS (Offline)<br/>1. Check floor network switch port.<br/>2. Check local EAP file agent daemon.<br/>3. Inspect shared network drive permissions."]
+    WD -->|"No message for > 2 hours"| COMM_LOSS["COMM LOSS (Offline)<br/>1. Check floor network switch port.<br/>2. Check local EAP file agent daemon.<br/>3. Inspect shared network drive permissions."]
     WD -->|"RUN state > 60 min with<br/>zero hole progress"| STALE_RUN["STALE RUN (Frozen State)<br/>1. Parser locked on log file buffer.<br/>2. Machine halted without sending Stop code.<br/>3. Restart EAP agent service."]
 
     classDef wdStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
@@ -555,7 +555,7 @@ SELECT
     MAX(event_time) AT TIME ZONE 'Asia/Bangkok' AS "Last_Contact",
     NOW() - MAX(event_time) AS "Silence_Duration",
     CASE 
-        WHEN NOW() - MAX(event_time) > INTERVAL '3 hours' THEN 'COMM_LOSS (Offline)'
+        WHEN NOW() - MAX(event_time) > INTERVAL '2 hours' THEN 'COMM_LOSS (Offline)'
         WHEN NOW() - MAX(event_time) > INTERVAL '1 hour' THEN 'STALE (Warning)'
         ELSE 'ONLINE (Healthy)'
     END AS "Signal_Status"

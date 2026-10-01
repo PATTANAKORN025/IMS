@@ -31,37 +31,29 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph SOURCES["车间现场与 IT/OT 硬件设备源"]
-    S1["IT/OT 基础设施与服务器
-(SNMP v2c Agent 代理)"]
-    S2["LDI 激光直接成像光刻机
-(HTTP/JSON 批量采集上报)"]
-    S3["CNC 钻孔设备与 VCP 电镀线
-(EAP 高保真运行数据流)"]
-    S4["未来生产车间机台
-(SECS-II / GEM HSMS 协议栈)"]
+    S1["IT/OT 基础设施与服务器\n(SNMP v2c Agent 代理)"]
+    S2["LDI 激光直接成像光刻机\n(HTTP/JSON 批量采集上报)"]
+    S3["CNC 钻孔设备与 VCP 电镀线\n(EAP 运行生产系统)"]
+    S4["未来生产车间机台\n(SECS-II / GEM HSMS 协议栈)"]
   end
 
   subgraph ADAPTERS["设备自动化程序 (EAP) 适配器层"]
-    A1["适配器 1: SNMP 轮询器
-(30 秒周期, fork_5_ways)"]
-    A2["适配器 2: HTTP 接入网关
-(POST /ldi-telemetry, x-api-key)"]
-    A3["适配器 3: EAP 流水线适配器
-(钻孔与电镀工序遥测内核)"]
-    A4["适配器 4: SECS/GEM 标准契约
-(SVID/ECID 与 CEID 事件映射)"]
+    A1["适配器 1: SNMP 轮询器\n(30 秒周期, ingestion.json)"]
+    A2["适配器 2: HTTP 接入网关\n(POST /ldi-telemetry, ldi_ingestion.json)"]
+    A3["适配器 3: EAP 业务数据库直连\n(eap_backup DB: machine_event, vcp_upp)"]
+    A4["适配器 4: SECS/GEM 标准契约\n(未来扩展规范)"]
   end
 
   subgraph REGISTRY["统一设备注册中心与存储层"]
-    DEV[("public.devices
-设备主元数据大表")]
-    HT_SYS[("sys_metrics 与 net_metrics")]
-    HT_LDI[("public.ldi_data
-LDI 光刻时序超表")]
-    HT_DRL[("drilling_telemetry 与 vcp_telemetry
-eap_backup 演练数据库")]
-    ALARM[("报警主字典与事件流水
-(ldi_alarm_ms_code 等)")]
+    DEV[("public.devices\n设备主元数据大表")]
+    HT_SYS[("public.snmp_data\nSNMP 遥测时序超表")]
+    HT_LDI[("public.ldi_data\nLDI 光刻时序超表")]
+    EAP_DB[("eap_backup DB\nmachine_event, vcp_upp, vcp_alarm")]
+    ALARM[("报警主字典与事件流水\n(ldi_alarm_ms_code 与 log)")]
+  end
+
+  subgraph VISUALIZATION["Grafana 监控看板生态"]
+    GRAF["Grafana 13 (22 块看板)\n通过端口 :5432 直接 SQL 查询"]
   end
 
   S1 --> A1 --> DEV
@@ -69,13 +61,18 @@ eap_backup 演练数据库")]
   S2 --> A2 --> DEV
   A2 --> HT_LDI
   A2 --> ALARM
-  S3 --> A3 --> DEV
-  A3 --> HT_DRL
+  S3 --> A3 --> EAP_DB
   S4 -.-> A4 -.-> DEV
+
+  HT_SYS --> GRAF
+  HT_LDI --> GRAF
+  EAP_DB -->|"drilling-timescaledb 数据源直连"| GRAF
+  ALARM --> GRAF
 
   style SOURCES fill:#1e293b,stroke:#00F2FE,color:#f8fafc
   style ADAPTERS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
   style REGISTRY fill:#1e293b,stroke:#10B981,color:#f8fafc
+  style VISUALIZATION fill:#1e293b,stroke:#8B5CF6,color:#f8fafc
 ```
 
 ---

@@ -31,29 +31,26 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph FOUNDATION["核心平台公共基石 (无需改动的稳定底座)"]
-    DEV[("public.devices
-统一硬件设备身份与元数据总表")]
-    PGB["PgBouncer 事务模式连接池
-(端口 5432, AUTH: plain)"]
-    CORE_LINT["CI 自动化门禁与合规检查套件
-(alarm-sync, query-budget, dashboard-linter)"]
+    DEV[("public.devices\n统一硬件设备身份与元数据总表")]
+    PGB["PgBouncer 事务模式连接池\n(端口 5432, AUTH: scram-sha-256)"]
+    CORE_LINT["CI 自动化门禁与合规检查套件\n(alarm-sync, query-budget, dashboard-linter)"]
   end
 
   subgraph DOMAINS["增量生产制造工序领域 (独立时序超表群)"]
     subgraph D_LDI["工序领域: LDI 激光光刻曝光"]
       LDI_TBL[("public.ldi_data (时序超表)")]
       LDI_ALM[("public.ldi_alarm_ms_code 与 log")]
-      LDI_CAGGS[("cagg_ldi_metrics_1m / 1h")]
+      LDI_CAGGS[("ldi_data_1m / 15m / 1h / ldi_data_hourly")]
     end
     subgraph D_DRL["工序领域: CNC 数控钻孔设备群"]
-      DRL_TBL[("drilling_telemetry (时序超表)")]
-      DRL_ALM[("drilling_alarm_ms_code 与 log")]
-      DRL_CAGGS[("v_drilling_shift_summary")]
+      DRL_TBL[("eap_backup: public.machine_event")]
+      DRL_ALM[("eap_backup: public.agent_log")]
+      DRL_CAGGS[("直接 SQL 分析查询与视图")]
     end
     subgraph D_VCP["工序领域: VCP 垂直连续电镀生产线"]
-      VCP_TBL[("vcp_telemetry (时序超表)")]
-      VCP_ALM[("vcp_alarm_ms_code 与 log")]
-      VCP_CAGGS[("v_vcp_active_lines 与 bath_health")]
+      VCP_TBL[("eap_backup: public.vcp_upp (100k 行)")]
+      VCP_ALM[("eap_backup: public.vcp_alarm 与 vcp_status_change")]
+      VCP_CAGGS[("视图: eap_api_vcp_upp")]
     end
     subgraph D_FUTURE["未来新增工序 (如 AOI 检测 / 蚀刻)"]
       NEW_TBL[("public.<process>_data (时序超表)")]
@@ -63,14 +60,10 @@ flowchart TB
   end
 
   subgraph DASHBOARDS["Grafana 预配仪表盘集群 (严格遵循 Grid-24)"]
-    LDI_DASH["LDI 工序三联仪表盘
-(安灯看版, 深度工程分析, 制造总览)"]
-    DRL_DASH["钻孔工序三联仪表盘
-(机群概览, 单机排查, 班次统计)"]
-    VCP_DASH["电镀工序三联仪表盘
-(实时电视墙, 运行控制台, 总体概览)"]
-    NEW_DASH["新工序三联仪表盘
-(现场看版, 工程分析, 指挥中心)"]
+    LDI_DASH["LDI 仪表盘组 (10)\n(安灯看版, 深度工程分析, 制造总览, 数字孪生)"]
+    DRL_DASH["钻孔仪表盘组 (4)\n(机群概览, 单机排查, 班次统计, 异常分析)"]
+    VCP_DASH["电镀仪表盘组 (3)\n(实时电视墙, 运行控制台, 总体概览)"]
+    NEW_DASH["新工序仪表盘组\n(现场看版, 工程分析, 指挥中心)"]
   end
 
   DEV --> LDI_TBL

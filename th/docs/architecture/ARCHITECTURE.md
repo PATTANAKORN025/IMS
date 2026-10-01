@@ -38,7 +38,7 @@ flowchart TB
 
  subgraph LEGACY ["ไปป์ไลน์เดิม SNMP / โครงสร้างพื้นฐาน"]
   DEV["เซิร์ฟเวอร์จริง 2 เครื่อง\n+ ตัวจำลอง SNMP"] -->|"SNMP v2c, โพลทุก 30 วินาที"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
-  NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
+  NR --> SNMPDATA[("public.snmp_data\nไฮเปอร์เทเบิล, ชิ้นละ 1 วัน")]
  end
 
  subgraph EAP ["การเชื่อมต่อเครื่องจักร (งานเจาะ CNC & ชุบ VCP)"]
@@ -48,9 +48,10 @@ flowchart TB
  LDIDATA --> GRAFANA["Grafana 13\n22 แดชบอร์ดใน 4 แผนก"]
  ALARMLOG --> GRAFANA
  ALARMLC --> GRAFANA
- SYSMETRICS --> GRAFANA
+ SNMPDATA --> GRAFANA
  EAPDB --> GRAFANA
- SYSMETRICS --> PROM["Prometheus"]
+ NR -->|"เมตริก /metrics"| PROM["Prometheus"]
+ BBOX["Blackbox Exporter"] --> PROM
  GRAFANA -->|"กฎแจ้งเตือนในตัว"| NRWEBHOOK["Node-RED /alert-webhook"]
  PROM --> AM["Alertmanager"] --> NRWEBHOOK
  NRWEBHOOK --> LINE["LINE Messaging API"]

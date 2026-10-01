@@ -29,51 +29,43 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph SOURCES["1. 工业现场运行遥测源"]
-    SNMP_DEV["服务器 / 网络核心交换机
-(SNMP v2c 协议, 30 秒轮询)"]
-    LDI_DEV["LDI 激光直接成像光刻机
-(HTTP POST /ldi-telemetry, 2 秒)"]
-    DRL_DEV["CNC 数控钻孔机台群
-(EAP 主轴运行与加工循环事件)"]
-    VCP_DEV["VCP 垂直连续电镀生产线
-(EAP 整流器电流与槽体温度遥测)"]
+    SNMP_DEV["服务器 / 网络核心交换机\n(SNMP v2c 协议, 30 秒轮询)"]
+    LDI_DEV["LDI 激光直接成像光刻机\n(HTTP POST /ldi-telemetry, 2 秒)"]
+    DRL_DEV["CNC 数控钻孔机台群\n(机台事件与加工循环记录)"]
+    VCP_DEV["VCP 垂直连续电镀生产线\n(槽体传感器与工艺运行日志)"]
   end
 
   subgraph INGESTION["2. 数据接入与标准化清洗层 (Node-RED)"]
-    NR_INFRA["ingestion.json
-fork_5_ways -> sre_parser"]
-    NR_LDI["ldi_ingestion.json
-Schema 合规校验, O(1) GC 内存回收"]
-    NR_EAP["eap_ingestion.json
-工学单位转换与批量聚合打包"]
+    NR_INFRA["ingestion.json\nfork_5_ways -> sre_parser v10"]
+    NR_LDI["ldi_ingestion.json\nSchema 校验, 预写暂存, O(1) GC 内存回收"]
   end
 
   subgraph POOL["3. 数据库连接池代理层"]
-    PGB["PgBouncer 连接池
-(事务模式, 端口 5432, AUTH: plain)"]
+    PGB["PgBouncer 连接池\n(事务模式, 端口 5432, AUTH: scram-sha-256)"]
   end
 
   subgraph STORAGE["4. TimescaleDB 核心存储层 (仅限 public schema)"]
     subgraph HYPER["原始高频超表群 Hypertables (1 天切片时间跨度)"]
-      HT_SYS[("sys_metrics 与 net_metrics")]
+      HT_SYS[("snmp_data")]
       HT_LDI[("ldi_data 与 ldi_alarm_log")]
-      HT_DRL[("drilling_telemetry 与 spindle_metrics")]
-      HT_VCP[("vcp_telemetry 与 rectifier_metrics")]
+      HT_STG[("ingest_staging")]
+    end
+    subgraph EAP_DB["次级业务数据库: eap_backup"]
+      EAP_DRL[("machine_event 与 agent_log")]
+      EAP_VCP[("vcp_upp, vcp_alarm, vcp_status_change")]
     end
     subgraph CAGGS["持续聚合物化层 (Continuous Aggregates)"]
-      CAGG_1M[("1 分钟级汇总 (如 ldi_data_1m)")]
+      CAGG_1M[("1 分钟级汇总 (ldi_data_1m)")]
       CAGG_15M[("15 分钟级汇总 (ldi_data_15m)")]
       CAGG_1H[("1 小时级汇总与 ldi_data_hourly")]
     end
     subgraph COMPRESS["列式数据切片压缩"]
-      COL[("超过 7 天切片执行列压缩
-分段维度: machine_id / device_id")]
+      COL[("超过 7 天切片执行列压缩\n分段维度: machine_id / device_id")]
     end
   end
 
   subgraph DISPATCH["5. 可视化呈现与警报分发层"]
-    GRAF["Grafana 监控大屏 (22 块)
-遵循 Grid-24, 亚秒级 CAGG 历史查询"]
+    GRAF["Grafana 监控大屏 (22 块)\n遵循 Grid-24, 亚秒级快速查询"]
     PROM["Prometheus 指标拉取采集器"]
     AM["Alertmanager 告警路由内核"]
     WH["Node-RED /alert-webhook 适配器"]
@@ -82,26 +74,25 @@ Schema 合规校验, O(1) GC 内存回收"]
 
   SNMP_DEV --> NR_INFRA
   LDI_DEV --> NR_LDI
-  DRL_DEV --> NR_EAP
-  VCP_DEV --> NR_EAP
+  DRL_DEV -.->|"直接同步"| EAP_DRL
+  VCP_DEV -.->|"直接同步"| EAP_VCP
 
-  NR_INFRA -->|批量 SQL 写入| PGB
-  NR_LDI -->|批量 SQL 写入| PGB
-  NR_EAP -->|批量 SQL 写入| PGB
+  NR_INFRA -->|"批量 SQL 写入 (nodered_writer)"| PGB
+  NR_LDI -->|"预写暂存与批量落盘 (nodered_writer)"| PGB
 
   PGB --> HT_SYS
   PGB --> HT_LDI
-  PGB --> HT_DRL
-  PGB --> HT_VCP
+  PGB --> HT_STG
 
   HT_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
   HT_LDI --> COL
-  HT_DRL --> COL
-  HT_VCP --> COL
+  HT_SYS --> COL
 
   CAGGS --> GRAF
   HYPER --> GRAF
+  EAP_DB -->|"drilling-timescaledb (直连 :5432)"| GRAF
   PROM --> AM --> WH --> NOTIF
+  GRAF -->|"原生告警规则"| WH
 ```
 
 ---

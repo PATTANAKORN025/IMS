@@ -43,10 +43,10 @@ C4Context
 
  System(ims, "IMS Platform", "Central telemetry ingestion, connection-pooled TimescaleDB storage, and 22 Grafana HUD dashboards.")
 
- Rel(noc_op, ims, "Observes NOC and capacity dashboards", "HTTPS / Port 3000")
- Rel(proc_eng, ims, "Inspects LDI Command Center and SPC analytics", "HTTPS / Port 3000")
- Rel(drill_eng, ims, "Analyzes CNC fleet and anomaly dashboards", "HTTPS / Port 3000")
- Rel(vcp_tech, ims, "Monitors VCP operations and real-time wall", "HTTPS / Port 3000")
+ Rel(noc_op, ims, "Observes NOC and capacity dashboards", "HTTP / Port 3000")
+ Rel(proc_eng, ims, "Inspects LDI Command Center and SPC analytics", "HTTP / Port 3000")
+ Rel(drill_eng, ims, "Analyzes CNC fleet and anomaly dashboards", "HTTP / Port 3000")
+ Rel(vcp_tech, ims, "Monitors VCP operations and real-time wall", "HTTP / Port 3000")
 
  Rel(ldi_mach, ims, "Streams manufacturing telemetry", "HTTP POST /ldi-telemetry")
  Rel(cnc_drill, ims, "Feeds event logs & machine status", "PostgreSQL / eap_backup")
@@ -70,7 +70,7 @@ C4Container
  Person(user, "Engineers & Operators", "Accesses dashboards, twin, and alarm APIs via browser.")
  System_Ext(ext_dev, "Factory Edge Equipment", "LDI, CNC Drilling, VCP, Servers, Switches.")
 
- System_Boundary(c1, "IMS Docker Network (ims_net)") {
+ System_Boundary(c1, "IMS Docker Networks (ims-internal, ims-monitoring, ims-docker-api)") {
    Container(proxy, "Reverse Proxy (ims-proxy)", "Nginx Alpine", "Unified ingress, rate limiting, and session auth gate.")
    Container(grafana, "Grafana 13 (ims-grafana)", "Go", "Hosts 22 Cyberpunk HUD dashboards across 4 operational domains.")
    Container(alarm_api, "Alarm API (ims-alarm-api)", "Node.js Express", "Governs alarm lifecycle transitions (ack/resolve) on public.ldi_alarm_lifecycle.")
@@ -78,22 +78,23 @@ C4Container
    Container(renderer, "Image Renderer (ims-grafana-renderer)", "Chromium", "Generates server-side PNG snapshots for alerts and scheduled reports.")
 
    Container(nodered, "Ingestion Pipeline (ims-node-red)", "Node.js / Node-RED", "Parallel walkers, telemetry parser, buffer queue, and alerting router.")
-   Container(pgbouncer, "Connection Pooler (ims-pgbouncer)", "C / PgBouncer", "Transaction pooling for TimescaleDB to protect connection budget.")
-   ContainerDb(timescaledb, "TimescaleDB (ims-timescaledb)", "PostgreSQL 16 + TimescaleDB", "Persistent storage for hypertables, continuous aggregates, and alarm tables.")
+   Container(pgbouncer, "Connection Pooler (ims-pgbouncer)", "C / PgBouncer", "Transaction pooling on port 5432 with SCRAM-SHA-256 auth.")
+   ContainerDb(timescaledb, "TimescaleDB (ims-timescaledb)", "PostgreSQL 16 + TimescaleDB", "Hypertables, continuous aggregates, alarm tables, and eap_backup DB.")
 
-   Container(prometheus, "Prometheus (ims-prometheus)", "Go", "Collects platform metrics and evaluates alerting rules.")
+   Container(prometheus, "Prometheus (ims-prometheus)", "Go", "Scrapes service metrics and evaluates alerting rules.")
    Container(alertmanager, "Alertmanager (ims-alertmanager)", "Go", "Deduplicates, groups, and routes alert events to Node-RED.")
-   Container(blackbox, "Blackbox Probes (ims-blackbox)", "Go", "Probes HTTP/TCP endpoints to verify platform SLA.")
+   Container(blackbox, "Blackbox Probes (ims-blackbox)", "Go", "Probes HTTP/TCP/ICMP endpoints to verify platform SLA.")
    Container(snmpsim, "SNMP Simulator (ims-snmpsim)", "Python", "Simulates Linux servers and network switches for local development.")
    Container(archiver, "Observability Archiver (ims-observability-archiver)", "Bash", "Archives telemetry snapshots and container metrics to ops-logs.")
    Container(db_migrate, "Migration Runner (ims-db-migrate)", "Bash / psql", "One-shot container applying database migrations (001 to 091).")
-    Container(sockproxy, "Docker Socket Proxy (ims-docker-socket-proxy)", "HAProxy / Alpine", "Restricts Docker daemon access for observability-archiver.")
+   Container(sockproxy, "Docker Socket Proxy (ims-docker-socket-proxy)", "HAProxy / Alpine", "Restricts Docker daemon access on internal ims-docker-api.")
    Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "Web database management console (host port 127.0.0.1:5050).")
  }
 
- Rel(user, proxy, "Accesses UI and APIs", "HTTPS / Port 3000")
+ Rel(user, proxy, "Accesses UI and APIs", "HTTP / Port 3000")
  Rel(ext_dev, proxy, "HTTP telemetry", "POST /ldi-telemetry")
  Rel(nodered, ext_dev, "Polls SNMP telemetry", "UDP 161")
+ Rel(nodered, snmpsim, "Polls mock SNMP devices", "UDP 161")
 
  Rel(proxy, grafana, "Proxies UI & Grafana APIs", "HTTP :3000")
  Rel(proxy, alarm_api, "Proxies /alarm-api/* (Auth Checked)", "HTTP :4000")
@@ -102,14 +103,23 @@ C4Container
  Rel(proxy, grafana, "Internal session verify (/auth-check)", "HTTP :3000")
 
  Rel(grafana, renderer, "Requests panel PNG render", "HTTP :8081")
- Rel(grafana, pgbouncer, "Queries CAGGs and views", "TCP :6432")
- Rel(alarm_api, pgbouncer, "Updates alarm status (alarm_api_writer)", "TCP :6432")
- Rel(nodered, pgbouncer, "Batch INSERTs telemetry", "TCP :6432")
- Rel(pgbouncer, timescaledb, "Transaction connections", "TCP :5432")
+ Rel(grafana, pgbouncer, "Queries CAGGs and views", "TCP :5432")
+ Rel(grafana, timescaledb, "Queries eap_backup (drilling-timescaledb)", "TCP :5432")
+ Rel(alarm_api, pgbouncer, "Updates alarm status (alarm_api_writer)", "TCP :5432")
+ Rel(nodered, pgbouncer, "Batch INSERTs telemetry (nodered_writer)", "TCP :5432")
+ Rel(pgbouncer, timescaledb, "Transaction connections (SCRAM)", "TCP :5432")
+ Rel(db_migrate, timescaledb, "Applies schema migrations 001-091", "TCP :5432")
+ Rel(pgadmin, timescaledb, "Database administration", "TCP :5432")
 
- Rel(prometheus, timescaledb, "Scrapes metrics", "TCP :5432")
+ Rel(prometheus, nodered, "Scrapes pipeline metrics", "HTTP :1880/metrics")
  Rel(prometheus, alertmanager, "Dispatches alerts", "HTTP :9093")
+ Rel(prometheus, blackbox, "Executes HTTP/TCP/ICMP probes", "HTTP :9115")
+ Rel(blackbox, timescaledb, "Probes TCP connect :5432", "TCP :5432")
+ Rel(blackbox, pgbouncer, "Probes TCP connect :5432", "TCP :5432")
  Rel(alertmanager, nodered, "POSTs to /alert-webhook", "HTTP :1880")
+ Rel(grafana, nodered, "Native alerts to /alert-webhook", "HTTP :1880")
+
+ Rel(archiver, sockproxy, "Reads Docker metrics & events", "HTTP :2375 (ims-docker-api)")
 ```
 
 ---
@@ -129,28 +139,26 @@ flowchart TD
   end
 
   subgraph SplitFlows ["Split Flow Modules (nodered_data/flows/)"]
-    subgraph Flow01 ["01-snmp-poller.json"]
+    subgraph FlowIngest ["ingestion.json"]
       REG["Device Registry Cache\n(Reloads from public.devices every 5m)"]
       CB["Circuit Breaker Engine\n(State: CLOSED / OPEN / HALF_OPEN)"]
       FORK["fork_5_ways Walker Dispatch\n(CPU, Net, Storage, Temp, LDI)"]
       PARSER["sre_parser v10\n(Per-device context, O(N) parsing)"]
+      BATCH_SNMP["Batch SQL Builder\n(INSERT INTO public.snmp_data...)"]
     end
 
-    subgraph Flow02 ["02-ldi-ingest.json"]
+    subgraph FlowLdiIngest ["ldi_ingestion.json"]
       AUTH_CHK["API Key Validator\n(Matches INGEST_API_KEY)"]
-      SCHEMA_VAL["JSON Schema Validator\n(22-field structural assertion)"]
-      LDI_BUF["LDI Memory Buffer\n(Explicit GC: flatData.length=0)"]
+      SCHEMA_VAL["JSON Array Schema Validator\n(22-field structural assertion)"]
+      STAGE_WRITE["Write-Ahead Staging\n(INSERT INTO public.ingest_staging)"]
+      LDI_WRITE["Batch Hypertable Writer\n(INSERT INTO public.ldi_data)"]
+      STAGE_DEL["Delete Staged Batch\n(DELETE FROM public.ingest_staging)"]
+      GC["Explicit Garbage Collection\n(flatData.length=0, msg.payload=null)"]
     end
 
-    subgraph Flow03 ["03-alarm-engine.json"]
-      COND_EVAL["Condition Evaluation Engine\n(Threshold checks on live telemetry)"]
-      AM_DISP["Alertmanager Dispatcher\n(Generates alert payloads)"]
-    end
-
-    subgraph Flow04 ["04-storage-writer.json"]
-      FLUSH_TMR["Batch Flush Timer (10s)"]
-      BATCH_BUILD["Multi-row SQL Constructor\n(INSERT INTO public.ldi_data...)"]
-      PG_CLIENT["PgBouncer Pool Client\n(global.get('pg'), Transaction mode)"]
+    subgraph FlowSim ["ldi_simulator.json & ldi_alarm_simulator.json"]
+      SIM_LDI["Live Telemetry Simulator\n(OU Process, 10 Machines)"]
+      SIM_ALARM["Live Alarm Replay Engine\n(Excursion evaluation & injection)"]
     end
 
     subgraph FlowAlerting ["alerting.json"]
@@ -161,16 +169,21 @@ flowchart TD
   end
 
   subgraph PersistenceTier ["Persistence Tier"]
-    PGB["PgBouncer (:6432)"]
-    TSDB[("TimescaleDB (:5432)\npublic.ldi_data\npublic.sys_metrics")]
+    PGB["PgBouncer (:5432)\nTransaction Pooling | SCRAM-SHA-256"]
+    TSDB[("TimescaleDB (:5432)\npublic.snmp_data\npublic.ldi_data\npublic.ingest_staging")]
   end
 
-  TMR --> REG --> CB --> FORK --> PARSER --> BATCH_BUILD
-  HTTP_LDI --> AUTH_CHK --> SCHEMA_VAL --> LDI_BUF --> BATCH_BUILD
+  TMR --> REG --> CB --> FORK --> PARSER --> BATCH_SNMP --> PGB
+  HTTP_LDI --> AUTH_CHK --> SCHEMA_VAL --> STAGE_WRITE --> LDI_WRITE --> STAGE_DEL --> GC
+  LDI_WRITE --> PGB
+  STAGE_WRITE --> PGB
+  STAGE_DEL --> PGB
   HTTP_INJ --> SCHEMA_VAL
 
-  LDI_BUF --> COND_EVAL --> AM_DISP
-  FLUSH_TMR --> BATCH_BUILD --> PG_CLIENT --> PGB --> TSDB
+  SIM_LDI -->|"Internal POST"| HTTP_LDI
+  SIM_ALARM --> PGB
+
+  PGB --> TSDB
 
   AM_HOOK --> MSG_FMT
   MSG_FMT --> LINE_API
@@ -189,22 +202,38 @@ sequenceDiagram
   participant Machine as LDI Exposure Machine
   participant Proxy as Nginx Gateway (ims-proxy)
   participant NodeRed as Ingestion Engine (ims-node-red)
-  participant PgBouncer as PgBouncer (:6432)
+  participant PgBouncer as PgBouncer (:5432)
   participant TimescaleDB as TimescaleDB (:5432)
   participant Grafana as Grafana Dashboard (:3000)
 
-  Machine->>Proxy: POST /ldi-telemetry (JSON payload + X-API-Key)
-  Proxy->>Proxy: Apply rate limiting (rate=100r/s burst=2500)
+  Machine->>Proxy: POST /ldi-telemetry (JSON array + X-API-Key)
+  Proxy->>Proxy: Apply rate limiting (rate=50r/s burst=100 nodelay)
   Proxy->>NodeRed: Forward payload to internal :1880/ldi-telemetry
-  NodeRed->>NodeRed: Validate API key & schema (22 fields)
-  NodeRed-->>Proxy: 202 Accepted {"status": "accepted", "records_queued": 1}
-  Proxy-->>Machine: 202 Accepted
+  NodeRed->>NodeRed: Validate API key & array schema (22 fields)
 
-  Note over NodeRed: Memory buffer accumulates rows for 10s window
-  NodeRed->>NodeRed: Construct batched INSERT (NOW() in values)
-  NodeRed->>PgBouncer: Execute batched SQL transaction
-  PgBouncer->>TimescaleDB: Write into hypertable public.ldi_data (1d chunk)
-  NodeRed->>NodeRed: Explicit GC (flatData.length = 0, msg.payload = null)
+  alt Validation Failure
+    NodeRed-->>Proxy: 400 Bad Request ("Payload must be a JSON array")
+    Proxy-->>Machine: 400 Bad Request
+  else Validation Success
+    NodeRed->>PgBouncer: Write-ahead staging: INSERT INTO public.ingest_staging
+    PgBouncer->>TimescaleDB: Write staging record
+    alt Staging DB Failure
+      NodeRed-->>Proxy: 503 Service Unavailable ("Staging failed, batch not accepted")
+      Proxy-->>Machine: 503 Service Unavailable
+    else Staging DB Success
+      NodeRed->>PgBouncer: Batch INSERT INTO public.ldi_data (1d chunk)
+      PgBouncer->>TimescaleDB: Write into hypertable public.ldi_data
+      alt Batch Insert Failure
+        NodeRed-->>Proxy: 502 Bad Gateway (Staged row retained for retry)
+        Proxy-->>Machine: 502 Bad Gateway
+      else Batch Insert Success
+        NodeRed->>PgBouncer: DELETE FROM public.ingest_staging WHERE id = staged_id
+        NodeRed->>NodeRed: Explicit GC (flatData.length = 0, msg.payload = null)
+        NodeRed-->>Proxy: 200 OK {"status": "success", "inserted": count}
+        Proxy-->>Machine: 200 OK
+      end
+    end
+  end
 
   Note over TimescaleDB: Continuous Aggregate policy triggers
   TimescaleDB->>TimescaleDB: Materialize rollups into public.ldi_data_15m
@@ -270,7 +299,7 @@ sequenceDiagram
   participant Walker as SNMP Bulk Walker
   participant Breaker as Circuit Breaker State
   participant Target as Edge Device (Unresponsive)
-  participant DB as TimescaleDB (sys_metrics)
+  participant DB as TimescaleDB (circuit_breaker_events)
 
   Timer->>Walker: Trigger scheduled poll cycle
   Walker->>Breaker: Query device state for target "SW-CORE-01"
@@ -285,23 +314,23 @@ sequenceDiagram
     else failureCount >= 2
       Breaker->>Breaker: Transition State -> OPEN (Trip breaker)
       Breaker->>DB: Record Node Status = OFFLINE (Immediate zero-value telemetry)
-      Note over Breaker: Start 120s cooldown probe timer
+      Note over Breaker: Start 300s (5-minute) cooldown probe timer
     end
 
   else Breaker State is OPEN (Tripped)
     Breaker-->>Walker: Suppress poll (Protect edge network from packet floods)
-    Note over Walker: Skip SNMP transmission; retain safe zeroed metrics
+    Note over Walker: Skip SNMP transmission - retain safe zeroed metrics
 
   else Cooldown Expired: Transition to HALF_OPEN (Probe Mode)
     Breaker->>Walker: Allow single lightweight SNMP probe request
     Walker->>Target: Dispatch probe GET request
     alt Probe Succeeds
       Target-->>Walker: Valid SNMP Response
-      Walker->>Breaker: Reset failureCount = 0; Transition State -> CLOSED
+      Walker->>Breaker: Reset failureCount = 0 - Transition State -> CLOSED
       Breaker->>DB: Record Node Status = ONLINE
     else Probe Fails
       Target--xWalker: Timeout
-      Walker->>Breaker: Re-trip State -> OPEN; Restart 120s cooldown timer
+      Walker->>Breaker: Re-trip State -> OPEN - Restart 300s cooldown timer
     end
   end
 ```
@@ -316,7 +345,7 @@ Illustrates the chunking boundaries, continuous aggregate hierarchies, and lifec
 flowchart TD
   subgraph Ingestion ["Ingestion Level"]
     RAW_LDI["public.ldi_data\n(Hypertable, 1-Day Chunks)"]
-    RAW_INFRA["public.sys_metrics & net_metrics\n(Hypertables, 1-Day Chunks)"]
+    RAW_INFRA["public.snmp_data\n(Hypertable, 1-Day Chunks)"]
     RAW_ALARM["public.ldi_alarm_log\n(Hypertable, 7-Day Chunks)"]
   end
 

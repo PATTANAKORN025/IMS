@@ -31,29 +31,26 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph FOUNDATION["ฐานรากแพลตฟอร์มส่วนกลาง (Zero-Modification Foundation)"]
-    DEV[("public.devices
-แคตตาล็อกอุปกรณ์และตัวตนเครื่องจักรหลัก")]
-    PGB["PgBouncer Transaction Pooler
-(พอร์ต 5432, AUTH: plain)"]
-    CORE_LINT["ระบบตรวจสอบคุณภาพ CI & Linters
-(alarm-sync, query-budget, dashboard-linter)"]
+    DEV[("public.devices\nแคตตาล็อกอุปกรณ์และตัวตนเครื่องจักรหลัก")]
+    PGB["PgBouncer Transaction Pooler\n(พอร์ต 5432, AUTH: scram-sha-256)"]
+    CORE_LINT["ระบบตรวจสอบคุณภาพ CI & Linters\n(alarm-sync, query-budget, dashboard-linter)"]
   end
 
   subgraph DOMAINS["โดเมนกระบวนการผลิตที่เพิ่มเข้ามา (Additive Process Domains)"]
     subgraph D_LDI["โดเมน: กระบวนการฉายแสง LDI"]
       LDI_TBL[("public.ldi_data (Hypertable)")]
       LDI_ALM[("public.ldi_alarm_ms_code & log")]
-      LDI_CAGGS[("cagg_ldi_metrics_1m / 1h")]
+      LDI_CAGGS[("ldi_data_1m / 15m / 1h / ldi_data_hourly")]
     end
     subgraph D_DRL["โดเมน: ฝูงเครื่องเจาะ CNC Drilling"]
-      DRL_TBL[("drilling_telemetry (Hypertable)")]
-      DRL_ALM[("drilling_alarm_ms_code & log")]
-      DRL_CAGGS[("v_drilling_shift_summary")]
+      DRL_TBL[("eap_backup: public.machine_event")]
+      DRL_ALM[("eap_backup: public.agent_log")]
+      DRL_CAGGS[("คิวรีเชิงวิเคราะห์และ Views")]
     end
     subgraph D_VCP["โดเมน: สายชุบโลหะด้วยไฟฟ้า VCP"]
-      VCP_TBL[("vcp_telemetry (Hypertable)")]
-      VCP_ALM[("vcp_alarm_ms_code & log")]
-      VCP_CAGGS[("v_vcp_active_lines & bath_health")]
+      VCP_TBL[("eap_backup: public.vcp_upp (100k แถว)")]
+      VCP_ALM[("eap_backup: public.vcp_alarm & vcp_status_change")]
+      VCP_CAGGS[("วิว: eap_api_vcp_upp")]
     end
     subgraph D_FUTURE["โดเมน: กระบวนการผลิตในอนาคต (เช่น AOI / Etching)"]
       NEW_TBL[("public.<process>_data (Hypertable)")]
@@ -63,14 +60,10 @@ flowchart TB
   end
 
   subgraph DASHBOARDS["ระบบแดชบอร์ด Grafana (มาตรฐาน Grid-24)"]
-    LDI_DASH["แดชบอร์ด 3 ประสาน LDI
-(Andon, Analytics, Manufacturing)"]
-    DRL_DASH["แดชบอร์ด 3 ประสาน Drilling
-(Fleet, Investigation, Shift)"]
-    VCP_DASH["แดชบอร์ด 3 ประสาน VCP
-(Wall, Console, Overview)"]
-    NEW_DASH["แดชบอร์ด 3 ประสานใหม่
-(Andon, Analytics, Command)"]
+    LDI_DASH["แดชบอร์ด LDI (10)\n(Andon, Analytics, Manufacturing, Twin)"]
+    DRL_DASH["แดชบอร์ด Drilling (4)\n(Fleet, Investigation, Shift, Anomaly)"]
+    VCP_DASH["แดชบอร์ด VCP (3)\n(Wall, Console, Overview)"]
+    NEW_DASH["แดชบอร์ดกระบวนการใหม่\n(Andon, Analytics, Command)"]
   end
 
   DEV --> LDI_TBL

@@ -321,9 +321,10 @@ The full pre-commit suite (all unit tests, the `tests/lint/` linters, dashboard 
 ```mermaid
 flowchart LR
   subgraph Collection ["Collection"]
-    J["Network switches"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
+    J["Network switches"] -->|SNMP v2c| W["Node-RED\ningestion.json"]
     S["Servers"] -->|SNMP v2c| W
-    L["LDI machines"] -->|"HTTP POST /ldi-telemetry (via nginx)"| W
+    L["LDI machines"] -->|"HTTP POST /ldi-telemetry\n(via Nginx Proxy)"| LI["Node-RED\nldi_ingestion.json"]
+    EAP["Drilling & VCP"] -.->|"Direct DB Sync"| EDB[("eap_backup DB\nmachine_event, vcp_upp")]
   end
 
   subgraph Processing ["V10 Streaming Pipeline"]
@@ -331,30 +332,35 @@ flowchart LR
     W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
     W -->|fork_5_ways| STO[Storage Walker]
     W -->|fork_5_ways| TMP[Temp Walker]
-    CPU --> P["Stateful Parser\nper-device flow context"]
+    CPU --> P["Stateful Parser\nsre_parser v10"]
     NET --> P
     STO --> P
     TMP --> P
+    LI -->|"Write-Ahead Staging\ningest_staging"| STG["Batch Hypertable Writer\nExplicit GC"]
   end
 
   subgraph Storage ["Storage"]
-    P -->|Batch INSERT 10s| B["PgBouncer\nTransaction Pool"]
-    B --> T["(TimescaleDB\nHypertables)"]
-    T --> CAGG["CAGGs\nHourly → Daily → Weekly"]
+    P -->|"Batch INSERT (nodered_writer)"| B["PgBouncer :5432\nSCRAM-SHA-256 Pool"]
+    STG -->|"Batch INSERT (nodered_writer)"| B
+    B --> T[("TimescaleDB :5432\npublic schema")]
+    T --> CAGG["CAGGs\n1m → 15m → 1h / Hourly"]
   end
 
   subgraph Visualization ["Visualization"]
+    CAGG --> G2["Grafana 13\n10 manufacturing dashboards"]
     T --> G1["Grafana 13\n5 infrastructure dashboards"]
-    T --> G2["Grafana 13\n10 manufacturing dashboards"]
-    T --> G3["Grafana 13\n4 CNC drilling dashboards"]
-    T --> G4["Grafana 13\n3 VCP plating dashboards"]
+    EDB -->|"drilling-timescaledb"| G3["Grafana 13\n4 CNC drilling dashboards"]
+    EDB -->|"drilling-timescaledb"| G4["Grafana 13\n3 VCP plating dashboards"]
     T --> FT["Factory Twin 3D\n+ Alarm API"]
   end
 
   subgraph Alerting ["Alerting"]
-    T --> PR["Prometheus\n/metrics scrape"]
+    W -->|"Scrape /metrics"| PR["Prometheus\nRule Evaluation"]
     PR --> AM["Alertmanager\nInhibition Rules"]
-    AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
+    AM --> WH["Node-RED\n/alert-webhook"]
+    G1 -->|"Native Alerts"| WH
+    G2 -->|"Native Alerts"| WH
+    WH --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
   end
 
   style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0

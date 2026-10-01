@@ -92,7 +92,7 @@ sequenceDiagram
   IC->>DB: Apply Emergency Connection Scale & Flush Pool
   DB-->>Pipe: Connections Available & Batch Commits Resume
   Pipe-->>Mon: Buffer Cleared & Latency Returns to < 500ms
-  IC->>OnCall: Incident Mitigated; Monitoring Standby
+  IC->>OnCall: Incident Mitigated - Monitoring Standby
 ```
 
 ### Detailed Event Log

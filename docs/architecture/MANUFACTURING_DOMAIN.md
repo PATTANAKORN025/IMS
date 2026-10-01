@@ -31,29 +31,26 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph FOUNDATION["Common Platform Foundation (Zero-Modification Layer)"]
-    DEV[("public.devices
-Unified Hardware Identity Catalog")]
-    PGB["PgBouncer Transaction Pooler
-(Port 5432, AUTH: plain)"]
-    CORE_LINT["Continuous Integration & Linters
-(alarm-sync, query-budget, dashboard-linter)"]
+    DEV[("public.devices\nUnified Hardware Identity Catalog")]
+    PGB["PgBouncer Transaction Pooler\n(Port 5432, AUTH: scram-sha-256)"]
+    CORE_LINT["Continuous Integration & Linters\n(alarm-sync, query-budget, dashboard-linter)"]
   end
 
   subgraph DOMAINS["Additive Process Domains (Isolated Schemas & Hypertables)"]
     subgraph D_LDI["Domain: LDI Photolithography"]
       LDI_TBL[("public.ldi_data (Hypertable)")]
       LDI_ALM[("public.ldi_alarm_ms_code & log")]
-      LDI_CAGGS[("cagg_ldi_metrics_1m / 1h")]
+      LDI_CAGGS[("ldi_data_1m / 15m / 1h / ldi_data_hourly")]
     end
     subgraph D_DRL["Domain: CNC Drilling Fleet"]
-      DRL_TBL[("drilling_telemetry (Hypertable)")]
-      DRL_ALM[("drilling_alarm_ms_code & log")]
-      DRL_CAGGS[("v_drilling_shift_summary")]
+      DRL_TBL[("eap_backup: public.machine_event")]
+      DRL_ALM[("eap_backup: public.agent_log")]
+      DRL_CAGGS[("Direct Analytical Queries & Views")]
     end
     subgraph D_VCP["Domain: VCP Electroplating"]
-      VCP_TBL[("vcp_telemetry (Hypertable)")]
-      VCP_ALM[("vcp_alarm_ms_code & log")]
-      VCP_CAGGS[("v_vcp_active_lines & bath_health")]
+      VCP_TBL[("eap_backup: public.vcp_upp (100k rows)")]
+      VCP_ALM[("eap_backup: public.vcp_alarm & vcp_status_change")]
+      VCP_CAGGS[("Views: eap_api_vcp_upp")]
     end
     subgraph D_FUTURE["Domain: Future Process (e.g. AOI / Etching)"]
       NEW_TBL[("public.<process>_data (Hypertable)")]
@@ -63,14 +60,10 @@ Unified Hardware Identity Catalog")]
   end
 
   subgraph DASHBOARDS["Grafana Provisioned Ecosystem (Grid-24 Discipline)"]
-    LDI_DASH["LDI Dashboard Trio
-(Andon, Analytics, Manufacturing)"]
-    DRL_DASH["Drilling Dashboard Trio
-(Fleet, Investigation, Shift)"]
-    VCP_DASH["VCP Dashboard Trio
-(Wall, Console, Overview)"]
-    NEW_DASH["New Process Dashboard Trio
-(Andon, Analytics, Command)"]
+    LDI_DASH["LDI Dashboards (10)\n(Andon, Analytics, Manufacturing, Twin)"]
+    DRL_DASH["Drilling Dashboards (4)\n(Fleet, Investigation, Shift, Anomaly)"]
+    VCP_DASH["VCP Dashboards (3)\n(Wall, Console, Overview)"]
+    NEW_DASH["New Process Dashboards\n(Andon, Analytics, Command)"]
   end
 
   DEV --> LDI_TBL

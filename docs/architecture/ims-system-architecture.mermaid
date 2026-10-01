@@ -16,14 +16,14 @@ flowchart TD
   end
 
   subgraph IngestionLayer ["Ingestion & Transformation Pipeline"]
-    NR["Node-RED Pipeline (ims-node-red :1880)\n01-snmp-poller | 02-ldi-ingest\n03-alarm-engine | 04-storage-writer"]
+    NR["Node-RED Pipeline (ims-node-red :1880)\ningestion.json | ldi_ingestion.json\nalerting.json | simulators"]
     BBOX["Blackbox Exporter (ims-blackbox :9115)\nSLA & HTTP/TCP Probes"]
   end
 
   subgraph PersistenceLayer ["Persistence Tier"]
-    PGB["PgBouncer Pooler (ims-pgbouncer :6432)\nTransaction Pooling | AUTH: plain"]
-    TSDB[("TimescaleDB (ims-timescaledb :5432)\nHypertables: ldi_data, sys_metrics, ldi_alarm_log\nCAGGs: 1m, 15m, 1h, 1d, 1w\nSecondary DB: eap_backup")]
-    DBMIG["Migration Runner (ims-db-migrate)\nMigrations 001 - 086"]
+    PGB["PgBouncer Pooler (ims-pgbouncer :5432)\nTransaction Pooling | AUTH: scram-sha-256"]
+    TSDB[("TimescaleDB (ims-timescaledb :5432)\nHypertables: ldi_data, snmp_data, ldi_alarm_log\nCAGGs: 1m, 15m, 1h, Hourly\nSecondary DB: eap_backup")]
+    DBMIG["Migration Runner (ims-db-migrate)\nMigrations 001 - 091"]
     ARCH["Observability Archiver\n(ims-observability-archiver)"]
     PGADMIN["PgAdmin 4 (ims-pgadmin4 :5050)\nDatabase Web Management"]
   end
@@ -52,17 +52,17 @@ flowchart TD
 
   %% Gateway Auth Sub-requests & Proxied Routes
   PROXY -->|Forward UI & API| GRAFANA
-  PROXY -->|Forward /alarm-api/* (Auth Checked)| ALARM_API
-  PROXY -->|Forward /factory-twin-3d/* (Auth Checked)| TWIN
+  PROXY -->|"Forward /alarm-api/* (Auth Checked)"| ALARM_API
+  PROXY -->|"Forward /factory-twin-3d/* (Auth Checked)"| TWIN
   PROXY -.->|Internal /auth-check sub-request| GRAFANA
 
   %% Persistence Connections
-  NR -->|Batched INSERTs (10s)| PGB
+  NR -->|"Batched INSERTs (10s)"| PGB
   ALARM_API -->|UPDATE ldi_alarm_lifecycle| PGB
   GRAFANA -->|CAGG Analytical Queries| PGB
   PGB --> TSDB
-  CNC -.->|Log Sync| TSDB
-  VCP -.->|Sensor Sync| TSDB
+  CNC -.->|"Log Sync (eap_backup)"| TSDB
+  VCP -.->|"Sensor Sync (eap_backup)"| TSDB
 
   %% Support & Admin
   DBMIG -->|Initial Migrations| TSDB
@@ -71,7 +71,7 @@ flowchart TD
   GRAFANA -->|Render Request| RENDERER
 
   %% Alerting Flow
-  TSDB -->|Metrics Scrape| PROM
+  NR -->|"Metrics Scrape /metrics"| PROM
   PROM -->|Fire Alerts| AM
   AM -->|POST /alert-webhook| NR
   GRAFANA -->|Native Alerts /alert-webhook| NR

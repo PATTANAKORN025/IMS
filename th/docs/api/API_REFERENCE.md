@@ -45,7 +45,7 @@ flowchart TD
     end
 
     subgraph StorageLayer["ระบบฐานข้อมูลและการจัดเก็บ"]
-        PGB["PgBouncer ตัวรวมการเชื่อมต่อ\n(:6432)"]
+        PGB["PgBouncer ตัวรวมการเชื่อมต่อ\n(:5432)"]
         TSDB["TimescaleDB เก็บข้อมูลอนุกรมเวลา\n(:5432)"]
     end
 
@@ -56,13 +56,13 @@ flowchart TD
 
     PROXY -->|ส่งต่อ /ldi-telemetry| NR
     PROXY -->|ส่งต่อ /inject| NR
-    PROXY -->|ส่งต่อ /alarm-api/* (ตรวจสอบสิทธิ์)| ALARM
+    PROXY -->|"ส่งต่อ /alarm-api/* (ตรวจสอบสิทธิ์)"| ALARM
     PROXY -->|ส่งต่อ /api/* และ UI| GRAFANA
-    PROXY -->|ส่งต่อ /factory-twin-3d/*| TWIN
+    PROXY -->|"ส่งต่อ /factory-twin-3d/*"| TWIN
 
     PROXY -.->|ตรวจสอบสิทธิ์ภายใน /auth-check| GRAFANA
 
-    NR -->|บันทึกแบบกลุ่ม (Batched INSERT)| PGB
+    NR -->|"บันทึกแบบกลุ่ม (Batched INSERT)"| PGB
     ALARM -->|อัปเดต ldi_alarm_lifecycle| PGB
     GRAFANA -->|คิวรีเชิงวิเคราะห์ / CAGGs| PGB
     PGB --> TSDB

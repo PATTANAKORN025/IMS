@@ -38,7 +38,7 @@ flowchart TB
 
  subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
   DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
-  NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
+  NR --> SNMPDATA[("public.snmp_data\nhypertable, 1d chunks")]
  end
 
  subgraph EAP ["Equipment Integration (Drilling & VCP)"]
@@ -48,9 +48,10 @@ flowchart TB
  LDIDATA --> GRAFANA["Grafana 13\n22 dashboards across 4 domains"]
  ALARMLOG --> GRAFANA
  ALARMLC --> GRAFANA
- SYSMETRICS --> GRAFANA
+ SNMPDATA --> GRAFANA
  EAPDB --> GRAFANA
- SYSMETRICS --> PROM["Prometheus"]
+ NR -->|"metrics endpoint"| PROM["Prometheus"]
+ BBOX["Blackbox Exporter"] --> PROM
  GRAFANA -->|"native alert rules"| NRWEBHOOK["Node-RED /alert-webhook"]
  PROM --> AM["Alertmanager"] --> NRWEBHOOK
  NRWEBHOOK --> LINE["LINE Messaging API"]

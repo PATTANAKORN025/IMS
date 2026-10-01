@@ -19,7 +19,7 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
  subgraph HOST["Host network"]
-  subgraph DOCKER["Docker bridge networks (ims-internal / ims-monitoring)"]
+  subgraph DOCKER["Docker bridge networks (ims-internal / ims-monitoring / ims-docker-api)"]
    PROXY["nginx proxy :3000, all interfaces\n(single UI entry point)"]
    GRAFANA["Grafana\ninternal only, no host port"]
    ALARMAPI["alarm-api\ninternal only, no host port"]
@@ -32,13 +32,15 @@ flowchart TB
    PGADMIN["pgAdmin\n127.0.0.1:5050"]
    SNMPSIM["SNMP simulator\ninternal only"]
    BLACKBOX["Blackbox exporter\n127.0.0.1:9115"]
+    SOCKPROXY["ims-docker-socket-proxy\ninternal only, ims-docker-api"]
+    ARCHIVER["ims-observability-archiver\ninternal only"]
   end
  end
 
  EXT1["Real SNMP devices\n(servers, network gear)"] -->|"community-string auth"| NODERED
  EXT2["Real/simulated LDI machines"] -->|"HTTP POST /ldi-telemetry via proxy,\nx-api-key auth"| PROXY
  PROXY -->|"/ldi-telemetry, /inject"| NODERED
- NODERED --> PGB --> TSDB
+ NODERED -->|"nodered_writer role"| PGB --> TSDB
  PROXY -->|"reverse proxy"| GRAFANA
  PROXY -->|"auth_request /api/user\n(rejects if session invalid)\nthen reverse proxy"| ALARMAPI
  PROXY -->|"auth_request /api/user\nthen reverse proxy"| TWIN
@@ -51,6 +53,9 @@ flowchart TB
  NODERED -->|"credentials not shipped"| LINE["LINE Messaging API"]
  NODERED -->|"credentials not shipped"| TEAMS["MS Teams"]
 
+ 
+ ARCHIVER -->|"read-only Docker metrics"| SOCKPROXY
+ GRAFANA -->|"drilling-timescaledb (eap_backup)"| TSDB
  FUTURE["Future: real SECS/GEM equipment\n(not built)"] -.->|"NEW boundary, not yet designed"| NODERED
 ```
 

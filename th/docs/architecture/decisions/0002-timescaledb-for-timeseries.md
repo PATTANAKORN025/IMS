@@ -90,12 +90,12 @@ flowchart TD
 
   subgraph POOL["ชั้นจัดการการเชื่อมต่อ (Connection Pooling)"]
     PGB["PgBouncer
-(Transaction Mode, port 5432, AUTH: plain)"]
+(Transaction Mode, port 5432, AUTH: scram-sha-256)"]
   end
 
   subgraph STORAGE["ชั้น TimescaleDB (public schema)"]
     HT["Hypertables
-(ldi_data, sys_metrics, net_metrics)
+(ldi_data, ldi_data, snmp_data)
 Chunk Interval: 1 day"]
     CAGG["Continuous Aggregates (CAGGs)
 (1m, 15m, 1h Rollups)

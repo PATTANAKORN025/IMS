@@ -31,37 +31,29 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph SOURCES["Shopfloor & IT/OT Devices"]
-    S1["IT/OT Network & Servers
-(SNMP v2c Agent)"]
-    S2["LDI Photolithography Tools
-(HTTP/JSON Batch Producer)"]
-    S3["CNC Drilling & VCP Lines
-(EAP Operational Stand-in)"]
-    S4["Future Production Tools
-(SECS-II / GEM HSMS Protocol)"]
+    S1["IT/OT Network & Servers\n(SNMP v2c Agent)"]
+    S2["LDI Photolithography Tools\n(HTTP/JSON Batch Producer)"]
+    S3["CNC Drilling & VCP Lines\n(EAP Operational Systems)"]
+    S4["Future Production Tools\n(SECS-II / GEM HSMS Protocol)"]
   end
 
   subgraph ADAPTERS["Equipment Automation Program (EAP) Layer"]
-    A1["Adapter 1: SNMP Poller
-(30s cycle, fork_5_ways)"]
-    A2["Adapter 2: HTTP Ingestion
-(POST /ldi-telemetry, x-api-key)"]
-    A3["Adapter 3: EAP Stream Adapter
-(Drilling & VCP Telemetry Engine)"]
-    A4["Adapter 4: SECS/GEM Contract
-(SVID/ECID & CEID Event Mapping)"]
+    A1["Adapter 1: SNMP Poller\n(30s cycle, ingestion.json)"]
+    A2["Adapter 2: HTTP Ingestion\n(POST /ldi-telemetry, ldi_ingestion.json)"]
+    A3["Adapter 3: EAP Database Direct\n(eap_backup DB: machine_event, vcp_upp)"]
+    A4["Adapter 4: SECS/GEM Contract\n(Future Specification)"]
   end
 
   subgraph REGISTRY["Unified Device Registry & Storage Tier"]
-    DEV[("public.devices
-Master Equipment Catalog")]
-    HT_SYS[("sys_metrics & net_metrics")]
-    HT_LDI[("public.ldi_data
-LDI Telemetry Hypertable")]
-    HT_DRL[("drilling_telemetry & vcp_telemetry
-EAP Backup Database")]
-    ALARM[("Alarm Master & Event Logs
-(ldi_alarm_ms_code, etc.)")]
+    DEV[("public.devices\nMaster Equipment Catalog")]
+    HT_SYS[("public.snmp_data\nSNMP Telemetry Hypertable")]
+    HT_LDI[("public.ldi_data\nLDI Telemetry Hypertable")]
+    EAP_DB[("eap_backup DB\nmachine_event, vcp_upp, vcp_alarm")]
+    ALARM[("Alarm Master & Event Logs\n(ldi_alarm_ms_code & ldi_alarm_log)")]
+  end
+
+  subgraph VISUALIZATION["Grafana Dashboard Ecosystem"]
+    GRAF["Grafana 13 (22 Dashboards)\nDirect SQL Queries via :5432"]
   end
 
   S1 --> A1 --> DEV
@@ -69,13 +61,18 @@ EAP Backup Database")]
   S2 --> A2 --> DEV
   A2 --> HT_LDI
   A2 --> ALARM
-  S3 --> A3 --> DEV
-  A3 --> HT_DRL
+  S3 --> A3 --> EAP_DB
   S4 -.-> A4 -.-> DEV
+
+  HT_SYS --> GRAF
+  HT_LDI --> GRAF
+  EAP_DB -->|"drilling-timescaledb datasource"| GRAF
+  ALARM --> GRAF
 
   style SOURCES fill:#1e293b,stroke:#00F2FE,color:#f8fafc
   style ADAPTERS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
   style REGISTRY fill:#1e293b,stroke:#10B981,color:#f8fafc
+  style VISUALIZATION fill:#1e293b,stroke:#8B5CF6,color:#f8fafc
 ```
 
 ---

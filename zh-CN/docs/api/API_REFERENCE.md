@@ -45,7 +45,7 @@ flowchart TD
     end
 
     subgraph StorageLayer["数据持久化层"]
-        PGB["PgBouncer 连接池\n(:6432)"]
+        PGB["PgBouncer 连接池\n(:5432)"]
         TSDB["TimescaleDB 时序数据库\n(:5432)"]
     end
 
@@ -56,13 +56,13 @@ flowchart TD
 
     PROXY -->|转发 /ldi-telemetry| NR
     PROXY -->|转发 /inject| NR
-    PROXY -->|转发 /alarm-api/* (鉴权校验)| ALARM
+    PROXY -->|"转发 /alarm-api/* (鉴权校验)"| ALARM
     PROXY -->|转发 /api/* 及 UI 界面| GRAFANA
-    PROXY -->|转发 /factory-twin-3d/*| TWIN
+    PROXY -->|"转发 /factory-twin-3d/*"| TWIN
 
     PROXY -.->|内部会话鉴权 /auth-check| GRAFANA
 
-    NR -->|批量写入 (Batched INSERT)| PGB
+    NR -->|"批量写入 (Batched INSERT)"| PGB
     ALARM -->|更新 ldi_alarm_lifecycle| PGB
     GRAFANA -->|分析查询 / CAGGs| PGB
     PGB --> TSDB

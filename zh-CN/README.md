@@ -321,9 +321,10 @@ ORDER BY bucket ASC;
 ```mermaid
 flowchart LR
   subgraph Collection ["数据采集"]
-    J["网络交换机"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
+    J["网络交换机"] -->|SNMP v2c| W["Node-RED\ningestion.json"]
     S["服务器"] -->|SNMP v2c| W
-    L["LDI 设备"] -->|"HTTP POST /ldi-telemetry（经 nginx）"| W
+    L["LDI 设备"] -->|"HTTP POST /ldi-telemetry\n(经由 Nginx 网关)"| LI["Node-RED\nldi_ingestion.json"]
+    EAP["钻孔与电镀工序"] -.->|"直接数据同步"| EDB[("eap_backup DB\nmachine_event, vcp_upp")]
   end
 
   subgraph Processing ["V10 流式流水线"]
@@ -331,30 +332,35 @@ flowchart LR
     W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
     W -->|fork_5_ways| STO[Storage Walker]
     W -->|fork_5_ways| TMP[Temp Walker]
-    CPU --> P["有状态解析器\n按设备的 flow context"]
+    CPU --> P["有状态解析器\nsre_parser v10"]
     NET --> P
     STO --> P
     TMP --> P
+    LI -->|"预写暂存\ningest_staging"| STG["超表批量写入器\n显式 GC 内存回收"]
   end
 
   subgraph Storage ["存储"]
-    P -->|Batch INSERT 10s| B["PgBouncer\nTransaction Pool"]
-    B --> T["(TimescaleDB\nHypertables)"]
-    T --> CAGG["CAGGs\n小时 → 日 → 周"]
+    P -->|"批量写入 (nodered_writer)"| B["PgBouncer :5432\nSCRAM-SHA-256 连接池"]
+    STG -->|"批量写入 (nodered_writer)"| B
+    B --> T[("TimescaleDB :5432\npublic schema")]
+    T --> CAGG["CAGGs\n1m → 15m → 1h / Hourly"]
   end
 
   subgraph Visualization ["可视化"]
+    CAGG --> G2["Grafana 13\n10 个制造仪表板"]
     T --> G1["Grafana 13\n5 个基础设施仪表板"]
-    T --> G2["Grafana 13\n10 个制造仪表板"]
-    T --> G3["Grafana 13\n4 个 CNC 钻孔仪表板"]
-    T --> G4["Grafana 13\n3 个 VCP 电镀仪表板"]
+    EDB -->|"drilling-timescaledb"| G3["Grafana 13\n4 个 CNC 钻孔仪表板"]
+    EDB -->|"drilling-timescaledb"| G4["Grafana 13\n3 个 VCP 电镀仪表板"]
     T --> FT["Factory Twin 3D\n+ Alarm API"]
   end
 
   subgraph Alerting ["告警"]
-    T --> PR["Prometheus\n抓取 /metrics"]
-    PR --> AM["Alertmanager\nInhibition Rules"]
-    AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
+    W -->|"指标拉取 /metrics"| PR["Prometheus\n规则评估引擎"]
+    PR --> AM["Alertmanager\n抑制与去重规则"]
+    AM --> WH["Node-RED\n/alert-webhook"]
+    G1 -->|"原生告警规则"| WH
+    G2 -->|"原生告警规则"| WH
+    WH --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
   end
 
   style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0

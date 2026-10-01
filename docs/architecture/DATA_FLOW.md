@@ -29,51 +29,43 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph SOURCES["1. Industrial Telemetry Sources"]
-    SNMP_DEV["Servers / Switches / Routers
-(SNMP v2c, 30s polling)"]
-    LDI_DEV["LDI Photolithography Machines
-(HTTP POST /ldi-telemetry, 2s)"]
-    DRL_DEV["CNC Drilling Machines
-(EAP Spindle & Cycle Events)"]
-    VCP_DEV["VCP Electroplating Lines
-(EAP Rectifier & Bath Telemetry)"]
+    SNMP_DEV["Servers / Switches / Routers\n(SNMP v2c, 30s polling)"]
+    LDI_DEV["LDI Photolithography Machines\n(HTTP POST /ldi-telemetry, 2s)"]
+    DRL_DEV["CNC Drilling Machines\n(Events & Spindle Telemetry)"]
+    VCP_DEV["VCP Electroplating Lines\n(Sensor & Chemical Bath Logs)"]
   end
 
   subgraph INGESTION["2. Ingestion & Transformation Tier (Node-RED)"]
-    NR_INFRA["ingestion.json
-fork_5_ways -> sre_parser"]
-    NR_LDI["ldi_ingestion.json
-Schema validation, O(1) GC cleanup"]
-    NR_EAP["eap_ingestion.json
-Unit normalization & batching"]
+    NR_INFRA["ingestion.json\nfork_5_ways -> sre_parser v10"]
+    NR_LDI["ldi_ingestion.json\nSchema validation, staging, O(1) GC cleanup"]
   end
 
   subgraph POOL["3. Connection Pooling Tier"]
-    PGB["PgBouncer
-(Transaction Mode, port 5432, AUTH: plain)"]
+    PGB["PgBouncer\n(Transaction Mode, port 5432, AUTH: scram-sha-256)"]
   end
 
   subgraph STORAGE["4. TimescaleDB Storage Tier (public schema)"]
     subgraph HYPER["Raw Hypertables (1-day chunking)"]
-      HT_SYS[("sys_metrics & net_metrics")]
+      HT_SYS[("snmp_data")]
       HT_LDI[("ldi_data & ldi_alarm_log")]
-      HT_DRL[("drilling_telemetry & spindle_metrics")]
-      HT_VCP[("vcp_telemetry & rectifier_metrics")]
+      HT_STG[("ingest_staging")]
+    end
+    subgraph EAP_DB["Secondary Database: eap_backup"]
+      EAP_DRL[("machine_event & agent_log")]
+      EAP_VCP[("vcp_upp, vcp_alarm, vcp_status_change")]
     end
     subgraph CAGGS["Continuous Aggregates (CAGGs)"]
-      CAGG_1M[("1-Minute Rollups (e.g. ldi_data_1m)")]
+      CAGG_1M[("1-Minute Rollups (ldi_data_1m)")]
       CAGG_15M[("15-Minute Rollups (ldi_data_15m)")]
       CAGG_1H[("1-Hour Rollups & ldi_data_hourly")]
     end
     subgraph COMPRESS["Columnar Compression"]
-      COL[("Compressed Chunks > 7 Days
-Segmentby: machine_id / device_id")]
+      COL[("Compressed Chunks > 7 Days\nSegmentby: machine_id / device_id")]
     end
   end
 
   subgraph DISPATCH["5. Visualization & Alerting Tier"]
-    GRAF["Grafana (22 Dashboards)
-Grid-24 UI, sub-second CAGG queries"]
+    GRAF["Grafana (22 Dashboards)\nGrid-24 UI, sub-second queries"]
     PROM["Prometheus Scraper"]
     AM["Alertmanager Engine"]
     WH["Node-RED /alert-webhook"]
@@ -82,26 +74,25 @@ Grid-24 UI, sub-second CAGG queries"]
 
   SNMP_DEV --> NR_INFRA
   LDI_DEV --> NR_LDI
-  DRL_DEV --> NR_EAP
-  VCP_DEV --> NR_EAP
+  DRL_DEV -.->|"Direct Sync"| EAP_DRL
+  VCP_DEV -.->|"Direct Sync"| EAP_VCP
 
-  NR_INFRA -->|Batched SQL| PGB
-  NR_LDI -->|Batched SQL| PGB
-  NR_EAP -->|Batched SQL| PGB
+  NR_INFRA -->|"Batched SQL (nodered_writer)"| PGB
+  NR_LDI -->|"Write-Ahead & Batch (nodered_writer)"| PGB
 
   PGB --> HT_SYS
   PGB --> HT_LDI
-  PGB --> HT_DRL
-  PGB --> HT_VCP
+  PGB --> HT_STG
 
   HT_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
   HT_LDI --> COL
-  HT_DRL --> COL
-  HT_VCP --> COL
+  HT_SYS --> COL
 
   CAGGS --> GRAF
   HYPER --> GRAF
+  EAP_DB -->|"drilling-timescaledb (Direct :5432)"| GRAF
   PROM --> AM --> WH --> NOTIF
+  GRAF -->|"Native Alerts"| WH
 ```
 
 ---

@@ -90,12 +90,12 @@ flowchart TD
 
   subgraph POOL["连接池代理层 (Connection Pooling)"]
     PGB["PgBouncer
-(事务模式, 端口 5432, AUTH: plain)"]
+(事务模式, 端口 5432, AUTH: scram-sha-256)"]
   end
 
   subgraph STORAGE["TimescaleDB 核心存储层 (public schema)"]
     HT["超表集群 Hypertables
-(ldi_data, sys_metrics, net_metrics)
+(ldi_data, ldi_data, snmp_data)
 切片时间跨度: 1 天"]
     CAGG["持续聚合层 CAGGs
 (1m, 15m, 1h 汇总物化视图)

@@ -31,37 +31,29 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
   subgraph SOURCES["อุปกรณ์ในโรงงานและโครงสร้าง IT/OT"]
-    S1["เครือข่ายและเซิร์ฟเวอร์ IT/OT
-(SNMP v2c Agent)"]
-    S2["เครื่องจักร LDI Photolithography
-(HTTP/JSON Batch Producer)"]
-    S3["เครื่องเจาะ CNC และสายชุบ VCP
-(EAP Operational Stand-in)"]
-    S4["เครื่องจักรการผลิตในอนาคต
-(SECS-II / GEM HSMS Protocol)"]
+    S1["เครือข่ายและเซิร์ฟเวอร์ IT/OT\n(SNMP v2c Agent)"]
+    S2["เครื่องจักร LDI Photolithography\n(HTTP/JSON Batch Producer)"]
+    S3["เครื่องเจาะ CNC และสายชุบ VCP\n(ระบบบันทึกงานผลิต EAP)"]
+    S4["เครื่องจักรการผลิตในอนาคต\n(SECS-II / GEM HSMS Protocol)"]
   end
 
   subgraph ADAPTERS["ชั้นอะแดปเตอร์ Equipment Automation Program (EAP)"]
-    A1["อะแดปเตอร์ 1: SNMP Poller
-(รอบละ 30s, fork_5_ways)"]
-    A2["อะแดปเตอร์ 2: HTTP Ingestion
-(POST /ldi-telemetry, x-api-key)"]
-    A3["อะแดปเตอร์ 3: EAP Stream Adapter
-(ระบบรับข้อมูลงานเจาะและ VCP)"]
-    A4["อะแดปเตอร์ 4: สัญญา SECS/GEM
-(แปลง SVID/ECID และ CEID Event)"]
+    A1["อะแดปเตอร์ 1: SNMP Poller\n(รอบละ 30s, ingestion.json)"]
+    A2["อะแดปเตอร์ 2: HTTP Ingestion\n(POST /ldi-telemetry, ldi_ingestion.json)"]
+    A3["อะแดปเตอร์ 3: EAP Database Direct\n(eap_backup DB: machine_event, vcp_upp)"]
+    A4["อะแดปเตอร์ 4: สัญญา SECS/GEM\n(ข้อกำหนดในอนาคต)"]
   end
 
   subgraph REGISTRY["ระบบลงทะเบียนเครื่องจักรและฐานข้อมูล"]
-    DEV[("public.devices
-แคตตาล็อกเครื่องจักรหลัก")]
-    HT_SYS[("sys_metrics & net_metrics")]
-    HT_LDI[("public.ldi_data
-ตาราง Hypertable ของ LDI")]
-    HT_DRL[("drilling_telemetry & vcp_telemetry
-ฐานข้อมูล eap_backup")]
-    ALARM[("พจนานุกรมและประวัติการแจ้งเตือน
-(ldi_alarm_ms_code ฯลฯ)")]
+    DEV[("public.devices\nแคตตาล็อกเครื่องจักรหลัก")]
+    HT_SYS[("public.snmp_data\nตาราง Hypertable ของ SNMP")]
+    HT_LDI[("public.ldi_data\nตาราง Hypertable ของ LDI")]
+    EAP_DB[("eap_backup DB\nmachine_event, vcp_upp, vcp_alarm")]
+    ALARM[("พจนานุกรมและประวัติการแจ้งเตือน\n(ldi_alarm_ms_code และ log)")]
+  end
+
+  subgraph VISUALIZATION["ระบบแสดงผลแดชบอร์ด Grafana"]
+    GRAF["Grafana 13 (22 แดชบอร์ด)\nคิวรีตรงผ่านพอร์ต :5432"]
   end
 
   S1 --> A1 --> DEV
@@ -69,13 +61,18 @@ flowchart TB
   S2 --> A2 --> DEV
   A2 --> HT_LDI
   A2 --> ALARM
-  S3 --> A3 --> DEV
-  A3 --> HT_DRL
+  S3 --> A3 --> EAP_DB
   S4 -.-> A4 -.-> DEV
+
+  HT_SYS --> GRAF
+  HT_LDI --> GRAF
+  EAP_DB -->|"drilling-timescaledb datasource"| GRAF
+  ALARM --> GRAF
 
   style SOURCES fill:#1e293b,stroke:#00F2FE,color:#f8fafc
   style ADAPTERS fill:#1e293b,stroke:#3b82f6,color:#f8fafc
   style REGISTRY fill:#1e293b,stroke:#10B981,color:#f8fafc
+  style VISUALIZATION fill:#1e293b,stroke:#8B5CF6,color:#f8fafc
 ```
 
 ---

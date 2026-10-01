@@ -70,7 +70,7 @@ C4Container
  Person(user, "工程师与运维人员", "通过浏览器访问监控仪表板、三维数字孪生与告警处置 API。")
  System_Ext(ext_dev, "车间现场工业边缘设备", "LDI、CNC 钻机、VCP 电镀线、服务器、交换机。")
 
- System_Boundary(c1, "IMS 内部容器网络 (ims_net)") {
+ System_Boundary(c1, "IMS 内部容器网络 (ims-internal, ims-monitoring, ims-docker-api)") {
    Container(proxy, "反向代理 (ims-proxy)", "Nginx Alpine", "统一入口网关、客户端限流与会话安全鉴权。")
    Container(grafana, "Grafana 13 (ims-grafana)", "Go", "承载涵盖 4 大业务领域的 22 个赛博朋克 HUD 仪表板。")
    Container(alarm_api, "告警 API (ims-alarm-api)", "Node.js Express", "管理 public.ldi_alarm_lifecycle 表上的告警确认与解决生命周期。")
@@ -78,8 +78,8 @@ C4Container
    Container(renderer, "图像渲染引擎 (ims-grafana-renderer)", "Chromium", "生成用于告警通知与报表的面板静态 PNG 截图。")
 
    Container(nodered, "接入流水线 (ims-node-red)", "Node.js / Node-RED", "并行轮询采集、遥测解析、队列缓冲与告警路由。")
-   Container(pgbouncer, "连接池管理器 (ims-pgbouncer)", "C / PgBouncer", "事务级连接池化，保护 TimescaleDB 免受并发耗尽。")
-   ContainerDb(timescaledb, "TimescaleDB (ims-timescaledb)", "PostgreSQL 16 + TimescaleDB", "持久化存储超表 (Hypertables)、连续聚合 (CAGGs) 与告警记录。")
+   Container(pgbouncer, "连接池管理器 (ims-pgbouncer)", "C / PgBouncer", "端口 5432 事务级连接池化，支持 SCRAM-SHA-256 认证。")
+   ContainerDb(timescaledb, "TimescaleDB (ims-timescaledb)", "PostgreSQL 16 + TimescaleDB", "持久化存储超表 (Hypertables)、连续聚合 (CAGGs)、告警记录及 eap_backup 库。")
 
    Container(prometheus, "Prometheus (ims-prometheus)", "Go", "抓取服务状态指标并执行告警评估规则。")
    Container(alertmanager, "Alertmanager (ims-alertmanager)", "Go", "处理告警去重、抑制及向 Node-RED 投递通知。")
@@ -87,13 +87,14 @@ C4Container
    Container(snmpsim, "SNMP 模拟器 (ims-snmpsim)", "Python", "本地开发环境下模拟 Linux 主机与交换机节点。")
    Container(archiver, "可观测性归档器 (ims-observability-archiver)", "Bash", "定期备份容器与数据库监控快照至 ops-logs。")
    Container(db_migrate, "数据库迁移器 (ims-db-migrate)", "Bash / psql", "一次性执行脚本，顺序运行 001 至 091 迁移文件。")
-    Container(sockproxy, "Docker Socket 代理 (ims-docker-socket-proxy)", "HAProxy / Alpine", "为 observability-archiver 提供受限的安全只读 Docker 守护进程访问。")
+   Container(sockproxy, "Docker Socket 代理 (ims-docker-socket-proxy)", "HAProxy / Alpine", "在内部 ims-docker-api 网络提供受限的安全只读 Docker 守护进程访问。")
    Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "Web 端数据库管理平台 (映射端口 127.0.0.1:5050)。")
  }
 
- Rel(user, proxy, "访问界面与各服务接口", "HTTPS / 端口 3000")
+ Rel(user, proxy, "访问界面与各服务接口", "HTTP / 端口 3000")
  Rel(ext_dev, proxy, "推送设备遥测", "POST /ldi-telemetry")
  Rel(nodered, ext_dev, "采集 SNMP 遥测", "UDP 161")
+ Rel(nodered, snmpsim, "采集模拟 SNMP 设备遥测", "UDP 161")
 
  Rel(proxy, grafana, "反向代理 UI 及 Grafana 内部接口", "HTTP :3000")
  Rel(proxy, alarm_api, "反向代理 /alarm-api/* (已鉴权)", "HTTP :4000")
@@ -102,14 +103,23 @@ C4Container
  Rel(proxy, grafana, "内部鉴权校验 (/auth-check)", "HTTP :3000")
 
  Rel(grafana, renderer, "请求渲染面板截图", "HTTP :8081")
- Rel(grafana, pgbouncer, "查询 CAGG 预聚合视图", "TCP :6432")
- Rel(alarm_api, pgbouncer, "更新告警生命周期 (alarm_api_writer 权限)", "TCP :6432")
- Rel(nodered, pgbouncer, "批量写入遥测数据 (Batch INSERT)", "TCP :6432")
- Rel(pgbouncer, timescaledb, "事务级数据库连接", "TCP :5432")
+ Rel(grafana, pgbouncer, "查询 CAGG 预聚合视图", "TCP :5432")
+ Rel(grafana, timescaledb, "直连查询 eap_backup (drilling-timescaledb)", "TCP :5432")
+ Rel(alarm_api, pgbouncer, "更新告警生命周期 (alarm_api_writer 权限)", "TCP :5432")
+ Rel(nodered, pgbouncer, "批量写入遥测数据 (nodered_writer)", "TCP :5432")
+ Rel(pgbouncer, timescaledb, "事务级数据库连接 (SCRAM)", "TCP :5432")
+ Rel(db_migrate, timescaledb, "执行数据库迁移 001-091", "TCP :5432")
+ Rel(pgadmin, timescaledb, "管理数据库", "TCP :5432")
 
- Rel(prometheus, timescaledb, "抓取性能指标", "TCP :5432")
+ Rel(prometheus, nodered, "抓取流水线指标", "HTTP :1880/metrics")
  Rel(prometheus, alertmanager, "触发告警事件", "HTTP :9093")
+ Rel(prometheus, blackbox, "调度 HTTP/TCP/ICMP 探测", "HTTP :9115")
+ Rel(blackbox, timescaledb, "探测 TCP 连接 :5432", "TCP :5432")
+ Rel(blackbox, pgbouncer, "探测 TCP 连接 :5432", "TCP :5432")
  Rel(alertmanager, nodered, "发送 Webhook 至 /alert-webhook", "HTTP :1880")
+ Rel(grafana, nodered, "原生告警推送至 /alert-webhook", "HTTP :1880")
+
+ Rel(archiver, sockproxy, "读取容器指标与事件", "HTTP :2375 (ims-docker-api)")
 ```
 
 ---
@@ -129,28 +139,26 @@ flowchart TD
   end
 
   subgraph SplitFlows ["拆分流程模块 (nodered_data/flows/)"]
-    subgraph Flow01 ["01-snmp-poller.json"]
+    subgraph FlowIngest ["ingestion.json"]
       REG["设备注册表内存缓存\n(每 5 分钟从 public.devices 刷新)"]
       CB["熔断器状态机\n(状态: CLOSED / OPEN / HALF_OPEN)"]
       FORK["五路并行分支 fork_5_ways\n(CPU, 网络, 存储, 温度, LDI)"]
       PARSER["数据解析器 sre_parser v10\n(维护单机上下文, O(N) 复杂度)"]
+      BATCH_SNMP["SNMP 批量 SQL 生成器\n(INSERT INTO public.snmp_data...)"]
     end
 
-    subgraph Flow02 ["02-ldi-ingest.json"]
+    subgraph FlowLdiIngest ["ldi_ingestion.json"]
       AUTH_CHK["API Key 校验逻辑\n(比对 INGEST_API_KEY)"]
       SCHEMA_VAL["JSON 架构断言验证\n(校验 22 个标准字段)"]
-      LDI_BUF["内存数据缓冲队列\n(显式内存垃圾回收: flatData.length=0)"]
+      STAGE_WRITE["预写暂存写入\n(INSERT INTO public.ingest_staging)"]
+      LDI_WRITE["超表批量写入器\n(INSERT INTO public.ldi_data)"]
+      STAGE_DEL["删除已写入暂存数据\n(DELETE FROM public.ingest_staging)"]
+      GC["显式内存垃圾回收\n(flatData.length=0, msg.payload=null)"]
     end
 
-    subgraph Flow03 ["03-alarm-engine.json"]
-      COND_EVAL["实时条件评估引擎\n(比对实时遥测阈值超限)"]
-      AM_DISP["告警分发装配器\n(封装事件并投递至 Alertmanager)"]
-    end
-
-    subgraph Flow04 ["04-storage-writer.json"]
-      FLUSH_TMR["批量落盘定时器 (10 秒)"]
-      BATCH_BUILD["多行 SQL 构造器\n(INSERT INTO public.ldi_data...)"]
-      PG_CLIENT["PgBouncer 连接客户端\n(global.get('pg'), 事务模式)"]
+    subgraph FlowSim ["ldi_simulator.json & ldi_alarm_simulator.json"]
+      SIM_LDI["实时遥测模拟器\n(OU 随机过程, 10 台机台)"]
+      SIM_ALARM["实时告警重放引擎\n(越界条件评估与事件注入)"]
     end
 
     subgraph FlowAlerting ["alerting.json"]
@@ -161,16 +169,21 @@ flowchart TD
   end
 
   subgraph PersistenceTier ["数据持久化层"]
-    PGB["PgBouncer (:6432)"]
-    TSDB[("TimescaleDB (:5432)\npublic.ldi_data\npublic.sys_metrics")]
+    PGB["PgBouncer (:5432)\n事务模式连接池 | SCRAM-SHA-256"]
+    TSDB[("TimescaleDB (:5432)\npublic.snmp_data\npublic.ldi_data\npublic.ingest_staging")]
   end
 
-  TMR --> REG --> CB --> FORK --> PARSER --> BATCH_BUILD
-  HTTP_LDI --> AUTH_CHK --> SCHEMA_VAL --> LDI_BUF --> BATCH_BUILD
+  TMR --> REG --> CB --> FORK --> PARSER --> BATCH_SNMP --> PGB
+  HTTP_LDI --> AUTH_CHK --> SCHEMA_VAL --> STAGE_WRITE --> LDI_WRITE --> STAGE_DEL --> GC
+  LDI_WRITE --> PGB
+  STAGE_WRITE --> PGB
+  STAGE_DEL --> PGB
   HTTP_INJ --> SCHEMA_VAL
 
-  LDI_BUF --> COND_EVAL --> AM_DISP
-  FLUSH_TMR --> BATCH_BUILD --> PG_CLIENT --> PGB --> TSDB
+  SIM_LDI -->|"内部 POST"| HTTP_LDI
+  SIM_ALARM --> PGB
+
+  PGB --> TSDB
 
   AM_HOOK --> MSG_FMT
   MSG_FMT --> LINE_API
@@ -189,26 +202,41 @@ sequenceDiagram
   participant Machine as LDI 曝光机现场设备
   participant Proxy as Nginx 统一网关 (ims-proxy)
   participant NodeRed as 数据接入流水线 (ims-node-red)
-  participant PgBouncer as PgBouncer 连接池 (:6432)
+  participant PgBouncer as PgBouncer 连接池 (:5432)
   participant TimescaleDB as TimescaleDB (:5432)
   participant Grafana as Grafana 监控大屏 (:3000)
 
-  Machine->>Proxy: POST /ldi-telemetry (JSON 载荷 + X-API-Key)
-  Proxy->>Proxy: 执行网关限流控制 (rate=100r/s burst=2500)
+  Machine->>Proxy: POST /ldi-telemetry (JSON 数组 + X-API-Key)
+  Proxy->>Proxy: 执行网关限流控制 (rate=50r/s burst=100 nodelay)
   Proxy->>NodeRed: 转发至内部 :1880/ldi-telemetry 端点
   NodeRed->>NodeRed: 校验密钥并断言 22 个字段类型合法性
-  NodeRed-->>Proxy: 202 Accepted {"status": "accepted", "records_queued": 1}
-  Proxy-->>Machine: 202 Accepted
 
-  Note over NodeRed: 内存队列持续累积 10 秒时间窗口内的数据
-  NodeRed->>NodeRed: 构造多行批量 INSERT 语句 (VALUES 包含 NOW())
-  NodeRed->>PgBouncer: 执行批量 SQL 写入事务
-  PgBouncer->>TimescaleDB: 写入超表 public.ldi_data (1 小时数据块 Chunk)
-  NodeRed->>NodeRed: 显式垃圾回收 (flatData.length = 0, msg.payload = null)
+  alt 校验失败
+    NodeRed-->>Proxy: 400 Bad Request ("Payload must be a JSON array")
+    Proxy-->>Machine: 400 Bad Request
+  else 校验成功
+    NodeRed->>PgBouncer: 预写暂存: INSERT INTO public.ingest_staging
+    PgBouncer->>TimescaleDB: 写入暂存数据
+    alt 暂存写入失败
+      NodeRed-->>Proxy: 503 Service Unavailable ("Staging failed, batch not accepted")
+      Proxy-->>Machine: 503 Service Unavailable
+    else 暂存写入成功
+      NodeRed->>PgBouncer: 批量写入超表: INSERT INTO public.ldi_data (1 天分区)
+      PgBouncer->>TimescaleDB: 提交批量数据至超表
+      alt 超表批量写入失败
+        NodeRed-->>Proxy: 502 Bad Gateway (暂存行保留用于重试)
+        Proxy-->>Machine: 502 Bad Gateway
+      else 超表批量写入成功
+        NodeRed->>PgBouncer: DELETE FROM public.ingest_staging WHERE id = staged_id
+        NodeRed->>NodeRed: 显式垃圾回收 (flatData.length = 0, msg.payload = null)
+        NodeRed-->>Proxy: 200 OK {"status": "success", "inserted": count}
+        Proxy-->>Machine: 200 OK
+      end
+    end
+  end
 
   Note over TimescaleDB: 连续聚合引擎按调度策略自动触发
   TimescaleDB->>TimescaleDB: 刷新聚合数据至 public.ldi_data_15m 视图
-
   Grafana->>PgBouncer: SELECT bucket AS time, avg_temperature FROM ldi_data_15m
   PgBouncer->>TimescaleDB: 运行预聚合高性能分析查询
   TimescaleDB-->>Grafana: 亚秒级返回已计算完毕的指标数据
@@ -270,7 +298,7 @@ sequenceDiagram
   participant Walker as SNMP 批量采集器
   participant Breaker as 熔断器状态机 (Context State)
   participant Target as 目标边缘设备 (离线故障)
-  participant DB as TimescaleDB (sys_metrics)
+  participant DB as TimescaleDB (circuit_breaker_events)
 
   Timer->>Walker: 触发本轮采集周期
   Walker->>Breaker: 查询目标设备 "SW-CORE-01" 运行状态
@@ -285,23 +313,23 @@ sequenceDiagram
     else failureCount >= 2
       Breaker->>Breaker: 切换状态为 OPEN (立即熔断)
       Breaker->>DB: 写入节点离线状态 (即刻将各项指标置 0 以免误判)
-      Note over Breaker: 启动 120 秒静默冷却计时器
+      Note over Breaker: 启动 300 秒 (5 分钟) 静默冷却计时器
     end
 
   else 熔断器状态为 OPEN (熔断阻断)
     Breaker-->>Walker: 拦截采集请求 (保护物理网络免受风暴冲击)
-    Note over Walker: 跳过本轮 SNMP 报文发送
+    Note over Walker: 跳过本轮 SNMP 报文发送 - 保持安全占位零值指标
 
   else 冷却超时结束: 切换为 HALF_OPEN (半开探测模式)
     Breaker->>Walker: 仅允许发送单条轻量探测请求
     Walker->>Target: 发送轻量 SNMP GET 请求
     alt 设备已恢复
       Target-->>Walker: 返回正常响应报文
-      Walker->>Breaker: 清空计数 failureCount = 0; 切换为 CLOSED
+      Walker->>Breaker: 清空计数 failureCount = 0 - 切换为 CLOSED
       Breaker->>DB: 恢复节点在线状态
     else 探测失败
       Target--xWalker: 依旧超时
-      Walker->>Breaker: 重新进入 OPEN 熔断状态; 重启 120 秒冷却
+      Walker->>Breaker: 重新进入 OPEN 熔断状态 - 重启 300 秒冷却
     end
   end
 ```

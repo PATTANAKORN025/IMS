@@ -38,7 +38,7 @@ flowchart TB
 
  subgraph LEGACY ["传统 SNMP / 基础设施流水线"]
   DEV["2 台真实服务器\n+ SNMP 模拟器"] -->|"SNMP v2c, 30s 轮询"| NR["ingestion.json\nfork_5_ways 采集器 -> sre_parser"]
-  NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
+  NR --> SNMPDATA[("public.snmp_data\n超表，1 天数据块")]
  end
 
  subgraph EAP ["设备集成 (数控钻孔与 VCP 电镀)"]
@@ -48,9 +48,10 @@ flowchart TB
  LDIDATA --> GRAFANA["Grafana 13\n覆盖 4 大业务领域的 22 个仪表板"]
  ALARMLOG --> GRAFANA
  ALARMLC --> GRAFANA
- SYSMETRICS --> GRAFANA
+ SNMPDATA --> GRAFANA
  EAPDB --> GRAFANA
- SYSMETRICS --> PROM["Prometheus"]
+ NR -->|"指标接口 /metrics"| PROM["Prometheus"]
+ BBOX["Blackbox Exporter"] --> PROM
  GRAFANA -->|"原生告警规则"| NRWEBHOOK["Node-RED /alert-webhook"]
  PROM --> AM["Alertmanager"] --> NRWEBHOOK
  NRWEBHOOK --> LINE["LINE Messaging API"]

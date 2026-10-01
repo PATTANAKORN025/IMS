@@ -321,9 +321,10 @@ ORDER BY bucket ASC;
 ```mermaid
 flowchart LR
   subgraph Collection ["การเก็บข้อมูล"]
-    J["สวิตช์เครือข่าย"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
+    J["สวิตช์เครือข่าย"] -->|SNMP v2c| W["Node-RED\ningestion.json"]
     S["เซิร์ฟเวอร์"] -->|SNMP v2c| W
-    L["เครื่อง LDI"] -->|"HTTP POST /ldi-telemetry (ผ่าน nginx)"| W
+    L["เครื่องจักร LDI"] -->|"HTTP POST /ldi-telemetry\n(ผ่าน Nginx Proxy)"| LI["Node-RED\nldi_ingestion.json"]
+    EAP["งานเจาะและชุบ"] -.->|"ซิงค์ตรง"| EDB[("eap_backup DB\nmachine_event, vcp_upp")]
   end
 
   subgraph Processing ["ไปป์ไลน์สตรีมมิง V10"]
@@ -331,30 +332,35 @@ flowchart LR
     W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
     W -->|fork_5_ways| STO[Storage Walker]
     W -->|fork_5_ways| TMP[Temp Walker]
-    CPU --> P["Stateful Parser\nบริบท flow รายอุปกรณ์"]
+    CPU --> P["Stateful Parser\nsre_parser v10"]
     NET --> P
     STO --> P
     TMP --> P
+    LI -->|"Write-Ahead Staging\ningest_staging"| STG["บันทึกลงไฮเปอร์เทเบิลแบบชุด\nคืนหน่วยความจำชัดเจน"]
   end
 
   subgraph Storage ["การจัดเก็บ"]
-    P -->|Batch INSERT 10s| B["PgBouncer\nTransaction Pool"]
-    B --> T["(TimescaleDB\nHypertables)"]
-    T --> CAGG["CAGGs\nรายชั่วโมง → รายวัน → รายสัปดาห์"]
+    P -->|"Batch INSERT (nodered_writer)"| B["PgBouncer :5432\nSCRAM-SHA-256 Pool"]
+    STG -->|"Batch INSERT (nodered_writer)"| B
+    B --> T[("TimescaleDB :5432\nสคีมา public")]
+    T --> CAGG["CAGGs\n1m → 15m → 1h / รายชั่วโมง"]
   end
 
   subgraph Visualization ["การแสดงผล"]
+    CAGG --> G2["Grafana 13\nแดชบอร์ดการผลิต 10 ชุด"]
     T --> G1["Grafana 13\nแดชบอร์ดโครงสร้างพื้นฐาน 5 ชุด"]
-    T --> G2["Grafana 13\nแดชบอร์ดการผลิต 10 ชุด"]
-    T --> G3["Grafana 13\nแดชบอร์ดงานเจาะ CNC 4 ชุด"]
-    T --> G4["Grafana 13\nแดชบอร์ดงานชุบ VCP 3 ชุด"]
+    EDB -->|"drilling-timescaledb"| G3["Grafana 13\nแดชบอร์ดงานเจาะ CNC 4 ชุด"]
+    EDB -->|"drilling-timescaledb"| G4["Grafana 13\nแดชบอร์ดงานชุบ VCP 3 ชุด"]
     T --> FT["Factory Twin 3D\n+ Alarm API"]
   end
 
   subgraph Alerting ["การแจ้งเตือน"]
-    T --> PR["Prometheus\nscrape /metrics"]
+    W -->|"ดึง /metrics"| PR["Prometheus\nประเมินกฎแจ้งเตือน"]
     PR --> AM["Alertmanager\nInhibition Rules"]
-    AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
+    AM --> WH["Node-RED\n/alert-webhook"]
+    G1 -->|"การแจ้งเตือนในตัว"| WH
+    G2 -->|"การแจ้งเตือนในตัว"| WH
+    WH --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
   end
 
   style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0

@@ -27,7 +27,7 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart LR
   EDGE["工业边缘设备\n(LDI, CNC, VCP, SNMP)"] -->|"HTTPS / SNMP"| INGEST["摄入处理层\n(Nginx Proxy & Node-RED)"]
-  INGEST -->|"连接池调度"| PGB["PgBouncer :6432"]
+  INGEST -->|"连接池调度"| PGB["PgBouncer :5432"]
   PGB -->|"写入超表"| TSDB["TimescaleDB (PostgreSQL 16)"]
   TSDB -->|"连续聚合视图"| GRAFANA["Grafana 13\n(22 个预置生产看板)"]
   PROM["Prometheus & Alertmanager"] -->|"Webhooks"| NOTIF["LINE & Teams 告警外发"]
