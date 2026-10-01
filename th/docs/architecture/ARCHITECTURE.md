@@ -174,28 +174,28 @@ Migration 064 แปลง `v_machine_spc_fleet` และ `v_ldi_rca_recent_win
 
 | แผนกงาน | UID | Title | ขอบเขต |
 | :--- | :--- | :--- | :--- |
-| **01 Drilling** | `ims-drilling-fleet-overview` | IMS Drilling - Fleet Overview | ภาพรวมกลุ่มเครื่องเจาะ, รอบหมุน Spindle, อัตราป้อน, และประวัติเหตุการณ์เครื่องจักร |
-| **01 Drilling** | `ims-drilling-shift-production` | IMS Drilling - Shift Production | ยอดการเจาะรายกะ, ปริมาณชิ้นงานที่ผลิตได้ และประสิทธิภาพเชิงปฏิบัติการ |
-| **01 Drilling** | `ims-drilling-machine-investigation` | IMS Drilling - Machine Investigation | เจาะลึกความสั่นสะเทือนของแต่ละ Spindle, จำนวนการเจาะของดอกสว่าน และภาระมอเตอร์ |
-| **01 Drilling** | `ims-drilling-anomaly-analysis` | IMS Drilling - Anomaly & Root Cause | ค่าความสั่นสะเทือนผิดปกติ, การตรวจจับดอกสว่านหัก และความสัมพันธ์ของสัญญาณเตือน |
-| **02 LDI** | `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | แดชบอร์ด RCA 4 ชั้นเต็มรูปแบบ: KPI ผู้บริหาร, telemetry เครื่อง, บริบทการผลิต, สตรีม alarm |
-| **02 LDI** | `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | จอ kiosk หน้าไลน์ อ่านอย่างเดียว; ไม่ต้องเลื่อนที่ 1920x1080 และ 3840x2160 (ไม่รองรับ 1280x720 ตั้งแต่ PR #22) |
-| **02 LDI** | `ims-ldi-alarm-console` | IMS LDI - Alarm Console | แดชบอร์ดเดียวที่โต้ตอบได้: Acknowledge/Resolve ผ่าน `alarm-api` ลง `public.ldi_alarm_lifecycle` |
-| **02 LDI** | `ims-ldi-alarm-response` | IMS LDI - Alarm Response (MTTA/MTTR) | KPI เวลาตอบสนองที่คำนวณจากวงจรชีวิต alarm จริง |
-| **02 LDI** | `ims-ldi-alarm-dictionary` | IMS LDI - Alarm Dictionary | ค้นรหัส alarm ของผู้ผลิตพร้อมเหตุการณ์ล่าสุด เข้าถึงผ่านลิงก์เจาะลึก |
-| **02 LDI** | `ims-ldi-factory-digital-twin` | IMS LDI - Factory Digital Twin | แผนผัง Canvas ของเครื่อง LDI ที่ส่งข้อมูล จัดกลุ่มตามโซน (`public.devices.location`) |
-| **02 LDI** | `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | จัดอันดับ Cpk/SPC, RCA Truth Test, การกระจายของ PE/JE |
-| **02 LDI** | `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | เจาะลึกรายเหตุการณ์ (คลิก alarm/log เพื่อตรวจสอบ) |
-| **02 LDI** | `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | แดชบอร์ดตรวจคุณภาพข้อมูลด้วยตัวเอง (board key ซ้ำ, % ความครอบคลุม, อัตราจับคู่กับ alarm master) |
-| **02 LDI** | `ims-easy-overview` | IMS Easy Overview | ดูภาพรวมทั้งกลุ่มเครื่องโดยไม่ต้องตั้งค่า สร้างจาก view/ฟังก์ชันที่ใช้ร่วมกันทั้งหมด (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) -- ไม่มี template variable ให้ตั้ง |
-| **03 Platform** | `ims-noc-overview` | IMS NOC Overview | เฉพาะโครงสร้างพื้นฐาน (เซิร์ฟเวอร์ + เครือข่าย) — เนื้อหากระบวนการ LDI อยู่ที่อื่น ดูด้านล่าง |
-| **03 Platform** | `ims-engineering` | IMS Engineering Drill-Down | เน้นโครงสร้างพื้นฐาน: CPU/RAM/storage/เครือข่ายรายเซิร์ฟเวอร์, throughput/คุณภาพของ LDI (ไปป์ไลน์แบบเดิม) |
-| **03 Platform** | `ims-capacity` | IMS AIOps & Capacity Forecast | พยากรณ์จำนวนวันจนเต็ม/อิ่มตัวด้วย regression (โครงสร้างพื้นฐาน) |
-| **03 Platform** | `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | สุขภาพของไปป์ไลน์รับข้อมูลเอง (แถว/วินาที, อัตรา batch สำเร็จ, ความลึกของคิว retry) |
-| **03 Platform** | `ims-ingestion-latency` | IMS Ingestion Latency | หลักฐานความหน่วง source_ts → ingest_ts แบบอ่านอย่างเดียว จากคอลัมน์ `ingest_ts` ของ migration 081 |
-| **04 VCP** | `ims-vcp-overview` | IMS VCP - Fleet Overview | ภาพรวมสายการผลิตชุบแผ่น: รอบเวลาเคลื่อนที่, ความเร็วสายชุบ, พื้นที่ผิวที่ชุบแล้วทั้งหมด |
-| **04 VCP** | `ims-vcp-operations-console` | IMS VCP - Operations Console | กระแสไฟฟ้า Rectifier แบบเรียลไทม์, อุณหภูมิบ่อชุบจริงเทียบกับค่าตั้ง, สถานะปั๊มเคมี |
-| **04 VCP** | `ims-vcp-realtime-wall` | IMS VCP - Real-Time Wall | หน้าจอ Kiosk ติดผนังสำหรับช่างเทคนิคประจำไลน์; แจ้งเตือนบ่อชุบที่หลุดเกณฑ์ควบคุม |
+| **01 Drilling** | `001` | Drilling — 01 Fleet Digital Twin & Overview | ดิจิทัลทวินจำลองพื้นที่การผลิต 3D และภาพรวมการปฏิบัติการระดับสูงของกลุ่มเครื่องเจาะ CNC ทั้งหมด |
+| **01 Drilling** | `ims-drilling-history` | Drilling — 02 Shift Production & OEE Tracking | ยอดการเจาะรายกะ, จำนวนการเจาะ, ปริมาณชิ้นงานที่ผลิตได้ และการติดตามค่าประสิทธิผลโดยรวมของเครื่องจักร (OEE) |
+| **01 Drilling** | `ims-drilling-machine-detail` | Drilling — 03 Machine Investigation & Spindle Diagnostics | หน้าจอวิเคราะห์เจาะลึกเครื่องจักรรายตัว: รอบหมุน Spindle, ภาระมอเตอร์, อัตราป้อน และ telemetry การสึกหรอของดอกสว่าน |
+| **01 Drilling** | `ims-drilling-5-anomaly` | Drilling — 04 Fleet Anomaly & Root Cause Analysis | การตรวจจับความผิดปกติในกลุ่มเครื่องเจาะ, เหตุการณ์การสั่นสะเทือน Spindle เกินเกณฑ์ และการวิเคราะห์หาสาเหตุเชิงลึก |
+| **02 LDI** | `ims-easy-overview` | LDI — 01 Fleet Executive Overview | ภาพรวมกลุ่มเครื่องจักร LDI แบบไม่ต้องตั้งค่า สร้างจาก shared view/function (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `v_machine_spc_fleet`) |
+| **02 LDI** | `ims-ldi-operator-andon` | LDI — 02 Operator Andon Board (Shopfloor Kiosk) | จอ Kiosk หน้าร้าน ผลิตตามมาตรฐาน ISA-101 ไม่ต้องโต้ตอบและไม่ต้องเลื่อนหน้าจอที่ขนาด 1280x720 ขึ้นไป |
+| **02 LDI** | `ims-ldi-factory-digital-twin` | LDI — 03 Factory 3D Digital Twin & Spatial Layout | ดิจิทัลทวิน Canvas ของเครื่อง LDI ทั้ง 10 เครื่อง จัดกลุ่มตาม 5 โซนจริง (`public.devices.location`) |
+| **02 LDI** | `ims-ldi-manufacturing` | LDI — 04 Manufacturing Fleet Command Center | แดชบอร์ด RCA 4 ชั้นเต็มรูปแบบ: HUD ผู้บริหาร, telemetry เครื่องจักร, บริบทการผลิต, สตรีม alarm |
+| **02 LDI** | `ims-ldi-machine-snapshot` | LDI — 05 Machine Deep-Dive Snapshot | ภาพรวมเครื่องจักร 360 องศา ณ มิลลิวินาทีที่คลิกจาก Process Timeline |
+| **02 LDI** | `ims-ldi-engineering-analytics` | LDI — 06 Process Engineering Analytics & SPC | เส้นเวลาวิเคราะห์กระบวนการ เลเยอร์ 3 ทำ RCA เชื่อมโยงหลายพารามิเตอร์พร้อมกัน, Cpk ranking, การกระจายตัวของ PE/JE |
+| **02 LDI** | `ims-ldi-alarm-console` | LDI — 07 Live Alarm Management Console | เวิร์กโฟลว์รับทราบ/แก้ไข alarm (Acknowledge/Resolve) ที่เขียนสถานะลง `public.ldi_alarm_lifecycle` จริง |
+| **02 LDI** | `ims-ldi-alarm-response` | LDI — 08 Alarm Response Metrics & MTTA/MTTR | KPI วัดประสิทธิภาพเวลาตอบสนอง และ MTTA/MTTR จริงจาก `public.ldi_alarm_lifecycle` |
+| **02 LDI** | `ims-ldi-alarm-dictionary` | LDI — 09 Alarm Code Dictionary & Corrective Actions | พจนานุกรมค้นหารหัส Alarm Master ของผู้ผลิต พร้อมประวัติเหตุการณ์ที่เกิดขึ้นล่าสุด |
+| **02 LDI** | `ldi-data-readiness` | LDI — 10 Telemetry Signal Quality & Integration Readiness | แดชบอร์ดตรวจสอบความพร้อมและคุณภาพสัญญาณ telemetry โดยอิงจากแถวข้อมูลจริงใน PostgreSQL |
+| **03 Platform** | `ims-noc-overview` | Platform — 01 Network Operations Center (NOC) Overview | เฉพาะโครงสร้างพื้นฐาน (เซิร์ฟเวอร์ + เครือข่าย) — เมตริกกระบวนการผลิต LDI อยู่ในแดชบอร์ดฝั่ง Manufacturing |
+| **03 Platform** | `ims-engineering` | Platform — 02 Host & Network Infrastructure Engineering Drill-Down | เจาะลึกรายโฮสต์: กราฟและเกจ CPU/RAM/ดิสก์/อุณหภูมิ/เครือข่าย พร้อมการตรวจจับความผิดปกติ |
+| **03 Platform** | `ims-capacity` | Platform — 03 AIOps Predictive Capacity & Resource Forecasting | การพยากรณ์จำนวนวันก่อนทรัพยากรเต็ม (CPU, RAM, ดิสก์) ด้วย Linear Regression 30 วัน และ Z-Score anomaly |
+| **03 Platform** | `ims-ingestion-latency` | Platform — 04 Ingestion Pipeline Latency & Telemetry SLO | หลักฐานความหน่วงของไปป์ไลน์แบบอ่านอย่างเดียว source_ts → ingest_ts จากคอลัมน์ `ingest_ts` ของ migration 081 |
+| **03 Platform** | `ims-meta-monitoring` | Platform — 05 Pipeline Reliability & SRE Meta-Monitoring | สุขภาพของตัวไปป์ไลน์เอง: อัตราการเขียนแถว/วินาที, ความสำเร็จของแบตช์, ความลึกคิว retry, สถานะ Circuit Breaker |
+| **04 VCP** | `ims-vcp-overview` | VCP — 01 Plating Fleet Overview & Process Analytics | ภาพรวมกลุ่มสายชุบ VCP: ชั่วโมงตามสถานะ, ค่าเบี่ยงเบนอุณหภูมิบ่อชุบและกระแสไฟ, ความต้านทานเซลล์, การปฏิบัติตามสูตรผลิต |
+| **04 VCP** | `ims-vcp-operations-console` | VCP — 02 Plating Line Operations Console | คอนโซลควบคุมการปฏิบัติการ: สถานะล่าสุดของแต่ละสาย, งานที่กำลังผลิต, อุณหภูมิบ่อชุบ 7 ขั้นตอน, กระแสและแรงดัน 18 สถานี, บันทึก alarm |
+| **04 VCP** | `ims-vcp-realtime-wall` | VCP — 03 Real-Time Plating Line Wall Display | จอแสดงผลติดผนัง: การ์ดแสดงสถานะ, งานปัจจุบัน, อุณหภูมิบ่อชุบ, เร็กติไฟเออร์ 18 จุด, ปั๊มหมุนเวียน 18 ตัว และสัญญาณแจ้งเตือน |
 
 NOC Overview ถูกแยกออกจากเนื้อหา LDI/การผลิตในรอบนั้น (เดิมแสดง panel Yield ซ้ำกับ Manufacturing) — เรื่องโครงสร้างพื้นฐานและการผลิตจึงตั้งใจแยกไว้คนละแดชบอร์ด ไม่ผสมในหน้า "overview" เดียว แดชบอร์ดงานเจาะและงานชุบ VCP แยกเก็บข้อมูลในฐานข้อมูล `eap_backup` อย่างปลอดภัย
 

@@ -127,8 +127,8 @@ function main() {
 
   if (checkMode) {
     const existing = fs.existsSync(OUT_FILE) ? fs.readFileSync(OUT_FILE, 'utf8') : null;
-    const norm = (s) => (s || '').replace(/\r\n/g, '\n').trim();
-    if (norm(existing) === norm(content)) {
+    const strip = (s) => (s || '').replace(/\r\n/g, '\n').replace(/Last generated: \d{4}-\d{2}-\d{2}/, 'Last generated: DATE').trim();
+    if (strip(existing) === strip(content)) {
       console.log('Dashboard inventory is up to date.');
       process.exit(0);
     }

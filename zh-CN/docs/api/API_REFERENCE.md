@@ -118,8 +118,9 @@ IMS 在系统各边界之间采用多层防御的鉴权机制：
   "state": true,
   "pe_1": 1.1,
   "je_1": 2.2,
-  "log_id": "LOG-10001"
-}
+    "log_id": "LOG-10001"
+  }
+]
 ```
 
 #### 字段词典 (Field Dictionary)
@@ -180,7 +181,7 @@ IMS 在系统各边界之间采用多层防御的鉴权机制：
 curl -X POST http://localhost:3000/ldi-telemetry \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ${INGEST_API_KEY}" \
-  -d '{
+  -d '[{
     "time": "2026-09-28T04:00:00Z",
     "factory": "F1",
     "process": "LDI",
@@ -203,7 +204,7 @@ curl -X POST http://localhost:3000/ldi-telemetry \
     "pe_1": 1.1,
     "je_1": 2.2,
     "log_id": "LOG-10001"
-  }'
+  }]'
 ```
 
 ---

@@ -37,7 +37,7 @@
 
 ### Container Overview
 
-The system operates entirely on Docker Compose: `docker-compose.yaml` defines 15 services (14 long-running services and 1 one-shot migration runner that exits upon completion). There is no `profiles:` gating, so `make up` and `make up-prod` start all of them, the SNMP simulator and pgAdmin included:
+The system operates entirely on Docker Compose: `docker-compose.yaml` defines 16 services (15 long-running services and 1 one-shot migration runner that exits upon completion). There is no `profiles:` gating, so `make up` and `make up-prod` start all of them, the SNMP simulator and pgAdmin included:
 
 | Container              | Service                | Port                        | Purpose                                                                                                                                           |
 | ---------------------- | ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -54,8 +54,9 @@ The system operates entirely on Docker Compose: `docker-compose.yaml` defines 15
 | `ims-blackbox`         | Blackbox Exporter      | 9115 (loopback only)        | SLA probes                                                                                                                                        |
 | `ims-snmpsim`          | SNMP Simulator         | 161/udp (internal)          | Simulated SNMP devices for development and demos                                                                                                  |
 | `ims-factory-twin-3d`  | Factory Twin 3D        | 4100 (internal)             | Floor 1 digital twin, served through `ims-proxy` at `/factory-twin-3d/`                                                                           |
-| `ims-observability-archiver` | Log/metrics archiver | — (no port)             | Periodically archives container and DB observability snapshots to `./ops-logs`. Mounts `/var/run/docker.sock` read-only — treat it as privileged. |
-| `ims-pgadmin4`         | pgAdmin 4              | **5050, all interfaces**    | Database administration UI. The only service besides `ims-proxy` published on every interface — firewall it or bind it to `127.0.0.1` outside a lab. |
+| `ims-observability-archiver` | Log/metrics archiver | — (no port)             | Periodically archives container and DB observability snapshots to `./ops-logs`. Communicates securely via `ims-docker-socket-proxy`. |
+| `ims-docker-socket-proxy`   | Docker Socket Proxy  | — (internal only)       | Restricts Docker daemon socket access to read-only endpoints on an isolated network. |
+| `ims-pgadmin4`         | pgAdmin 4              | **5050 (loopback: 127.0.0.1:5050)** | Database administration UI. Bound strictly to loopback interface for security. |
 
 > `ims-db-migrate` exits with status 0 after applying pending migrations -- seeing it as `Exited (0)` in `docker compose ps` is expected, not a failure. `node-red` and `alarm-api` won't start until it completes successfully.
 
@@ -362,7 +363,7 @@ docker compose up -d
 # 2. Wait 40 seconds
 sleep 40
 
-# 3. Verify containers (14 long-running + ims-db-migrate, which should be Exited (0))
+# 3. Verify containers (15 long-running + ims-db-migrate, which should be Exited (0))
 docker compose ps
 
 # 4. Verify data flow

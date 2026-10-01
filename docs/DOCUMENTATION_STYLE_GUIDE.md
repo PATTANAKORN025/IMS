@@ -132,7 +132,7 @@ Before any documentation update is committed or pushed to `main`, it must pass t
 
 ```bash
 # 1. Verify link integrity and anchor resolution across all 690+ markdown files
-node tests/lint/check-all-links.js
+node scripts/find-broken-links.js
 
 # 2. Run documentation overclaim and phrase verification linter
 node tests/lint/doc-overclaim-linter.js

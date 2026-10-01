@@ -160,7 +160,7 @@ _Designed for Managers, UI/UX Reviewers, and System Evaluators wanting to see th
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
 cp .env.example .env   # then replace EVERY secret value before first start (see below)
-make up                # build-flows + docker compose up -d (all 15 services, simulator included)
+make up                # build-flows + docker compose up -d (all 16 services, simulator included)
 sleep 40 && make verify
 # browse to http://localhost:3000 (nginx front door; Grafana has no published port)
 ```
@@ -266,11 +266,11 @@ Sub-second analytical queries powered by Continuous Aggregates (CAGGs) over mill
 -- Query 15-minute rollups for fleet machine performance
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature,
   ROUND(avg_scan_speed::numeric, 2) AS scan_speed
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```
@@ -295,7 +295,7 @@ Architectural claims are backed by test scripts and dated evidence files. `.gith
 | Command                    | Description                                                 |
 | -------------------------- | ----------------------------------------------------------- |
 | `make doctor`              | Check prerequisites (docker, compose, node)                 |
-| `make up`                  | Build flows, then start all 15 services (simulator included) |
+| `make up`                  | Build flows, then start all 16 services (simulator included) |
 | `make up-prod`             | Same, with the `docker-compose.prod.yaml` resource overlay  |
 | `make down` / `make restart` | Stop the stack / restart node-red, grafana, alertmanager, prometheus |
 | `make logs`                | Tail Node-RED logs                                          |
@@ -405,14 +405,14 @@ Use `kiosk`: the older `kiosk=tv` TV mode is not one of Grafana 13's kiosk optio
 
 | Layer             | Technology                | Purpose                                                                       |
 | ----------------- | ------------------------- | ----------------------------------------------------------------------------- |
-| **Orchestration** | Docker Compose            | 15-service stack (`docker-compose.yaml`) + production resource overlay       |
+| **Orchestration** | Docker Compose            | 16-service stack (`docker-compose.yaml`) + production resource overlay       |
 | **Collection**    | Node-RED + net-snmp       | Sequential async bulk SNMP walks, 5-thread parallel walker                    |
 | **Database**      | TimescaleDB 2.29 (PostgreSQL 16) + PgBouncer 1.25 | Hypertables, CAGG rollups, native compression, retention policies |
 | **Visualization** | Grafana 13.1.2 + image renderer | 22 dashboards (4 drilling + 10 LDI + 5 infrastructure + 3 VCP)         |
 | **Alerting**      | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks     |
 | **Load Testing**  | K6                        | Pipeline stress, thresholds success > 95 %, e2e p95 < 10 s                    |
 | **Services**      | Node.js 22 (Express)      | `alarm-api` (acknowledge/resolve write path), `factory-twin-3d` (Floor 1 twin) |
-| **Front door**    | nginx 1.27                | Single published UI port; same-origin routing to Grafana, alarm-api, twin, Node-RED ingest |
+| **Front door**    | nginx 1.31                | Single published UI port; same-origin routing to Grafana, alarm-api, twin, Node-RED ingest |
 | **SLA Probing**   | Blackbox Exporter         | HTTP/TCP/ICMP endpoint monitoring                                             |
 
 </details>
@@ -436,7 +436,7 @@ Exact column counts, the full view/CAGG list, and applied-migration count: **[Da
 
 ```text
 IMS/
-├── docker-compose.yaml         # 15 services; docker-compose.prod.yaml adds resource limits
+├── docker-compose.yaml         # 16 services; docker-compose.prod.yaml adds resource limits
 ├── proxy/nginx.conf            # the single front door (Grafana, alarm-api, twin, LDI ingest)
 ├── monitoring/
 │  ├── grafana/

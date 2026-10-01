@@ -60,12 +60,12 @@ C4Context
 
 ## 2. 容器拓扑模型图 (C4 Model - Level 2: Container Topology)
 
-本图详细展示了 IMS Docker Compose 环境下的全部 15 项服务、内部容器网络架构以及外部端口映射：
+本图详细展示了 IMS Docker Compose 环境下的全部 16 项服务、内部容器网络架构以及外部端口映射：
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 C4Container
- title IMS 容器架构拓扑图 (15 项服务)
+ title IMS 容器架构拓扑图 (16 项服务)
 
  Person(user, "工程师与运维人员", "通过浏览器访问监控仪表板、三维数字孪生与告警处置 API。")
  System_Ext(ext_dev, "车间现场工业边缘设备", "LDI、CNC 钻机、VCP 电镀线、服务器、交换机。")
@@ -250,7 +250,7 @@ sequenceDiagram
   Browser->>Proxy: POST /alarm-api/alarms/resolve {"logid": "LOG-10001", "resolved_by": "engineer-02", "resolution_note": "已更换滤芯"}
   Proxy->>Proxy: 校验用户会话 GET /auth-check (200 OK)
   Proxy->>AlarmAPI: 转发 POST /alarms/resolve
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by='engineer-02', resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
+  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by=session.user, resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
   DB-->>AlarmAPI: 数据库记录更新成功
   AlarmAPI-->>Proxy: 200 OK
   Proxy-->>Browser: 200 OK (仪表板将状态变更为春绿 Green 已解决)
@@ -339,9 +339,8 @@ flowchart TD
     RET_ALARM["告警日志记录：365 天"]
   end
 
-  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H --> CAGG_1D --> CAGG_1W
-  RAW_LDI --> CAGG_OEE_1M
-  RAW_INFRA --> INFRA_1H
+  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
+  RAW_INFRA --> INFRA_HOURLY
 
   RAW_LDI -.-> RET_RAW
   RAW_INFRA -.-> RET_RAW
@@ -408,16 +407,16 @@ flowchart LR
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # 2. 检查 PgBouncer 连接池客户端及服务端连接复用状态
-docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims_telemetry -c "SHOW POOLS;"
+docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
 
 # 3. 检查 TimescaleDB 内部各超表的数据块分布与压缩率
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry -c "
+docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "
 SELECT hypertable_name, num_chunks, total_size, compressed_total_size
 FROM timescaledb_information.hypertables
 ORDER BY total_size DESC;"
 
 # 4. 检查连续聚合视图的刷新任务与调度间隔
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry -c "
+docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "
 SELECT view_name, schedule_interval, max_interval_per_job
 FROM timescaledb_information.continuous_aggregate_stats;"
 ```

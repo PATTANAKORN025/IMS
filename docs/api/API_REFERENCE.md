@@ -93,11 +93,12 @@ Directly streams structured machine execution metrics, alignment offsets, exposu
   - `Content-Type: application/json`
   - `X-API-Key: ${INGEST_API_KEY}` (Required)
 
-#### Request Payload Schema
+#### Request Payload Schema (JSON Array)
 
 ```json
-{
-  "time": "2026-09-28T04:00:00Z",
+[
+  {
+    "time": "2026-09-28T04:00:00Z",
   "factory": "F1",
   "process": "LDI",
   "eqp_id": "LDI-01",
@@ -118,8 +119,9 @@ Directly streams structured machine execution metrics, alignment offsets, exposu
   "state": true,
   "pe_1": 1.1,
   "je_1": 2.2,
-  "log_id": "LOG-10001"
-}
+    "log_id": "LOG-10001"
+  }
+]
 ```
 
 #### Field Dictionary
@@ -180,7 +182,7 @@ Directly streams structured machine execution metrics, alignment offsets, exposu
 curl -X POST http://localhost:3000/ldi-telemetry \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ${INGEST_API_KEY}" \
-  -d '{
+  -d '[{
     "time": "2026-09-28T04:00:00Z",
     "factory": "F1",
     "process": "LDI",
@@ -203,7 +205,7 @@ curl -X POST http://localhost:3000/ldi-telemetry \
     "pe_1": 1.1,
     "je_1": 2.2,
     "log_id": "LOG-10001"
-  }'
+  }]'
 ```
 
 ---

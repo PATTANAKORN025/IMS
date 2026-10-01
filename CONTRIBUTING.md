@@ -49,12 +49,12 @@ done
 
 - All objects live in the `public` schema.
 - Never query raw hypertables (`ldi_data`, `sys_metrics`, `net_metrics`) directly from a dashboard when a continuous aggregate or materialized view already exists for that use case — see `docs/architecture/DATABASE_SCHEMA.md` for the current view/CAGG inventory. `tests/lint/query-budget-linter.js` enforces this.
-- Every migration is a new, sequentially-numbered file in `database/migrations/` (currently up to `082`, applied in order by the `db-migrate` service). **Never edit or renumber a migration after it's merged** — a correction is always the _next_ number. See `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7 for the full versioning policy.
+- Every migration is a new, sequentially-numbered file in `database/migrations/` (currently up to `091`, applied in order by the `db-migrate` service). **Never edit or renumber a migration after it's merged** — a correction is always the _next_ number. See `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7 for the full versioning policy.
 - Use `sanitize()` (from `nodered_data/lib/parser.js`, exported via `global.get('parser')`) for any user-supplied string that reaches SQL in a function node — zero tolerance for SQL injection. The Node services use parameterised queries.
 
 ### Grafana
 
-- Edit dashboard JSON files in `monitoring/grafana/dashboards/infrastructure/` (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring, Ingestion Latency) or `monitoring/grafana/dashboards/manufacturing/` (the LDI suite) — see `docs/architecture/OWNERSHIP.md` for the domain boundary and `docs/architecture/DASHBOARD_INVENTORY.md` for the full inventory.
+- Edit dashboard JSON files in `monitoring/grafana/dashboards/{drilling,infrastructure,manufacturing,vcp}/` (all 22 dashboards across 4 operational domains) — see `docs/architecture/OWNERSHIP.md` for the domain boundary and `docs/architecture/DASHBOARD_INVENTORY.md` for the full inventory.
 - Use `ROUND(x::NUMERIC, N)` in panel SQL — PostgreSQL's two-argument `ROUND()` only accepts `NUMERIC`, not `DOUBLE PRECISION`.
 - The datasource UID must be `timescaledb`, not a template variable or a different name.
 - Use only the approved color token set (`docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1) — `dashboard-linter.js` Check 15 enforces this at commit time.
@@ -135,7 +135,7 @@ New files in `tests/unit/` are not picked up automatically: add them to both `sc
 
 ```text
 IMS/
-├── docker-compose.yaml        # Main orchestration (15 services)
+├── docker-compose.yaml        # Main orchestration (16 services)
 ├── proxy/nginx.conf           # The single front door
 ├── nodered_data/
 │ ├── flows/                   # Node-RED flows, split by concern (source of truth)

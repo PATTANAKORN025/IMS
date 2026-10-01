@@ -121,14 +121,14 @@ This pipeline is what actually powers NOC Overview's infrastructure panels (CPU/
 
 ---
 
-## Database Schema (as of migration 047)
+## Database Schema (as of migration 091)
 
 > Column counts, the full view/materialized-view/CAGG list, and the current applied-migration count are auto-generated in **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)** (`node scripts/generate-schema-inventory.js`, CI-checked against the live database). This table adds the "why" -- what feeds each table and what it's for -- that the generator can't infer from `information_schema` alone.
 
 | Table                                         | Type                   | Fed by                             | Purpose                                                                                                                          |
 | --------------------------------------------- | ---------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `devices`                                     | Table                  | manual/seed                        | Registry of every monitored entity (`device_type`: `ldi` or `server`)                                                            |
-| `ldi_data`                                    | Hypertable, 1h chunks  | `ldi_ingestion.json`               | Real LDI process telemetry — PE/JE, temperature, humidity, vacuum, scan speed, per-sample. Source for every LDI dashboard panel. |
+| `ldi_data`                                    | Hypertable, 1d chunks  | `ldi_ingestion.json`               | Real LDI process telemetry — PE/JE, temperature, humidity, vacuum, scan speed, per-sample (1d chunks via migration 091). Source for every LDI dashboard panel. |
 | `ldi_alarm_log`                               | Hypertable, 7d chunks  | `ldi_alarm_simulator.json`         | Per-alarm-event rows, condition-correlated as of this session's simulator fix                                                    |
 | `ldi_alarm_ms_code`                           | Table                  | migration 036 (mock seed)          | Master alarm code reference (20 real production codes, functional descriptions only — not the vendor catalog)                    |
 | `sys_metrics` / `net_metrics` / `ldi_metrics` | Hypertables, 1d chunks | `ingestion.json` (legacy pipeline) | Infra telemetry + the k6-synthetic LDI metrics table with known gaps (see below)                                                 |
@@ -174,28 +174,28 @@ If either credential is unset, the corresponding delivery function calls `node.e
 
 | Domain | UID | Title | Scope |
 | :--- | :--- | :--- | :--- |
-| **01 Drilling** | `ims-drilling-fleet-overview` | IMS Drilling - Fleet Overview | Fleet-wide drill status, spindle rpm, feed rates, active machine events |
-| **01 Drilling** | `ims-drilling-shift-production` | IMS Drilling - Shift Production | Shift-by-shift panel hit counts, lot throughput, and operational efficiency |
-| **01 Drilling** | `ims-drilling-machine-investigation` | IMS Drilling - Machine Investigation | Deep drilldown on individual spindle vibration, tool hit counts, and motor load |
-| **01 Drilling** | `ims-drilling-anomaly-analysis` | IMS Drilling - Anomaly & Root Cause | Spindle vibration excursions, broken tool detection, and alarm correlation |
-| **02 LDI** | `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | Full 4-layer RCA dashboard: executive KPIs, machine telemetry, production context, alarm stream |
-| **02 LDI** | `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | Factory-floor kiosk, read-only; zero-scroll at 1920x1080 and 3840x2160 (1280x720 unsupported since PR #22) |
-| **02 LDI** | `ims-ldi-alarm-console` | IMS LDI - Alarm Console | The only interactive dashboard: Acknowledge/Resolve through `alarm-api` into `public.ldi_alarm_lifecycle` |
-| **02 LDI** | `ims-ldi-alarm-response` | IMS LDI - Alarm Response (MTTA/MTTR) | Response-time KPIs computed from the real alarm lifecycle |
-| **02 LDI** | `ims-ldi-alarm-dictionary` | IMS LDI - Alarm Dictionary | Reference lookup of a vendor alarm code plus recent occurrences; reached through drill-down links |
-| **02 LDI** | `ims-ldi-factory-digital-twin` | IMS LDI - Factory Digital Twin | Canvas floor view of the reporting LDI machines grouped by zone (`public.devices.location`) |
-| **02 LDI** | `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | Cpk/SPC ranking, RCA Truth Test, PE/JE distributions |
-| **02 LDI** | `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | Per-event drill-down (click an alarm/log to inspect) |
-| **02 LDI** | `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | Self-auditing data-quality dashboard (board-key duplication, coverage %, alarm-master match rate) |
-| **02 LDI** | `ims-easy-overview` | IMS Easy Overview | Zero-config whole-fleet glance built entirely from shared views/functions (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) -- no template variables to set |
-| **03 Platform** | `ims-noc-overview` | IMS NOC Overview | Infrastructure only (servers + network) — LDI process content lives elsewhere |
-| **03 Platform** | `ims-engineering` | IMS Engineering Drill-Down | Infra-focused: CPU/RAM/storage/network per server, LDI throughput/quality (legacy pipeline) |
-| **03 Platform** | `ims-capacity` | IMS AIOps & Capacity Forecast | Days-until-full/saturation regression forecasts (infra) |
-| **03 Platform** | `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | Ingestion pipeline's own health (rows/sec, batch success rate, retry queue depth) |
-| **03 Platform** | `ims-ingestion-latency` | IMS Ingestion Latency | Read-only source_ts → ingest_ts latency evidence from migration 081's `ingest_ts` columns |
-| **04 VCP** | `ims-vcp-overview` | IMS VCP - Fleet Overview | Plating line overview: hoist cycle times, active line speed, total square meters processed |
-| **04 VCP** | `ims-vcp-operations-console` | IMS VCP - Operations Console | Real-time rectifier currents, chemical bath actual vs preset temperatures, dosing pump status |
-| **04 VCP** | `ims-vcp-realtime-wall` | IMS VCP - Real-Time Wall | High-visibility wall kiosk for plating operators; out-of-spec chemical bath alerts |
+| **01 Drilling** | `001` | Drilling — 01 Fleet Digital Twin & Overview | Live 3D shopfloor digital twin and high-level operational overview of all CNC drilling machines |
+| **01 Drilling** | `ims-drilling-history` | Drilling — 02 Shift Production & OEE Tracking | Shift-by-shift production throughput, hit count, panel output, and overall equipment effectiveness (OEE) tracking |
+| **01 Drilling** | `ims-drilling-machine-detail` | Drilling — 03 Machine Investigation & Spindle Diagnostics | Deep-dive diagnostic console for individual drilling machines: spindle RPM, motor load, feed rate, and drill bit wear telemetry |
+| **01 Drilling** | `ims-drilling-5-anomaly` | Drilling — 04 Fleet Anomaly & Root Cause Analysis | Fleet anomaly detection, spindle vibration out-of-spec events, and multi-factor root cause analysis across the CNC drilling fleet |
+| **02 LDI** | `ims-easy-overview` | LDI — 01 Fleet Executive Overview | Zero-config whole-fleet glance built entirely from shared views/functions (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `v_machine_spc_fleet`) -- no template variables to set |
+| **02 LDI** | `ims-ldi-operator-andon` | LDI — 02 Operator Andon Board (Shopfloor Kiosk) | Factory-floor kiosk, ISA-101 compliant, zero interaction, zero scrolling at 1280x720 and above |
+| **02 LDI** | `ims-ldi-factory-digital-twin` | LDI — 03 Factory 3D Digital Twin & Spatial Layout | 10-machine Canvas Factory Digital Twin grouped into 5 zones (`public.devices.location`) |
+| **02 LDI** | `ims-ldi-manufacturing` | LDI — 04 Manufacturing Fleet Command Center | Full 4-layer RCA dashboard: executive HUD, machine telemetry, production context, alarm stream |
+| **02 LDI** | `ims-ldi-machine-snapshot` | LDI — 05 Machine Deep-Dive Snapshot | 360° machine snapshot at the exact millisecond clicked from Process Timeline |
+| **02 LDI** | `ims-ldi-engineering-analytics` | LDI — 06 Process Engineering Analytics & SPC | Layer 3 Process Timeline, synchronized multi-parameter RCA, Cpk ranking, PE/JE distributions |
+| **02 LDI** | `ims-ldi-alarm-console` | LDI — 07 Live Alarm Management Console | Interactive alarm acknowledge/resolve workflow writing real state to `public.ldi_alarm_lifecycle` |
+| **02 LDI** | `ims-ldi-alarm-response` | LDI — 08 Alarm Response Metrics & MTTA/MTTR | Response-time KPIs and real MTTA/MTTR from `public.ldi_alarm_lifecycle` |
+| **02 LDI** | `ims-ldi-alarm-dictionary` | LDI — 09 Alarm Code Dictionary & Corrective Actions | Reference lookup of vendor Alarm Master definitions plus recent live occurrences |
+| **02 LDI** | `ldi-data-readiness` | LDI — 10 Telemetry Signal Quality & Integration Readiness | Evidence-based data readiness and signal quality auditing using live PostgreSQL rows |
+| **03 Platform** | `ims-noc-overview` | Platform — 01 Network Operations Center (NOC) Overview | Infrastructure only (servers + network) — LDI process content lives elsewhere |
+| **03 Platform** | `ims-engineering` | Platform — 02 Host & Network Infrastructure Engineering Drill-Down | Per-server deep dive: CPU/RAM/storage/network timeseries plus anomaly panels |
+| **03 Platform** | `ims-capacity` | Platform — 03 AIOps Predictive Capacity & Resource Forecasting | Days-until-full regression forecasts for CPU, RAM, disk, plus Z-Score anomaly detection |
+| **03 Platform** | `ims-ingestion-latency` | Platform — 04 Ingestion Pipeline Latency & Telemetry SLO | Real source_ts → ingest_ts latency evidence from `ingest_ts` columns |
+| **03 Platform** | `ims-meta-monitoring` | Platform — 05 Pipeline Reliability & SRE Meta-Monitoring | Ingestion pipeline health: rows/sec, batch success rate, retry queue depth, circuit breaker state |
+| **04 VCP** | `ims-vcp-overview` | VCP — 01 Plating Fleet Overview & Process Analytics | Hours by state, bath and station-current deviation from setpoint, cell resistance, recipe compliance by lot |
+| **04 VCP** | `ims-vcp-operations-console` | VCP — 02 Plating Line Operations Console | Operations console: latest state of each line, active job, 7-step bath temperatures, 18-station currents/voltages, alarm log |
+| **04 VCP** | `ims-vcp-realtime-wall` | VCP — 03 Real-Time Plating Line Wall Display | Wall display: state cards, current job, bath temperatures, 18 rectifiers, 18 circulation pumps, and alarm indicators |
 
 NOC Overview was split from LDI/manufacturing content this session (it previously duplicated Manufacturing's Yield panel) — infrastructure and manufacturing concerns are deliberately kept on separate dashboards now, not blended on one "overview" page. Drilling and VCP dashboards are isolated to the `eap_backup` data tier.
 

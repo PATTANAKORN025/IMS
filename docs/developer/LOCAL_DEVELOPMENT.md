@@ -81,15 +81,27 @@ cp .env.example .env
 
 | Variable Name | Required | Default Example | Description |
 |:--------------|:---------|:----------------|:------------|
+| `POSTGRES_DB` | Yes | `ims` | Primary telemetry database name. |
 | `POSTGRES_USER` | Yes | `ims_admin` | Master administrative user for TimescaleDB. |
-| `POSTGRES_PASSWORD` | Yes | *StrongSecret!* | Master password for TimescaleDB. |
-| `POSTGRES_DB` | Yes | `ims_telemetry` | Primary telemetry database name. |
-| `GF_SECURITY_ADMIN_USER` | Yes | `admin` | Grafana administrative username. |
-| `GF_SECURITY_ADMIN_PASSWORD` | Yes | *AdminSecret!* | Grafana administrative password. |
-| `INGEST_API_KEY` | Yes | *TelemetrySecretKey* | API token required for `POST /ldi-telemetry`. |
-| `NODE_RED_CREDENTIAL_SECRET` | Yes | *FlowEncryptKey* | AES encryption key for Node-RED flow credentials. |
-| `ALERTMANAGER_LINE_TOKEN` | Optional | *LineToken...* | LINE Notify bearer token for alerting. |
-| `ALERTMANAGER_TEAMS_WEBHOOK` | Optional | `https://...` | Microsoft Teams incoming webhook URL. |
+| `POSTGRES_PASSWORD` | Yes | *GenerateSecurePassword* | Master password for TimescaleDB. |
+| `GRAFANA_ADMIN_USER` | Yes | `admin` | Grafana administrative username (`GF_SECURITY_ADMIN_USER`). |
+| `GRAFANA_ADMIN_PASSWORD` | Yes | *GenerateSecurePassword* | Grafana administrative password (`GF_SECURITY_ADMIN_PASSWORD`). |
+| `GRAFANA_DB_USER` | Yes | `grafana_reader` | Read-only TimescaleDB user for Grafana datasources. |
+| `GRAFANA_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Read-only database password for Grafana. |
+| `NODERED_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Password for `nodered_writer` role (migration 087). |
+| `ARCHIVER_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Password for `archiver_reader` role (migration 087). |
+| `ALARM_API_DB_PASSWORD` | Yes | *GenerateSecurePassword* | Password for `alarm_api_writer` role. |
+| `INGEST_API_KEY` | Yes | *GenerateSecureToken* | API key required for `POST /ldi-telemetry` & `/inject`. |
+| `NODE_RED_CREDENTIAL_SECRET` | Yes | *GenerateSecureToken* | AES encryption key for Node-RED flow credentials. |
+| `NODE_RED_ADMIN_USER` | Yes | `admin` | Node-RED web editor administrator login. |
+| `NODE_RED_ADMIN_PASSWORD_HASH` | Yes | *bcrypt hash* | Bcrypt hash for Node-RED web editor authentication. |
+| `ALERT_WEBHOOK_TOKEN` | Yes | *GenerateSecureToken* | Webhook authentication secret for alert ingest. |
+| `LINE_CHANNEL_ACCESS_TOKEN` | Optional | *Token...* | LINE Messaging API channel access token. |
+| `LINE_USER_ID` | Optional | *UserId...* | LINE destination user or group identifier. |
+| `TEAMS_WEBHOOK_URL` | Optional | `https://...` | Microsoft Teams incoming webhook connector URL. |
+| `PGADMIN_DEFAULT_EMAIL` | Yes | `admin@example.com` | pgAdmin default login email address. |
+| `PGADMIN_DEFAULT_PASSWORD` | Yes | *GenerateSecurePassword* | pgAdmin web console administrator password. |
+| `GRAFANA_RENDERER_TOKEN` | Yes | *GenerateSecureToken* | Secret token for Grafana Image Renderer service. |
 
 > [!CAUTION]
 > **Strict Secret Security Policy**: Reference environment variables by name only in documentation, commits, and discussions. All Compose configurations enforce secrets using the `${VARIABLE:?set VARIABLE in .env}` syntax.
@@ -192,7 +204,7 @@ All telemetry data resides in TimescaleDB (PostgreSQL 16 with TimescaleDB extens
 
 ```bash
 # Execute a new migration against TimescaleDB through docker exec
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry < database/migrations/086-add-custom-telemetry.sql
+docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/086-add-custom-telemetry.sql
 ```
 
 ### Continuous Aggregates (CAGGs)
@@ -244,12 +256,15 @@ All Grafana dashboards are version-controlled as JSON files in `monitoring/grafa
 1. **Grid-24 Layout Discipline**:
    - Every dashboard row must sum to exactly **24 columns**.
    - Coordinate calculation: $\text{Next Y} = \text{Prev Y} + \text{Prev H}$.
-2. **Canonical Color Tokens Only**:
-   - Primary Telemetry & Normal State: `#00F2FE` (Electric Cyan)
-   - Operational Success & Healthy: `#00FF87` (Spring Green)
-   - Critical Alarms & Faults: `#FF003C` (Crimson Red)
-   - Warning & Attention: `#FFB300` (Amber)
-   - Secondary & Analytical Curves: `#7928CA` (Neon Purple)
+2. **Canonical Color Tokens Only** (`GRAFANA_DESIGN_SYSTEM.md` §2.1):
+   - `ok`: `#22C55E` (Healthy, running, PASS, Capable+)
+   - `warning`: `#F59E0B` (IDLE, Marginal, warning thresholds)
+   - `critical`: `#EF4444` (OUT OF SPEC, critical alarms, error states)
+   - `info`: `#00F2FE` (General telemetry, plain KPI values)
+   - `accent`: `#3B82F6` (Highlights, navigation, active UI elements)
+   - `no_data`: `#64748B` (Reporting gaps, null/nan values)
+   - `forecast`: `#4A5568` (Regression trends, dashed lines)
+   - `severity-minor`: `#EAB308` (4th alarm-severity tier)
    - Never use Grafana's default color palettes.
 3. **SQL Injection Prevention**:
    - Non-repeated panels: `machine_id IN (${machine_id:singlequote})`
@@ -269,7 +284,7 @@ Before pushing changes or opening a Pull Request, run the local quality assuranc
 node scripts/pre-commit.js
 
 # 2. Audit all markdown links and anchor integrity
-node scripts/check-all-links.js
+node scripts/find-broken-links.js
 
 # 3. Verify documentation counts against real repository inventories
 node tests/lint/doc-overclaim-linter.js
@@ -317,4 +332,4 @@ Before submitting a PR:
 - [ ] `node scripts/pre-commit.js` passes with 0 failures.
 - [ ] No private CAD geometries, machine vendor names, or production secrets are included.
 - [ ] Documentation updates are mirrored symmetrically across English (`docs/`), Thai (`th/`), and Simplified Chinese (`zh-CN/`).
-- [ ] All markdown links pass link verification (`check-all-links.js`).
+- [ ] All markdown links pass link verification (`find-broken-links.js`).

@@ -160,7 +160,7 @@ _面向希望实际查看仪表板运行效果的经理、UI/UX 评审人员与�
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
 cp .env.example .env   # 首次启动前替换其中的每一个密钥值（见下文）
-make up                # build-flows + docker compose up -d（全部 15 个服务，含模拟器）
+make up                # build-flows + docker compose up -d（全部 16 个服务，含模拟器）
 sleep 40 && make verify
 # 浏览 http://localhost:3000（nginx 统一入口；Grafana 不直接发布端口）
 ```
@@ -266,11 +266,11 @@ node scripts/mock/verify-mock-dashboards.js --container=ims-timescaledb --psql-u
 -- 查询机群关键性能参数的 15 分钟聚合汇总
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature,
   ROUND(avg_scan_speed::numeric, 2) AS scan_speed
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```
@@ -280,7 +280,7 @@ ORDER BY bucket ASC;
 
 - nginx 统一入口使用明文 HTTP（主机端口 `${GRAFANA_PORT:-3000}`，容器端口 80）；生产环境需另行配置 TLS 终止。
 - 在 `.env` 中设置 `LINE_CHANNEL_ACCESS_TOKEN`、`LINE_USER_ID` 与 `TEAMS_WEBHOOK_URL` 之前，Alertmanager 不会向 LINE/Teams 发送任何消息。
-- 除 nginx 统一入口外，`pgadmin` 是唯一在**所有**网络接口上发布端口（`5050`）的服务；在实验环境之外，请用主机防火墙加以限制，或绑定到 `127.0.0.1`。
+- `pgadmin` 仅发布于 `127.0.0.1:5050`（仅限本地访问，安全）。
 - Makefile 混用多种 shell：`backup`、`restore`、`test-load`、`snapshot-flows` 与 `deploy-flows` 需要 POSIX shell（Windows 上使用 Git Bash）；`doctor` 使用 cmd 风格的重定向。
 
 </details>
@@ -295,7 +295,7 @@ ORDER BY bucket ASC;
 | 命令 | 说明 |
 | --- | --- |
 | `make doctor` | 检查前置条件（docker、compose、node） |
-| `make up` | 构建 flows，然后启动全部 15 个服务（含模拟器） |
+| `make up` | 构建 flows，然后启动全部 16 个服务（含模拟器） |
 | `make up-prod` | 同上，并叠加 `docker-compose.prod.yaml` 资源配置 |
 | `make down` / `make restart` | 停止整个栈 / 重启 node-red、grafana、alertmanager、prometheus |
 | `make logs` | 跟踪 Node-RED 日志 |
@@ -405,14 +405,14 @@ flowchart LR
 
 | 层级 | 技术 | 用途 |
 | --- | --- | --- |
-| **编排** | Docker Compose | 15 个服务的栈（`docker-compose.yaml`）+ 生产资源叠加配置 |
+| **编排** | Docker Compose | 16 个服务的栈（`docker-compose.yaml`）+ 生产资源叠加配置 |
 | **采集** | Node-RED + net-snmp | 顺序异步批量 SNMP 遍历，5 线程并行 walker |
 | **数据库** | TimescaleDB 2.29 (PostgreSQL 16) + PgBouncer 1.25 | Hypertable、CAGG 汇总、原生压缩、保留策略 |
 | **可视化** | Grafana 13.1.2 + image renderer | 22 个仪表板（4 个钻孔 + 10 个 LDI + 5 个基础设施 + 3 个 VCP） |
 | **告警** | Prometheus + Alertmanager | 指标抓取、抑制规则、LINE Messaging API + MS Teams webhooks |
 | **负载测试** | K6 | 流水线压力测试，阈值：成功率 > 95 %、端到端 p95 < 10 秒 |
 | **服务** | Node.js 22 (Express) | `alarm-api`（确认/解决写入路径）、`factory-twin-3d`（一楼数字孪生） |
-| **统一入口** | nginx 1.27 | 唯一发布的 UI 端口；同源路由至 Grafana、alarm-api、孪生服务与 Node-RED 接入端点 |
+| **统一入口** | nginx 1.31 | 唯一发布的 UI 端口；同源路由至 Grafana、alarm-api、孪生服务与 Node-RED 接入端点 |
 | **SLA 探测** | Blackbox Exporter | HTTP/TCP/ICMP 端点监控 |
 
 </details>
@@ -436,7 +436,7 @@ flowchart LR
 
 ```text
 IMS/
-├── docker-compose.yaml         # 15 个服务；docker-compose.prod.yaml 增加资源限制
+├── docker-compose.yaml         # 16 个服务；docker-compose.prod.yaml 增加资源限制
 ├── proxy/nginx.conf            # 唯一统一入口（Grafana、alarm-api、孪生服务、LDI 接入）
 ├── monitoring/
 │  ├── grafana/

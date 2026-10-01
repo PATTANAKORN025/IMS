@@ -93,11 +93,12 @@ IMS กำหนดสิทธิ์การเข้าถึงอย่า�
   - `Content-Type: application/json`
   - `X-API-Key: ${INGEST_API_KEY}` (จำเป็น)
 
-#### โครงสร้าง JSON ของ Request (Schema)
+#### โครงสร้าง JSON ของ Request (JSON Array)
 
 ```json
-{
-  "time": "2026-09-28T04:00:00Z",
+[
+  {
+    "time": "2026-09-28T04:00:00Z",
   "factory": "F1",
   "process": "LDI",
   "eqp_id": "LDI-01",
@@ -118,8 +119,9 @@ IMS กำหนดสิทธิ์การเข้าถึงอย่า�
   "state": true,
   "pe_1": 1.1,
   "je_1": 2.2,
-  "log_id": "LOG-10001"
-}
+    "log_id": "LOG-10001"
+  }
+]
 ```
 
 #### พจนานุกรมฟิลด์ข้อมูล (Field Dictionary)
@@ -180,7 +182,7 @@ IMS กำหนดสิทธิ์การเข้าถึงอย่า�
 curl -X POST http://localhost:3000/ldi-telemetry \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ${INGEST_API_KEY}" \
-  -d '{
+  -d '[{
     "time": "2026-09-28T04:00:00Z",
     "factory": "F1",
     "process": "LDI",
@@ -203,7 +205,7 @@ curl -X POST http://localhost:3000/ldi-telemetry \
     "pe_1": 1.1,
     "je_1": 2.2,
     "log_id": "LOG-10001"
-  }'
+  }]'
 ```
 
 ---

@@ -135,7 +135,7 @@ node tests/e2e/golden-dataset-spc.js
 
 ```text
 IMS/
-├── docker-compose.yaml        # Main orchestration (15 services)
+├── docker-compose.yaml        # Main orchestration (16 services)
 ├── proxy/nginx.conf           # The single front door
 ├── nodered_data/
 │ ├── flows/                   # Node-RED flows, split by concern (source of truth)

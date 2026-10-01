@@ -11,7 +11,7 @@ This skill imports world-class database performance practices (inspired by top G
 ## Core Directives
 
 1. **Continuous Aggregates (CAGGs) First**
-   - Raw tables (`ims_telemetry`) should only be queried for the last 1-6 hours of data.
+   - Raw tables (`ldi_data`, `sys_metrics`) should only be queried for the last 1-6 hours of data.
    - For trends > 24 hours, you MUST route queries to the appropriate CAGG.
 
 2. **Time-Bucket Aliasing**

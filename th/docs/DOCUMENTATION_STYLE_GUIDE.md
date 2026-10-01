@@ -131,7 +131,7 @@ c:\Projects\IMS
 
 ```bash
 # 1. ตรวจสอบความถูกต้องของลิงก์และ Anchor ครอบคลุมไฟล์ Markdown กว่า 690 ไฟล์
-node tests/lint/check-all-links.js
+node scripts/find-broken-links.js
 
 # 2. ตรวจสอบข้อความอวดอ้างและคำศัพท์เกินจริง (Overclaim Linter)
 node tests/lint/doc-overclaim-linter.js

@@ -192,7 +192,7 @@ nodered_data/flows/
 
 ```bash
 # ส่งคำสั่งไมเกรชันเข้าสู่ TimescaleDB ผ่าน docker exec
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry < database/migrations/086-add-custom-telemetry.sql
+docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/086-add-custom-telemetry.sql
 ```
 
 ### การใช้งาน Continuous Aggregates (CAGGs)
@@ -269,7 +269,7 @@ node scripts/mock/verify-mock-dashboards.js --container=ims-timescaledb --psql-u
 node scripts/pre-commit.js
 
 # 2. ตรวจสอบความถูกต้องของลิงก์และ Anchor ในเอกสาร Markdown ทั้งหมด
-node scripts/check-all-links.js
+node scripts/find-broken-links.js
 
 # 3. ตรวจสอบความสอดคล้องของตัวเลขสถิติในเอกสารกับโค้ดจริง
 node tests/lint/doc-overclaim-linter.js
@@ -316,4 +316,4 @@ node scripts/generate-docs-readme-index.js --check
 - [ ] คำสั่ง `node scripts/pre-commit.js` รันผ่านสมบูรณ์โดยไม่มีข้อผิดพลาด (0 failures)
 - [ ] ไม่มีข้อมูล CAD จริง, ชื่อผู้ผลิตเครื่องจักร หรือความลับของโรงงานหลุดเข้าไปในโค้ด
 - [ ] เนื้อหาเอกสารได้รับการอัปเดตตรงกันทั้ง 3 ภาษา (อังกฤษ `docs/`, ไทย `th/`, จีนตัวย่อ `zh-CN/`)
-- [ ] ลิงก์ทั้งหมดในเอกสารผ่านการตรวจสอบด้วย `check-all-links.js` เรียบร้อย
+- [ ] ลิงก์ทั้งหมดในเอกสารผ่านการตรวจสอบด้วย `find-broken-links.js` เรียบร้อย

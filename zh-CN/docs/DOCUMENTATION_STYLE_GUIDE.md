@@ -131,7 +131,7 @@ c:\Projects\IMS
 
 ```bash
 # 1. 验证全库 690+ Markdown 文件的超链接与锚点有效性
-node tests/lint/check-all-links.js
+node scripts/find-broken-links.js
 
 # 2. 运行文档过度宣称与虚标断言检查器
 node tests/lint/doc-overclaim-linter.js

@@ -192,7 +192,7 @@ Node-RED 中的 Function 节点运行在受限的 VM 沙箱环境中：
 
 ```bash
 # 通过 docker exec 直接向 TimescaleDB 灌入新迁移脚本
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry < database/migrations/086-add-custom-telemetry.sql
+docker exec -i ims-timescaledb psql -U ims_admin -d ims < database/migrations/086-add-custom-telemetry.sql
 ```
 
 ### 连续聚合视图 (CAGGs) 查询
@@ -269,7 +269,7 @@ node scripts/mock/verify-mock-dashboards.js --container=ims-timescaledb --psql-u
 node scripts/pre-commit.js
 
 # 2. 审计全库 Markdown 链接与锚点完整性
-node scripts/check-all-links.js
+node scripts/find-broken-links.js
 
 # 3. 校验文档中声称的数据与代码清单完全匹配
 node tests/lint/doc-overclaim-linter.js
@@ -316,4 +316,4 @@ Commit 消息必须严格遵循 Conventional Commits 格式：
 - [ ] `node scripts/pre-commit.js` 全部 53 项检查均显示 `PASS` (0 failures)。
 - [ ] 确保未引入任何真实 CAD 几何图纸、设备厂商专有名称或生产密钥。
 - [ ] 所有文档修改均已对称同步至英文 (`docs/`)、泰文 (`th/`) 及简体中文 (`zh-CN/`)。
-- [ ] 运行 `check-all-links.js` 确保所有内链与锚点 100% 有效。
+- [ ] 运行 `find-broken-links.js` 确保所有内链与锚点 100% 有效。

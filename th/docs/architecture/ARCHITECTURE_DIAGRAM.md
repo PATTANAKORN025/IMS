@@ -60,12 +60,12 @@ C4Context
 
 ## 2. แผนภาพโครงสร้างคอนเทนเนอร์ (C4 Model - Level 2: Container Diagram)
 
-แผนภาพนี้แสดงรายละเอียดการทำงานของเซอร์วิสทั้ง 15 ตัวในเครือข่าย Docker Compose พร้อมการแมปพอร์ตและเส้นทางการรับส่งข้อมูล:
+แผนภาพนี้แสดงรายละเอียดการทำงานของเซอร์วิสทั้ง 16 ตัวในเครือข่าย Docker Compose พร้อมการแมปพอร์ตและเส้นทางการรับส่งข้อมูล:
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 C4Container
- title แผนภาพคอนเทนเนอร์ของระบบ IMS (15 เซอร์วิส)
+ title แผนภาพคอนเทนเนอร์ของระบบ IMS (16 เซอร์วิส)
 
  Person(user, "วิศวกรและผู้ปฏิบัติการ", "เข้าใช้งานแดชบอร์ด, Digital Twin และ API จัดการแจ้งเตือนผ่านเบราว์เซอร์")
  System_Ext(ext_dev, "อุปกรณ์และเครื่องจักรในโรงงาน", "LDI, CNC เจาะ, VCP ชุบ, เซิร์ฟเวอร์, สวิตช์")
@@ -250,7 +250,7 @@ sequenceDiagram
   Browser->>Proxy: POST /alarm-api/alarms/resolve {"logid": "LOG-10001", "resolved_by": "engineer-02", "resolution_note": "เปลี่ยนไส้กรอง"}
   Proxy->>Proxy: ตรวจสอบสิทธิ์เซสชันผ่าน GET /auth-check (200 OK)
   Proxy->>AlarmAPI: ส่งต่อ POST /alarms/resolve
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by='engineer-02', resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
+  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by=session.user, resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
   DB-->>AlarmAPI: อัปเดตข้อมูลสำเร็จ
   AlarmAPI-->>Proxy: 200 OK
   Proxy-->>Browser: 200 OK (แดชบอร์ดแสดงสถานะแก้ไขแล้วเป็นสีเขียว Green)
@@ -339,9 +339,8 @@ flowchart TD
     RET_ALARM["ประวัติการแจ้งเตือน: 365 วัน"]
   end
 
-  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H --> CAGG_1D --> CAGG_1W
-  RAW_LDI --> CAGG_OEE_1M
-  RAW_INFRA --> INFRA_1H
+  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
+  RAW_INFRA --> INFRA_HOURLY
 
   RAW_LDI -.-> RET_RAW
   RAW_INFRA -.-> RET_RAW
@@ -406,16 +405,16 @@ flowchart LR
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # 2. ตรวจสอบจำนวนการเชื่อมต่อใน Pool ของ PgBouncer
-docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims_telemetry -c "SHOW POOLS;"
+docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
 
 # 3. ตรวจสอบการกระจายตัวของ Chunks และขนาดการบีบอัดข้อมูลใน TimescaleDB
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry -c "
+docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "
 SELECT hypertable_name, num_chunks, total_size, compressed_total_size
 FROM timescaledb_information.hypertables
 ORDER BY total_size DESC;"
 
 # 4. ตรวจสอบนโยบายการคำนวณ Continuous Aggregate ที่ทำงานอยู่
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry -c "
+docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "
 SELECT view_name, schedule_interval, max_interval_per_job
 FROM timescaledb_information.continuous_aggregate_stats;"
 ```

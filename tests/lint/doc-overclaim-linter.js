@@ -79,7 +79,9 @@ function getRealDashboardCounts() {
   const base = path.join(ROOT, 'monitoring', 'grafana', 'dashboards');
   const infra = countJsonFiles(path.join(base, 'infrastructure'));
   const manufacturing = countJsonFiles(path.join(base, 'manufacturing'));
-  return { infra, manufacturing, total: infra + manufacturing };
+  const drilling = countJsonFiles(path.join(base, 'drilling'));
+  const vcp = countJsonFiles(path.join(base, 'vcp'));
+  return { infra, manufacturing, drilling, vcp, total: infra + manufacturing + drilling + vcp };
 }
 
 function getRealServiceCount() {
@@ -130,7 +132,7 @@ function main() {
   console.log('IMS Doc Over-Claim Linter');
   console.log('='.repeat(50));
   console.log(
-    `Real values: ${dash.total} dashboards (${dash.infra} infra + ${dash.manufacturing} manufacturing), ${realServices} services, ${realMigrations.count} migrations (max 0${realMigrations.max})`
+    `Real values: ${dash.total} dashboards (${dash.infra} infra + ${dash.manufacturing} manufacturing + ${dash.drilling} drilling + ${dash.vcp} vcp), ${realServices} services, ${realMigrations.count} migrations (max 0${realMigrations.max})`
   );
   console.log('');
 

@@ -85,9 +85,9 @@ Grafana itself has **no** published port. When something works direct-to-contain
 
 ### Containers
 
-15 services in `docker-compose.yaml`, all containers named `ims-*`: `timescaledb`, `pgbouncer`, `db-migrate` (one-shot migration runner via `scripts/migrate-entrypoint.sh`, the single canonical runner), `node-red`, `grafana`, `renderer` (Grafana image renderer), `proxy`, `prometheus`, `alertmanager`, `blackbox-exporter`, `snmpsim`, `alarm-api`, `factory-twin-3d`, `observability-archiver`, `pgadmin`.
+16 services in `docker-compose.yaml`, all containers named `ims-*`: `timescaledb`, `pgbouncer`, `db-migrate` (one-shot migration runner via `scripts/migrate-entrypoint.sh`, the single canonical runner), `node-red`, `grafana`, `renderer` (Grafana image renderer), `proxy`, `prometheus`, `alertmanager`, `blackbox-exporter`, `snmpsim`, `alarm-api`, `factory-twin-3d`, `observability-archiver`, `docker-socket-proxy`, `pgadmin`.
 
-The base file has **no `profiles:` gating** — `make up` and `make up-prod` both start all 15, SNMP simulator and pgAdmin included. `docker-compose.dev.yaml` (the only file that puts `snmpsim` behind a `dev` profile) is referenced by no Makefile target. Apart from the nginx front door, `pgadmin` is the only service publishing on all interfaces (`5050:80`); every other published port binds `127.0.0.1`.
+The base file has **no `profiles:` gating** — `make up` and `make up-prod` both start all 16, SNMP simulator and pgAdmin included. `docker-compose.dev.yaml` (the only file that puts `snmpsim` behind a `dev` profile) is referenced by no Makefile target. `pgadmin` binds to loopback (`127.0.0.1:5050:80`); every published port except the nginx front door binds `127.0.0.1`.
 
 Secrets come from `.env` with `${VAR:?message}` required-var syntax — `.env.example` lists every key. The example values are public; never reuse them outside a throw-away environment.
 

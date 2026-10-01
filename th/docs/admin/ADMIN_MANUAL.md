@@ -37,7 +37,7 @@
 
 ### ภาพรวมคอนเทนเนอร์
 
-ระบบทำงานบน Docker Compose ทั้งหมด: `docker-compose.yaml` กำหนด 15 service (service ที่ทำงานต่อเนื่อง 14 ตัว และตัวรัน migration แบบครั้งเดียว 1 ตัวซึ่งจะจบการทำงานเมื่อเสร็จ) ไม่มีการแบ่งด้วย `profiles:` ดังนั้น `make up` และ `make up-prod` จะเริ่มทุก service รวมถึงตัวจำลอง SNMP และ pgAdmin:
+ระบบทำงานบน Docker Compose ทั้งหมด: `docker-compose.yaml` กำหนด 16 service (service ที่ทำงานต่อเนื่อง 15 ตัว และตัวรัน migration แบบครั้งเดียว 1 ตัวซึ่งจะจบการทำงานเมื่อเสร็จ) ไม่มีการแบ่งด้วย `profiles:` ดังนั้น `make up` และ `make up-prod` จะเริ่มทุก service รวมถึงตัวจำลอง SNMP และ pgAdmin:
 
 | คอนเทนเนอร์ | Service | พอร์ต | หน้าที่ |
 | --- | --- | --- | --- |
@@ -54,8 +54,9 @@
 | `ims-blackbox` | Blackbox Exporter | 9115 (loopback เท่านั้น) | probe วัด SLA |
 | `ims-snmpsim` | SNMP Simulator | 161/udp (ภายใน) | อุปกรณ์ SNMP จำลองสำหรับการพัฒนาและสาธิต |
 | `ims-factory-twin-3d` | Factory Twin 3D | 4100 (ภายใน) | ดิจิทัลทวินชั้น 1 ให้บริการผ่าน `ims-proxy` ที่ `/factory-twin-3d/` |
-| `ims-observability-archiver` | ตัวเก็บถาวร log/ตัวชี้วัด | — (ไม่มีพอร์ต) | เก็บ snapshot ด้าน observability ของคอนเทนเนอร์และฐานข้อมูลลง `./ops-logs` เป็นระยะ มีการ mount `/var/run/docker.sock` แบบอ่านอย่างเดียว — ให้ถือว่าเป็นคอนเทนเนอร์สิทธิ์สูง |
-| `ims-pgadmin4` | pgAdmin 4 | **5050 ทุก interface** | หน้าจอจัดการฐานข้อมูล เป็น service เดียวนอกจาก `ims-proxy` ที่เปิดพอร์ตบนทุก interface — นอกห้องทดลองต้องกั้นด้วยไฟร์วอลล์หรือ bind ไว้ที่ `127.0.0.1` |
+| `ims-observability-archiver` | ตัวเก็บถาวร log/ตัวชี้วัด | — (ไม่มีพอร์ต) | เก็บ snapshot ด้าน observability ของคอนเทนเนอร์และฐานข้อมูลลง `./ops-logs` เป็นระยะ สื่อสารผ่าน `ims-docker-socket-proxy` อย่างปลอดภัย |
+| `ims-docker-socket-proxy` | Docker Socket Proxy | — (ภายในเท่านั้น) | จำกัดการเข้าถึง Docker daemon ให้เรียกได้เฉพาะ endpoint อ่านอย่างเดียวบนเครือข่ายภายใน |
+| `ims-pgadmin4` | pgAdmin 4 | **5050 (loopback: 127.0.0.1:5050)** | หน้าจอจัดการฐานข้อมูล ผูกกับ loopback เพื่อความปลอดภัย |
 
 > `ims-db-migrate` จะจบการทำงานด้วยสถานะ 0 หลัง apply migration ที่ค้างอยู่ การเห็นสถานะ `Exited (0)` ใน `docker compose ps` จึงเป็นเรื่องปกติ ไม่ใช่ความผิดพลาด `node-red` และ `alarm-api` จะไม่เริ่มจนกว่า migration จะสำเร็จ
 

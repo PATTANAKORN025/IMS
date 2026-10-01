@@ -43,7 +43,7 @@
 
 ## 5. เวิร์กโฟลว์การพัฒนาและคำสั่ง (Development Workflow & Commands)
 
-- `make up` — build flows แล้วเริ่มครบ 15 service (ไม่มี compose profile; รวมตัวจำลองและ pgAdmin)
+- `make up` — build flows แล้วเริ่มครบ 16 service (ไม่มี compose profile; รวมตัวจำลองและ pgAdmin)
 - `make up-prod` — เริ่ม overlay สำหรับการผลิต
 - `make restart` — รีสตาร์ท Node-RED, Grafana, Alertmanager, Prometheus
 - `make verify` — ตรวจสอบสถานะการทำงานอย่างเต็มรูปแบบ (containers, DB, pipeline, alerts)

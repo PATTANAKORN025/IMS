@@ -174,28 +174,28 @@ flowchart TB
 
 | 领域 | UID | Title | 范围 |
 | :--- | :--- | :--- | :--- |
-| **01 钻孔领域** | `ims-drilling-fleet-overview` | IMS Drilling - Fleet Overview | 机群运行状态、主轴转速、进给速率及活动机台事件 |
-| **01 钻孔领域** | `ims-drilling-shift-production` | IMS Drilling - Shift Production | 班次钻孔板件命中计数、批次产量及生产综合效率 |
-| **01 钻孔领域** | `ims-drilling-machine-investigation` | IMS Drilling - Machine Investigation | 单台主轴振动状态、刀具命中寿命及主轴电机负载深度诊断 |
-| **01 钻孔领域** | `ims-drilling-anomaly-analysis` | IMS Drilling - Anomaly & Root Cause | 振动异常突变、断刀检测判定及告警相关性分析 |
-| **02 LDI 领域** | `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | 完整的 4 层 RCA 仪表板：管理层 KPI、设备遥测、生产上下文、告警流 |
-| **02 LDI 领域** | `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | 产线 kiosk 看板，只读；在 1920x1080 与 3840x2160 下无需滚动（自 PR #22 起不支持 1280x720） |
-| **02 LDI 领域** | `ims-ldi-alarm-console` | IMS LDI - Alarm Console | 唯一可交互的仪表板：经 `alarm-api` 将确认/解决写入 `public.ldi_alarm_lifecycle` |
-| **02 LDI 领域** | `ims-ldi-alarm-response` | IMS LDI - Alarm Response (MTTA/MTTR) | 基于真实告警生命周期计算的响应时间 KPI |
-| **02 LDI 领域** | `ims-ldi-alarm-dictionary` | IMS LDI - Alarm Dictionary | 查询厂商告警代码及其最近发生记录；通过下钻链接进入 |
-| **02 LDI 领域** | `ims-ldi-factory-digital-twin` | IMS LDI - Factory Digital Twin | 按区域（`public.devices.location`）分组的上报 LDI 设备 Canvas 平面图 |
-| **02 LDI 领域** | `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | Cpk/SPC 排名、RCA Truth Test、PE/JE 分布 |
-| **02 LDI 领域** | `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | 逐事件下钻（点击告警/日志进行检查） |
-| **02 LDI 领域** | `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | 自检式数据质量仪表板（板件键重复、覆盖率 %、告警主数据匹配率） |
-| **02 LDI 领域** | `ims-easy-overview` | IMS Easy Overview | 零配置全设备群一览，完全基于共享视图/函数构建（`v_ldi_machine_latest_full`、`v_ldi_alarm_context`、`f_ldi_yield_pct`、`v_machine_spc_fleet`）——无需设置模板变量 |
-| **03 平台领域** | `ims-noc-overview` | IMS NOC Overview | 仅基础设施（服务器 + 网络）——LDI 工艺内容位于其他仪表板 |
-| **03 平台领域** | `ims-engineering` | IMS Engineering Drill-Down | 侧重基础设施：各服务器的 CPU/内存/存储/网络，以及 LDI 吞吐量/质量（传统流水线） |
-| **03 平台领域** | `ims-capacity` | IMS AIOps & Capacity Forecast | 距离耗尽/饱和天数的回归预测（基础设施） |
-| **03 平台领域** | `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | 接入流水线自身的健康状况（行/秒、批次成功率、重试队列深度） |
-| **03 平台领域** | `ims-ingestion-latency` | IMS Ingestion Latency | 基于迁移 081 的 `ingest_ts` 列、只读的 source_ts → ingest_ts 延迟证据 |
-| **04 VCP 领域** | `ims-vcp-overview` | IMS VCP - Fleet Overview | 电镀产线总览：行车节拍周期、产线线速、累计电镀加工面积 |
-| **04 VCP 领域** | `ims-vcp-operations-console` | IMS VCP - Operations Console | 实时整流器电流密度、化学药水槽实测与设定温度比对、加药泵运行状态 |
-| **04 VCP 领域** | `ims-vcp-realtime-wall` | IMS VCP - Real-Time Wall | 车间电镀操作员专用高可见度悬挂大屏；药水槽超限预警指示 |
+| **01 钻孔领域** | `001` | Drilling — 01 Fleet Digital Twin & Overview | CNC 钻孔机群 3D 车间数字孪生及高层运行总览 |
+| **01 钻孔领域** | `ims-drilling-history` | Drilling — 02 Shift Production & OEE Tracking | 班次钻孔产量、孔数统计、板件产出及综合设备效率 (OEE) 跟踪 |
+| **01 钻孔领域** | `ims-drilling-machine-detail` | Drilling — 03 Machine Investigation & Spindle Diagnostics | 单台钻孔机深度诊断控制台：主轴转速、电机负载、进给速率及钻头磨损遥测 |
+| **01 钻孔领域** | `ims-drilling-5-anomaly` | Drilling — 04 Fleet Anomaly & Root Cause Analysis | 钻孔机群异常检测、主轴振动超标事件及多因素根本原因分析 (RCA) |
+| **02 LDI 领域** | `ims-easy-overview` | LDI — 01 Fleet Executive Overview | 零配置全设备群一览，完全基于共享视图/函数构建（`v_ldi_machine_latest_full`、`v_ldi_alarm_context`、`v_machine_spc_fleet`）——无需设置模板变量 |
+| **02 LDI 领域** | `ims-ldi-operator-andon` | LDI — 02 Operator Andon Board (Shopfloor Kiosk) | 车间看板，符合 ISA-101 规范，零交互且在 1280x720 及以上无需滚动 |
+| **02 LDI 领域** | `ims-ldi-factory-digital-twin` | LDI — 03 Factory 3D Digital Twin & Spatial Layout | 10 台上报 LDI 设备的 Canvas 数字孪生，按 5 个真实物理区域分组 (`public.devices.location`) |
+| **02 LDI 领域** | `ims-ldi-manufacturing` | LDI — 04 Manufacturing Fleet Command Center | 完整的 4 层 RCA 仪表板：管理层 HUD、设备遥测、生产上下文、告警流 |
+| **02 LDI 领域** | `ims-ldi-machine-snapshot` | LDI — 05 Machine Deep-Dive Snapshot | 针对点击事件毫秒级的 360° 单机深度快照 |
+| **02 LDI 领域** | `ims-ldi-engineering-analytics` | LDI — 06 Process Engineering Analytics & SPC | Layer 3 工艺时间轴多参数同步 RCA、Cpk/SPC 排名、PE/JE 误差分布 |
+| **02 LDI 领域** | `ims-ldi-alarm-console` | LDI — 07 Live Alarm Management Console | 交互式告警确认/解决工作流，真实写入 `public.ldi_alarm_lifecycle` |
+| **02 LDI 领域** | `ims-ldi-alarm-response` | LDI — 08 Alarm Response Metrics & MTTA/MTTR | 基于 `public.ldi_alarm_lifecycle` 真实计算的响应时间 KPI 与 MTTA/MTTR |
+| **02 LDI 领域** | `ims-ldi-alarm-dictionary` | LDI — 09 Alarm Code Dictionary & Corrective Actions | 厂商告警代码主数据定义与近期现场发生记录参考速查 |
+| **02 LDI 领域** | `ldi-data-readiness` | LDI — 10 Telemetry Signal Quality & Integration Readiness | 基于实际 PostgreSQL 数据的证据化信号质量与数据就绪度审计 |
+| **03 平台领域** | `ims-noc-overview` | Platform — 01 Network Operations Center (NOC) Overview | 仅限基础设施（服务器与交换机）——LDI 工艺指标位于制造领域仪表板 |
+| **03 平台领域** | `ims-engineering` | Platform — 02 Host & Network Infrastructure Engineering Drill-Down | 单机深度排查：CPU/内存/磁盘/温度/网络时间序列图及异常检测面板 |
+| **03 平台领域** | `ims-capacity` | Platform — 03 AIOps Predictive Capacity & Resource Forecasting | 基于 30 天线性回归的 CPU、内存、磁盘耗尽天数预测及 Z-Score 异常检测 |
+| **03 平台领域** | `ims-ingestion-latency` | Platform — 04 Ingestion Pipeline Latency & Telemetry SLO | 基于迁移 081 `ingest_ts` 列的只读 source_ts → ingest_ts 延迟证据 |
+| **03 平台领域** | `ims-meta-monitoring` | Platform — 05 Pipeline Reliability & SRE Meta-Monitoring | 接入流水线自身健康度：每秒写入行数、批次成功率、重试队列深度、熔断器状态 |
+| **04 VCP 领域** | `ims-vcp-overview` | VCP — 01 Plating Fleet Overview & Process Analytics | 垂直连续电镀 (VCP) 线群概览：状态运行时间、药水槽及整流器电流设定偏差、槽电阻、配方合规率 |
+| **04 VCP 领域** | `ims-vcp-operations-console` | VCP — 02 Plating Line Operations Console | 电镀线运行控制台：各产线最新状态、正在处理批次、7 步药水槽温度、18 个工作站电流电压、告警日志 |
+| **04 VCP 领域** | `ims-vcp-realtime-wall` | VCP — 03 Real-Time Plating Line Wall Display | 车间高可见度悬挂大屏：产线卡片、当前批次、药水温度、18 台整流器与 18 台循环泵状态及告警指示 |
 
 NOC Overview 在当时已与 LDI/制造内容拆分（此前它重复展示了 Manufacturing 的良率面板）——基础设施与制造的关注点现在有意分放在不同仪表板上，而不是混在同一个"总览"页面。钻孔与 VCP 仪表板完全隔离在 `eap_backup` 数据层中。
 

@@ -160,7 +160,7 @@ _สำหรับผู้จัดการ ผู้รีวิว UI/UX �
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
 cp .env.example .env   # จากนั้นเปลี่ยนค่าลับทุกค่าก่อนเริ่มระบบครั้งแรก (ดูด้านล่าง)
-make up                # build-flows + docker compose up -d (ครบ 15 service รวมตัวจำลอง)
+make up                # build-flows + docker compose up -d (ครบ 16 service รวมตัวจำลอง)
 sleep 40 && make verify
 # เปิด http://localhost:3000 (ประตูหน้า nginx; Grafana ไม่ได้เปิดพอร์ตออกโดยตรง)
 ```
@@ -266,11 +266,11 @@ node scripts/mock/verify-mock-dashboards.js --container=ims-timescaledb --psql-u
 -- คิวรีข้อมูลสรุปทุก 15 นาทีสำหรับสมรรถนะของเครื่องจักรในสายการผลิต
 SELECT
   bucket AS "time",
-  machine_id,
+  eqp_id AS machine_id,
   ROUND(avg_temperature::numeric, 2) AS temperature,
   ROUND(avg_scan_speed::numeric, 2) AS scan_speed
 FROM public.ldi_data_15m
-WHERE machine_id = 'LDI-01'
+WHERE eqp_id = 'LDI-01'
   AND bucket > NOW() - INTERVAL '24 hours'
 ORDER BY bucket ASC;
 ```
@@ -280,7 +280,7 @@ ORDER BY bucket ASC;
 
 - ประตูหน้า nginx ใช้ HTTP ธรรมดา (`${GRAFANA_PORT:-3000}` บนเครื่อง host และพอร์ต 80 ในคอนเทนเนอร์) ต้องเพิ่ม TLS termination ก่อนใช้งานจริง
 - Alertmanager จะไม่ส่งข้อความไป LINE/Teams จนกว่าจะกำหนด `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` และ `TEAMS_WEBHOOK_URL` ใน `.env`
-- นอกจากประตูหน้า nginx แล้ว `pgadmin` เป็น service เดียวที่เปิดพอร์ต (`5050`) บน **ทุก** network interface นอกห้องทดลองให้จำกัดด้วยไฟร์วอลล์ของ host หรือ bind ไว้ที่ `127.0.0.1`
+- `pgadmin` เผยแพร่ที่ `127.0.0.1:5050` (เฉพาะ localhost เท่านั้น ปลอดภัย)
 - Makefile ใช้ shell ผสมกัน: `backup`, `restore`, `test-load`, `snapshot-flows` และ `deploy-flows` ต้องใช้ POSIX shell (บน Windows ใช้ Git Bash) ส่วน `doctor` ใช้การ redirect แบบ cmd
 
 </details>
@@ -295,7 +295,7 @@ ORDER BY bucket ASC;
 | คำสั่ง | คำอธิบาย |
 | --- | --- |
 | `make doctor` | ตรวจสิ่งที่ต้องติดตั้งไว้ก่อน (docker, compose, node) |
-| `make up` | build flows แล้วเริ่มครบ 15 service (รวมตัวจำลอง) |
+| `make up` | build flows แล้วเริ่มครบ 16 service (รวมตัวจำลอง) |
 | `make up-prod` | เหมือน `make up` แต่ใช้ overlay ทรัพยากรจาก `docker-compose.prod.yaml` |
 | `make down` / `make restart` | หยุดทั้ง stack / รีสตาร์ต node-red, grafana, alertmanager, prometheus |
 | `make logs` | ติดตาม log ของ Node-RED |
@@ -405,14 +405,14 @@ flowchart LR
 
 | ชั้น | เทคโนโลยี | หน้าที่ |
 | --- | --- | --- |
-| **Orchestration** | Docker Compose | stack 15 service (`docker-compose.yaml`) + overlay ทรัพยากรสำหรับ production |
+| **Orchestration** | Docker Compose | stack 16 service (`docker-compose.yaml`) + overlay ทรัพยากรสำหรับ production |
 | **การเก็บข้อมูล** | Node-RED + net-snmp | walk SNMP แบบ bulk อะซิงโครนัสทีละขั้น, walker ขนาน 5 เธรด |
 | **ฐานข้อมูล** | TimescaleDB 2.29 (PostgreSQL 16) + PgBouncer 1.25 | Hypertables, rollup แบบ CAGG, การบีบอัดแบบ native, นโยบายระยะเก็บข้อมูล |
 | **การแสดงผล** | Grafana 13.1.2 + image renderer | 22 แดชบอร์ด (งานเจาะ 4 + LDI 10 + โครงสร้างพื้นฐาน 5 + VCP 3) |
 | **การแจ้งเตือน** | Prometheus + Alertmanager | scrape ตัวชี้วัด, inhibition rules, LINE Messaging API + MS Teams webhooks |
 | **ทดสอบโหลด** | K6 | stress test ไปป์ไลน์, เกณฑ์ success > 95 %, e2e p95 < 10 วินาที |
 | **Services** | Node.js 22 (Express) | `alarm-api` (เส้นทางเขียน acknowledge/resolve), `factory-twin-3d` (ดิจิทัลทวินชั้น 1) |
-| **ประตูหน้า** | nginx 1.27 | เปิดพอร์ต UI เพียงพอร์ตเดียว; route แบบ same-origin ไปยัง Grafana, alarm-api, twin และช่องรับข้อมูลของ Node-RED |
+| **ประตูหน้า** | nginx 1.31 | เปิดพอร์ต UI เพียงพอร์ตเดียว; route แบบ same-origin ไปยัง Grafana, alarm-api, twin และช่องรับข้อมูลของ Node-RED |
 | **SLA Probing** | Blackbox Exporter | เฝ้าระวัง endpoint แบบ HTTP/TCP/ICMP |
 
 </details>
@@ -436,7 +436,7 @@ flowchart LR
 
 ```text
 IMS/
-├── docker-compose.yaml         # 15 service; docker-compose.prod.yaml เพิ่มข้อจำกัดทรัพยากร
+├── docker-compose.yaml         # 16 service; docker-compose.prod.yaml เพิ่มข้อจำกัดทรัพยากร
 ├── proxy/nginx.conf            # ประตูหน้าเพียงทางเดียว (Grafana, alarm-api, twin, ช่องรับข้อมูล LDI)
 ├── monitoring/
 │  ├── grafana/

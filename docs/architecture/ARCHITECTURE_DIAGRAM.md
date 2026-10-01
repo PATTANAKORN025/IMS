@@ -60,12 +60,12 @@ C4Context
 
 ## 2. Container Diagram (C4 Model - Level 2)
 
-This diagram details all 15 services within the IMS Docker Compose topology, highlighting inter-container networking, host port bindings, and data paths.
+This diagram details all 16 services within the IMS Docker Compose topology, highlighting inter-container networking, host port bindings, and data paths.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 C4Container
- title Container Topology Diagram for IMS (15 Services)
+ title Container Topology Diagram for IMS (16 Services)
 
  Person(user, "Engineers & Operators", "Accesses dashboards, twin, and alarm APIs via browser.")
  System_Ext(ext_dev, "Factory Edge Equipment", "LDI, CNC Drilling, VCP, Servers, Switches.")
@@ -202,7 +202,7 @@ sequenceDiagram
   Note over NodeRed: Memory buffer accumulates rows for 10s window
   NodeRed->>NodeRed: Construct batched INSERT (NOW() in values)
   NodeRed->>PgBouncer: Execute batched SQL transaction
-  PgBouncer->>TimescaleDB: Write into hypertable public.ldi_data (1h chunk)
+  PgBouncer->>TimescaleDB: Write into hypertable public.ldi_data (1d chunk)
   NodeRed->>NodeRed: Explicit GC (flatData.length = 0, msg.payload = null)
 
   Note over TimescaleDB: Continuous Aggregate policy triggers
@@ -239,18 +239,18 @@ sequenceDiagram
   Operator->>Browser: Clicks "Acknowledge" on Alarm LOG-10001
   Browser->>Proxy: POST /alarm-api/alarms/ack (with session cookie)
   Proxy->>Proxy: Sub-request GET /auth-check -> Grafana /api/user (200 OK)
-  Proxy->>AlarmAPI: Forward POST /alarms/ack {"logid": "LOG-10001", "acknowledged_by": "operator-01"}
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by='operator-01' WHERE status='OPEN'
+  Proxy->>AlarmAPI: Forward POST /alarms/ack {"logdate_ms": 1790568000000, "logid": "LOG-10001"}
+  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by=session.user WHERE status='OPEN'
   DB-->>AlarmAPI: Row updated (1 row returned)
   AlarmAPI-->>Proxy: 200 OK (Updated JSON record)
   Proxy-->>Browser: 200 OK (Dashboard updates UI status to Amber)
 
   Note over Engineer: Engineer inspects machine, cleans optical filter
   Engineer->>Browser: Clicks "Resolve" with corrective action note
-  Browser->>Proxy: POST /alarm-api/alarms/resolve {"logid": "LOG-10001", "resolved_by": "engineer-02", "resolution_note": "Replaced filter"}
+  Browser->>Proxy: POST /alarm-api/alarms/resolve {"logdate_ms": 1790568000000, "logid": "LOG-10001", "resolution_note": "Replaced filter"}
   Proxy->>Proxy: Sub-request GET /auth-check (200 OK)
   Proxy->>AlarmAPI: Forward POST /alarms/resolve
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by='engineer-02', resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
+  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by=session.user, resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
   DB-->>AlarmAPI: Row updated (1 row returned)
   AlarmAPI-->>Proxy: 200 OK (Updated JSON record)
   Proxy-->>Browser: 200 OK (Dashboard marks alarm RESOLVED in Green)
@@ -314,25 +314,19 @@ Illustrates the chunking boundaries, continuous aggregate hierarchies, and lifec
 ```mermaid
 flowchart TD
   subgraph Ingestion ["Ingestion Level"]
-    RAW_LDI["public.ldi_data\n(Hypertable, 1-Hour Chunks)"]
+    RAW_LDI["public.ldi_data\n(Hypertable, 1-Day Chunks)"]
     RAW_INFRA["public.sys_metrics & net_metrics\n(Hypertables, 1-Day Chunks)"]
     RAW_ALARM["public.ldi_alarm_log\n(Hypertable, 7-Day Chunks)"]
   end
 
-  subgraph CAGG_Tier1 ["Tier 1: Minute-Level Rollups"]
+  subgraph CAGG_Tier1 ["Tier 1: High-Frequency Rollups"]
     CAGG_1M["public.ldi_data_1m\n(Refreshed every 1m, 1h window)"]
-    CAGG_OEE_1M["public.ldi_oee_1m\n(Real-time line availability)"]
-  end
-
-  subgraph CAGG_Tier2 ["Tier 2: 15-Minute & Hourly Rollups"]
     CAGG_15M["public.ldi_data_15m\n(Refreshed every 15m)\nPowers Manufacturing & Command Center"]
-    CAGG_1H["public.ldi_data_1h\n(Refreshed every 1h)\nPowers SPC and Trend Visualizations"]
-    INFRA_1H["public.sys_metrics_1h & net_metrics_1h\n(Infrastructure Hourly Summaries)"]
   end
 
-  subgraph CAGG_Tier3 ["Tier 3: Daily & Weekly Macro Rollups"]
-    CAGG_1D["public.ldi_data_1d\n(Refreshed every 6h)\nPowers Long-Term Capacity Planning"]
-    CAGG_1W["public.ldi_data_1w\n(Refreshed every 6h)\nHistorical Yield Archive"]
+  subgraph CAGG_Tier2 ["Tier 2: Hourly Rollups"]
+    CAGG_1H["public.ldi_data_1h & ldi_data_hourly\n(Refreshed every 1h)\nPowers SPC and Trend Visualizations"]
+    INFRA_HOURLY["public.sys_hourly & net_hourly\n(Infrastructure Hourly Summaries)"]
   end
 
   subgraph Retention ["Retention Policies (Verified Live Database)"]
@@ -341,9 +335,8 @@ flowchart TD
     RET_ALARM["Alarm Log Retention: 365 Days"]
   end
 
-  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H --> CAGG_1D --> CAGG_1W
-  RAW_LDI --> CAGG_OEE_1M
-  RAW_INFRA --> INFRA_1H
+  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
+  RAW_INFRA --> INFRA_HOURLY
 
   RAW_LDI -.-> RET_RAW
   RAW_INFRA -.-> RET_RAW
@@ -406,20 +399,20 @@ flowchart LR
 Verify the active system architecture directly from your terminal:
 
 ```bash
-# 1. Inspect all 14 running containers and exposed ports
+# 1. Inspect all 16 containers and exposed ports
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # 2. Check PgBouncer connection pool client and server allocation
-docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims_telemetry -c "SHOW POOLS;"
+docker exec -i ims-timescaledb psql -U ims_admin -p 6432 -h ims-pgbouncer -d ims -c "SHOW POOLS;"
 
 # 3. Inspect TimescaleDB hypertable chunk distribution and compression status
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry -c "
+docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "
 SELECT hypertable_name, num_chunks, total_size, compressed_total_size
 FROM timescaledb_information.hypertables
 ORDER BY total_size DESC;"
 
 # 4. Check active Continuous Aggregate refresh policies
-docker exec -i ims-timescaledb psql -U ims_admin -d ims_telemetry -c "
+docker exec -i ims-timescaledb psql -U ims_admin -d ims -c "
 SELECT view_name, schedule_interval, max_interval_per_job
 FROM timescaledb_information.continuous_aggregate_stats;"
 ```

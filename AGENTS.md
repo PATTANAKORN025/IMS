@@ -43,7 +43,7 @@
 
 ## 5. Development Workflow & Commands
 
-- `make up` — Build flows and start all 15 services (no compose profiles; simulator and pgAdmin included)
+- `make up` — Build flows and start all 16 services (no compose profiles; simulator and pgAdmin included)
 - `make up-prod` — Start production overlay
 - `make restart` — Restart Node-RED, Grafana, Alertmanager, Prometheus
 - `make verify` — Full health check (containers, DB, pipeline, alerts)

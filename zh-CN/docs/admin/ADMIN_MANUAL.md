@@ -37,7 +37,7 @@
 
 ### 容器概览
 
-系统完全运行在 Docker Compose 上：`docker-compose.yaml` 定义了 15 个服务（14 个常驻服务，以及 1 个完成后即退出的一次性迁移执行器）。由于没有 `profiles:` 分组，`make up` 与 `make up-prod` 会启动全部服务，包括 SNMP 模拟器与 pgAdmin：
+系统完全运行在 Docker Compose 上：`docker-compose.yaml` 定义了 16 个服务（15 个常驻服务，以及 1 个完成后即退出的一次性迁移执行器）。由于没有 `profiles:` 分组，`make up` 与 `make up-prod` 会启动全部服务，包括 SNMP 模拟器与 pgAdmin：
 
 | 容器 | 服务 | 端口 | 用途 |
 | --- | --- | --- | --- |
@@ -54,8 +54,9 @@
 | `ims-blackbox` | Blackbox Exporter | 9115（仅回环） | SLA 探测 |
 | `ims-snmpsim` | SNMP 模拟器 | 161/udp（内部） | 用于开发与演示的模拟 SNMP 设备 |
 | `ims-factory-twin-3d` | Factory Twin 3D | 4100（内部） | 一楼数字孪生，经 `ims-proxy` 在 `/factory-twin-3d/` 提供 |
-| `ims-observability-archiver` | 日志/指标归档器 | —（无端口） | 定期将容器与数据库的可观测性快照归档到 `./ops-logs`。以只读方式挂载 `/var/run/docker.sock`——应视为特权容器。 |
-| `ims-pgadmin4` | pgAdmin 4 | **5050，所有接口** | 数据库管理界面。除 `ims-proxy` 外唯一在所有接口上发布端口的服务——在实验环境之外，应以防火墙限制或绑定到 `127.0.0.1`。 |
+| `ims-observability-archiver` | 日志/指标归档器 | —（无端口） | 定期将容器与数据库的可观测性快照归档到 `./ops-logs`。通过 `ims-docker-socket-proxy` 安全通信。 |
+| `ims-docker-socket-proxy` | Docker Socket Proxy | —（仅内部） | 在隔离网络上限制 Docker daemon socket 仅允许只读端点。 |
+| `ims-pgadmin4` | pgAdmin 4 | **5050（仅回环：127.0.0.1:5050）** | 数据库管理界面。严格绑定到本地回环地址以确保安全。 |
 
 > `ims-db-migrate` 在应用完待执行迁移后以状态 0 退出——在 `docker compose ps` 中看到 `Exited (0)` 属正常现象，并非故障。在其成功完成之前，`node-red` 与 `alarm-api` 不会启动。
 
