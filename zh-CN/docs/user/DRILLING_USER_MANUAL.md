@@ -41,15 +41,55 @@ PCB 机械数控钻孔（Mechanical CNC Drilling）是多层印刷电路板加�
 遥测数据由机台本地 EAP 文件代理监听捕获，汇入独立的 TimescaleDB `eap_backup` 数据库中的超表（Hypertable）`public.machine_event`，并通过规范视图层 `drilling.*`（Migration 086）呈现在 Grafana 仪表板上。
 
 ```mermaid
-flowchart TD
-    M["数控钻机群 (例如 MOCK-DRL-001)"] --> AGENT["EAP 代理服务 (文件监听与事件解析)"]
-    AGENT --> RAW[("public.machine_event (TimescaleDB eap_backup)")]
-    RAW --- IDX["加速索引 (Migration 085)"]
-    RAW --- VIEW["规范视图 (drilling.*)"]
-    VIEW --> D1["01 · 机群数字孪生与总览 (UID: 001)"]
-    VIEW --> D2["02 · 班次产能与 OEE 追踪 (UID: ims-drilling-history)"]
-    VIEW --> D3["03 · 单机深入诊断 (UID: ims-drilling-machine-detail)"]
-    VIEW --> D4["04 · 异常与根因分析 (UID: ims-drilling-5-anomaly)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: 钻孔数据路径
+  accDescr: 钻孔站写入事件日志，工厂 EAP agent 将其解析为 eap_backup 数据库中的 machine_event；迁移 085 与 086 添加索引和四个钻孔仪表板所查询的 drilling.* 视图。
+  M["钻孔站<br/>MOCK-DRL-001 … nnn"]:::ext
+  AGENT["工厂 EAP agent<br/>解析日志 → 事件代码"]:::ext
+  subgraph DB["eap_backup"]
+    EV[("machine_event<br/>hypertable · 1 天分块")]:::store
+    AL[("agent_log")]:::store
+    IX["索引 · 迁移 085"]:::app
+    VW[("drilling.event · drilling.telemetry · drilling.agent_status")]:::store
+  end
+  subgraph DASH["钻孔仪表板"]
+    D1["01 Fleet Digital Twin & Overview · 001"]:::viz
+    D2["02 Shift Production & OEE · ims-drilling-history"]:::viz
+    D3["03 Machine Investigation · ims-drilling-machine-detail"]:::viz
+    D4["04 Fleet Anomaly & RCA · ims-drilling-5-anomaly"]:::viz
+  end
+  M -->|"事件日志"| AGENT
+  AGENT --> EV
+  AGENT -->|"心跳 · 错误"| AL
+  EV --- IX
+  EV --> VW
+  AL --> VW
+  VW --> D1
+  VW --> D2
+  VW --> D3
+  VW --> D4
+
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["外部系统"]:::ext ~~~ LG_store["数据存储"]:::store ~~~ LG_app["IMS 服务"]:::app ~~~ LG_viz["Grafana / UI"]:::viz
+    end
+  end
+  D4 ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -66,22 +106,22 @@ flowchart TD
 - **OFFLINE**（深灰色 `#1E293B`）：超过 2 小时未接收到遥测数据（COMM LOSS）
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-    [*] --> OFFLINE : 超过 2 小时未接收到遥测数据
-    [*] --> STANDBY : 待机就绪，等待加工指令
-
-    STANDBY --> RUN : 启动加工循环 (0101 / 0112)
-    RUN --> TOOL_CHANGE : 自动换刀动作 (0110)
-    TOOL_CHANGE --> RUN : 换刀完成，恢复加工 (0112)
-    RUN --> STOP : 程序运行结束或暂停 (0108 / 0201)
-    STOP --> RUN : 开始下一加工循环 (0101)
-
-    RUN --> ALARM : 断刀或设备故障停机 (0408, 0409 等)
-    TOOL_CHANGE --> ALARM : 夹头卡死或刀库定位异常
-    ALARM --> STANDBY : 故障清除并手动复位 (0204)
-
-    RUN --> OFFLINE : 遥测中断超过 2 小时 (COMM LOSS)
-    STOP --> OFFLINE : 设备关机断电
+  accTitle: 钻孔机台状态
+  accDescr: 由最新事件代码推导的状态：RUN、TOOL_CHANGE、STOP、ALARM 与 STANDBY；静默 2 小时的机台为 OFFLINE（COMM LOSS）。
+  [*] --> STANDBY: 就绪，等待作业
+  STANDBY --> RUN: 0101 · 0112
+  RUN --> TOOL_CHANGE: 0110
+  TOOL_CHANGE --> RUN: 0112
+  RUN --> STOP: 0108 · 0201
+  STOP --> RUN: 0101
+  RUN --> ALARM: 断刀 · 激光 · 过载
+  TOOL_CHANGE --> ALARM: 夹头 · 刀库故障
+  ALARM --> STANDBY: 复位 0204
+  RUN --> OFFLINE: 2 小时无事件
+  STOP --> OFFLINE: 2 小时无事件
+  OFFLINE --> RUN: 事件恢复
 ```
 
 ### 2.2 主轴掩码计算 (Spindle 1–6 Bitmask)
@@ -93,24 +133,25 @@ $$\text{Spindle } N \text{ Active} \iff (\text{Mask} \ \& \ 2^{N-1}) > 0$$
 - **0** (`000000`): 全轴停用
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TD
-    M["主轴掩码整数值<br/>来自代码 0211 (例如 63)"] --> D{"按位解码器<br/>(Mask & 2^(N-1)) > 0"}
-    D --> S1["主轴 1: 第 0 位 (权重 1)"]
-    D --> S2["主轴 2: 第 1 位 (权重 2)"]
-    D --> S3["主轴 3: 第 2 位 (权重 4)"]
-    D --> S4["主轴 4: 第 3 位 (权重 8)"]
-    D --> S5["主轴 5: 第 4 位 (权重 16)"]
-    D --> S6["主轴 6: 第 5 位 (权重 32)"]
-
-    S1 --> G1{"是否启用?"}
-    S2 --> G2{"是否启用?"}
-    S3 --> G3{"是否启用?"}
-    S4 --> G4{"是否启用?"}
-    S5 --> G5{"是否启用?"}
-    S6 --> G6{"是否启用?"}
-
-    G1 -->|是| C1["🟢 绿色 (启用中)"]
-    G1 -->|否| C2["⚪ 暗灰 (停用)"]
+  accTitle: 现场操作员对钻孔告警的处置
+  accDescr: 由事件代码决定 OCAP：断刀、激光错误或夹头故障；重复或未知代码升级给维修。
+  A["仪表板上的告警"]:::notify --> C{"事件代码"}
+  C -->|"0408 · 0417 · 0218"| O1["OCAP-DRL-01 断刀<br/>停机、检查板件、若刀尖嵌入则隔离、换刀、BBD 检查"]:::app
+  C -->|"0409 · 0404 · 0410"| O2["OCAP-DRL-02 激光错误<br/>清洁光学件、核对刀径、重新激光检测"]:::app
+  C -->|"0424 · 0425"| O3["OCAP-DRL-03 夹头故障<br/>检查安装、清洁夹爪、测试夹紧、打滑则更换"]:::app
+  C -->|"重复超过 2 次 · 未知"| E["升级到维修（第 2 级）"]:::actor
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ### 2.3 11 类标准根因归类
@@ -156,14 +197,23 @@ flowchart TD
 ## 5. 数据库运维与技术故障诊断 (Database Runbook & Diagnostics)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-    EVENT_STREAM["遥测数据流<br/>(drilling.event)"] --> WD{"看门狗评估引擎"}
-
-    WD -->|"超过 2 小时无数据"| COMM_LOSS["COMM LOSS (离线)<br/>1. 检查现场交换机端口。<br/>2. 检查本地 EAP 文件代理服务。<br/>3. 检查网络共享目录读写权限。"]
-    WD -->|"RUN 状态超过 60 分钟<br/>且孔数无递增"| STALE_RUN["STALE RUN (假死冻结)<br/>1. 日志解析器锁死。<br/>2. 设备已停机但未上报 Stop 代码。<br/>3. 重启本地 EAP 代理服务。"]
-
-    classDef wdStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
-    class EVENT_STREAM,COMM_LOSS,STALE_RUN wdStyle;
+  accTitle: 钻孔数据看门狗
+  accDescr: 2 小时无事件的机台为 COMM LOSS；最后事件为运行类代码且已超过 1 小时的机台为 STALE RUN。
+  EV[("drilling.event")]:::store --> W{"最新事件的时长"}
+  W -->|"≥ 2 h"| CL["COMM LOSS<br/>检查交换机端口、EAP agent、共享权限"]:::notify
+  W -->|"≥ 1 小时且最后代码为运行类"| SR["STALE RUN<br/>解析器卡住或未发送停止代码；重启 EAP agent"]:::obs
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 - **通讯丢失监控 (COMM LOSS)**: 超过 2 小时无新事件产生，机台标记为 OFFLINE，排查网络端口与 EAP 代理。

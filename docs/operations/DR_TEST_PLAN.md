@@ -26,41 +26,43 @@
 ## 1. Disaster Recovery Lifecycle & Drill Sequences
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: Disaster-recovery drills
+  accDescr: Three drills run by scripts/dr-test.sh: backup and restore into a throwaway database with a row-count bracket, killing one container and timing its restart, and a destructive full recreate that needs --confirm-destroy.
   autonumber
-  actor SRE as SRE Engineer
-  participant Script as scripts/dr-test.sh
-  participant DB as ims-timescaledb
-  participant TestDB as ims_dr_test
-  participant Docker as Docker Engine Daemon
-
-  Note over SRE,Docker: Drill 1: Backup & Ephemeral Restore Validation
-  SRE->>Script: ./scripts/dr-test.sh backup-restore
-  Script->>DB: Query Pre-Snapshot Row Count
-  Script->>DB: Stream pg_dump to backup.sql
-  Script->>DB: Query Post-Snapshot Row Count
-  Script->>TestDB: CREATE DATABASE ims_dr_test && Restore SQL
-  Script->>TestDB: SELECT count(*) FROM ldi_data
-  Script->>Script: Assert: Count(Pre) <= Restored <= Count(Post)
-  Script->>TestDB: DROP DATABASE ims_dr_test
-  Script-->>SRE: Status: PASS (Row counts verified within bracket)
-
-  Note over SRE,Docker: Drill 2: Single-Container-Loss Recovery
-  SRE->>Script: ./scripts/dr-test.sh container-loss timescaledb
-  Script->>Docker: docker kill ims-timescaledb
-  Docker-->>Script: Container Killed (State: Exited 137)
-  Script->>Docker: Poll container state every 2s (Timeout: 120s)
-  Docker->>Docker: Trigger restart: unless-stopped
-  Script->>Docker: Assert container status == 'Up (healthy)'
-  Script-->>SRE: Status: PASS (Recovered in < 25s)
-
-  Note over SRE,Docker: Drill 3: Full-Stack Cold Recreate (Destructive)
-  SRE->>Script: ./scripts/dr-test.sh full-recreate --confirm-destroy
-  Script->>Docker: docker compose down -v (Wipe all data volumes)
-  Script->>Docker: docker compose up -d (Spin up fresh containers)
-  Script->>DB: Apply database/migrations/*.sql (001 to 091)
-  Script->>DB: Restore raw telemetry data from verified backup
-  Script-->>SRE: Status: PASS (All 16 containers healthy, migrations applied)
+  actor S as SRE
+  participant R as scripts/dr-test.sh
+  participant D as ims-timescaledb
+  participant T as ims_dr_test
+  participant K as Docker
+  Note over S,K: Drill 1 · backup-restore
+  S->>R: dr-test.sh backup-restore
+  R->>D: row count before
+  R->>D: pg_dump
+  R->>D: row count after
+  R->>T: CREATE DATABASE + restore
+  R->>T: SELECT count(*) FROM ldi_data
+  R-->>S: PASS if before ≤ restored ≤ after
+  R->>T: DROP DATABASE
+  Note over S,K: Drill 2 · container-loss
+  S->>R: dr-test.sh container-loss timescaledb
+  R->>K: docker kill ims-timescaledb
+  loop every 2 s, up to 120 s
+    R->>K: container state?
+  end
+  alt restart policy fired
+    R-->>S: PASS · recovery time
+  else not restarted (seen on Docker Desktop)
+    R-->>S: FAIL · use scripts/container-watchdog.sh
+  end
+  Note over S,K: Drill 3 · full-recreate (destroys volumes)
+  S->>R: dr-test.sh full-recreate --confirm-destroy
+  R->>K: docker compose down -v
+  R->>K: docker compose up -d
+  Note over D: db-migrate applies every migration
+  R->>D: restore from the verified backup
+  R-->>S: PASS when all 16 containers are up
 ```
 
 ---

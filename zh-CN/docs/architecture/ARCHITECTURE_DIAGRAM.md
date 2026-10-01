@@ -25,35 +25,56 @@
 系统上下文图展示了运维操作员、工艺工程师、车间现场设备、企业 IT 计算集群、网络交换机以及外部告警分发平台与 IMS 核心遥测引擎的交互关系。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-C4Context
- title IMS 工业监控系统上下文模型图 (System Context Diagram)
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 第 1 层：系统上下文
+  accDescr: 四类用户通过浏览器使用 IMS；IMS 通过 HTTP 接收 LDI 遥测、通过 SNMP 轮询服务器与交换机、读取工厂钻孔与 VCP 数据库，并向 LINE 与 Microsoft Teams 发送告警。
 
- Person(noc_op, "NOC 运维工程师", "监控企业级基础设施健康状况、服务器负载与网络接口告警。")
- Person(proc_eng, "工艺质量工程师", "分析 LDI 曝光良率、Cpk 工艺制程能力，并执行根本原因分析 (RCA)。")
- Person(drill_eng, "钻孔技术专家", "排查 CNC 主轴振动异常、钻孔命中计数与刀具寿命损耗。")
- Person(vcp_tech, "电镀工艺技术员", "实时监控 VCP 电镀线速、药水槽温度及整流器电流密度。")
+  subgraph PEOPLE["用户"]
+    NOC["NOC 操作员<br/>[人员]<br/>基础设施健康"]:::actor
+    PE["工艺工程师<br/>[人员]<br/>LDI 良率、SPC、RCA"]:::actor
+    DRL["钻孔专员<br/>[人员]<br/>机台事件与告警"]:::actor
+    VCPT["电镀技术员<br/>[人员]<br/>槽液、电流、线速"]:::actor
+  end
 
- System_Ext(ldi_mach, "LDI 激光曝光设备", "高精密直接成像曝光机，通过 HTTP/JSON 推送高频制造遥测。")
- System_Ext(cnc_drill, "CNC 数控钻孔机群", "机械钻孔机群将主轴转速、进给速率及机台事件写入 eap_backup。")
- System_Ext(vcp_lines, "VCP 连续电镀产线", "垂直连续电镀线记录化学药水槽参数及输送线速度至 eap_backup。")
- System_Ext(servers, "Linux 生产服务器机群", "计算集群通过 SNMP v2c 提供 CPU、内存及磁盘利用率遥测。")
- System_Ext(switches, "Juniper 工业交换机", "交换网络通过 SNMP 提供接口吞吐字节数及端口丢包计数器。")
- System_Ext(line_teams, "LINE / MS Teams", "外部通知系统，负责向当班工程团队推送严重级别异常。")
+  IMS["IMS<br/>[软件系统]<br/>采集、存储、22 个仪表板、告警"]:::app
 
- System(ims, "IMS 监控平台", "集中遥测接入、事务级连接池持久化存储及 22 个赛博朋克 HUD 仪表板。")
+  subgraph EXT["外部系统"]
+    LDIM["LDI 机台<br/>[外部]<br/>HTTP JSON"]:::ext
+    NET["服务器与交换机<br/>[外部]<br/>SNMP v2c agent"]:::ext
+    EAPSRC["工厂 EAP 数据库<br/>[外部]<br/>钻孔与 VCP 记录"]:::ext
+    MSG["LINE · Microsoft Teams<br/>[外部]"]:::notify
+  end
 
- Rel(noc_op, ims, "查看 NOC 总览与容量预测仪表板", "HTTPS / 端口 3000")
- Rel(proc_eng, ims, "检查 LDI 制造控制中心与 SPC 分析", "HTTPS / 端口 3000")
- Rel(drill_eng, ims, "分析钻孔机群概览与振动异常诊断", "HTTPS / 端口 3000")
- Rel(vcp_tech, ims, "监视 VCP 运营大屏与车间实时看板", "HTTPS / 端口 3000")
+  NOC -->|"HTTP :3000"| IMS
+  PE -->|"HTTP :3000"| IMS
+  DRL -->|"HTTP :3000"| IMS
+  VCPT -->|"HTTP :3000"| IMS
+  LDIM -->|"POST /ldi-telemetry · X-API-Key"| IMS
+  NET -->|"SNMP v2c · UDP 161 · 被轮询"| IMS
+  EAPSRC -.->|"恢复到 eap_backup"| IMS
+  IMS -->|"HTTPS"| MSG
 
- Rel(ldi_mach, ims, "流式推送制造遥测数据", "HTTP POST /ldi-telemetry")
- Rel(cnc_drill, ims, "写入机台事件与设备状态", "PostgreSQL / eap_backup")
- Rel(vcp_lines, ims, "同步药水槽传感器遥测", "PostgreSQL / eap_backup")
- Rel(ims, servers, "采集主机性能指标", "SNMP v2c / UDP 161")
- Rel(ims, switches, "采集网络流量与接口统计", "SNMP v2c / UDP 161")
- Rel(ims, line_teams, "分发关键故障告警通知", "HTTPS Webhooks")
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["人员"]:::actor ~~~ LG_app["IMS 服务"]:::app ~~~ LG_ext["外部系统"]:::ext ~~~ LG_notify["通知"]:::notify
+    end
+  end
+  MSG ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -63,63 +84,96 @@ C4Context
 本图详细展示了 IMS Docker Compose 环境下的全部 16 项服务、内部容器网络架构以及外部端口映射：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-C4Container
- title IMS 容器架构拓扑图 (16 项服务)
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 第 2 层：16 个容器
+  accDescr: 全部 16 个 Docker Compose 服务及其连接：nginx 是唯一监听所有网卡的端口；数据服务位于 ims-internal；监控位于 ims-monitoring；archiver 只能通过隔离网络 ims-docker-api 上的 socket proxy 访问 Docker。
 
- Person(user, "工程师与运维人员", "通过浏览器访问监控仪表板、三维数字孪生与告警处置 API。")
- System_Ext(ext_dev, "车间现场工业边缘设备", "LDI、CNC 钻机、VCP 电镀线、服务器、交换机。")
+  USER["用户 · 浏览器"]:::actor
+  EDGE["LDI 机台 · SNMP 设备"]:::ext
 
- System_Boundary(c1, "IMS 内部容器网络 (ims-internal, ims-monitoring, ims-docker-api)") {
-   Container(proxy, "反向代理 (ims-proxy)", "Nginx Alpine", "统一入口网关、客户端限流与会话安全鉴权。")
-   Container(grafana, "Grafana 13 (ims-grafana)", "Go", "承载涵盖 4 大业务领域的 22 个赛博朋克 HUD 仪表板。")
-   Container(alarm_api, "告警 API (ims-alarm-api)", "Node.js Express", "管理 public.ldi_alarm_lifecycle 表上的告警确认与解决生命周期。")
-   Container(twin_3d, "三维数字孪生 (ims-factory-twin-3d)", "Node.js Express", "一楼车间数字孪生空间可视化服务（只读模式）。")
-   Container(renderer, "图像渲染引擎 (ims-grafana-renderer)", "Chromium", "生成用于告警通知与报表的面板静态 PNG 截图。")
+  subgraph INGRESS["主机端口 3000，所有网卡"]
+    PROXY["proxy · nginx 1.31<br/>ims-proxy"]:::ingress
+  end
 
-   Container(nodered, "接入流水线 (ims-node-red)", "Node.js / Node-RED", "并行轮询采集、遥测解析、队列缓冲与告警路由。")
-   Container(pgbouncer, "连接池管理器 (ims-pgbouncer)", "C / PgBouncer", "端口 5432 事务级连接池化，支持 SCRAM-SHA-256 认证。")
-   ContainerDb(timescaledb, "TimescaleDB (ims-timescaledb)", "PostgreSQL 16 + TimescaleDB", "持久化存储超表 (Hypertables)、连续聚合 (CAGGs)、告警记录及 eap_backup 库。")
+  subgraph APP["应用 · ims-internal"]
+    GRAF["grafana 13.1.2<br/>22 个仪表板"]:::viz
+    RENDER["renderer<br/>图像渲染"]:::app
+    ALARM["alarm-api :4000<br/>Express"]:::app
+    TWIN["factory-twin-3d :4100<br/>Express"]:::app
+    NR["node-red :1880<br/>5 个流程文件"]:::flow
+    SNMPSIM["snmpsim<br/>模拟 agent"]:::app
+  end
 
-   Container(prometheus, "Prometheus (ims-prometheus)", "Go", "抓取服务状态指标并执行告警评估规则。")
-   Container(alertmanager, "Alertmanager (ims-alertmanager)", "Go", "处理告警去重、抑制及向 Node-RED 投递通知。")
-   Container(blackbox, "黑盒探针 (ims-blackbox)", "Go", "执行 HTTP/TCP 探针以验证系统服务 SLA。")
-   Container(snmpsim, "SNMP 模拟器 (ims-snmpsim)", "Python", "本地开发环境下模拟 Linux 主机与交换机节点。")
-   Container(archiver, "可观测性归档器 (ims-observability-archiver)", "Bash", "定期备份容器与数据库监控快照至 ops-logs。")
-   Container(db_migrate, "数据库迁移器 (ims-db-migrate)", "Bash / psql", "一次性执行脚本，顺序运行 001 至 091 迁移文件。")
-   Container(sockproxy, "Docker Socket 代理 (ims-docker-socket-proxy)", "HAProxy / Alpine", "在内部 ims-docker-api 网络提供受限的安全只读 Docker 守护进程访问。")
-   Container(pgadmin, "PgAdmin 4 (ims-pgadmin4)", "Python", "Web 端数据库管理平台 (映射端口 127.0.0.1:5050)。")
- }
+  subgraph DATA["数据 · ims-internal"]
+    MIG["db-migrate<br/>一次性，迁移 013–091"]:::app
+    PGB["pgbouncer :5432<br/>SCRAM"]:::app
+    TSDB[("timescaledb :5432<br/>ims · eap_backup")]:::store
+    PGADMIN["pgadmin<br/>127.0.0.1:5050"]:::app
+  end
 
- Rel(user, proxy, "访问界面与各服务接口", "HTTP / 端口 3000")
- Rel(ext_dev, proxy, "推送设备遥测", "POST /ldi-telemetry")
- Rel(nodered, ext_dev, "采集 SNMP 遥测", "UDP 161")
- Rel(nodered, snmpsim, "采集模拟 SNMP 设备遥测", "UDP 161")
+  subgraph MONNET["监控 · ims-monitoring"]
+    PROM["prometheus<br/>127.0.0.1:9090"]:::obs
+    AM["alertmanager<br/>127.0.0.1:9093"]:::obs
+    BBOX["blackbox-exporter<br/>127.0.0.1:9115"]:::obs
+  end
 
- Rel(proxy, grafana, "反向代理 UI 及 Grafana 内部接口", "HTTP :3000")
- Rel(proxy, alarm_api, "反向代理 /alarm-api/* (已鉴权)", "HTTP :4000")
- Rel(proxy, twin_3d, "反向代理 /factory-twin-3d/* (已鉴权)", "HTTP :4100")
- Rel(proxy, nodered, "反向代理 /ldi-telemetry 及 /inject", "HTTP :1880")
- Rel(proxy, grafana, "内部鉴权校验 (/auth-check)", "HTTP :3000")
+  subgraph DOCKERAPI["ims-docker-api · 内部，无出口"]
+    ARCH["observability-archiver<br/>同时位于 ims-internal"]:::app
+    SOCK["docker-socket-proxy<br/>只读端点"]:::app
+  end
 
- Rel(grafana, renderer, "请求渲染面板截图", "HTTP :8081")
- Rel(grafana, pgbouncer, "查询 CAGG 预聚合视图", "TCP :5432")
- Rel(grafana, timescaledb, "直连查询 eap_backup (drilling-timescaledb)", "TCP :5432")
- Rel(alarm_api, pgbouncer, "更新告警生命周期 (alarm_api_writer 权限)", "TCP :5432")
- Rel(nodered, pgbouncer, "批量写入遥测数据 (nodered_writer)", "TCP :5432")
- Rel(pgbouncer, timescaledb, "事务级数据库连接 (SCRAM)", "TCP :5432")
- Rel(db_migrate, timescaledb, "执行数据库迁移 001-091", "TCP :5432")
- Rel(pgadmin, timescaledb, "管理数据库", "TCP :5432")
+  USER -->|"HTTP :3000"| PROXY
+  EDGE -->|"POST /ldi-telemetry"| PROXY
+  EDGE -->|"SNMP v2c"| NR
+  SNMPSIM -->|"SNMP v2c"| NR
+  PROXY --> GRAF
+  PROXY -->|"auth_request /alarm-api/"| ALARM
+  PROXY -->|"auth_request /factory-twin-3d/"| TWIN
+  PROXY -->|"/ldi-telemetry · /inject"| NR
+  GRAF <-->|"渲染请求 / 回调"| RENDER
+  GRAF -->|"timescaledb"| PGB
+  GRAF -->|"drilling-timescaledb"| TSDB
+  ALARM -->|"alarm_api_writer"| PGB
+  TWIN --> PGB
+  NR -->|"nodered_writer"| PGB
+  ARCH -->|"observability_archiver"| TSDB
+  PGB --> TSDB
+  MIG --> TSDB
+  PGADMIN --> TSDB
+  NR -->|"/metrics"| PROM
+  BBOX -->|"探测结果"| PROM
+  PROM --> AM
+  AM -->|"/alert-webhook"| NR
+  GRAF -->|"/alert-webhook"| NR
+  ARCH -->|"HTTP :2375"| SOCK
 
- Rel(prometheus, nodered, "抓取流水线指标", "HTTP :1880/metrics")
- Rel(prometheus, alertmanager, "触发告警事件", "HTTP :9093")
- Rel(prometheus, blackbox, "调度 HTTP/TCP/ICMP 探测", "HTTP :9115")
- Rel(blackbox, timescaledb, "探测 TCP 连接 :5432", "TCP :5432")
- Rel(blackbox, pgbouncer, "探测 TCP 连接 :5432", "TCP :5432")
- Rel(alertmanager, nodered, "发送 Webhook 至 /alert-webhook", "HTTP :1880")
- Rel(grafana, nodered, "原生告警推送至 /alert-webhook", "HTTP :1880")
-
- Rel(archiver, sockproxy, "读取容器指标与事件", "HTTP :2375 (ims-docker-api)")
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["人员"]:::actor ~~~ LG_ext["外部系统"]:::ext ~~~ LG_ingress["入口 / 网关"]:::ingress ~~~ LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_store["数据存储"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["监控"]:::obs
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  SOCK ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -129,65 +183,81 @@ C4Container
 展现 `ims-node-red` 容器内部的模块化拆分流程与数据处理管线：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-flowchart TD
-  subgraph IngressPoints ["入口触发点与接入端点"]
-    TMR["定时轮询触发器 (每 30 秒)"]
-    HTTP_LDI["POST /ldi-telemetry\n(经 Nginx 统一网关转发)"]
-    HTTP_INJ["POST /inject\n(通用指标注入端点)"]
-    AM_HOOK["POST /alert-webhook\n(Alertmanager 告警接入)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: C4 第 3 层：Node-RED 组件
+  accDescr: nodered_data/flows 中的 5 个流程文件及各自写入的内容：带断路器和文件重试队列的 SNMP 轮询、先写 staging 的 LDI 采集、两个模拟器以及告警投递。
+
+  subgraph F1["ingestion.json"]
+    T30["Poll Fleet · 每 30 秒"]:::flow
+    REG["设备注册表<br/>public.devices · 每 5 分钟刷新"]:::flow
+    CB["断路器<br/>失败 2 次后打开 · 冷却 5 分钟"]:::flow
+    FORK["fork_5_ways<br/>CPU · 存储 · 网络 · 温度 · LDI"]:::flow
+    PARSER["SRE AIOps Parser v9<br/>每设备状态 · 批量缓冲"]:::flow
+    RETRY["重试队列<br/>/data/retry_queue.json · 每 30 秒处理"]:::flow
+    INJ["POST /inject<br/>压测数据生成器"]:::flow
+    MET["GET /metrics<br/>ims_pipeline_* · ims_circuit_breaker_*"]:::flow
   end
 
-  subgraph SplitFlows ["拆分流程模块 (nodered_data/flows/)"]
-    subgraph FlowIngest ["ingestion.json"]
-      REG["设备注册表内存缓存\n(每 5 分钟从 public.devices 刷新)"]
-      CB["熔断器状态机\n(状态: CLOSED / OPEN / HALF_OPEN)"]
-      FORK["五路并行分支 fork_5_ways\n(CPU, 网络, 存储, 温度, LDI)"]
-      PARSER["数据解析器 sre_parser v10\n(维护单机上下文, O(N) 复杂度)"]
-      BATCH_SNMP["SNMP 批量 SQL 生成器\n(INSERT INTO public.sys_metrics & net_metrics...)"]
-    end
-
-    subgraph FlowLdiIngest ["ldi_ingestion.json"]
-      AUTH_CHK["API Key 校验逻辑\n(比对 INGEST_API_KEY)"]
-      SCHEMA_VAL["JSON 架构断言验证\n(校验 22 个标准字段)"]
-      STAGE_WRITE["预写暂存写入\n(INSERT INTO public.ingest_staging)"]
-      LDI_WRITE["超表批量写入器\n(INSERT INTO public.ldi_data)"]
-      STAGE_DEL["删除已写入暂存数据\n(DELETE FROM public.ingest_staging)"]
-      GC["显式内存垃圾回收\n(flatData.length=0, msg.payload=null)"]
-    end
-
-    subgraph FlowSim ["ldi_simulator.json & ldi_alarm_simulator.json"]
-      SIM_LDI["实时遥测模拟器\n(OU 随机过程, 10 台机台)"]
-      SIM_ALARM["实时告警重放引擎\n(越界条件评估与事件注入)"]
-    end
-
-    subgraph FlowAlerting ["alerting.json"]
-      MSG_FMT["通知卡片格式化引擎\n(组装 Adaptive Cards 与 JSON)"]
-      LINE_API["LINE Messaging API 发送器\n(附带认证令牌推送消息)"]
-      TEAMS_API["MS Teams Webhook 发送器\n(推送富文本自适应卡片)"]
-    end
+  subgraph F2["ldi_ingestion.json"]
+    LPOST["POST /ldi-telemetry"]:::flow
+    AUTH["校验 X-API-Key → 401"]:::flow
+    VAL["JSON 数组，36 列<br/>必须有 eqp_id + log_id → 400 / 413"]:::flow
+    STG["暂存批次 → 失败返回 503"]:::flow
+    INS["写入 ldi_data → 失败返回 502"]:::flow
+    DONE["删除暂存行 → 200"]:::flow
   end
 
-  subgraph PersistenceTier ["数据持久化层"]
-    PGB["PgBouncer (:5432)\n事务模式连接池 | SCRAM-SHA-256"]
-    TSDB[("TimescaleDB (:5432)\npublic.sys_metrics & net_metrics\npublic.ldi_data\npublic.ingest_staging")]
+  subgraph F3["模拟器"]
+    SIMLDI["ldi_simulator.json<br/>每 2 秒 · OU 模型"]:::flow
+    SIMALM["ldi_alarm_simulator.json<br/>每 10 秒 · 暂存后写入"]:::flow
   end
 
-  TMR --> REG --> CB --> FORK --> PARSER --> BATCH_SNMP --> PGB
-  HTTP_LDI --> AUTH_CHK --> SCHEMA_VAL --> STAGE_WRITE --> LDI_WRITE --> STAGE_DEL --> GC
-  LDI_WRITE --> PGB
-  STAGE_WRITE --> PGB
-  STAGE_DEL --> PGB
-  HTTP_INJ --> SCHEMA_VAL
+  subgraph F4["alerting.json"]
+    HOOK["POST /alert-webhook"]:::flow
+    BEARER["校验 Bearer token"]:::flow
+    FMT["格式化 LINE 消息 / Teams Adaptive Card"]:::flow
+  end
 
-  SIM_LDI -->|"内部 POST"| HTTP_LDI
-  SIM_ALARM --> PGB
+  PGB["PgBouncer :5432 · nodered_writer"]:::app
+  TSDB[("TimescaleDB · ims")]:::store
+  NOTIFY["LINE · MS Teams"]:::notify
+  PROM["Prometheus"]:::obs
 
+  T30 --> REG --> CB --> FORK --> PARSER
+  INJ --> FORK
+  PARSER -->|"sys_metrics · net_metrics · ldi_metrics"| PGB
+  PARSER -.->|"写入失败时"| RETRY
+  RETRY -->|"最多重试 5 次"| PGB
+  LPOST --> AUTH --> VAL --> STG --> INS --> DONE
+  STG -->|"ingest_staging"| PGB
+  INS -->|"ldi_data"| PGB
+  SIMLDI -->|"127.0.0.1:1880/ldi-telemetry"| LPOST
+  SIMALM -->|"ingest_staging · ldi_alarm_log · ldi_alarm_lifecycle"| PGB
+  HOOK --> BEARER --> FMT --> NOTIFY
   PGB --> TSDB
+  MET --> PROM
 
-  AM_HOOK --> MSG_FMT
-  MSG_FMT --> LINE_API
-  MSG_FMT --> TEAMS_API
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app ~~~ LG_store["数据存储"]:::store ~~~ LG_obs["监控"]:::obs ~~~ LG_notify["通知"]:::notify
+    end
+  end
+  PROM ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -197,50 +267,39 @@ flowchart TD
 展示从 LDI 曝光机硬件采集开始，经网关接入、批量持久化到 Grafana 亚秒级聚合查询渲染的全链路：
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: 先写 staging 的 LDI 遥测采集
+  accDescr: 批次只有在提交后才会被确认：Node-RED 先写入 ingest_staging，再写入 ldi_data，删除暂存副本并返回 200；失败时返回 400、401、413、503 或 502，写入失败时暂存副本保留以便恢复。
   autonumber
-  participant Machine as LDI 曝光机现场设备
-  participant Proxy as Nginx 统一网关 (ims-proxy)
-  participant NodeRed as 数据接入流水线 (ims-node-red)
-  participant PgBouncer as PgBouncer 连接池 (:5432)
-  participant TimescaleDB as TimescaleDB (:5432)
-  participant Grafana as Grafana 监控大屏 (:3000)
-
-  Machine->>Proxy: POST /ldi-telemetry (JSON 数组 + X-API-Key)
-  Proxy->>Proxy: 执行网关限流控制 (rate=50r/s burst=100 nodelay)
-  Proxy->>NodeRed: 转发至内部 :1880/ldi-telemetry 端点
-  NodeRed->>NodeRed: 校验密钥并断言 22 个字段类型合法性
-
-  alt 校验失败
-    NodeRed-->>Proxy: 400 Bad Request ("Payload must be a JSON array")
-    Proxy-->>Machine: 400 Bad Request
-  else 校验成功
-    NodeRed->>PgBouncer: 预写暂存: INSERT INTO public.ingest_staging
-    PgBouncer->>TimescaleDB: 写入暂存数据
-    alt 暂存写入失败
-      NodeRed-->>Proxy: 503 Service Unavailable ("Staging failed, batch not accepted")
-      Proxy-->>Machine: 503 Service Unavailable
-    else 暂存写入成功
-      NodeRed->>PgBouncer: 批量写入超表: INSERT INTO public.ldi_data (1 天分区)
-      PgBouncer->>TimescaleDB: 提交批量数据至超表
-      alt 超表批量写入失败
-        NodeRed-->>Proxy: 502 Bad Gateway (暂存行保留用于重试)
-        Proxy-->>Machine: 502 Bad Gateway
-      else 超表批量写入成功
-        NodeRed->>PgBouncer: DELETE FROM public.ingest_staging WHERE id = staged_id
-        NodeRed->>NodeRed: 显式垃圾回收 (flatData.length = 0, msg.payload = null)
-        NodeRed-->>Proxy: 200 OK {"status": "success", "inserted": count}
-        Proxy-->>Machine: 200 OK
+  participant M as LDI 机台
+  participant P as nginx (ims-proxy)
+  participant N as ldi_ingestion.json
+  participant B as PgBouncer
+  participant T as TimescaleDB
+  M->>P: POST /ldi-telemetry · X-API-Key · JSON array
+  Note over P: 每客户端 50 r/s，突发 100
+  P->>N: 转发到 node-red:1880
+  alt key 错误 / 请求体错误 / 行数过多
+    N-->>M: 401 · 400 · 413
+  else 批次有效
+    N->>B: INSERT INTO ingest_staging RETURNING id
+    B->>T: 写入暂存批次
+    alt 暂存失败
+      N-->>M: 503 · 未接收
+    else 已暂存
+      N->>B: INSERT INTO ldi_data … ON CONFLICT DO NOTHING
+      B->>T: 写入行（源时间戳）
+      alt 写入失败
+        N->>B: UPDATE ingest_staging SET attempts + 1
+        N-->>M: 502 · 保留暂存副本
+      else 已提交
+        N->>B: DELETE FROM ingest_staging WHERE id
+        N-->>M: 200 OK
       end
     end
   end
-
-  Note over TimescaleDB: 连续聚合引擎按调度策略自动触发
-  TimescaleDB->>TimescaleDB: 刷新聚合数据至 public.ldi_data_15m 视图
-  Grafana->>PgBouncer: SELECT bucket AS time, avg_temperature FROM ldi_data_15m
-  PgBouncer->>TimescaleDB: 运行预聚合高性能分析查询
-  TimescaleDB-->>Grafana: 亚秒级返回已计算完毕的指标数据
-  Grafana-->>Grafana: 在 Cyberpunk HUD 仪表板上实时绘制曲线
+  Note over T: CAGG 策略每分钟刷新 ldi_data_1m
 ```
 
 ---
@@ -250,39 +309,33 @@ sequenceDiagram
 展示从告警产生、操作员确认到工程人员排查解决的全流程闭环：
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: 告警确认与解决
+  accDescr: 操作员在告警控制台确认告警、工程师解决告警；nginx 先校验 Grafana 会话，alarm-api 再更新 ldi_alarm_lifecycle，执行人始终为会话登录用户。
   autonumber
-  actor Operator as NOC 当班操作员
-  actor Engineer as 现场维护工程师
-  participant Browser as 浏览器终端
-  participant Proxy as Nginx 统一网关 (:3000)
-  participant AlarmAPI as 告警微服务 (ims-alarm-api :4000)
-  participant DB as TimescaleDB (public.ldi_alarm_lifecycle)
-
-  Note over DB: 遥测引擎检测到设备参数超标 (状态: OPEN)
-
-  Operator->>Browser: 打开 "IMS LDI - Alarm Console" 控制台
-  Browser->>Proxy: GET /d/ims-ldi-alarm-console
-  Proxy->>Browser: 返回活动告警面板，显示当前 OPEN 状态列表
-
-  Operator->>Browser: 针对告警 LOG-10001 点击 "确认" (Acknowledge)
-  Browser->>Proxy: POST /alarm-api/alarms/ack (携带登录 Cookie)
-  Proxy->>Proxy: 子请求 GET /auth-check 校验 Grafana 用户会话 (200 OK)
-  Proxy->>AlarmAPI: 转发 POST /alarms/ack {"logdate_ms": 1790568000000, "logid": "LOG-10001"}
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='ACKNOWLEDGED', acknowledged_by=session.user WHERE status='OPEN'
-  DB-->>AlarmAPI: 数据库记录更新成功 (返回 1 行)
-  AlarmAPI-->>Proxy: 200 OK (返回更新后的 JSON 实体)
-  Proxy-->>Browser: 200 OK (仪表板将该告警显示更新为琥珀黄 Amber)
-
-  Note over Engineer: 工程师排查硬件故障并更换工作台气动滤芯
-  Engineer->>Browser: 点击 "解决" (Resolve) 并填写排查说明
-  Browser->>Proxy: POST /alarm-api/alarms/resolve {"logid": "LOG-10001", "resolved_by": "engineer-02", "resolution_note": "已更换滤芯"}
-  Proxy->>Proxy: 校验用户会话 GET /auth-check (200 OK)
-  Proxy->>AlarmAPI: 转发 POST /alarms/resolve
-  AlarmAPI->>DB: UPDATE ldi_alarm_lifecycle SET status='RESOLVED', resolved_by=session.user, resolution_note='...' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
-  DB-->>AlarmAPI: 数据库记录更新成功
-  AlarmAPI-->>Proxy: 200 OK
-  Proxy-->>Browser: 200 OK (仪表板将状态变更为春绿 Green 已解决)
+  actor O as 操作员 / 工程师
+  participant P as nginx
+  participant G as Grafana /api/user
+  participant A as alarm-api
+  participant D as ldi_alarm_lifecycle
+  Note over D: 新告警行初始为 OPEN（触发器）
+  O->>P: POST /alarm-api/alarms/ack · {logdate_ms, logid}
+  P->>G: auth_request · 会话 cookie
+  alt 会话无效
+    P-->>O: 401
+  else Viewer 角色
+    A-->>O: 403
+  else Editor / Admin
+    P->>A: 转发 + 会话登录名
+    A->>D: UPDATE … SET status = 'ACKNOWLEDGED' WHERE status = 'OPEN'
+    A-->>O: 200 · 若不是 OPEN 则 409
+  end
+  O->>P: POST /alarm-api/alarms/resolve · {logdate_ms, logid, resolution_note}
+  P->>G: auth_request
+  P->>A: 转发
+  A->>D: UPDATE … SET status = 'RESOLVED' WHERE status IN ('OPEN', 'ACKNOWLEDGED')
+  A-->>O: 200 · 若已 RESOLVED 则 409
 ```
 
 ---
@@ -292,46 +345,42 @@ sequenceDiagram
 防止边缘设备失联或网络震荡时引发 SNMP 请求雪崩效应：
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 sequenceDiagram
+  accTitle: SNMP 断路器
+  accDescr: 每 30 秒的轮询会检查保存在 Node-RED 流上下文中的每设备断路器：连续失败 2 次即打开，打开时跳过该设备，5 分钟后下一次轮询作为单次探测，决定关闭或重新打开。
   autonumber
-  participant Timer as Node-RED 调度定时器 (每 30 秒)
-  participant Walker as SNMP 批量采集器
-  participant Breaker as 熔断器状态机 (Context State)
-  participant Target as 目标边缘设备 (离线故障)
-  participant DB as TimescaleDB (circuit_breaker_events)
-
-  Timer->>Walker: 触发本轮采集周期
-  Walker->>Breaker: 查询目标设备 "SW-CORE-01" 运行状态
-
-  alt 熔断器状态为 CLOSED (健康通行)
-    Walker->>Target: 发送 SNMP GETBULK 请求 (UDP 161)
-    Target--xWalker: 无响应 (超时 5000ms)
-    Walker->>Breaker: 记录异常计数 (failureCount++)
-
-    alt failureCount < 2
-      Breaker-->>Walker: 维持 CLOSED 状态 (下轮继续尝试)
-    else failureCount >= 2
-      Breaker->>Breaker: 切换状态为 OPEN (立即熔断)
-      Breaker->>DB: 写入节点离线状态 (即刻将各项指标置 0 以免误判)
-      Note over Breaker: 启动 300 秒 (5 分钟) 静默冷却计时器
+  participant T as Poll Fleet (30 s)
+  participant C as 断路器 · 流上下文 cb_DEVICE
+  participant W as SNMP walker
+  participant D as 设备
+  participant P as Parser v9
+  T->>C: checkDevice()
+  alt CLOSED
+    C-->>W: 允许
+    W->>D: GETBULK (UDP 161, timeout 6000 ms)
+    alt 有响应
+      D-->>W: varbinds
+      W->>C: recordSuccess() · failures = 0
+      W->>P: 指标 → 批量写入
+    else 超时
+      W->>C: recordFailure() · failures + 1
+      Note over C: 连续第 2 次失败 → OPEN，trips + 1
+      W->>P: 离线心跳 → 指标置零
     end
-
-  else 熔断器状态为 OPEN (熔断阻断)
-    Breaker-->>Walker: 拦截采集请求 (保护物理网络免受风暴冲击)
-    Note over Walker: 跳过本轮 SNMP 报文发送 - 保持安全占位零值指标
-
-  else 冷却超时结束: 切换为 HALF_OPEN (半开探测模式)
-    Breaker->>Walker: 仅允许发送单条轻量探测请求
-    Walker->>Target: 发送轻量 SNMP GET 请求
-    alt 设备已恢复
-      Target-->>Walker: 返回正常响应报文
-      Walker->>Breaker: 清空计数 failureCount = 0 - 切换为 CLOSED
-      Breaker->>DB: 恢复节点在线状态
+  else OPEN 未满 5 分钟
+    C-->>T: 本轮跳过该设备
+  else OPEN 已满 5 分钟
+    C->>C: HALF_OPEN
+    C-->>W: 允许一次探测
+    W->>D: GETBULK
+    alt 探测成功
+      W->>C: recordSuccess() → CLOSED
     else 探测失败
-      Target--xWalker: 依旧超时
-      Walker->>Breaker: 重新进入 OPEN 熔断状态 - 重启 300 秒冷却
+      W->>C: recordFailure() → OPEN
     end
   end
+  Note over C: 在 GET /metrics 导出为 ims_circuit_breaker_state / _trips_total
 ```
 
 ---
@@ -339,36 +388,52 @@ sequenceDiagram
 ## 7. 时序数据分层存储与连续聚合架构 (TimescaleDB Topology)
 
 ```mermaid
-flowchart TD
-  subgraph Ingestion ["原始遥测写入层"]
-    RAW_LDI["public.ldi_data\n(超表，每 1 天一个数据块 Chunk)"]
-    RAW_INFRA["public.sys_metrics 与 net_metrics\n(超表，每 1 天一个数据块 Chunk)"]
-    RAW_ALARM["public.ldi_alarm_log\n(超表，每 7 天一个数据块 Chunk)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: Hypertable、连续聚合与保留策略
+  accDescr: 原始 hypertable 供给 7 个连续聚合；每个框显示实际数据库中配置的刷新计划与保留期。3 个基础设施小时聚合没有保留策略。
+
+  subgraph RAW["原始 hypertable"]
+    LDI[("ldi_data<br/>1 天分块 · 7 天后压缩 · 保留 180 天")]:::store
+    INF[("sys_metrics · net_metrics · ldi_metrics<br/>1 天分块 · 7 天后压缩 · 保留 30 天")]:::store
+    ALM[("ldi_alarm_log<br/>7 天分块 · 保留 365 天")]:::store
   end
 
-  subgraph CAGG_Tier1 ["第一层：分钟级预聚合 (High-Frequency Rollups)"]
-    CAGG_1M["public.ldi_data_1m\n(每 1 分钟计算一次最近 1 小时)"]
-    CAGG_15M["public.ldi_data_15m\n(每 15 分钟计算一次)\n供制造与指挥中心仪表板读取"]
+  subgraph LDICAGG["LDI 聚合"]
+    C1M[("ldi_data_1m<br/>每 1 分钟 · 窗口 2 小时 · 保留 30 天")]:::store
+    C15[("ldi_data_15m<br/>每 15 分钟 · 窗口 3 小时 · 保留 90 天")]:::store
+    C1H[("ldi_data_1h<br/>每 1 小时 · 窗口 1 天 · 保留 2 年")]:::store
+    CHR[("ldi_data_hourly<br/>每 1 小时 · 窗口 3 天 · 实时 · 保留 2 年")]:::store
   end
 
-  subgraph CAGG_Tier2 ["第二层：小时级聚合 (Hourly Rollups)"]
-    CAGG_1H["public.ldi_data_1h 与 ldi_data_hourly\n(每 1 小时计算一次)\n供 SPC 分析及长期趋势大屏读取"]
-    INFRA_HOURLY["public.sys_hourly 与 net_hourly\n(基础设施小时级汇总)"]
+  subgraph INFCAGG["基础设施聚合"]
+    SH[("sys_hourly · net_hourly · ldi_hourly<br/>每 30 分钟 · 窗口 6 小时 · 无保留策略")]:::store
   end
 
-  subgraph Retention ["生命周期保留策略 (实测系统配置)"]
-    RET_RAW["原始遥测数据：30 天 (基础设施) / 180 天 (LDI)"]
-    RET_HOURLY["小时级聚合数据：2 年"]
-    RET_ALARM["告警日志记录：365 天"]
+  LDI --> C1M --> C15 --> C1H
+  LDI --> CHR
+  INF --> SH
+
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_store["数据存储"]:::store
+    end
   end
-
-  RAW_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
-  RAW_INFRA --> INFRA_HOURLY
-
-  RAW_LDI -.-> RET_RAW
-  RAW_INFRA -.-> RET_RAW
-  RAW_ALARM -.-> RET_ALARM
-  CAGG_1H -.-> RET_HOURLY
+  SH ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -378,45 +443,67 @@ flowchart TD
 系统内置纳管的全部 22 个 Grafana 仪表板划分在 4 大核心业务领域中：
 
 ```mermaid
-flowchart LR
-  subgraph D1 ["01. 数控钻孔 CNC 领域 (4 个仪表板)"]
-    DR1["机群总览 (Fleet Overview)"]
-    DR2["班次生产看板 (Shift Production)"]
-    DR3["单机深入排查 (Machine Investigation)"]
-    DR4["异常与根因分析 (Anomaly Analysis)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: 按文件夹划分的 22 个预置仪表板
+  accDescr: 4 个 Grafana 文件夹及其仪表板标题和 UID；钻孔与 VCP 通过 drilling-timescaledb 数据源读取 eap_backup 数据库，LDI 与平台仪表板通过 PgBouncer 读取 ims 数据库。
+  EAP[("eap_backup · drilling-timescaledb")]:::store
+  IMS[("ims · timescaledb 经 PgBouncer")]:::store
+  subgraph DRL["01 · 钻孔 (CNC)"]
+    DRL0["01 Fleet Digital Twin & Overview<br/><code>001</code>"]:::viz
+    DRL1["02 Shift Production & OEE Tracking<br/><code>ims-drilling-history</code>"]:::viz
+    DRL2["03 Machine Investigation & Spindle Diagnostics<br/><code>ims-drilling-machine-detail</code>"]:::viz
+    DRL3["04 Fleet Anomaly & Root Cause Analysis<br/><code>ims-drilling-5-anomaly</code>"]:::viz
   end
-
-  subgraph D2 ["02. 激光曝光 LDI 领域 (10 个仪表板)"]
-    LDI1["制造指挥中心 (Manufacturing Center)"]
-    LDI2["操作员安灯看板 (Andon Board)"]
-    LDI3["告警控制台 (Alarm Console)"]
-    LDI4["告警响应 MTTA/MTTR (Alarm Response)"]
-    LDI5["告警字典查询 (Alarm Dictionary)"]
-    LDI6["车间数字孪生 (Digital Twin Canvas)"]
-    LDI7["工程分析与 SPC (Engineering & SPC)"]
-    LDI8["单机快照分析 (Machine Snapshot)"]
-    LDI9["数据就绪与集成度 (Data Readiness)"]
-    LDI10["极简速览总览 (Easy Overview)"]
+  EAP --> DRL
+  subgraph VCP["04 · 电镀 (VCP)"]
+    VCP0["01 Plating Fleet Overview & Process Analytics<br/><code>ims-vcp-overview</code>"]:::viz
+    VCP1["02 Plating Line Operations Console<br/><code>ims-vcp-operations-console</code>"]:::viz
+    VCP2["03 Real-Time Plating Line Wall Display<br/><code>ims-vcp-realtime-wall</code>"]:::viz
   end
-
-  subgraph D3 ["03. 基础设施与 NOC 领域 (5 个仪表板)"]
-    NOC1["NOC 监控总览 (NOC Overview)"]
-    NOC2["工程钻取诊断 (Engineering Drill-Down)"]
-    NOC3["AIOps 容量预测 (Capacity Forecast)"]
-    NOC4["流水线接入延迟 (Ingestion Latency)"]
-    NOC5["元监控与健康 (Meta-Monitoring)"]
+  EAP --> VCP
+  subgraph LDI["02 · 光刻 (LDI)"]
+    LDI0["01 Fleet Executive Overview<br/><code>ims-easy-overview</code>"]:::viz
+    LDI1["02 Operator Andon Board (Shopfloor Kiosk)<br/><code>ims-ldi-operator-andon</code>"]:::viz
+    LDI2["03 Factory 3D Digital Twin & Spatial Layout<br/><code>ims-ldi-factory-digital-twin</code>"]:::viz
+    LDI3["04 Manufacturing Fleet Command Center<br/><code>ims-ldi-manufacturing</code>"]:::viz
+    LDI4["05 Machine Deep-Dive Snapshot<br/><code>ims-ldi-machine-snapshot</code>"]:::viz
+    LDI5["06 Process Engineering Analytics & SPC<br/><code>ims-ldi-engineering-analytics</code>"]:::viz
+    LDI6["07 Live Alarm Management Console<br/><code>ims-ldi-alarm-console</code>"]:::viz
+    LDI7["08 Alarm Response Metrics & MTTA/MTTR<br/><code>ims-ldi-alarm-response</code>"]:::viz
+    LDI8["09 Alarm Code Dictionary & Corrective Actions<br/><code>ims-ldi-alarm-dictionary</code>"]:::viz
+    LDI9["10 Telemetry Signal Quality & Integration Readiness<br/><code>ldi-data-readiness</code>"]:::viz
   end
-
-  subgraph D4 ["04. 垂直电镀 VCP 领域 (3 个仪表板)"]
-    VCP1["电镀机群总览 (VCP Overview)"]
-    VCP2["运营控制台 (Operations Console)"]
-    VCP3["车间实时大屏 (Real-Time Wall)"]
+  IMS --> LDI
+  subgraph PLT["03 · 平台与 NOC"]
+    PLT0["01 Network Operations Center (NOC) Overview<br/><code>ims-noc-overview</code>"]:::viz
+    PLT1["02 Host & Network Infrastructure Engineering Drill-Down<br/><code>ims-engineering</code>"]:::viz
+    PLT2["03 AIOps Predictive Capacity & Resource Forecasting<br/><code>ims-capacity</code>"]:::viz
+    PLT3["04 Ingestion Pipeline Latency & Telemetry SLO<br/><code>ims-ingestion-latency</code>"]:::viz
+    PLT4["05 Pipeline Reliability & SRE Meta-Monitoring<br/><code>ims-meta-monitoring</code>"]:::viz
   end
+  IMS --> PLT
 
-  style D1 fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
-  style D2 fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
-  style D3 fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
-  style D4 fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_store["数据存储"]:::store ~~~ LG_viz["Grafana / UI"]:::viz
+    end
+  end
+  PLT ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

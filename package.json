@@ -9,6 +9,7 @@
     "@thesvg/icons": "^3.3.9",
     "husky": "^9.1.7",
     "js-yaml": "^5.3.0",
+    "mermaid": "11.17.2",
     "playwright": "^1.63.0",
     "prettier": "^3.9.9",
     "svgo": "^4.0.2"
@@ -25,7 +26,9 @@
   },
   "scripts": {
     "prepare": "husky",
-    "validate:floor1-geometry": "node tests/lint/floor1-geometry-validator.js"
+    "validate:floor1-geometry": "node tests/lint/floor1-geometry-validator.js",
+    "lint:diagrams": "node tests/lint/mermaid-lint.js",
+    "check:diagrams": "node scripts/check-mermaid-render.js"
   },
   "author": "IMS Open Source Community",
   "license": "UNLICENSED"

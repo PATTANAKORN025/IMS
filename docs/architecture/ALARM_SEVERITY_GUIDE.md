@@ -48,12 +48,15 @@ Every alarm code in `public.ldi_alarm_ms_code` is governed by a database `CHECK`
 Alarm lifecycle state transitions are enforced server-side inside PostgreSQL by trigger `trg_ldi_alarm_lifecycle_guard`:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-    [*] --> OPEN: Alarm Event Triggered (trg_ldi_alarm_lifecycle_init)
-    OPEN --> ACKNOWLEDGED: POST /alarm-api/alarms/ack (Actor + Timestamp)
-    OPEN --> RESOLVED: POST /alarm-api/alarms/resolve (Direct Resolution)
-    ACKNOWLEDGED --> RESOLVED: POST /alarm-api/alarms/resolve (Actor + Note)
-    RESOLVED --> [*]: Terminal State (No further updates permitted)
+  accTitle: Alarm lifecycle states (migration 077)
+  accDescr: An alarm row starts OPEN when inserted; POST /alarms/ack moves it to ACKNOWLEDGED; POST /alarms/resolve moves OPEN or ACKNOWLEDGED to RESOLVED; RESOLVED is final and any further request returns 409.
+  [*] --> OPEN: alarm inserted (trg_ldi_alarm_lifecycle_init)
+  OPEN --> ACKNOWLEDGED: POST /alarms/ack
+  OPEN --> RESOLVED: POST /alarms/resolve
+  ACKNOWLEDGED --> RESOLVED: POST /alarms/resolve
+  RESOLVED --> [*]: final · further requests 409
 ```
 
 ### State Definitions & Trigger Enforcement

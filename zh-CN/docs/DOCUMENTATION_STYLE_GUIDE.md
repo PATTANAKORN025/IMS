@@ -101,12 +101,16 @@ c:\Projects\IMS
 
 ## 5. 架构拓扑与流程图规范 (Mermaid)
 
-系统拓扑结构、业务执行序列及数据状态变迁统一采用内嵌 Mermaid 绘制：
+架构、时序与状态机统一以内嵌于 Markdown 的 Mermaid 图绘制。所有图遵循同一标准，由 `tests/lint/mermaid-lint.js`（pre-commit 与 CI）和 `scripts/check-mermaid-render.js`（CI，无头浏览器）强制执行。
 
-- **支持图表类型**: `flowchart TD`, `flowchart LR`, `sequenceDiagram`, `stateDiagram-v2`。
-- **节点文本转义**: 含有括号、端口号等特殊字符的节点必须加双引号转义：
-  `A["PgBouncer (:5432)"] --> B[("TimescaleDB (public)")]`
-- **独立 `.mermaid` 文件备份**: 针对系统级大架构图，需在 `docs/architecture/` 同步维护独立的 `.mermaid` 文件（如 `ims-system-architecture.mermaid`），以便 CI 自动渲染。
+- **模型**：结构采用 C4 分层（上下文 → 容器 → 组件，见 `docs/architecture/ARCHITECTURE_DIAGRAM.md`），运行时行为用时序图，生命周期用状态图。箭头始终表示数据流向。
+- **事实来自代码**：图中的每个服务、端口、文件、表、状态码与时间间隔都必须真实存在于 compose、流程、迁移或线上数据库中。lint 会拒绝仓库中不存在的 `*.json` / `*.js` / `*.sh` / `*.sql` 文件名，以及没有任何迁移创建的 `public.<name>`。不要写会变化的数量（行数、查询数）。
+- **统一视觉语言**：每个代码块第一行必须是 `scripts/lib/mermaid-theme.js` 中共享的 `INIT`（在 GitHub 浅色与深色页面均可读）。节点颜色只能通过 `CLASS_DEFS` 中的语义类（`actor`、`ext`、`ingress`、`app`、`flow`、`store`、`viz`、`obs`、`notify`、`future`）设置，使用类时需添加图例，避免仅靠颜色表达含义。
+- **无障碍**：每个图都要声明 `accTitle` 与 `accDescr`（仅 mindmap 例外，因其无法解析）。
+- **可读性**：图宽控制在约 1,600 px 以内（渲染检查在超过 2,400 px 时警告）；优先 `flowchart TB`，每层约不超过 5 个节点，标签简短并用 `<br/>` 换行，必要时拆分视图而不是堆在一张图里。
+- **语法陷阱**：含特殊字符的标签需加引号（`A["PgBouncer (:5432)"]`、`-->|"label (x)"|`）；时序图文本中不得出现 `;`（会结束语句）；当子图内节点与外部相连时，子图的 `direction` 会被忽略。
+- **三种语言，一种结构**：th/ 与 zh-CN/ 镜像必须具有相同顺序、相同节点 id 的图，只翻译标签。
+- **独立 `.mermaid` 文件**：`docs/architecture/ims-system-architecture.mermaid` 必须与 `README.md` 中的总览图一致（由 lint 比对）。
 
 ---
 

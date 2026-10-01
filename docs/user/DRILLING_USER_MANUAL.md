@@ -68,52 +68,55 @@ The factory CNC fleet consists of multi-station, 6-spindle automated drilling ma
 Telemetry signals originate from drilling units (for example `MOCK-DRL-001`), traverse local Equipment Automation Program (EAP) file agents, land in TimescaleDB (`eap_backup`), and are visualized in Grafana:
 
 ```mermaid
-flowchart TD
-    subgraph SHOPFLOOR[" Shopfloor Drilling Fleet "]
-        M1["CNC Drill Station #1<br/>(MOCK-DRL-001 / 6 Spindles)"]
-        M2["CNC Drill Station #2<br/>(MOCK-DRL-002 / 6 Spindles)"]
-        MN["CNC Drill Station #N...<br/>(MOCK-DRL-nnn / 6 Spindles)"]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: Drilling data path
+  accDescr: Drilling stations write event logs that the plant EAP agent parses into machine_event in the eap_backup database; migrations 085 and 086 add indexes and the drilling.* views that the four drilling dashboards query.
+  M["Drilling stations<br/>MOCK-DRL-001 … nnn"]:::ext
+  AGENT["Plant EAP agent<br/>parses logs → event codes"]:::ext
+  subgraph DB["eap_backup"]
+    EV[("machine_event<br/>hypertable · 1-day chunks")]:::store
+    AL[("agent_log")]:::store
+    IX["indexes · migration 085"]:::app
+    VW[("drilling.event · drilling.telemetry · drilling.agent_status")]:::store
+  end
+  subgraph DASH["Drilling dashboards"]
+    D1["01 Fleet Digital Twin & Overview · 001"]:::viz
+    D2["02 Shift Production & OEE · ims-drilling-history"]:::viz
+    D3["03 Machine Investigation · ims-drilling-machine-detail"]:::viz
+    D4["04 Fleet Anomaly & RCA · ims-drilling-5-anomaly"]:::viz
+  end
+  M -->|"event logs"| AGENT
+  AGENT --> EV
+  AGENT -->|"heartbeat · errors"| AL
+  EV --- IX
+  EV --> VW
+  AL --> VW
+  VW --> D1
+  VW --> D2
+  VW --> D3
+  VW --> D4
+
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["External system"]:::ext ~~~ LG_store["Data store"]:::store ~~~ LG_app["IMS service"]:::app ~~~ LG_viz["Grafana / UI"]:::viz
     end
-
-    subgraph INGESTION[" EAP Ingestion Layer "]
-        AGENT["EAP Local File Watcher & Parser<br/>(Parses logs, extracts machine event codes)"]
-        STATUS_FEED["Agent Heartbeat Monitor<br/>(eap_status / agent_log)"]
-    end
-
-    subgraph STORAGE[" TimescaleDB Pipeline (Database: eap_backup) "]
-        direction TB
-        RAW_EVENT[("public.machine_event<br/>[Hypertable: 1-Day Chunks]")]
-        MIG085["High-Performance Indexes (Migration 085)<br/>- ix_machine_event_eqp_code_time<br/>- ix_machine_event_anomalies"]
-        VIEW_SCHEMA["Canonical Schema (Migration 086)<br/>- drilling.event<br/>- drilling.agent_status<br/>- drilling.telemetry"]
-        RAW_EVENT --- MIG085
-        RAW_EVENT --- VIEW_SCHEMA
-    end
-
-    subgraph VISUALIZATION[" Grafana Drilling Operations Suite "]
-        D1["01 · Fleet Digital Twin & Overview<br/>(UID: 001)"]
-        D2["02 · Shift Production & OEE Tracking<br/>(UID: ims-drilling-history)"]
-        D3["03 · Machine Investigation & Diagnostics<br/>(UID: ims-drilling-machine-detail)"]
-        D4["04 · Fleet Anomaly & Root Cause Analysis<br/>(UID: ims-drilling-5-anomaly)"]
-    end
-
-    M1 & M2 & MN -->|Writes event logs & cycles| AGENT
-    AGENT -->|Streams decoded records| RAW_EVENT
-    AGENT -->|Reports agent health & errors| STATUS_FEED
-    STATUS_FEED --> STORAGE
-    VIEW_SCHEMA -->|SQL Lateral Queries| D1
-    VIEW_SCHEMA -->|Shift Aggregation| D2
-    VIEW_SCHEMA -->|Chronological Audit| D3
-    VIEW_SCHEMA -->|Anomaly & Pareto RCA| D4
-
-    classDef shopStyle fill:#f8fafc,stroke:#64748b,stroke-width:1.5px,color:#0f172a;
-    classDef ingestStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
-    classDef storageStyle fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#14532d;
-    classDef visualStyle fill:#fefce8,stroke:#eab308,stroke-width:1.5px,color:#713f12;
-
-    class M1,M2,MN shopStyle;
-    class AGENT,STATUS_FEED ingestStyle;
-    class RAW_EVENT,MIG085,VIEW_SCHEMA storageStyle;
-    class D1,D2,D3,D4 visualStyle;
+  end
+  D4 ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -185,22 +188,22 @@ WHERE (
 IMS evaluates equipment health into 6 definitive states based on event codes and message freshness:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-    [*] --> OFFLINE : No telemetry > 2 hours
-    [*] --> STANDBY : Ready, awaiting job load
-
-    STANDBY --> RUN : Cycle start (0101 / 0112)
-    RUN --> TOOL_CHANGE : Automatic Tool Change (0110)
-    TOOL_CHANGE --> RUN : Tool loaded, cycle resumes (0112)
-    RUN --> STOP : Normal stop / job completed (0108 / 0201)
-    STOP --> RUN : Next job starts (0101)
-
-    RUN --> ALARM : Bit breakage / laser error / overload
-    TOOL_CHANGE --> ALARM : Collet jam / magazine position fault
-    ALARM --> STANDBY : Fault cleared & reset (0204)
-
-    RUN --> OFFLINE : Silent > 2 hours (COMM LOSS)
-    STOP --> OFFLINE : Power down
+  accTitle: Drilling machine states
+  accDescr: States derived from the latest event code: RUN, TOOL_CHANGE, STOP, ALARM and STANDBY; a machine silent for two hours is OFFLINE (COMM LOSS).
+  [*] --> STANDBY: ready, waiting for a job
+  STANDBY --> RUN: 0101 · 0112
+  RUN --> TOOL_CHANGE: 0110
+  TOOL_CHANGE --> RUN: 0112
+  RUN --> STOP: 0108 · 0201
+  STOP --> RUN: 0101
+  RUN --> ALARM: bit breakage · laser · overload
+  TOOL_CHANGE --> ALARM: collet · magazine fault
+  ALARM --> STANDBY: reset 0204
+  RUN --> OFFLINE: no event for 2 h
+  STOP --> OFFLINE: no event for 2 h
+  OFFLINE --> RUN: events resume
 ```
 
 | State | CSS Token & Color | Technical Definition | Ingestion Rule |
@@ -455,22 +458,25 @@ The card strip glides left at a steady 25 px/s, waits 5 s at the end, rewinds, w
 When an equipment card transitions to `state-alarm` (Red), operators must follow the structured response matrix:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TD
-    ALM_DETECT["Alarm Detected on Dashboard<br/>(State: ALARM Red)"] --> CODE_CHECK{"Inspect Event Code"}
-
-    CODE_CHECK -->|"0408 / 0417 / 0218<br/>(Bit Breakage / BBD)"| OCAP_01["OCAP-DRL-01: Bit Breakage<br/>1. Halt cycle; lock spindle safety covers.<br/>2. Inspect PCB panel for embedded carbide tips.<br/>3. If bit is embedded: Quarantine PCB; mark QA Hold.<br/>4. Replace tool in magazine slot.<br/>5. Run manual BBD verification; resume."]
-
-    CODE_CHECK -->|"0409 / 0404 / 0410<br/>(Laser Error)"| OCAP_02["OCAP-DRL-02: Laser Error<br/>1. Check optical sensor lens for dust/swarf.<br/>2. Clean optics with lens tissue and IPA.<br/>3. Verify tool diameter against setup sheet.<br/>4. Re-run laser verification cycle."]
-
-    CODE_CHECK -->|"0424 / 0425<br/>(Shank / Collet)"| OCAP_03["OCAP-DRL-03: Collet Fault<br/>1. Check shank seating depth in cassette.<br/>2. Clean collet jaws with pneumatic spray.<br/>3. Test pneumatic collet clamp/unclamp.<br/>4. Replace worn collet if slippage recurs."]
-
-    CODE_CHECK -->|"Repeated > 2x / Complex Code"| ESCALATE["Escalate to Level 2<br/>(Maintenance Technician)"]
-
-    classDef opStyle fill:#fef2f2,stroke:#ef4444,stroke-width:1.5px,color:#991b1b;
-    classDef escStyle fill:#fffbeb,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-
-    class ALM_DETECT,CODE_CHECK,OCAP_01,OCAP_02,OCAP_03 opStyle;
-    class ESCALATE escStyle;
+  accTitle: Floor operator response to drilling alarms
+  accDescr: The event code decides the OCAP: bit breakage, laser error or collet fault; a repeated or unknown code is escalated to maintenance.
+  A["Alarm on the dashboard"]:::notify --> C{"event code"}
+  C -->|"0408 · 0417 · 0218"| O1["OCAP-DRL-01 bit breakage<br/>stop, check panel, quarantine if tip embedded, replace tool, BBD check"]:::app
+  C -->|"0409 · 0404 · 0410"| O2["OCAP-DRL-02 laser error<br/>clean optics, check tool diameter, re-run laser check"]:::app
+  C -->|"0424 · 0425"| O3["OCAP-DRL-03 collet fault<br/>check seating, clean jaws, test clamp, replace if slipping"]:::app
+  C -->|"repeated more than twice · unknown"| E["Escalate to maintenance (level 2)"]:::actor
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 > [!WARNING]
@@ -521,17 +527,23 @@ At **07:45** and **19:45** Bangkok time:
 ### 5.1 Infrastructure Health Watchdogs (COMM LOSS & STALE RUN)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-    EVENT_STREAM["Telemetry Stream<br/>(drilling.event)"] --> WD{"Watchdog Evaluator"}
-
-    WD -->|"No message for > 2 hours"| COMM_LOSS["COMM LOSS (Offline)<br/>1. Check floor network switch port.<br/>2. Check local EAP file agent daemon.<br/>3. Inspect shared network drive permissions."]
-    WD -->|"RUN state > 60 min with<br/>zero hole progress"| STALE_RUN["STALE RUN (Frozen State)<br/>1. Parser locked on log file buffer.<br/>2. Machine halted without sending Stop code.<br/>3. Restart EAP agent service."]
-
-    classDef wdStyle fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e3a8a;
-    classDef warnStyle fill:#fffbeb,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-
-    class EVENT_STREAM,WD wdStyle;
-    class COMM_LOSS,STALE_RUN warnStyle;
+  accTitle: Drilling data watchdogs
+  accDescr: A machine with no event for two hours is COMM LOSS; a machine whose last event is a run-type code and is at least one hour old is STALE RUN.
+  EV[("drilling.event")]:::store --> W{"age of the latest event"}
+  W -->|"≥ 2 h"| CL["COMM LOSS<br/>check switch port, EAP agent, share permissions"]:::notify
+  W -->|"≥ 1 h and last code is run-type"| SR["STALE RUN<br/>parser stuck or stop code not sent; restart EAP agent"]:::obs
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

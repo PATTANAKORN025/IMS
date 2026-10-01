@@ -16,47 +16,82 @@
 ## ขอบเขตความเชื่อถือ
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
- subgraph HOST["Host network"]
-  subgraph DOCKER["Docker bridge networks (ims-internal / ims-monitoring / ims-docker-api)"]
-   PROXY["nginx proxy :3000, all interfaces\n(single UI entry point)"]
-   GRAFANA["Grafana\ninternal only, no host port"]
-   ALARMAPI["alarm-api\ninternal only, no host port"]
-   TWIN["factory-twin-3d\ninternal only, no host port"]
-   NODERED["Node-RED\n127.0.0.1:1880"]
-   PROM["Prometheus\n127.0.0.1:9090"]
-   AM["Alertmanager\n127.0.0.1:9093"]
-   PGB["PgBouncer\ninternal only"]
-   TSDB["TimescaleDB\ninternal only"]
-   PGADMIN["pgAdmin\n127.0.0.1:5050"]
-   SNMPSIM["SNMP simulator\ninternal only"]
-   BLACKBOX["Blackbox exporter\n127.0.0.1:9115"]
-    SOCKPROXY["ims-docker-socket-proxy\ninternal only, ims-docker-api"]
-    ARCHIVER["ims-observability-archiver\ninternal only"]
+  accTitle: ขอบเขตความเชื่อถือ
+  accDescr: มีเพียง nginx ที่เปิดรับทุก interface ของ host ส่วน Node-RED, Prometheus, Alertmanager, Blackbox และ pgAdmin ผูกกับ 127.0.0.1 client ฐานข้อมูลทุกตัวใช้ role ที่มีสิทธิ์น้อยที่สุดของตัวเอง archiver เข้าถึง Docker ผ่าน socket proxy แบบอ่านอย่างเดียวบนเครือข่ายที่แยกออกเท่านั้น และ webhook แจ้งเตือนต้องมี bearer token
+  EXT1["เครื่อง LDI"]:::ext
+  EXT2["อุปกรณ์ SNMP"]:::ext
+  USER["ผู้ใช้ผ่านเบราว์เซอร์"]:::actor
+  subgraph PUBLIC["Host · ทุก interface"]
+    PROXY["nginx :3000<br/>จำกัดอัตรา · auth_request"]:::ingress
   end
- end
+  subgraph LOOP["Host · 127.0.0.1 เท่านั้น"]
+    NR["Node-RED :1880"]:::flow
+    PROM["Prometheus :9090 · Alertmanager :9093 · Blackbox :9115"]:::obs
+    PGADMIN["pgAdmin :5050"]:::app
+  end
+  subgraph INTERNAL["ims-internal · ไม่มีพอร์ตบน host"]
+    GRAF["Grafana"]:::viz
+    ALARM["alarm-api · root FS อ่านอย่างเดียว"]:::app
+    TWIN["factory-twin-3d · root FS อ่านอย่างเดียว"]:::app
+    PGB["PgBouncer · SCRAM"]:::app
+    TSDB[("TimescaleDB")]:::store
+  end
+  subgraph DOCKERAPI["ims-docker-api · เครือข่ายภายใน"]
+    ARCH["observability-archiver"]:::app
+    SOCK["docker-socket-proxy · GET เท่านั้น"]:::app
+  end
+  NOTIFY["LINE · MS Teams"]:::notify
+  FUT["อุปกรณ์ SECS/GEM · ยังไม่ได้ออกแบบขอบเขต"]:::future
 
- EXT1["Real SNMP devices\n(servers, network gear)"] -->|"community-string auth"| NODERED
- EXT2["Real/simulated LDI machines"] -->|"HTTP POST /ldi-telemetry via proxy,\nx-api-key auth"| PROXY
- PROXY -->|"/ldi-telemetry, /inject"| NODERED
- NODERED -->|"nodered_writer role"| PGB --> TSDB
- PROXY -->|"reverse proxy"| GRAFANA
- PROXY -->|"auth_request /api/user\n(rejects if session invalid)\nthen reverse proxy"| ALARMAPI
- PROXY -->|"auth_request /api/user\nthen reverse proxy"| TWIN
- GRAFANA --> PGB
- ALARMAPI -->|"alarm_api_writer role:\nSELECT+UPDATE on\nldi_alarm_lifecycle only"| PGB
- TWIN -->|"read-only queries"| PGB
- PGADMIN -->|"admin login"| TSDB
- PROM --> AM
- AM --> NODERED
- NODERED -->|"credentials not shipped"| LINE["LINE Messaging API"]
- NODERED -->|"credentials not shipped"| TEAMS["MS Teams"]
+  EXT1 -->|"X-API-Key"| PROXY
+  USER -->|"session ของ Grafana"| PROXY
+  EXT2 -->|"SNMP community"| NR
+  PROXY --> NR
+  PROXY --> GRAF
+  PROXY -->|"auth_request"| ALARM
+  PROXY -->|"auth_request"| TWIN
+  NR -->|"nodered_writer"| PGB
+  ALARM -->|"alarm_api_writer"| PGB
+  GRAF -->|"grafana_reader"| PGB
+  TWIN -->|"grafana_reader"| PGB
+  PGB --> TSDB
+  GRAF -->|"drilling-timescaledb"| TSDB
+  ARCH -->|"observability_archiver"| TSDB
+  PGADMIN -->|"admin"| TSDB
+  ARCH --> SOCK
+  PROM -->|"Bearer token"| NR
+  GRAF -->|"Bearer token"| NR
+  NR -->|"token ที่ผู้ดูแลตั้งค่า"| NOTIFY
+  FUT -.-> NR
 
- 
- ARCHIVER -->|"read-only Docker metrics"| SOCKPROXY
- GRAFANA -->|"drilling-timescaledb (eap_backup)"| TSDB
- FUTURE["Future: real SECS/GEM equipment\n(not built)"] -.->|"NEW boundary, not yet designed"| NODERED
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["บุคคล"]:::actor ~~~ LG_ext["ระบบภายนอก"]:::ext ~~~ LG_ingress["ทางเข้า / เกตเวย์"]:::ingress ~~~ LG_flow["โฟลว์ Node-RED"]:::flow ~~~ LG_app["บริการของ IMS"]:::app
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["การเฝ้าระวัง"]:::obs ~~~ LG_notify["การแจ้งเตือน"]:::notify ~~~ LG_future["ยังไม่ได้สร้าง"]:::future
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 **ขอบเขตที่ 1 — Host ↔ เครือข่าย Docker** มีเพียง service `proxy` (nginx, `${GRAFANA_PORT:-3000}`) เท่านั้นที่รับการเชื่อมต่อบน external host interface ส่วน `pgadmin` (`5050`), Node-RED, Prometheus, Alertmanager และ Blackbox exporter เปิดพอร์ตที่ bind ไว้กับ `127.0.0.1` loopback เท่านั้น Grafana, alarm-api และ Factory Twin ล้วนอยู่หลัง `proxy` ทุก request จาก browser จึงผ่านทางเข้าเดียว PgBouncer, TimescaleDB, ตัวจำลอง SNMP และ image renderer ไม่เคยเปิดสู่ host — ใช้ DNS ภายในของ Docker เท่านั้น ส่วน `observability-archiver` เชื่อมต่อ Docker daemon ผ่าน `ims-docker-socket-proxy` ภายในเครือข่ายด้วยสิทธิ์อ่านอย่างเดียว

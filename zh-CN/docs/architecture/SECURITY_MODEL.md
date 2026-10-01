@@ -16,47 +16,82 @@
 ## 信任边界
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
- subgraph HOST["Host network"]
-  subgraph DOCKER["Docker bridge networks (ims-internal / ims-monitoring / ims-docker-api)"]
-   PROXY["nginx proxy :3000, all interfaces\n(single UI entry point)"]
-   GRAFANA["Grafana\ninternal only, no host port"]
-   ALARMAPI["alarm-api\ninternal only, no host port"]
-   TWIN["factory-twin-3d\ninternal only, no host port"]
-   NODERED["Node-RED\n127.0.0.1:1880"]
-   PROM["Prometheus\n127.0.0.1:9090"]
-   AM["Alertmanager\n127.0.0.1:9093"]
-   PGB["PgBouncer\ninternal only"]
-   TSDB["TimescaleDB\ninternal only"]
-   PGADMIN["pgAdmin\n127.0.0.1:5050"]
-   SNMPSIM["SNMP simulator\ninternal only"]
-   BLACKBOX["Blackbox exporter\n127.0.0.1:9115"]
-    SOCKPROXY["ims-docker-socket-proxy\ninternal only, ims-docker-api"]
-    ARCHIVER["ims-observability-archiver\ninternal only"]
+  accTitle: 信任边界
+  accDescr: 只有 nginx 监听主机所有网卡；Node-RED、Prometheus、Alertmanager、Blackbox 与 pgAdmin 绑定 127.0.0.1；每个数据库客户端使用各自的最小权限角色；archiver 只能通过隔离网络上的只读 socket proxy 访问 Docker；告警 webhook 需要 bearer token。
+  EXT1["LDI 机台"]:::ext
+  EXT2["SNMP 设备"]:::ext
+  USER["浏览器用户"]:::actor
+  subgraph PUBLIC["主机 · 所有网卡"]
+    PROXY["nginx :3000<br/>限流 · auth_request"]:::ingress
   end
- end
+  subgraph LOOP["主机 · 仅 127.0.0.1"]
+    NR["Node-RED :1880"]:::flow
+    PROM["Prometheus :9090 · Alertmanager :9093 · Blackbox :9115"]:::obs
+    PGADMIN["pgAdmin :5050"]:::app
+  end
+  subgraph INTERNAL["ims-internal · 无主机端口"]
+    GRAF["Grafana"]:::viz
+    ALARM["alarm-api · 只读根文件系统"]:::app
+    TWIN["factory-twin-3d · 只读根文件系统"]:::app
+    PGB["PgBouncer · SCRAM"]:::app
+    TSDB[("TimescaleDB")]:::store
+  end
+  subgraph DOCKERAPI["ims-docker-api · 内部网络"]
+    ARCH["observability-archiver"]:::app
+    SOCK["docker-socket-proxy · 仅 GET"]:::app
+  end
+  NOTIFY["LINE · MS Teams"]:::notify
+  FUT["SECS/GEM 设备 · 边界未设计"]:::future
 
- EXT1["Real SNMP devices\n(servers, network gear)"] -->|"community-string auth"| NODERED
- EXT2["Real/simulated LDI machines"] -->|"HTTP POST /ldi-telemetry via proxy,\nx-api-key auth"| PROXY
- PROXY -->|"/ldi-telemetry, /inject"| NODERED
- NODERED -->|"nodered_writer role"| PGB --> TSDB
- PROXY -->|"reverse proxy"| GRAFANA
- PROXY -->|"auth_request /api/user\n(rejects if session invalid)\nthen reverse proxy"| ALARMAPI
- PROXY -->|"auth_request /api/user\nthen reverse proxy"| TWIN
- GRAFANA --> PGB
- ALARMAPI -->|"alarm_api_writer role:\nSELECT+UPDATE on\nldi_alarm_lifecycle only"| PGB
- TWIN -->|"read-only queries"| PGB
- PGADMIN -->|"admin login"| TSDB
- PROM --> AM
- AM --> NODERED
- NODERED -->|"credentials not shipped"| LINE["LINE Messaging API"]
- NODERED -->|"credentials not shipped"| TEAMS["MS Teams"]
+  EXT1 -->|"X-API-Key"| PROXY
+  USER -->|"Grafana 会话"| PROXY
+  EXT2 -->|"SNMP community"| NR
+  PROXY --> NR
+  PROXY --> GRAF
+  PROXY -->|"auth_request"| ALARM
+  PROXY -->|"auth_request"| TWIN
+  NR -->|"nodered_writer"| PGB
+  ALARM -->|"alarm_api_writer"| PGB
+  GRAF -->|"grafana_reader"| PGB
+  TWIN -->|"grafana_reader"| PGB
+  PGB --> TSDB
+  GRAF -->|"drilling-timescaledb"| TSDB
+  ARCH -->|"observability_archiver"| TSDB
+  PGADMIN -->|"admin"| TSDB
+  ARCH --> SOCK
+  PROM -->|"Bearer token"| NR
+  GRAF -->|"Bearer token"| NR
+  NR -->|"由运维配置的令牌"| NOTIFY
+  FUT -.-> NR
 
- 
- ARCHIVER -->|"read-only Docker metrics"| SOCKPROXY
- GRAFANA -->|"drilling-timescaledb (eap_backup)"| TSDB
- FUTURE["Future: real SECS/GEM equipment\n(not built)"] -.->|"NEW boundary, not yet designed"| NODERED
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_actor["人员"]:::actor ~~~ LG_ext["外部系统"]:::ext ~~~ LG_ingress["入口 / 网关"]:::ingress ~~~ LG_flow["Node-RED 流程"]:::flow ~~~ LG_app["IMS 服务"]:::app
+    end
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_store["数据存储"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["监控"]:::obs ~~~ LG_notify["通知"]:::notify ~~~ LG_future["尚未构建"]:::future
+    end
+    LEGEND_0 ~~~ LEGEND_1
+  end
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 **边界 1——主机 ↔ Docker 网络。** 唯一监听外部网络接口的服务是 `proxy` 服务（nginx，`${GRAFANA_PORT:-3000}`）。`pgadmin`（`5050`）、Node-RED、Prometheus、Alertmanager 与 Blackbox exporter 发布的端口均绑定在 `127.0.0.1` 本地回环。Grafana、alarm-api 与 Factory Twin 均位于 `proxy` 之后，因此所有面向浏览器的请求统一经过唯一入口。PgBouncer、TimescaleDB、SNMP 模拟器与 image renderer 从不暴露给主机——只使用 Docker 内部 DNS。`observability-archiver` 通过内部网络的 `ims-docker-socket-proxy` 访问 Docker 守护进程，并具备受控的只读权限。

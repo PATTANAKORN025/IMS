@@ -24,42 +24,46 @@
 ## 1. 合成数据生成管道与验证拓扑
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-flowchart TD
-  subgraph GEN["1. 合成数据生成引擎 (Generator Engine)"]
-    SCHEMA["database/mock/eap_backup-schema.sql
-创建表结构、视图及防误触标记表"]
-    MOCK_JS["scripts/mock/eap-mock-data.js
-合成模型: 转速、进给、主轴掩码、槽液温度"]
-    UNIT["tests/unit/eap-mock-data.test.js
-Pre-commit 预提交单元测试"]
-  end
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: 合成 eap_backup 数据及其验证
+  accDescr: schema 脚本与迁移 084–086 构建替代 eap_backup 数据库，生成器写入 MOCK- 行，验证器针对它运行所有钻孔与 VCP 面板查询以及 7 个 VCP 告警查询。
+  SCHEMA["database/mock/eap_backup-schema.sql"]:::app
+  MIG["迁移 084–086"]:::app
+  GEN["scripts/mock/eap-mock-data.js<br/>--hours=168 --apply"]:::app
+  TEST["tests/unit/eap-mock-data.test.js"]:::app
+  DB[("eap_backup<br/>标记表 mock_dataset · MOCK- 前缀")]:::store
+  DASH["7 个仪表板 · 钻孔 4 · VCP 3"]:::viz
+  RULES["7 条 VCP 告警规则"]:::obs
+  VERIFY["scripts/mock/verify-mock-dashboards.js<br/>所有面板与告警查询"]:::app
+  SCHEMA --> DB
+  MIG --> DB
+  GEN --> DB
+  TEST -.->|"检查生成器"| GEN
+  DB --> DASH
+  DB --> RULES
+  VERIFY -->|"执行查询"| DB
 
-  subgraph DB["2. 隔离演练数据库 (eap_backup Database)"]
-    STANDIN[("替代数据库 eap_backup
-标记表: public.mock_dataset
-数据主键前缀: MOCK-*")]
-    MIG["迁移脚本 084–086
-通过 psql 顺畅执行"]
+  subgraph LEGEND["图例 · 箭头 = 数据流向"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_app["IMS 服务"]:::app ~~~ LG_store["数据存储"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["监控"]:::obs
+    end
   end
-
-  subgraph CONSUMERS["3. 下游数据消费端与质量大门"]
-    DASH["Grafana 监控大屏群
-钻孔车间大屏 (4 块)
-VCP 电镀大屏 (3 块)"]
-    ALERTS["Grafana Alerting
-7 条 VCP 生产异常告警规则"]
-    VERIFY["scripts/mock/verify-mock-dashboards.js
-校验 34 个大屏图表面板 + 7 条告警规则"]
-  end
-
-  SCHEMA -->|构建 Schema| STANDIN
-  MOCK_JS -->|生成数据 --hours=168 --apply| STANDIN
-  MIG -->|架构更新| STANDIN
-  UNIT -.->|验证生成逻辑| MOCK_JS
-  STANDIN --> DASH
-  STANDIN --> ALERTS
-  VERIFY -->|自动化执行 41 项查询| STANDIN
+  VERIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---

@@ -26,73 +26,87 @@
 ## 1. End-to-End Multi-Domain Pipeline Topology
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart TB
-  subgraph SOURCES["1. Industrial Telemetry Sources"]
-    SNMP_DEV["Servers / Switches / Routers\n(SNMP v2c, 30s polling)"]
-    LDI_DEV["LDI Photolithography Machines\n(HTTP POST /ldi-telemetry, 2s)"]
-    DRL_DEV["CNC Drilling Machines\n(Events & Spindle Telemetry)"]
-    VCP_DEV["VCP Electroplating Lines\n(Sensor & Chemical Bath Logs)"]
+  accTitle: End-to-end data flow
+  accDescr: SNMP and LDI data enter through Node-RED and PgBouncer into the ims database, where ingest_staging protects LDI batches and continuous aggregates and compression run; drilling and VCP data sit in eap_backup; Grafana reads both and alerts leave through Node-RED.
+
+  SNMP["Servers · switches<br/>SNMP v2c, polled every 30 s"]:::ext
+  LDIM["LDI machines<br/>POST /ldi-telemetry"]:::ext
+  EAPSRC["Plant EAP database<br/>drilling · VCP"]:::ext
+
+  NRS["ingestion.json<br/>fork_5_ways → Parser v9"]:::flow
+  NRL["ldi_ingestion.json<br/>validate → stage → insert"]:::flow
+  PGB["PgBouncer :5432<br/>transaction pool · SCRAM"]:::app
+
+  subgraph IMSDB["Database ims"]
+    STG[("ingest_staging<br/>write-ahead table")]:::store
+    HSYS[("sys_metrics · net_metrics · ldi_metrics<br/>hypertables, 1-day chunks")]:::store
+    HLDI[("ldi_data<br/>hypertable, 1-day chunks")]:::store
+    HALM[("ldi_alarm_log<br/>hypertable, 7-day chunks")]:::store
+    CAGG[("continuous aggregates<br/>ldi_data_1m → 15m → 1h · *_hourly")]:::store
+    COMP[("compressed chunks after 7 d<br/>segment by eqp_id · device_id")]:::store
+  end
+  subgraph EAPDB["Database eap_backup"]
+    EDRL[("machine_event · agent_log")]:::store
+    EVCP[("vcp_upp · vcp_alarm · vcp_status_change")]:::store
   end
 
-  subgraph INGESTION["2. Ingestion & Transformation Tier (Node-RED)"]
-    NR_INFRA["ingestion.json\nfork_5_ways -> sre_parser v10"]
-    NR_LDI["ldi_ingestion.json\nSchema validation, staging, O(1) GC cleanup"]
-  end
+  GRAF["Grafana · 22 dashboards"]:::viz
+  PROM["Prometheus → Alertmanager"]:::obs
+  HOOK["alerting.json · /alert-webhook"]:::flow
+  NOTIFY["LINE · MS Teams"]:::notify
 
-  subgraph POOL["3. Connection Pooling Tier"]
-    PGB["PgBouncer\n(Transaction Mode, port 5432, AUTH: scram-sha-256)"]
-  end
+  SNMP --> NRS
+  LDIM --> NRL
+  NRS -->|"nodered_writer"| PGB
+  NRL -->|"nodered_writer"| PGB
+  PGB --> STG
+  PGB --> HSYS
+  PGB --> HLDI
+  PGB --> HALM
+  HLDI --> CAGG
+  HSYS --> CAGG
+  HLDI --> COMP
+  HSYS --> COMP
+  EAPSRC -.->|"restored copy"| EDRL
+  EAPSRC -.-> EVCP
+  CAGG --> GRAF
+  HLDI --> GRAF
+  HALM --> GRAF
+  EDRL -->|"drilling-timescaledb"| GRAF
+  EVCP -->|"drilling-timescaledb"| GRAF
+  NRS -->|"/metrics"| PROM
+  PROM --> HOOK
+  GRAF -->|"alert rules"| HOOK
+  HOOK --> NOTIFY
 
-  subgraph STORAGE["4. TimescaleDB Storage Tier (public schema)"]
-    subgraph HYPER["Raw Hypertables (1-day chunking)"]
-      HT_SYS[("sys_metrics & net_metrics")]
-      HT_LDI[("ldi_data & ldi_alarm_log")]
-      HT_STG[("ingest_staging")]
+  subgraph LEGEND["Legend · arrows = data flow"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_ext["External system"]:::ext ~~~ LG_flow["Node-RED flow"]:::flow ~~~ LG_app["IMS service"]:::app ~~~ LG_store["Data store"]:::store ~~~ LG_viz["Grafana / UI"]:::viz
     end
-    subgraph EAP_DB["Secondary Database: eap_backup"]
-      EAP_DRL[("machine_event & agent_log")]
-      EAP_VCP[("vcp_upp, vcp_alarm, vcp_status_change")]
+    subgraph LEGEND_1[" "]
+      direction LR
+      LG_obs["Monitoring"]:::obs ~~~ LG_notify["Notification"]:::notify
     end
-    subgraph CAGGS["Continuous Aggregates (CAGGs)"]
-      CAGG_1M[("1-Minute Rollups (ldi_data_1m)")]
-      CAGG_15M[("15-Minute Rollups (ldi_data_15m)")]
-      CAGG_1H[("1-Hour Rollups & ldi_data_hourly")]
-    end
-    subgraph COMPRESS["Columnar Compression"]
-      COL[("Compressed Chunks > 7 Days\nSegmentby: machine_id / device_id")]
-    end
+    LEGEND_0 ~~~ LEGEND_1
   end
-
-  subgraph DISPATCH["5. Visualization & Alerting Tier"]
-    GRAF["Grafana (22 Dashboards)\nGrid-24 UI, sub-second queries"]
-    PROM["Prometheus Scraper"]
-    AM["Alertmanager Engine"]
-    WH["Node-RED /alert-webhook"]
-    NOTIF["LINE Messaging API & MS Teams"]
-  end
-
-  SNMP_DEV --> NR_INFRA
-  LDI_DEV --> NR_LDI
-  DRL_DEV -.->|"Direct Sync"| EAP_DRL
-  VCP_DEV -.->|"Direct Sync"| EAP_VCP
-
-  NR_INFRA -->|"Batched SQL (nodered_writer)"| PGB
-  NR_LDI -->|"Write-Ahead & Batch (nodered_writer)"| PGB
-
-  PGB --> HT_SYS
-  PGB --> HT_LDI
-  PGB --> HT_STG
-
-  HT_LDI --> CAGG_1M --> CAGG_15M --> CAGG_1H
-  HT_LDI --> COL
-  HT_SYS --> COL
-
-  CAGGS --> GRAF
-  HYPER --> GRAF
-  EAP_DB -->|"drilling-timescaledb (Direct :5432)"| GRAF
-  PROM --> AM --> WH --> NOTIF
-  GRAF -->|"Native Alerts"| WH
+  NOTIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  style LEGEND_1 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
@@ -161,27 +175,29 @@ return msg;
 Raw telemetry data in `public.ldi_data` feeds two independent aggregation paths:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-  RAW[("ldi_data
-Raw Telemetry
-7d Compression, 180d Retention")]
-
-  RAW -->|"1m rollup"| M1[("ldi_data_1m
-30d Retention")]
-  M1 -->|"15m rollup"| M15[("ldi_data_15m
-90d Retention")]
-  M15 -->|"1h rollup"| M1H[("ldi_data_1h
-2yr Retention")]
-
-  RAW -->|"Direct Hourly Analytics
-(avg_max_pe, peak_pe)
-Real-time Aggregation: ON"| MHOURLY[("ldi_data_hourly
-2yr Retention")]
-
-  RAW -->|"Materialized 60s Refresh"| SPC["v_machine_spc_fleet
-v_ldi_rca_recent_window
-v_ldi_rca_truth_test"]
+  accTitle: LDI rollup chain
+  accDescr: ldi_data rolls up into 1-minute, 15-minute and 1-hour aggregates in a chain, plus a separate real-time hourly aggregate; three SPC and RCA materialized views refresh every minute.
+  RAW[("ldi_data<br/>180 d")]:::store
+  M1[("ldi_data_1m<br/>30 d")]:::store
+  M15[("ldi_data_15m<br/>90 d")]:::store
+  M1H[("ldi_data_1h<br/>2 y")]:::store
+  MH[("ldi_data_hourly<br/>real-time · 2 y")]:::store
+  MV["v_machine_spc_fleet<br/>v_ldi_rca_recent_window<br/>v_ldi_rca_truth_test"]:::store
+  RAW -->|"1 min"| M1 -->|"15 min"| M15 -->|"1 h"| M1H
+  RAW -->|"1 h"| MH
+  RAW -->|"refresh every 60 s"| MV
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 * **Chained Multi-Level Rollup (`1m -> 15m -> 1h`):** Successively aggregates smaller buckets to power long-range Grafana dashboards (7d, 30d, 90d) with sub-second execution times.
@@ -192,18 +208,30 @@ v_ldi_rca_truth_test"]
 ## 4. Alarm Processing & Root-Cause Analysis (RCA) Pipeline
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 flowchart LR
-  ALM_SIM["ldi_alarm_simulator.json"] --> ALOG[("ldi_alarm_log
-Real-time Event Stream
-365d Retention")]
-  MASTER[("ldi_alarm_ms_code
-Alarm Master Dictionary
-1,820+ Registered Codes")] -.->|"FK: alarm_code"| ALOG
-  ALOG --> CTX["v_ldi_alarm_context
-Telemetry Window Join (+-5m)"]
-  CTX --> RCA["v_ldi_rca_recent_window
-v_ldi_rca_truth_test"]
+  accTitle: Alarm and root-cause pipeline
+  accDescr: The alarm simulator writes ldi_alarm_log, whose equipmentid references devices; alarms join the alarm master on the code and the telemetry reading linked by related_log_id (or the latest one in the five minutes before), which feeds the RCA views.
+  SIM["ldi_alarm_simulator.json"]:::flow
+  DEV[("devices")]:::store
+  LOG[("ldi_alarm_log<br/>365 d")]:::store
+  MASTER[("ldi_alarm_ms_code<br/>1,820 codes")]:::store
+  CTX["v_ldi_alarm_context<br/>reading via related_log_id, else latest within 5 min before"]:::store
+  RCA["v_ldi_rca_recent_window<br/>v_ldi_rca_truth_test"]:::store
+  SIM --> LOG
+  LOG -.->|"FK equipmentid"| DEV
+  MASTER -.->|"join errorcode = alarm_code"| CTX
+  LOG --> CTX --> RCA
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 Alarms flow into `public.ldi_alarm_log`, linking to `public.ldi_alarm_ms_code` by foreign key. Downstream views (`v_ldi_alarm_context`) automatically join machine telemetry within a ±5-minute window around the alarm timestamp, feeding statistical root cause analysis into the operator console.

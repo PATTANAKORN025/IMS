@@ -61,15 +61,18 @@
 ### แผนผังวงจรชีวิตของ ADR (Lifecycle State Machine)
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-  [*] --> Proposed: ผู้เขียนร่างข้อเสนอการตัดสินใจ
-  Proposed --> Accepted: ผ่านการรีวิวทางเทคนิคและลงนามอนุมัติ
-  Proposed --> Rejected: ไม่สอดคล้องกับระบบ / ถูกปฏิเสธ
-  Accepted --> Deprecated: เทคโนโลยีถูกยกเลิกใช้งาน
-  Accepted --> Superseded: ถูกแทนที่ด้วย ADR ฉบับใหม่
-  Superseded --> [*]
-  Deprecated --> [*]
+  accTitle: Lifecycle ของ ADR
+  accDescr: ADR ถูกเสนอ แล้วได้รับการยอมรับหรือถูกปฏิเสธ ADR ที่ยอมรับแล้วอาจถูกเลิกใช้หรือถูกแทนที่ด้วย ADR ใหม่ในภายหลัง
+  [*] --> Proposed: ผู้เขียนร่าง
+  Proposed --> Accepted: ผ่านการรีวิว
+  Proposed --> Rejected: ไม่นำไปใช้
+  Accepted --> Deprecated: ไม่ใช้แล้ว
+  Accepted --> Superseded: ถูกแทนด้วย ADR ใหม่
   Rejected --> [*]
+  Deprecated --> [*]
+  Superseded --> [*]
 ```
 
 ### โครงสร้างไดเรกทอรีและรูปแบบการตั้งชื่อไฟล์
@@ -135,8 +138,21 @@ docs/architecture/decisions/
 
 ### แผนภาพสถาปัตยกรรม (Architectural Model)
 ```mermaid
-flowchart TD
-  A[องค์ประกอบ A] --> B[องค์ประกอบ B]
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart LR
+  accTitle: แม่แบบ ADR: ภาพร่างสถาปัตยกรรม
+  accDescr: ตัวอย่างโครงของแผนภาพใน ADR ใหม่ ให้แทนที่องค์ประกอบทั้งสองและความสัมพันธ์
+  A["องค์ประกอบ A"]:::app -->|"ความสัมพันธ์"| B["องค์ประกอบ B"]:::app
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ## 5. ผลกระทบและการประนีประนอม (Consequences & Trade-offs)

@@ -48,12 +48,15 @@
 การเปลี่ยนสถานะวงจรชีวิตของการแจ้งเตือนถูกควบคุมทางฝั่งเซิร์ฟเวอร์ฐานข้อมูล PostgreSQL โดยทริกเกอร์ `trg_ldi_alarm_lifecycle_guard`:
 
 ```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
 stateDiagram-v2
-    [*] --> OPEN: มีสัญญาณเตือนดังขึ้น (trg_ldi_alarm_lifecycle_init)
-    OPEN --> ACKNOWLEDGED: POST /alarm-api/alarms/ack (ระบุผู้รับผิดชอบ + เวลา)
-    OPEN --> RESOLVED: POST /alarm-api/alarms/resolve (แก้ไขเสร็จทันที)
-    ACKNOWLEDGED --> RESOLVED: POST /alarm-api/alarms/resolve (ระบุผู้ปิดงาน + บันทึก)
-    RESOLVED --> [*]: สถานะสิ้นสุด (ห้ามแก้ไขข้อมูลอีกต่อไป)
+  accTitle: สถานะใน lifecycle ของ alarm (migration 077)
+  accDescr: แถว alarm เริ่มที่ OPEN เมื่อ insert, POST /alarms/ack เปลี่ยนเป็น ACKNOWLEDGED, POST /alarms/resolve เปลี่ยน OPEN หรือ ACKNOWLEDGED เป็น RESOLVED และ RESOLVED เป็นสถานะสุดท้าย คำขอเพิ่มเติมจะได้ 409
+  [*] --> OPEN: insert alarm (trg_ldi_alarm_lifecycle_init)
+  OPEN --> ACKNOWLEDGED: POST /alarms/ack
+  OPEN --> RESOLVED: POST /alarms/resolve
+  ACKNOWLEDGED --> RESOLVED: POST /alarms/resolve
+  RESOLVED --> [*]: สถานะสุดท้าย · คำขอถัดไป 409
 ```
 
 ### คำจำกัดความของสถานะและการบังคับใช้ด้วยทริกเกอร์

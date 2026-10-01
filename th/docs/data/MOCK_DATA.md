@@ -24,42 +24,46 @@
 ## 1. แผนภาพสถาปัตยกรรมการสร้างและตรวจสอบข้อมูลสังเคราะห์
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-flowchart TD
-  subgraph GEN["1. เครื่องมือสร้างข้อมูลสังเคราะห์ (Generator Engine)"]
-    SCHEMA["database/mock/eap_backup-schema.sql
-สร้างตาราง วิว และตารางสัญลักษณ์ Marker"]
-    MOCK_JS["scripts/mock/eap-mock-data.js
-แบบจำลองสังเคราะห์: RPM, Feed, มาสก์ spindle, อุณหภูมิอ่าง"]
-    UNIT["tests/unit/eap-mock-data.test.js
-ชุดทดสอบ Unit Test ใน Pre-commit"]
-  end
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 10, "wrappingWidth": 150, "curve": "basis"}, "sequence": {"wrap": true, "width": 170, "actorMargin": 36, "boxMargin": 8, "noteMargin": 8, "messageMargin": 30, "mirrorActors": false}, "state": {"padding": 6}, "theme": "base", "themeVariables": {"fontFamily": "Inter, Segoe UI, Helvetica, Arial, sans-serif", "fontSize": "14px", "primaryColor": "#334155", "primaryTextColor": "#ffffff", "primaryBorderColor": "#1e293b", "lineColor": "#64748b", "textColor": "#64748b", "secondaryColor": "#475569", "tertiaryColor": "#f1f5f9", "clusterBkg": "transparent", "clusterBorder": "#94a3b8", "titleColor": "#64748b", "edgeLabelBackground": "#475569", "nodeTextColor": "#ffffff", "noteBkgColor": "#fef3c7", "noteTextColor": "#1e293b", "noteBorderColor": "#d97706", "actorBkg": "#334155", "actorTextColor": "#ffffff", "actorBorder": "#1e293b", "actorLineColor": "#94a3b8", "signalColor": "#64748b", "signalTextColor": "#64748b", "labelBoxBkgColor": "#334155", "labelBoxBorderColor": "#1e293b", "labelTextColor": "#ffffff", "loopTextColor": "#64748b", "activationBkgColor": "#e2e8f0", "sequenceNumberColor": "#ffffff", "stateLabelColor": "#ffffff", "compositeBackground": "transparent", "transitionColor": "#64748b", "transitionLabelColor": "#64748b"}}}%%
+flowchart TB
+  accTitle: ข้อมูลจำลอง eap_backup และการตรวจสอบ
+  accDescr: สคริปต์ schema และ migration 084 ถึง 086 สร้างฐานข้อมูล eap_backup ทดแทน ตัวสร้างข้อมูลเติมแถว MOCK- และตัวตรวจสอบรันทุก query ของแผง Drilling และ VCP กับ query ของกฎแจ้งเตือน VCP 7 ตัว
+  SCHEMA["database/mock/eap_backup-schema.sql"]:::app
+  MIG["migration 084–086"]:::app
+  GEN["scripts/mock/eap-mock-data.js<br/>--hours=168 --apply"]:::app
+  TEST["tests/unit/eap-mock-data.test.js"]:::app
+  DB[("eap_backup<br/>ตาราง marker mock_dataset · prefix MOCK-")]:::store
+  DASH["7 แดชบอร์ด · Drilling 4 · VCP 3"]:::viz
+  RULES["กฎแจ้งเตือน VCP 7 ตัว"]:::obs
+  VERIFY["scripts/mock/verify-mock-dashboards.js<br/>ทุก query ของแผงและการแจ้งเตือน"]:::app
+  SCHEMA --> DB
+  MIG --> DB
+  GEN --> DB
+  TEST -.->|"ตรวจตัวสร้างข้อมูล"| GEN
+  DB --> DASH
+  DB --> RULES
+  VERIFY -->|"รัน query"| DB
 
-  subgraph DB["2. ฐานข้อมูลตัวแทน (eap_backup Database)"]
-    STANDIN[("ฐานข้อมูล eap_backup
-มีตาราง Marker: public.mock_dataset
-รหัสข้อมูลขึ้นต้นด้วย MOCK-*")]
-    MIG["ไมเกรชัน 084–086
-รันผ่านคำสั่ง psql"]
+  subgraph LEGEND["คำอธิบายสัญลักษณ์ · ลูกศร = ทิศทางข้อมูล"]
+    direction TB
+    subgraph LEGEND_0[" "]
+      direction LR
+      LG_app["บริการของ IMS"]:::app ~~~ LG_store["ที่เก็บข้อมูล"]:::store ~~~ LG_viz["Grafana / UI"]:::viz ~~~ LG_obs["การเฝ้าระวัง"]:::obs
+    end
   end
-
-  subgraph CONSUMERS["3. ระบบปลายทางและการตรวจสอบคุณภาพ"]
-    DASH["แดชบอร์ด Grafana
-งานเจาะ Drilling (4 แดชบอร์ด)
-งานชุบ VCP (3 แดชบอร์ด)"]
-    ALERTS["Grafana Alerting
-กฎการแจ้งเตือน VCP 7 กฎ"]
-    VERIFY["scripts/mock/verify-mock-dashboards.js
-ทดสอบคิวรีพาเนล 34 คิวรี + กฎเตือน 7 กฎ"]
-  end
-
-  SCHEMA -->|สร้างสคีมา| STANDIN
-  MOCK_JS -->|สร้างข้อมูล --hours=168 --apply| STANDIN
-  MIG -->|อัปเดตสคีมา| STANDIN
-  UNIT -.->|ทดสอบตรรกะ| MOCK_JS
-  STANDIN --> DASH
-  STANDIN --> ALERTS
-  VERIFY -->|รันตรวจ 41 คิวรี| STANDIN
+  VERIFY ~~~ LEGEND
+  style LEGEND fill:transparent,stroke:#94a3b8,stroke-dasharray:3 3
+  style LEGEND_0 fill:transparent,stroke:transparent
+  classDef actor fill:#475569,stroke:#1e293b,color:#ffffff,stroke-width:1px
+  classDef ext fill:#57534e,stroke:#292524,color:#ffffff,stroke-width:1px
+  classDef ingress fill:#1d4ed8,stroke:#1e3a8a,color:#ffffff,stroke-width:1px
+  classDef app fill:#0f766e,stroke:#134e4a,color:#ffffff,stroke-width:1px
+  classDef flow fill:#0e7490,stroke:#164e63,color:#ffffff,stroke-width:1px
+  classDef store fill:#b45309,stroke:#78350f,color:#ffffff,stroke-width:1px
+  classDef viz fill:#4338ca,stroke:#312e81,color:#ffffff,stroke-width:1px
+  classDef obs fill:#6d28d9,stroke:#4c1d95,color:#ffffff,stroke-width:1px
+  classDef notify fill:#b91c1c,stroke:#7f1d1d,color:#ffffff,stroke-width:1px
+  classDef future fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 ---
