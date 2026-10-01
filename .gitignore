@@ -149,6 +149,14 @@ p*_scratch/
 
 # Allow tracking agent skills
 !.agents/skills/
+.agents/skills/ui-ux-pro-max/data/
+.agents/skills/ui-ux-pro-max/references/
+.agents/skills/ui-ux-pro-max/scripts/
+.agents/skills/frontend-design/
+
+# Spikes and prototype directories
+spikes/
+services/factory-twin-3d-next/
 
 # Additional AI/Audit Clutter
 .cursor/
