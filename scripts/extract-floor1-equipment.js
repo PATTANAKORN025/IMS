@@ -735,7 +735,7 @@ function main() {
       // abstraction, and NO GEOMETRY: there is no display centre, no display
       // angle, no display size and no display polygon, here or on the wire.
       // The renderer generates four corners from the record's own position,
-      // rotation_deg and footprint. See docs/equipment-display-geometry.md.
+      // rotation_deg and footprint. See docs/eap/floor1/equipment-display-geometry.md.
       // The block's own body axis, bounded. Beyond the limit the geometry is
       // saying something the INSERT does not, and the rule is to say so rather
       // than to turn the machine: the CAD rotation is preserved and the record

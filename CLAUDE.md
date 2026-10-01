@@ -10,12 +10,15 @@ IMS (Industrial Monitoring System) — an OT/IT telemetry platform. It is a Dock
 
 ## Commands
 
-Day-to-day operations go through `make`. **The Makefile is mixed-shell, not portable across the board**: only `verify` branches on `$(OS)`. `doctor` uses cmd-style `2>NUL`; `deploy-flows` needs `jq` plus bash process substitution `<(...)`; `backup`, `restore`, `test-load`, `snapshot-flows` need a POSIX shell. On Windows, run those from Git Bash.
+Day-to-day operations go through `make`; `make` alone prints every target with its description (`scripts/make-help.js` reads the `## ` comments). `verify` and `backup` branch on `$(OS)` and run the PowerShell script on Windows. `restore`, `test-load`, `test-visual-ldi` and `snapshot-flows` need a POSIX shell: on Windows, run them from Git Bash.
 
 | Command | What it does |
 | --- | --- |
+| `make` / `make help` | List every target |
 | `make doctor` | Check prerequisites (docker, compose, node) |
-| `make up` | `build-flows` then `docker compose up -d` on the base file only |
+| `make check` | The full pre-commit gate (`scripts/pre-commit.js`) |
+| `make check-env` | Strict `.env` check: missing required keys, public example values |
+| `make up` | `build-flows`, `.env` check, then `docker compose up -d` on the base file only |
 | `make up-prod` | Start with `docker-compose.prod.yaml` overlay (production resource limits) |
 | `make down` / `make restart` / `make logs` | Stop / restart core containers / tail Node-RED logs |
 | `make verify` | Full health check — containers, DB, pipeline, alerts |
@@ -24,10 +27,10 @@ Day-to-day operations go through `make`. **The Makefile is mixed-shell, not port
 | `make deploy-flows` | POST merged flows to Node-RED at `127.0.0.1:1880` |
 | `make snapshot-flows` | Back up `flows.json` to `backups/` before a deploy |
 | `make validate-dashboards` | Grep dashboards for corrupted hex codes |
-| `make test-unit` | The four core parser/boundary unit tests |
+| `make test-unit` | Every `tests/unit/*.test.js` |
 | `make test-load` | K6 stress test (`tests/k6/pipeline-stress.js`) |
 | `make test-visual` / `make test-visual-ldi` | Playwright dashboard screenshot regression |
-| `make backup` / `make restore FILE=<path>` | DB dump / restore |
+| `make backup` / `make restore FILE=<path>` | `.sql.gz` DB dump to `backups/` / restore |
 
 ### Running a single test
 
@@ -55,7 +58,7 @@ Other profiles: `security` (`--full`), `load`, `dr`. A profile never runs a cate
 
 ### Pre-commit / CI
 
-`.husky/pre-commit` runs `node scripts/pre-commit.js`: the unit tests, the `tests/lint/` linters, JSON validation of every dashboard, and flow JSON validation. `.github/workflows/ci.yml` runs roughly the same set plus gitleaks, compose validation, Prometheus config/rule lint, and the private-data leak scanner. **Both hardcode individual test paths** — a new file in `tests/unit/` is not picked up automatically; add it to `scripts/pre-commit.js` and `.github/workflows/ci.yml`. This has already drifted: `factory-twin-predictive`, `factory-twin-spc`, `floor1-cad-blocks` and `floor1-cad-rings` are referenced by neither. Commit messages are conventional-commit linted (`commitlint.config.js`).
+`.husky/pre-commit` runs `node scripts/pre-commit.js`: the unit tests, the `tests/lint/` linters, JSON validation of every dashboard, and flow JSON validation. `.github/workflows/ci.yml` runs roughly the same set plus gitleaks, compose validation, Prometheus config/rule lint, and the private-data leak scanner. `scripts/pre-commit.js` lists the unit tests by name with a label, then runs any `tests/unit/*.test.js` it has not run yet, so a new unit test is picked up without registering it. `tests/lint/` linters are still listed by hand: add a new one to `scripts/pre-commit.js` (and to `ci.yml` only if it must also run outside the gate job). Commit messages are conventional-commit linted (`commitlint.config.js`).
 
 ## Architecture
 

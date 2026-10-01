@@ -58,7 +58,7 @@ phase's own instruction.
 
 ## Phase 3 — EAP positioning
 
-Already satisfied, `docs/eap-floor1-spatial-registration.md`'s own
+Already satisfied, `docs/eap/floor1/eap-floor1-spatial-registration.md`'s own
 measured result: 40 cells DIRECT/STRUCTURAL (real CAD world coordinates),
 167 SET_LEVEL (a zone region, not an individual position), 3 neither. No
 survey-grade claim is made for the 167 -- their `spatial_evidence` field

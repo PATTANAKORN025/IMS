@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * IMS Pre-commit Hook
- * Runs unit tests and JSON validation before every commit
- * Install: copy to .git/hooks/pre-commit and make executable
+ * Runs unit tests, linters and JSON validation before every commit.
+ * Wired up by husky (.husky/pre-commit); CI and `make check` run it too.
  */
 
 const { execSync } = require('child_process');
@@ -10,8 +10,11 @@ const fs = require('fs');
 const path = require('path');
 
 let failed = false;
+const ranUnitTests = new Set();
 
 function run(label, cmd, timeout = 30000) {
+  const unit = cmd.match(/tests\/unit\/([\w.-]+\.test\.js)/);
+  if (unit) ranUnitTests.add(unit[1]);
   try {
     console.log(`  Running: ${label}`);
     execSync(cmd, { stdio: 'pipe', timeout });
@@ -89,6 +92,15 @@ run("Factory Twin SPC Tests", "node tests/unit/factory-twin-spc.test.js");
 run("Floor 1 CAD Block Transformation Tests", "node tests/unit/floor1-cad-blocks.test.js");
 run("Floor 1 CAD Ring Boundary Tests", "node tests/unit/floor1-cad-rings.test.js");
 
+// Any tests/unit/*.test.js not listed above still runs, so a new test can never
+// be skipped by forgetting to register it here (four were, until 2026-10).
+// alarm-api-server.test.js needs its service's dependencies and goes through
+// run-alarm-api-tests.js above.
+for (const f of fs.readdirSync(path.join('tests', 'unit')).filter((f) => f.endsWith('.test.js')).sort()) {
+  if (ranUnitTests.has(f) || f === 'alarm-api-server.test.js') continue;
+  run(`Unit (unregistered): ${f}`, `node tests/unit/${f}`, 120000);
+}
+
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");
 run("Alarm Sync Linter", "node tests/lint/alarm-sync-linter.js");
@@ -119,10 +131,28 @@ if (fs.existsSync(dashDir)) {
   }
 }
 
-// 3. Validate Node-RED flow JSON
-const flowFile = 'flows-ubuntu.json';
-if (fs.existsSync(flowFile)) {
-  run(`JSON: ${flowFile}`, `node -e "JSON.parse(require('fs').readFileSync('${flowFile}', 'utf8'))"`);
+// 3. Validate the Node-RED flow sources (nodered_data/flows/*.json are the
+// source of truth; flows.json is built from them): each parses to an array and
+// no node id appears twice across them.
+const flowDir = path.join('nodered_data', 'flows');
+if (fs.existsSync(flowDir)) {
+  const seen = new Map();
+  for (const f of fs.readdirSync(flowDir).filter((f) => f.endsWith('.json')).sort()) {
+    const label = `Flow JSON: ${f}`;
+    try {
+      const nodes = JSON.parse(fs.readFileSync(path.join(flowDir, f), 'utf8'));
+      if (!Array.isArray(nodes)) throw new Error('not an array');
+      for (const n of nodes) {
+        if (!n.id) continue;
+        if (seen.has(n.id)) throw new Error(`duplicate node id ${n.id} (also in ${seen.get(n.id)})`);
+        seen.set(n.id, f);
+      }
+      console.log(`  PASS  ${label}`);
+    } catch (e) {
+      console.error(`  FAIL  ${label}: ${e.message}`);
+      failed = true;
+    }
+  }
 }
 
 // 4. Check for hardcoded secrets

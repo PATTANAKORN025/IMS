@@ -108,8 +108,8 @@ completeness, not because the simulation will produce it).
 **No manual redraw performed or needed.** AUTO mode's real screenshot
 shows the actual CAD-extracted walls, columns and door openings from
 `Floor1.dwg`/`.dxf` (via the existing, unchanged `/api/floor-geometry`
-pipeline — the same one `docs/eap-floor1-spatial-registration.md`/
-`docs/eap-operational-node-reconciliation-floor1.md` already validated
+pipeline — the same one `docs/eap/floor1/eap-floor1-spatial-registration.md`/
+`docs/eap/floor1/eap-operational-node-reconciliation-floor1.md` already validated
 in prior phases). The zone-region overlays (A-K lettered boxes) sit
 inside real walls, at positions consistent with the reference image's
 own relative arrangement (see table above) — confirming the prior

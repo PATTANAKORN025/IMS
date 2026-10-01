@@ -213,7 +213,7 @@ function main() {
       footprint_fill: null,
       footprint_note: 'RECOVERED: position borrowed from floor1-machine-nodes.json '
         + '(drawn-geometry method), not re-measured by this pass. See '
-        + 'docs/eap-floor1-spatial-registration.md and commit 8f6a6e5.',
+        + 'docs/eap/floor1/eap-floor1-spatial-registration.md and commit 8f6a6e5.',
       unresolved_reason: hasFootprint ? null : 'NO_DRAWN_EXTENT_IN_CENSUS',
       measurement: null,
       confidence: typeof node.confidence === 'string' ? node.confidence.toLowerCase() : 'medium',
