@@ -38,7 +38,7 @@ flowchart TB
 
  subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
   DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
-  NR --> SNMPDATA[("public.snmp_data\nhypertable, 1d chunks")]
+  NR --> SNMPDATA[("public.sys_metrics & net_metrics\nhypertables, 1d chunks")]
  end
 
  subgraph EAP ["Equipment Integration (Drilling & VCP)"]

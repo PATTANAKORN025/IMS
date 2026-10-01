@@ -144,7 +144,7 @@ flowchart TD
       CB["ระบบตัดวงจร Circuit Breaker\n(สถานะ: CLOSED / OPEN / HALF_OPEN)"]
       FORK["แยกการโพล fork_5_ways\n(CPU, Net, Storage, Temp, LDI)"]
       PARSER["พาร์สเซอร์ sre_parser v10\n(เก็บบริบทรายอุปกรณ์, O(N))"]
-      BATCH_SNMP["ตัวสร้าง SQL ชุดข้อมูล SNMP\n(INSERT INTO public.snmp_data...)"]
+      BATCH_SNMP["ตัวสร้าง SQL ชุดข้อมูล SNMP\n(INSERT INTO public.sys_metrics & net_metrics...)"]
     end
 
     subgraph FlowLdiIngest ["ldi_ingestion.json"]
@@ -170,7 +170,7 @@ flowchart TD
 
   subgraph PersistenceTier ["ระบบฐานข้อมูล"]
     PGB["PgBouncer (:5432)\nTransaction Pooling | SCRAM-SHA-256"]
-    TSDB[("TimescaleDB (:5432)\npublic.snmp_data\npublic.ldi_data\npublic.ingest_staging")]
+    TSDB[("TimescaleDB (:5432)\npublic.sys_metrics & net_metrics\npublic.ldi_data\npublic.ingest_staging")]
   end
 
   TMR --> REG --> CB --> FORK --> PARSER --> BATCH_SNMP --> PGB

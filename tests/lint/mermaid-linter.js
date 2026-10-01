@@ -52,6 +52,7 @@ const FORBIDDEN_TERMS = [
   { term: ':6432', reason: 'Obsolete PgBouncer internal port; real port is :5432' },
   { term: '120s cooldown', reason: 'Obsolete circuit breaker cooldown; real cooldown is 300s (5 minutes)' },
   { term: '120-second', reason: 'Obsolete circuit breaker cooldown; real cooldown is 300s (5 minutes)' },
+  { term: 'snmp_data', reason: 'Fictitious table; real tables are sys_metrics and net_metrics' },
 ];
 
 function walk(dir, fileList = []) {

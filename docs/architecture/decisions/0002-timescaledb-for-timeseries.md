@@ -93,9 +93,9 @@ flowchart TD
 (Transaction Mode, port 5432, AUTH: scram-sha-256)"]
   end
 
-  subgraph STORAGE["TimescaleDB Tier (public schema)"]
+  subgraph STORAGE["TimescaleDB Tier (public schema & eap_backup)"]
     HT["Hypertables
-(ldi_data, snmp_data)
+(ldi_data, sys_metrics, net_metrics)
 Chunk Interval: 1 day"]
     CAGG["Continuous Aggregates (CAGGs)
 (1m, 15m, 1h Rollups)
@@ -105,6 +105,8 @@ Segmentby: machine_id / device_id
 Orderby: time DESC"]
     RET["Retention Policy Engine
 Automatic drop_chunks > 90d / 180d"]
+    EAP_DB[("Secondary DB: eap_backup
+(Drilling & VCP Datasets)")]
   end
 
   subgraph CLIENTS["Consumer & Visualization Layer"]
@@ -113,19 +115,20 @@ Sub-second CAGG Analytical Queries"]
     ALARM["Alarm API & Webhooks
 Transactional State Transitions"]
     PROM["Prometheus / Alertmanager
-Storage Exporter & Health Scrapes"]
+Scrapes Node-RED :1880/metrics"]
   end
 
-  INGEST -->|Batched SQL Inserts| PGB
-  EAP -->|Batched SQL Inserts| PGB
+  NR -->|Batched SQL Inserts| PGB
+  EAP -.->|Direct Sync| EAP_DB
   PGB --> HT
   HT --> CAGG
   HT --> COMP
   COMP --> RET
   GRAF -->|Fast Analytical Queries| CAGG
   GRAF -->|Real-time Snapshot| HT
+  GRAF -.->|Query drilling-timescaledb| EAP_DB
   ALARM <-->|ACID Transactions| HT
-  PROM -->|Metrics| STORAGE
+  NR -->|Exposes /metrics| PROM
 ```
 
 ---

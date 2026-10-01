@@ -93,9 +93,9 @@ flowchart TD
 (Transaction Mode, port 5432, AUTH: scram-sha-256)"]
   end
 
-  subgraph STORAGE["ชั้น TimescaleDB (public schema)"]
+  subgraph STORAGE["ชั้น TimescaleDB (public schema & eap_backup)"]
     HT["Hypertables
-(ldi_data, snmp_data)
+(ldi_data, sys_metrics, net_metrics)
 Chunk Interval: 1 day"]
     CAGG["Continuous Aggregates (CAGGs)
 (1m, 15m, 1h Rollups)
@@ -105,6 +105,8 @@ Segmentby: machine_id / device_id
 Orderby: time DESC"]
     RET["Retention Policy Engine
 ลบข้อมูลเก่าอัตโนมัติ drop_chunks > 90d / 180d"]
+    EAP_DB[("Secondary DB: eap_backup
+(ชุดข้อมูล Drilling & VCP)")]
   end
 
   subgraph CLIENTS["ชั้นการแสดงผลและการแจ้งเตือน"]
@@ -113,19 +115,20 @@ Orderby: time DESC"]
     ALARM["Alarm API & Webhooks
 อัปเดตสถานะการแจ้งเตือนแบบ ACID"]
     PROM["Prometheus / Alertmanager
-ดึงสถานะและความสมบูรณ์ของฐานข้อมูล"]
+ดึงเมทริกซ์จาก Node-RED :1880/metrics"]
   end
 
-  INGEST -->|Batched SQL Inserts| PGB
-  EAP -->|Batched SQL Inserts| PGB
+  NR -->|Batched SQL Inserts| PGB
+  EAP -.->|Direct Sync| EAP_DB
   PGB --> HT
   HT --> CAGG
   HT --> COMP
   COMP --> RET
   GRAF -->|Fast Analytical Queries| CAGG
   GRAF -->|Real-time Snapshot| HT
+  GRAF -.->|Query drilling-timescaledb| EAP_DB
   ALARM <-->|ACID Transactions| HT
-  PROM -->|Metrics| STORAGE
+  NR -->|Exposes /metrics| PROM
 ```
 
 ---

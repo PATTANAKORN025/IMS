@@ -38,7 +38,7 @@ flowchart TB
 
  subgraph LEGACY ["ไปป์ไลน์เดิม SNMP / โครงสร้างพื้นฐาน"]
   DEV["เซิร์ฟเวอร์จริง 2 เครื่อง\n+ ตัวจำลอง SNMP"] -->|"SNMP v2c, โพลทุก 30 วินาที"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
-  NR --> SNMPDATA[("public.snmp_data\nไฮเปอร์เทเบิล, ชิ้นละ 1 วัน")]
+  NR --> SNMPDATA[("public.sys_metrics & net_metrics\nไฮเปอร์เทเบิล, ชิ้นละ 1 วัน")]
  end
 
  subgraph EAP ["การเชื่อมต่อเครื่องจักร (งานเจาะ CNC & ชุบ VCP)"]

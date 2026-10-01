@@ -38,7 +38,7 @@ flowchart TB
 
  subgraph LEGACY ["传统 SNMP / 基础设施流水线"]
   DEV["2 台真实服务器\n+ SNMP 模拟器"] -->|"SNMP v2c, 30s 轮询"| NR["ingestion.json\nfork_5_ways 采集器 -> sre_parser"]
-  NR --> SNMPDATA[("public.snmp_data\n超表，1 天数据块")]
+  NR --> SNMPDATA[("public.sys_metrics & net_metrics\n超表，1 天数据块")]
  end
 
  subgraph EAP ["设备集成 (数控钻孔与 VCP 电镀)"]

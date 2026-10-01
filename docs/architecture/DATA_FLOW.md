@@ -46,7 +46,7 @@ flowchart TB
 
   subgraph STORAGE["4. TimescaleDB Storage Tier (public schema)"]
     subgraph HYPER["Raw Hypertables (1-day chunking)"]
-      HT_SYS[("snmp_data")]
+      HT_SYS[("sys_metrics & net_metrics")]
       HT_LDI[("ldi_data & ldi_alarm_log")]
       HT_STG[("ingest_staging")]
     end

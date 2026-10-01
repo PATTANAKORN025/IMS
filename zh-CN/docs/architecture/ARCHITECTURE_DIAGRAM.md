@@ -144,7 +144,7 @@ flowchart TD
       CB["熔断器状态机\n(状态: CLOSED / OPEN / HALF_OPEN)"]
       FORK["五路并行分支 fork_5_ways\n(CPU, 网络, 存储, 温度, LDI)"]
       PARSER["数据解析器 sre_parser v10\n(维护单机上下文, O(N) 复杂度)"]
-      BATCH_SNMP["SNMP 批量 SQL 生成器\n(INSERT INTO public.snmp_data...)"]
+      BATCH_SNMP["SNMP 批量 SQL 生成器\n(INSERT INTO public.sys_metrics & net_metrics...)"]
     end
 
     subgraph FlowLdiIngest ["ldi_ingestion.json"]
@@ -170,7 +170,7 @@ flowchart TD
 
   subgraph PersistenceTier ["数据持久化层"]
     PGB["PgBouncer (:5432)\n事务模式连接池 | SCRAM-SHA-256"]
-    TSDB[("TimescaleDB (:5432)\npublic.snmp_data\npublic.ldi_data\npublic.ingest_staging")]
+    TSDB[("TimescaleDB (:5432)\npublic.sys_metrics & net_metrics\npublic.ldi_data\npublic.ingest_staging")]
   end
 
   TMR --> REG --> CB --> FORK --> PARSER --> BATCH_SNMP --> PGB

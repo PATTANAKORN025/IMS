@@ -22,7 +22,7 @@ flowchart TD
 
   subgraph PersistenceLayer ["Persistence Tier"]
     PGB["PgBouncer Pooler (ims-pgbouncer :5432)\nTransaction Pooling | AUTH: scram-sha-256"]
-    TSDB[("TimescaleDB (ims-timescaledb :5432)\nHypertables: ldi_data, snmp_data, ldi_alarm_log\nCAGGs: 1m, 15m, 1h, Hourly\nSecondary DB: eap_backup")]
+    TSDB[("TimescaleDB (ims-timescaledb :5432)\nHypertables: ldi_data, sys_metrics, net_metrics, ldi_alarm_log\nCAGGs: 1m, 15m, 1h, Hourly\nSecondary DB: eap_backup")]
     DBMIG["Migration Runner (ims-db-migrate)\nMigrations 001 - 091"]
     ARCH["Observability Archiver\n(ims-observability-archiver)"]
     PGADMIN["PgAdmin 4 (ims-pgadmin4 :5050)\nDatabase Web Management"]

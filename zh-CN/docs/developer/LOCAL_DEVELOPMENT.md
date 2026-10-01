@@ -160,7 +160,7 @@ Node-RED 在系统中承担着高频遥测接入、数据清洗转换与入库�
 ```
 nodered_data/flows/
 ├── alerting.json             # 告警卡片格式化引擎与 LINE / Teams Webhook 投递
-├── ingestion.json            # SNMP 轮询采集、设备注册表缓存、熔断器、snmp_data 写入器
+├── ingestion.json            # SNMP 轮询采集、设备注册表缓存、熔断器、sys/net_metrics 写入器
 ├── ldi_alarm_simulator.json  # 实时越界告警注入与生命周期测试模拟器
 ├── ldi_ingestion.json        # HTTP /ldi-telemetry 校验、预写暂存与 ldi_data 批量写入
 └── ldi_simulator.json        # 10 台 LDI 曝光机实时随机过程遥测模拟器

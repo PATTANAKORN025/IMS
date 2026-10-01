@@ -46,7 +46,7 @@ flowchart TB
 
   subgraph REGISTRY["ระบบลงทะเบียนเครื่องจักรและฐานข้อมูล"]
     DEV[("public.devices\nแคตตาล็อกเครื่องจักรหลัก")]
-    HT_SYS[("public.snmp_data\nตาราง Hypertable ของ SNMP")]
+    HT_SYS[("public.sys_metrics & net_metrics\nตาราง Hypertable ของ SNMP")]
     HT_LDI[("public.ldi_data\nตาราง Hypertable ของ LDI")]
     EAP_DB[("eap_backup DB\nmachine_event, vcp_upp, vcp_alarm")]
     ALARM[("พจนานุกรมและประวัติการแจ้งเตือน\n(ldi_alarm_ms_code และ log)")]

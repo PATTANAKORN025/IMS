@@ -93,9 +93,9 @@ flowchart TD
 (事务模式, 端口 5432, AUTH: scram-sha-256)"]
   end
 
-  subgraph STORAGE["TimescaleDB 核心存储层 (public schema)"]
+  subgraph STORAGE["TimescaleDB 核心存储层 (public schema & eap_backup)"]
     HT["超表集群 Hypertables
-(ldi_data, snmp_data)
+(ldi_data, sys_metrics, net_metrics)
 切片时间跨度: 1 天"]
     CAGG["持续聚合层 CAGGs
 (1m, 15m, 1h 汇总物化视图)
@@ -105,6 +105,8 @@ flowchart TD
 排序依据: time DESC"]
     RET["生命周期自动清理引擎
 自动执行 drop_chunks > 90d / 180d"]
+    EAP_DB[("Secondary DB: eap_backup
+(CNC 钻孔与 VCP 电镀数据集)")]
   end
 
   subgraph CLIENTS["数据消费与呈现层"]
@@ -113,19 +115,20 @@ flowchart TD
     ALARM["报警生命周期 API 与 Webhook
 ACID 事务级状态变更"]
     PROM["Prometheus / Alertmanager
-数据库运行状态指标拉取"]
+拉取 Node-RED :1880/metrics"]
   end
 
-  INGEST -->|批量 SQL 写入| PGB
-  EAP -->|批量 SQL 写入| PGB
+  NR -->|批量 SQL 写入| PGB
+  EAP -.->|直连同步| EAP_DB
   PGB --> HT
   HT --> CAGG
   HT --> COMP
   COMP --> RET
   GRAF -->|高性能分析查询| CAGG
   GRAF -->|实时切片查询| HT
+  GRAF -.->|查询 drilling-timescaledb| EAP_DB
   ALARM <-->|ACID 事务操作| HT
-  PROM -->|状态指标| STORAGE
+  NR -->|暴露 /metrics| PROM
 ```
 
 ---

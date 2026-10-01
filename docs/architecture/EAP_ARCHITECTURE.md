@@ -46,7 +46,7 @@ flowchart TB
 
   subgraph REGISTRY["Unified Device Registry & Storage Tier"]
     DEV[("public.devices\nMaster Equipment Catalog")]
-    HT_SYS[("public.snmp_data\nSNMP Telemetry Hypertable")]
+    HT_SYS[("public.sys_metrics & net_metrics\nSNMP Telemetry Hypertables")]
     HT_LDI[("public.ldi_data\nLDI Telemetry Hypertable")]
     EAP_DB[("eap_backup DB\nmachine_event, vcp_upp, vcp_alarm")]
     ALARM[("Alarm Master & Event Logs\n(ldi_alarm_ms_code & ldi_alarm_log)")]

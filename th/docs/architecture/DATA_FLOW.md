@@ -46,7 +46,7 @@ flowchart TB
 
   subgraph STORAGE["4. ชั้นจัดเก็บข้อมูล TimescaleDB (สคีมา public เท่านั้น)"]
     subgraph HYPER["ตาราง Hypertables ข้อมูลดิบ (แบ่ง Chunk ละ 1 วัน)"]
-      HT_SYS[("snmp_data")]
+      HT_SYS[("sys_metrics & net_metrics")]
       HT_LDI[("ldi_data & ldi_alarm_log")]
       HT_STG[("ingest_staging")]
     end

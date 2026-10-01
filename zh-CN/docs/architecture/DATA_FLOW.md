@@ -46,7 +46,7 @@ flowchart TB
 
   subgraph STORAGE["4. TimescaleDB 核心存储层 (仅限 public schema)"]
     subgraph HYPER["原始高频超表群 Hypertables (1 天切片时间跨度)"]
-      HT_SYS[("snmp_data")]
+      HT_SYS[("sys_metrics & net_metrics")]
       HT_LDI[("ldi_data 与 ldi_alarm_log")]
       HT_STG[("ingest_staging")]
     end

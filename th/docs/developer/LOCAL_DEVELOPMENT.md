@@ -160,7 +160,7 @@ Node-RED ทำหน้าที่เป็นหัวใจหลักใ�
 ```
 nodered_data/flows/
 ├── alerting.json             # จัดรูปแบบข้อความแจ้งเตือนและส่งต่อไปยัง LINE / Teams Webhook
-├── ingestion.json            # โพล SNMP, แคชทะเบียนอุปกรณ์, ระบบตัดวงจร Circuit Breaker, บันทึก snmp_data
+├── ingestion.json            # โพล SNMP, แคชทะเบียนอุปกรณ์, ระบบตัดวงจร Circuit Breaker, บันทึก sys/net_metrics
 ├── ldi_alarm_simulator.json  # ระบบจำลองสถานการณ์ความผิดปกติและการทดสอบวงจรแจ้งเตือน LDI
 ├── ldi_ingestion.json        # ตรวจสอบสิทธิ์และสคีมา /ldi-telemetry, บันทึกลง staging และ ldi_data
 └── ldi_simulator.json        # ระบบจำลองข้อมูลโทรมาตรสดแบบสโตแคสติกสำหรับ 10 เครื่อง LDI

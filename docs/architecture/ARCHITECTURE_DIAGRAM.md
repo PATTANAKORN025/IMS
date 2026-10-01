@@ -144,7 +144,7 @@ flowchart TD
       CB["Circuit Breaker Engine\n(State: CLOSED / OPEN / HALF_OPEN)"]
       FORK["fork_5_ways Walker Dispatch\n(CPU, Net, Storage, Temp, LDI)"]
       PARSER["sre_parser v10\n(Per-device context, O(N) parsing)"]
-      BATCH_SNMP["Batch SQL Builder\n(INSERT INTO public.snmp_data...)"]
+      BATCH_SNMP["Batch SQL Builder\n(INSERT INTO public.sys_metrics & net_metrics...)"]
     end
 
     subgraph FlowLdiIngest ["ldi_ingestion.json"]
@@ -170,7 +170,7 @@ flowchart TD
 
   subgraph PersistenceTier ["Persistence Tier"]
     PGB["PgBouncer (:5432)\nTransaction Pooling | SCRAM-SHA-256"]
-    TSDB[("TimescaleDB (:5432)\npublic.snmp_data\npublic.ldi_data\npublic.ingest_staging")]
+    TSDB[("TimescaleDB (:5432)\npublic.sys_metrics & net_metrics\npublic.ldi_data\npublic.ingest_staging")]
   end
 
   TMR --> REG --> CB --> FORK --> PARSER --> BATCH_SNMP --> PGB
@@ -345,7 +345,7 @@ Illustrates the chunking boundaries, continuous aggregate hierarchies, and lifec
 flowchart TD
   subgraph Ingestion ["Ingestion Level"]
     RAW_LDI["public.ldi_data\n(Hypertable, 1-Day Chunks)"]
-    RAW_INFRA["public.snmp_data\n(Hypertable, 1-Day Chunks)"]
+    RAW_INFRA["public.sys_metrics & net_metrics\n(Hypertables, 1-Day Chunks)"]
     RAW_ALARM["public.ldi_alarm_log\n(Hypertable, 7-Day Chunks)"]
   end
 

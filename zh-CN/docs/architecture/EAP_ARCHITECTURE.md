@@ -46,7 +46,7 @@ flowchart TB
 
   subgraph REGISTRY["统一设备注册中心与存储层"]
     DEV[("public.devices\n设备主元数据大表")]
-    HT_SYS[("public.snmp_data\nSNMP 遥测时序超表")]
+    HT_SYS[("public.sys_metrics & net_metrics\nSNMP 遥测时序超表")]
     HT_LDI[("public.ldi_data\nLDI 光刻时序超表")]
     EAP_DB[("eap_backup DB\nmachine_event, vcp_upp, vcp_alarm")]
     ALARM[("报警主字典与事件流水\n(ldi_alarm_ms_code 与 log)")]
