@@ -41,11 +41,11 @@ dedicated test suite:
 
 | Existing document | What it already establishes |
 |---|---|
-| `docs/eap-operational-node-reconciliation-floor1.md` | The reference layout's 210 cells vs. the CAD drawing's 331 raw candidates — why the two numbers differ, zone-by-zone, with every special case and duplicate named |
-| `docs/eap-floor1-node-model.md` | The canonical 331→210→171 entity model (CAD candidates / EAP cells / machine units) as first-class, never-blended counts; the private JSON contract |
-| `docs/eap-floor1-spatial-registration.md` | Exactly which cells can reach true CAD world coordinates (40), which reach only a world region (167), and which reach neither (3) — no transform accepted without a residual test |
-| `docs/eap-floor1-operational-footprint.md` | The wire contract: which frame each cell draws in, what a renderer may and may not do at each evidence level, enforced by `tests/lint/eap-node-model-contract.js` |
-| `docs/eap-operational-map-renderer.md` | Why the renderer reads the node model instead of the physical CAD equipment pipeline, and what it draws (210 cells, 2 instanced batches, 3 draw calls) |
+| `docs/eap/floor1/eap-operational-node-reconciliation-floor1.md` | The reference layout's 210 cells vs. the CAD drawing's 331 raw candidates — why the two numbers differ, zone-by-zone, with every special case and duplicate named |
+| `docs/eap/floor1/eap-floor1-node-model.md` | The canonical 331→210→171 entity model (CAD candidates / EAP cells / machine units) as first-class, never-blended counts; the private JSON contract |
+| `docs/eap/floor1/eap-floor1-spatial-registration.md` | Exactly which cells can reach true CAD world coordinates (40), which reach only a world region (167), and which reach neither (3) — no transform accepted without a residual test |
+| `docs/eap/floor1/eap-floor1-operational-footprint.md` | The wire contract: which frame each cell draws in, what a renderer may and may not do at each evidence level, enforced by `tests/lint/eap-node-model-contract.js` |
+| `docs/eap/floor1/eap-operational-map-renderer.md` | Why the renderer reads the node model instead of the physical CAD equipment pipeline, and what it draws (210 cells, 2 instanced batches, 3 draw calls) |
 
 **This audit's own job is narrower and different**: verify these five
 phases' conclusions still hold today (they do — every cited test still

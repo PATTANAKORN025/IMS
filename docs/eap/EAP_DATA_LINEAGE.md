@@ -35,9 +35,9 @@ second extraction pipeline.
 ```text
 Reference SCADA/EAP layout image (a snapshot of another system, on the day it was captured)
   → manual/tooled placement + reconciliation against the Floor 1 CAD drawing's
-    331 raw machine candidates (docs/eap-operational-node-reconciliation-floor1.md)
+    331 raw machine candidates (docs/eap/floor1/eap-operational-node-reconciliation-floor1.md)
   → floor1-eap-node-model.json (private: eap_cells[], machine_units[], cad_candidates[],
-    spatial_registration; docs/eap-floor1-node-model.md's own canonical schema)
+    spatial_registration; docs/eap/floor1/eap-floor1-node-model.md's own canonical schema)
   → lib/eap-map.js's project() (server.js:1785's route handler)
   → GET /api/eap-map (whitelisted wire projection -- private CAD handles/millimetres/
     block names NEVER cross this boundary, lib/eap-map.js:14-21)
@@ -49,13 +49,13 @@ Reference SCADA/EAP layout image (a snapshot of another system, on the day it wa
 ## 3. Cell position (the two-frame split -- this phase's own "no fabricated survey coordinates" requirement, already enforced)
 
 Every cell has an `EAP_LAYOUT_FRAME` footprint (schematic, non-metric,
-anisotropic -- `docs/eap-floor1-operational-footprint.md`'s own contract).
+anisotropic -- `docs/eap/floor1/eap-floor1-operational-footprint.md`'s own contract).
 **Only** cells with real CAD-backed identity or a residual-tested
 structural registration additionally get a `FLOOR1_WORLD_M` footprint:
 
 ```text
 CAD candidate's own measured body + INSERT transform (Floor1.dxf)
-  → spatial registration test (docs/eap-floor1-spatial-registration.md:
+  → spatial registration test (docs/eap/floor1/eap-floor1-spatial-registration.md:
     40 cells DIRECT/STRUCTURAL, 167 SET_LEVEL/zone-region-only, 3 neither)
   → cad_world_position (CAD_WORLD_MM, private, never crosses the wire)
   → lib/eap-map.js's projectWorldFootprint() (line 348): applies the
