@@ -1,7 +1,14 @@
 -- Migration 093: Ingest Staging Replay Worker Function
 -- Idempotent: safe to re-run
--- Provides atomic, durable, and idempotent replay of pending batches in ingest_staging
+-- Provides atomic, durable, precision-safe replay of pending batches in ingest_staging
 -- (resolves the open gap from migration 081 where stalled batches were staged but never replayed).
+--
+-- Features:
+--   1. Full 64-bit double precision casting to eliminate IEEE 754 float4 precision distortion.
+--   2. Age guard (staged_at < clock_timestamp() - INTERVAL '30 seconds') to avoid mid-insert races.
+--   3. Retry attempt ceiling (attempts < 5); transitions failing batches to 'dead_letter'.
+--   4. Delete on success to prevent unbounded table growth.
+--   5. Strict validation rejecting unknown target_table values.
 
 CREATE OR REPLACE FUNCTION public.replay_staged_batches(p_limit INT DEFAULT 500)
 RETURNS TABLE (
@@ -22,6 +29,8 @@ BEGIN
         SELECT id, target_table, payload
         FROM public.ingest_staging
         WHERE status = 'pending'
+          AND staged_at < (clock_timestamp() - INTERVAL '30 seconds')
+          AND attempts < 5
         ORDER BY staged_at ASC
         LIMIT p_limit
         FOR UPDATE SKIP LOCKED
@@ -44,11 +53,15 @@ BEGIN
                     r_rec.je_1, r_rec.je_2, r_rec.je_3, r_rec.je_4, r_rec.pe_setting, r_rec.je_setting, r_rec.log_id,
                     clock_timestamp()
                 FROM jsonb_to_recordset(r.payload) AS r_rec(
-                    time text, factory text, process text, eqp_id text, mo text, fpn text, layer_name text, resist_dosage real, scale_x real, scale_y real,
-                    temperature real, humidity real, scan_speed real, air_vacuum real, thickness real, board_no int, total_board int,
-                    total_time real, filmno text, board_id text, resist text, state boolean, scale_mode text,
-                    pe_1 real, pe_2 real, pe_3 real, pe_4 real, pe_5 real, pe_6 real,
-                    je_1 real, je_2 real, je_3 real, je_4 real, pe_setting real, je_setting real, log_id text
+                    time text, factory text, process text, eqp_id text, mo text, fpn text, layer_name text,
+                    resist_dosage double precision, scale_x double precision, scale_y double precision,
+                    temperature double precision, humidity double precision, scan_speed double precision,
+                    air_vacuum double precision, thickness double precision, board_no int, total_board int,
+                    total_time double precision, filmno text, board_id text, resist text, state boolean, scale_mode text,
+                    pe_1 double precision, pe_2 double precision, pe_3 double precision,
+                    pe_4 double precision, pe_5 double precision, pe_6 double precision,
+                    je_1 double precision, je_2 double precision, je_3 double precision,
+                    je_4 double precision, pe_setting double precision, je_setting double precision, log_id text
                 )
                 ON CONFLICT (log_id, "time") DO NOTHING;
                 GET DIAGNOSTICS v_count = ROW_COUNT;
@@ -62,15 +75,18 @@ BEGIN
                     r_rec.logid, r_rec.logdate::timestamptz, r_rec.errorcode, r_rec.errortime::timestamptz, r_rec.equipmentid,
                     r_rec.factory, r_rec.process, r_rec.related_log_id, r_rec.link_basis, clock_timestamp()
                 FROM jsonb_to_recordset(r.payload) AS r_rec(
-                    logid text, logdate text, errorcode text, errortime text, equipmentid text, factory text, process text, related_log_id text, link_basis text
+                    logid text, logdate text, errorcode text, errortime text, equipmentid text,
+                    factory text, process text, related_log_id text, link_basis text
                 )
                 ON CONFLICT (logdate, logid) DO NOTHING;
                 GET DIAGNOSTICS v_count = ROW_COUNT;
                 v_alarm_rows := v_alarm_rows + v_count;
+            ELSE
+                RAISE EXCEPTION 'Unknown target_table: %', r.target_table;
             END IF;
 
-            UPDATE public.ingest_staging
-            SET status = 'committed', committed_at = clock_timestamp(), attempts = attempts + 1
+            -- Delete on success to prevent unbounded staging table growth
+            DELETE FROM public.ingest_staging
             WHERE id = r.id;
 
             v_batches := v_batches + 1;
@@ -78,7 +94,9 @@ BEGIN
         EXCEPTION WHEN OTHERS THEN
             v_failed := v_failed + 1;
             UPDATE public.ingest_staging
-            SET attempts = attempts + 1, last_error = SUBSTRING(SQLERRM, 1, 500)
+            SET attempts = attempts + 1,
+                last_error = SUBSTRING(SQLERRM, 1, 500),
+                status = CASE WHEN attempts + 1 >= 5 THEN 'dead_letter' ELSE 'pending' END
             WHERE id = r.id;
         END;
     END LOOP;
@@ -88,4 +106,4 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.replay_staged_batches(INT) IS
-    'Durable replay worker for public.ingest_staging. Replays up to p_limit pending batches with ON CONFLICT DO NOTHING and marks them committed.';
+    'Durable, precision-safe replay worker for public.ingest_staging. Replays up to p_limit pending batches with double precision, age guard, max attempts, and delete on success.';
