@@ -47,7 +47,7 @@ x-resource-large: &resource-large
 services:
   # ── TimescaleDB ───────────────────────────────────────────
   timescaledb:
-    image: timescale/timescaledb:2.29.2-pg16
+    image: timescale/timescaledb:2.30.1-pg16
     container_name: ims-timescaledb
     # parallel query uses /dev/shm; the Docker default of 64 MB is too small for it
     shm_size: 256mb
@@ -405,7 +405,7 @@ services:
 
   # ── Database Migrations (one-shot init container) ──────────
   db-migrate:
-    image: timescale/timescaledb:2.29.2-pg16
+    image: timescale/timescaledb:2.30.1-pg16
     container_name: ims-db-migrate
     restart: "no"
     <<: [*default-hardening, *no-caps]
