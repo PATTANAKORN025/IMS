@@ -495,7 +495,7 @@ IMS/
 │  ├── lib/                    # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
 │  └── settings.js
 ├── postgres/init/              # SQL bootstrap ตอนบูตครั้งแรก + สคริปต์รหัสผ่าน grafana
-├── database/migrations/        # migration แบบเดินหน้าอย่างเดียวตามลำดับเลข (สูงสุด 093) apply โดย db-migrate
+├── database/migrations/        # migration แบบเดินหน้าอย่างเดียวตามลำดับเลข (สูงสุด 094) apply โดย db-migrate
 ├── services/
 │  ├── alarm-api/              # เส้นทางเขียน acknowledge/resolve (Express + pg)
 │  └── factory-twin-3d/        # ดิจิทัลทวินชั้น 1 (Express, lib/*.js + ตัวแสดงผลใน public/)

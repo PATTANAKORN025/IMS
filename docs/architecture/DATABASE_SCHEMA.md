@@ -10,7 +10,7 @@
 > currently reports. Requires the `timescaledb` container to be running
 > and fully migrated.
 >
-> Last generated: 2026-10-02 | Migrations applied: 68 (013-093) | Tables: 13 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
+> Last generated: 2026-10-02 | Migrations applied: 69 (013-094) | Tables: 14 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
 
 ## Tables
 
@@ -26,6 +26,7 @@
 | `ldi_data` | 37 | Yes |
 | `ldi_machine_last_state` | 37 | — |
 | `ldi_metrics` | 10 | Yes |
+| `ldi_spec_limit` | 10 | — |
 | `net_metrics` | 11 | Yes |
 | `schema_migrations` | 4 | — |
 | `sys_metrics` | 15 | Yes |
@@ -34,10 +35,10 @@
 
 | Continuous Aggregate | Materialized Hypertable |
 |---|---|
-| `ldi_data_15m` | `_materialized_hypertable_19` |
-| `ldi_data_1h` | `_materialized_hypertable_20` |
-| `ldi_data_1m` | `_materialized_hypertable_18` |
-| `ldi_data_hourly` | `_materialized_hypertable_17` |
+| `ldi_data_15m` | `_materialized_hypertable_30` |
+| `ldi_data_1h` | `_materialized_hypertable_31` |
+| `ldi_data_1m` | `_materialized_hypertable_29` |
+| `ldi_data_hourly` | `_materialized_hypertable_28` |
 | `ldi_hourly` | `_materialized_hypertable_6` |
 | `net_hourly` | `_materialized_hypertable_5` |
 | `sys_hourly` | `_materialized_hypertable_4` |

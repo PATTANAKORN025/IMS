@@ -495,7 +495,7 @@ IMS/
 │  ├── lib/                    # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
 │  └── settings.js
 ├── postgres/init/              # first-boot bootstrap SQL + grafana password script
-├── database/migrations/        # numbered forward-only migrations (max 093), applied by db-migrate
+├── database/migrations/        # numbered forward-only migrations (max 094), applied by db-migrate
 ├── services/
 │  ├── alarm-api/              # acknowledge/resolve write path (Express + pg)
 │  └── factory-twin-3d/        # Floor 1 digital twin (Express, lib/*.js + public/ viewer)

@@ -119,6 +119,14 @@ test('vacuum and alignment codes both occur', () => {
   assert.ok((byCode['91009'] || 0) > 0, 'no 91009');
   assert.ok(ALIGN.some((c) => byCode[c] > 0), 'no alignment code');
 });
+test('vacuum share reflects primary plant fault mode (>= 15% of alarms)', () => {
+  const vacShare = (byCode['91009'] || 0) / total;
+  assert.ok(vacShare >= 0.15, `vacuum share ${(100 * vacShare).toFixed(1)}%`);
+});
+test('cleanroom environment alarms (91008) are rare (< 5% of alarms)', () => {
+  const envShare = (byCode['91008'] || 0) / total;
+  assert.ok(envShare < 0.05, `environment share ${(100 * envShare).toFixed(1)}%`);
+});
 test('alarm process/factory match the machine telemetry profile', () => {
   const P = JSON.parse(SIM.match(/const P = (\{.*?\});\n/s)[1]);
   for (const a of run.alarms) {

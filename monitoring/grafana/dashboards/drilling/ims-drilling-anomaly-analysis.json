@@ -493,9 +493,18 @@
         },
         "query": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL AND ('All' IN (${factory:sqlstring}) OR equipment_id IN (SELECT mm.equipment_id FROM public.machine_master mm WHERE mm.factory IN (${factory:sqlstring})));",
         "definition": "WITH RECURSIVE t AS ((SELECT equipment_id FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) UNION ALL SELECT (SELECT equipment_id FROM public.machine_event WHERE equipment_id > t.equipment_id AND equipment_id IS NOT NULL ORDER BY equipment_id LIMIT 1) FROM t WHERE t.equipment_id IS NOT NULL) SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT equipment_id AS __text, equipment_id AS __value FROM t WHERE equipment_id IS NOT NULL AND ('All' IN (${factory:sqlstring}) OR equipment_id IN (SELECT mm.equipment_id FROM public.machine_master mm WHERE mm.factory IN (${factory:sqlstring})));",
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "multi": true,
-        "includeAll": false,
+        "includeAll": true,
+        "allValue": "All",
         "refresh": 1,
         "sort": 0,
         "hide": 0,
