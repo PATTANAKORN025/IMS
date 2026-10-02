@@ -600,7 +600,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: this is a live triage queue, not a historical trend -- always shows current state */\nSELECT a.equipmentid AS \"Machine\",\n  m.severity AS \"Severity\",\n  m.alarm_msg AS \"Alarm\",\n  l.logdate AS \"Fired At\",\n  ROUND((EXTRACT(EPOCH FROM (NOW() - l.logdate)) / 60)::NUMERIC, 1) AS \"Waiting (min)\"\nFROM public.ldi_alarm_lifecycle l\nJOIN public.ldi_alarm_log a ON a.logdate = l.logdate AND a.logid = l.logid\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE l.status = 'OPEN'\nORDER BY l.logdate ASC\nLIMIT 20;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: this is a live triage queue, not a historical trend -- always shows current state */\nWITH top_open AS (\n  SELECT logdate, logid\n  FROM public.ldi_alarm_lifecycle\n  WHERE status = 'OPEN'\n  ORDER BY logdate ASC\n  LIMIT 20\n)\nSELECT a.equipmentid AS \"Machine\",\n  m.severity AS \"Severity\",\n  m.alarm_msg AS \"Alarm\",\n  t.logdate AS \"Fired At\",\n  ROUND((EXTRACT(EPOCH FROM (NOW() - t.logdate)) / 60)::NUMERIC, 1) AS \"Waiting (min)\"\nFROM top_open t\nJOIN public.ldi_alarm_log a ON a.logdate = t.logdate AND a.logid = t.logid\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nORDER BY t.logdate ASC;",
           "refId": "A",
           "sql": {
             "columns": [],

@@ -116,7 +116,7 @@ curl -s http://localhost:9093/-/healthy
 
 ### Database Migrations
 
-`database/migrations/` currently has 66 sequenced files (`013` through `091`, with some numbers skipped/archived — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` and `alarm-api` won't start until it exits successfully.
+`database/migrations/` currently has 68 sequenced files (`013` through `093`, with some numbers skipped/archived — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` and `alarm-api` won't start until it exits successfully.
 
 Migrations 084–086 act on the separate `eap_backup` database, which holds the drilling and VCP data. When it is absent they print `IMS_MIGRATION_DEFERRED` and the runner does **not** record them, so they apply automatically on the next `db-migrate` run after `eap_backup` exists (`docker compose run --rm db-migrate`). The runner also stops at the first failed migration instead of running later ones on a half-applied schema. Installs migrated before this behaviour may have 084–086 recorded without effect; run those three files by hand as shown in [Synthetic Drilling and VCP Data](../data/MOCK_DATA.md). They are safe to re-run.
 

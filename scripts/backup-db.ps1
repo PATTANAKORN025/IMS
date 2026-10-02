@@ -14,7 +14,8 @@
 [CmdletBinding()]
 param (
     [string]$BackupDir = ".\backups",
-    [int]$RetentionDays = 30
+    [int]$RetentionDays = 30,
+    [int]$MaxWaitSeconds = 600
 )
 
 $ErrorActionPreference = "Stop"
@@ -46,9 +47,26 @@ $fileName = "ims_backup_${timestamp}.sql.gz"
 $tmp = "/tmp/$fileName"
 $dest = Join-Path $BackupDir $fileName
 
-$running = docker ps -q --filter "name=^${container}$" --filter "status=running"
-if (-not $running) {
-    Write-Error "$container is not running. Aborting backup."
+$deadline = (Get-Date).AddSeconds($MaxWaitSeconds)
+$containerReady = $false
+
+Write-Host "Checking if container $container is running and ready..."
+while ((Get-Date) -lt $deadline) {
+    $running = docker ps -q --filter "name=^${container}$" --filter "status=running"
+    if ($running) {
+        docker exec $container pg_isready -U $dbUser -d $dbName 2>$null | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $containerReady = $true
+            break
+        }
+    }
+    $remaining = [math]::Max(0, [int](($deadline - (Get-Date)).TotalSeconds))
+    Write-Host "Waiting for $container to become ready... ($remaining seconds remaining)"
+    Start-Sleep -Seconds 10
+}
+
+if (-not $containerReady) {
+    Write-Error "$container did not become ready within $MaxWaitSeconds seconds. Aborting backup."
 }
 
 Write-Host "Backing up $dbName to $dest..."

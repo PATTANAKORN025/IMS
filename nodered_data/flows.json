@@ -1209,6 +1209,46 @@
         ]
     },
     {
+        "id": "ldi_replay_tick",
+        "type": "inject",
+        "z": "ldi-ingestion-tab",
+        "name": "Replay Tick 60s",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "15",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 150,
+        "y": 200,
+        "wires": [
+            [
+                "ldi_staging_replay"
+            ]
+        ]
+    },
+    {
+        "id": "ldi_staging_replay",
+        "type": "function",
+        "z": "ldi-ingestion-tab",
+        "name": "Periodic Staging Replay",
+        "func": "const pool = global.get('pgPool');\nif (!pool) return null;\n\n// Periodic replay sweep for failed/pending ingest_staging rows (migration 081 / 093)\npool.query(\n    'SELECT replayed_batches, replayed_data_rows, replayed_alarm_rows, failed_batches FROM public.replay_staged_batches(50)',\n    [],\n    function (err, result) {\n        if (err) {\n            node.warn('Staging replay sweep failed: ' + err.message);\n            node.status({ fill: 'red', shape: 'ring', text: 'replay error' });\n            return;\n        }\n        const row = result.rows && result.rows[0];\n        if (row && row.replayed_batches > 0) {\n            node.log('Replayed ' + row.replayed_batches + ' staged batches (data: ' + row.replayed_data_rows + ', alarms: ' + row.replayed_alarm_rows + ')');\n            node.status({ fill: 'green', shape: 'dot', text: 'replayed ' + row.replayed_batches + ' batches' });\n        } else {\n            node.status({ fill: 'grey', shape: 'ring', text: 'idle (0 pending)' });\n        }\n    }\n);\nreturn null;",
+        "outputs": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 200,
+        "wires": []
+    },
+    {
         "id": "ldisim_tab",
         "type": "tab",
         "label": "LDI Live Simulator",

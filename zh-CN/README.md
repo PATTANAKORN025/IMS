@@ -495,7 +495,7 @@ IMS/
 │  ├── lib/                    # circuit-breaker.js、parser.js、snmp-normalize.js、units.js
 │  └── settings.js
 ├── postgres/init/              # 首次启动的引导 SQL + grafana 密码脚本
-├── database/migrations/        # 按编号、仅向前的迁移（最大 086），由 db-migrate 应用
+├── database/migrations/        # 按编号、仅向前的迁移（最大 093），由 db-migrate 应用
 ├── services/
 │  ├── alarm-api/              # 确认/解决写入路径（Express + pg）
 │  └── factory-twin-3d/        # 一楼数字孪生（Express、lib/*.js + public/ 前端查看器）

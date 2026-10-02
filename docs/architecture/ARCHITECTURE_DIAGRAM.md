@@ -106,7 +106,7 @@ flowchart TB
   end
 
   subgraph DATA["Data · ims-internal"]
-    MIG["db-migrate<br/>one-shot, migrations 013–091"]:::app
+    MIG["db-migrate<br/>one-shot, migrations 013–093"]:::app
     PGB["pgbouncer :5432<br/>SCRAM"]:::app
     TSDB[("timescaledb :5432<br/>ims · eap_backup")]:::store
     PGADMIN["pgadmin<br/>127.0.0.1:5050"]:::app

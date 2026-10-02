@@ -20,14 +20,31 @@ DB_NAME="${DB_NAME:-ims}"
 CONTAINER="ims-timescaledb"
 BACKUP_DIR="./backups"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
+MAX_WAIT_SECONDS="${MAX_WAIT_SECONDS:-600}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 FILENAME="ims_backup_${TIMESTAMP}.sql.gz"
 TMP="/tmp/${FILENAME}"
 
 mkdir -p "$BACKUP_DIR"
 
-if [ -z "$(docker ps -q --filter "name=^${CONTAINER}\$" --filter status=running)" ]; then
-  echo "ERROR: ${CONTAINER} is not running." >&2
+echo "Checking if container ${CONTAINER} is running and ready..."
+START_TIME=$(date +%s)
+CONTAINER_READY=0
+
+while [ $(( $(date +%s) - START_TIME )) -lt "$MAX_WAIT_SECONDS" ]; do
+  if [ -n "$(docker ps -q --filter "name=^${CONTAINER}\$" --filter status=running)" ]; then
+    if docker exec "$CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+      CONTAINER_READY=1
+      break
+    fi
+  fi
+  REMAINING=$(( MAX_WAIT_SECONDS - ($(date +%s) - START_TIME) ))
+  echo "Waiting for ${CONTAINER} to become ready... (${REMAINING}s remaining)"
+  sleep 10
+done
+
+if [ "$CONTAINER_READY" -ne 1 ]; then
+  echo "ERROR: ${CONTAINER} did not become ready within ${MAX_WAIT_SECONDS}s." >&2
   exit 1
 fi
 
