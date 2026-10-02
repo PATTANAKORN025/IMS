@@ -1,4 +1,4 @@
-FROM nodered/node-red:4.1.13-22-minimal
+FROM nodered/node-red:5.0.7-24-minimal
 
 # Switch to root to install extra dependencies, then switch back
 USER root
