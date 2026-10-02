@@ -114,6 +114,7 @@ run("Alert Rule Linter", "node tests/lint/alert-rule-linter.js");
 run("Floor 1 Geometry Validator (skips cleanly if absent)", "node tests/lint/floor1-geometry-validator.js");
 run("Docs README Index", "node scripts/generate-docs-readme-index.js --check");
 run("Mermaid Diagram Lint", "node tests/lint/mermaid-lint.js");
+run("Markdown Code Dollar Linter", "node tests/lint/markdown-code-dollar-linter.js");
 
 // 2. Validate dashboard JSON files
 const dashDir = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');

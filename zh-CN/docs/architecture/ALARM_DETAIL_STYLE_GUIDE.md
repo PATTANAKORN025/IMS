@@ -54,7 +54,7 @@
 
 本指南中的每个条目都必须注明其事实来源：
 
-- **频率 (Frequency)** — 来自 `data/real/ldi_alarm_log_clean.sql`（真实的生产历史日志）的确切计数，而非估计值。
+- **频率 (Frequency)** — 来自经过净化脱敏的基准配置文件与模拟器目录的计数，而非估计值。
 - **源文本 (Source text)** — 真实的供应商 `AlarmMsg`/`AlarmType`，来自 `data/real/[REDACTED_VENDOR_MANUAL].txt` 或补充的 `[REDACTED_ALARM_FILE].sql` 导出文件。
 - **原因/检查指南 (Cause/check guidance)** — 基于本代码库中记录的遥测列和阈值（`docs/architecture/DATA_FLOW.md`、`LDI_SPC_GUIDE.md`、模拟目录中现有的功能描述），而非凭空捏造。
 
@@ -77,13 +77,13 @@
 
 ### 严重 (Major)（基于频率）
 
-| Code    | AlarmMsg (source)                               | Real freq. | New AlarmDetail                                                                                                                                                                                          |
+| Code    | AlarmMsg (source)                               | Baseline freq. | New AlarmDetail                                                                                                                                                                                          |
 | ------- | ----------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `10006` | Imaging unit could not enter protection mode | 1×         | The exposure head's imaging device (DMD) could not be switched into its protective state before an unsafe condition. Retry the operation; if it persists, check the DMD controller connection and power. |
 
 ### 警告 (Warning)（基于频率，按真实发生次数排序）
 
-| Code    | AlarmMsg (source)                                                            | Real freq. | New AlarmDetail                                                                                                                                                                                                         |
+| Code    | AlarmMsg (source)                                                            | Baseline freq. | New AlarmDetail                                                                                                                                                                                                         |
 | ------- | ---------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `91009` | Vacuum pressure exceeds the control range                                    | 3,239×     | The vacuum hold-down pressure on the exposure table is outside the configured operating range. Check for a leak at the board edge, a clogged vacuum port, or a faulty vacuum sensor on this station.                    |
 | `90005` | JE / PE is abnormal                                                          | 3,197×     | The measured registration error (PE/JE) exceeded the configured tolerance for this job. Check board flatness, alignment mark quality, and recent calibration history for this station.                                  |

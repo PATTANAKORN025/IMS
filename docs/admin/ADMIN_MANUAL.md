@@ -134,7 +134,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
 ```
 
-All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded `DO \$\$ ... \$\$` blocks) so re-running `scripts/migrate.sh` against an already-current database is always a safe no-op. See `docs/architecture/ARCHITECTURE.md`'s "Migration Governance" section for why there is deliberately exactly one migration runner, not three.
+All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded `DO $$ ... $$` blocks) so re-running `scripts/migrate.sh` against an already-current database is always a safe no-op. See `docs/architecture/ARCHITECTURE.md`'s "Migration Governance" section for why there is deliberately exactly one migration runner, not three.
 
 ---
 
@@ -281,7 +281,7 @@ If a dedicated dashboard is required for the new machine:
 
 1. Open Grafana → Dashboard → Edit
 2. Add a new panel
-3. Use the query: `SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (\${machine_id:sqlstring}) ORDER BY time DESC`
+3. Use the query: `SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (${machine_id:sqlstring}) ORDER BY time DESC`
 4. Save the dashboard
 
 ---

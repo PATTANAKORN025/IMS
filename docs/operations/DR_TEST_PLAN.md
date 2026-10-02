@@ -124,7 +124,7 @@ Simulate a catastrophic bare-metal failure requiring a 100% ground-up rebuild of
 1. **Clean Slate Volume Wipe:** `docker compose down -v` executes cleanly, unmounting all volumes.
 2. **Deterministic Migration Application:** `database/migrations/` (013 through 086) must execute sequentially in clean dependency order.
 3. **Raw Data Restoration:** Telemetry records from Drill 1 are restored after schema instantiation, preventing circular foreign key conflicts on TimescaleDB continuous aggregate metadata.
-4. **Full Stack Health:** All 14 core containers must reach `Up (healthy)` state within **180 seconds**.
+4. **Stack Health & Service Readiness:** `timescaledb` reaches `healthy`, migrations complete with 0 pending/failed, raw tables are restored, and gated services (`node-red`, `proxy`, `alarm-api`) reach `running` state.
 
 ---
 

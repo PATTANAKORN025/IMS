@@ -134,7 +134,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
 ```
 
-所有迁移都按可重复执行的方式编写（`CREATE ... IF NOT EXISTS`、带条件保护的 `DO \$\$ ... \$\$` 块），因此对已是最新状态的数据库重新运行 `scripts/migrate.sh` 始终是安全的空操作。有意只保留一个迁移执行器（而不是三个）的原因，见 `docs/architecture/ARCHITECTURE.md` 的 "Migration Governance" 一节。
+所有迁移都按可重复执行的方式编写（`CREATE ... IF NOT EXISTS`、带条件保护的 `DO $$ ... $$` 块），因此对已是最新状态的数据库重新运行 `scripts/migrate.sh` 始终是安全的空操作。有意只保留一个迁移执行器（而不是三个）的原因，见 `docs/architecture/ARCHITECTURE.md` 的 "Migration Governance" 一节。
 
 ---
 
@@ -281,7 +281,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 1. 打开 Grafana → Dashboard → Edit
 2. 添加新面板
-3. 使用查询：`SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (\${machine_id:sqlstring}) ORDER BY time DESC`
+3. 使用查询：`SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (${machine_id:sqlstring}) ORDER BY time DESC`
 4. 保存仪表板
 
 ---

@@ -54,7 +54,7 @@ Real vendor AlarmMsg text sometimes uses internal component names (`DMD`, `PSO`)
 
 Every entry in this guide must cite where its facts came from:
 
-- **Frequency** — an exact count from `data/real/ldi_alarm_log_clean.sql` (real historical production log), not an estimate.
+- **Frequency** — baseline replay frequency count from the sanitized baseline profile and simulator catalog, not an estimate.
 - **Source text** — the real vendor `AlarmMsg`/`AlarmType` from `data/real/[REDACTED_VENDOR_MANUAL].txt` or the supplemental `[REDACTED_ALARM_FILE].sql` export.
 - **Cause/check guidance** — grounded in this codebase's own documented telemetry columns and thresholds (`docs/architecture/DATA_FLOW.md`, `LDI_SPC_GUIDE.md`, the mock catalog's existing functional descriptions), not invented.
 
@@ -77,13 +77,13 @@ If any of the three is missing, the code is flagged for future update (see §6).
 
 ### Major (frequency-backed)
 
-| Code    | AlarmMsg (source)                               | Real freq. | New AlarmDetail                                                                                                                                                                                          |
+| Code    | AlarmMsg (source)                               | Baseline freq. | New AlarmDetail                                                                                                                                                                                          |
 | ------- | ----------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `10006` | Imaging unit could not enter protection mode | 1×         | The exposure head's imaging device (DMD) could not be switched into its protective state before an unsafe condition. Retry the operation; if it persists, check the DMD controller connection and power. |
 
 ### Warning (frequency-backed, ordered by real occurrence count)
 
-| Code    | AlarmMsg (source)                                                            | Real freq. | New AlarmDetail                                                                                                                                                                                                         |
+| Code    | AlarmMsg (source)                                                            | Baseline freq. | New AlarmDetail                                                                                                                                                                                                         |
 | ------- | ---------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `91009` | Vacuum pressure exceeds the control range                                    | 3,239×     | The vacuum hold-down pressure on the exposure table is outside the configured operating range. Check for a leak at the board edge, a clogged vacuum port, or a faulty vacuum sensor on this station.                    |
 | `90005` | JE / PE is abnormal                                                          | 3,197×     | The measured registration error (PE/JE) exceeded the configured tolerance for this job. Check board flatness, alignment mark quality, and recent calibration history for this station.                                  |

@@ -124,7 +124,7 @@ sequenceDiagram
 1. **存储卷彻底清空:** `docker compose down -v` 成功释放所有命名存储卷。
 2. **版本化迁移顺畅执行:** `database/migrations/` (从 013 到 086) 必须按版本依赖顺序无报错执行。
 3. **纯净数据行还原:** 在迁移构建出纯净 Schema 后导入科目 1 备份的原始数据，避免触发 TimescaleDB 持续聚合的循环外键冲突。
-4. **全技术栈可用性:** 全部 14 个核心容器在 **180 秒** 内全部达到 `Up (healthy)` 状态。
+4. **技术栈与关键服务就绪:** `timescaledb` 达到 `healthy` 状态，迁移无挂起/失败，原始数据行成功恢复，门控服务 (`node-red`, `proxy`, `alarm-api`) 达到 `running` 状态。
 
 ---
 
