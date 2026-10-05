@@ -5,7 +5,7 @@
 # updates available, including libcrypto3/libssl3 3.5.6-r0 -> 3.5.7-r0,
 # which resolves CVE-2026-45447 (Trivy-confirmed HIGH, target=pgbouncer's
 # Alpine OS layer). Same low-risk pattern as nodered_data/Dockerfile's fix.
-FROM edoburu/pgbouncer:v1.25.2-p0
+FROM edoburu/pgbouncer:v1.26.0-p0
 
 USER root
 RUN apk update && apk upgrade --no-cache
