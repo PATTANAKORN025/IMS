@@ -378,7 +378,7 @@ services:
 
   # ── Blackbox Exporter (Uptime/SLA Probes) ─────────────────
   blackbox-exporter:
-    image: prom/blackbox-exporter:v0.28.0
+    image: prom/blackbox-exporter:v0.29.1
     container_name: ims-blackbox
     <<: [*default-restart, *default-hardening, *no-caps]
     init: true
