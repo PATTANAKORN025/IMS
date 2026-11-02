@@ -646,7 +646,7 @@ services:
   # ── pgAdmin 4 ─────────────────────────────────────────────
   pgadmin:
     # pinned to the version proven in the running stack; Dependabot proposes upgrades
-    image: dpage/pgadmin4:9.18
+    image: dpage/pgadmin4:9.19
     container_name: ims-pgadmin4
     restart: unless-stopped
     environment:
