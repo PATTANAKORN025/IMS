@@ -630,7 +630,7 @@ services:
   # /containers only (POST=0); everything else is denied. It sits on its own
   # internal network that only the archiver joins.
   docker-socket-proxy:
-    image: tecnativa/docker-socket-proxy:v0.5.0
+    image: tecnativa/docker-socket-proxy:3.4
     container_name: ims-docker-socket-proxy
     <<: [*default-restart, *default-hardening, *no-caps]
     environment:
